@@ -1,0 +1,13 @@
+{
+  "id": 1032,
+  "difficulty": "easy",
+  "pegs": 3,
+  "disks": 4,
+  "start": [[3],[2],[4,1]],
+  "goal": [[3,1],[4],[2]],
+  "rules": ["classic_hanoi"],
+  "min_moves": 6,
+  "solution_path": [[1,0],[2,0],[2,1],[0,1],[0,2],[1,0]],
+  "star_thresholds": {"three":6,"two":8},
+  "time_limit_seconds": null
+}

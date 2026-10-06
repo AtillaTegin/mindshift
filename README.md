@@ -36,6 +36,28 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 | `tests/` | Headless testlər (`test_runner.gd`, `test_case.gd` bazası) |
 | `assets/` | Sprite və şriftlər (hələlik placeholder) |
 
+## Səviyyələr
+
+```powershell
+# generasiya (hər çətinliyin köhnə fayllarını əvəz edir; seed sabitdir, nəticə təkrarlanır)
+godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all --count=50
+godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=50 --seed=7
+# yoxlama (hər faylı Solver ilə yenidən həll edir; --require=N hər çətinlikdə ən azı N səviyyə tələb edir)
+godot --headless --path . --script res://tools/level_validator.gd -- --require=50
+```
+
+Fayllar `data/levels/<çətinlik>/<çətinlik>_NNN.json` adlanır (asandan çətinə sıralanıb).
+ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəli [core/difficulty.gd](core/difficulty.gd)-dədir.
+
+| Çətinlik | Gediş | Qüllə | Disk |
+|---|---|---|---|
+| Easy | 3–8 | 3 | 3–4 |
+| Medium | 9–18 | 3–4 | 5–6 |
+| Hard | 19–35 | 4 | 7–8 |
+| Expert | 36+ | 4 | 9–10 |
+
+Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
+
 ### Yeni qayda əlavə etmək
 
 1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın:
@@ -63,7 +85,7 @@ Solver-ə toxunmaq lazım deyil.
 |---|---|---|
 | 1 | Əsas data strukturu (`PuzzleState`, `Move`, `RuleBase`, `ClassicHanoiRule`, `RuleSet`) | ✅ |
 | 2 | BFS Solver (4 qüllə / 8 disk: ~60 ms, limit 5 s) | ✅ |
-| 3 | Səviyyə generatoru + validator | — |
+| 3 | Səviyyə generatoru + validator (4 × 50 səviyyə, hamısı yoxlanılıb) | ✅ |
 | 4 | Oyun lövhəsi UI | — |
 | 5 | Səviyyə seçimi, tamamlama ekranı, save | — |
 | 6 | Hint, Undo, Economy | — |
