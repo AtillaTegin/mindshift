@@ -195,6 +195,30 @@ func test_new_rule_combines_with_classic_without_changing_rule_set() -> void:
 	assert_eq(rules.get_rule_ids(), ["classic_hanoi", "test_forbidden_target"])
 
 
+func test_classic_rule_fast_path_hooks() -> void:
+	var rule: ClassicHanoiRule = ClassicHanoiRule.new()
+	assert_true(rule.supports_disk_move_check())
+	assert_true(rule.keeps_stacks_sorted())
+	assert_true(rule.is_disk_move_allowed(1, 0, 1, -1), "onto empty peg")
+	assert_true(rule.is_disk_move_allowed(1, 0, 1, 2), "onto larger disk")
+	assert_false(rule.is_disk_move_allowed(2, 0, 1, 1), "onto smaller disk")
+	assert_false(rule.is_disk_move_allowed(2, 0, 1, 2), "onto equal disk")
+	var base: RuleBase = RuleBase.new()
+	assert_false(base.supports_disk_move_check(), "opt-in only")
+	assert_false(base.keeps_stacks_sorted(), "opt-in only")
+
+
+func test_classic_move_check_uses_disk_check() -> void:
+	# is_move_allowed() must agree with is_disk_move_allowed() on every move.
+	var rules: RuleSet = RuleSet.new()
+	var rule: ClassicHanoiRule = ClassicHanoiRule.new()
+	for state: PuzzleState in _reachable_states(rules, PuzzleState.new([[3, 2, 1], [], []])):
+		for move: Move in rules.get_legal_moves(state):
+			var expected: bool = rule.is_disk_move_allowed(state.get_top_disk(move.from_peg),
+					move.from_peg, move.to_peg, state.get_top_disk(move.to_peg))
+			assert_eq(rule.is_move_allowed(state, move), expected, "%s %s" % [state.hash_key(), str(move)])
+
+
 func test_constructor_copies_rule_array() -> void:
 	var source: Array[RuleBase] = [ClassicHanoiRule.new()]
 	var rules: RuleSet = RuleSet.new(source)

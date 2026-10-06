@@ -38,17 +38,31 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 
 ### Yeni qayda əlavə etmək
 
-1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın (`get_id`, `is_move_allowed`, `is_state_valid`).
+1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın:
+   - qərar yalnız hərəkət edən diskdən, iki qüllədən və hədəf qüllənin üst diskindən asılıdırsa:
+     `is_disk_move_allowed()` + `supports_disk_move_check() -> true` (Solver sürətli yolu istifadə edə bilir);
+   - daha çox vəziyyət məlumatı lazımdırsa: `is_move_allowed()` (Solver ümumi BFS-ə keçir);
+   - mövqe məhdudiyyəti varsa: `is_state_valid()`.
 2. Onu `RuleSet.create_rule()` reyestrinə əlavə edin.
 
 Solver-ə toxunmaq lazım deyil.
+
+### Solver
+
+`Solver.solve(start, goal, rules, max_states)` → `{ solvable, min_moves, path: Array[Move], states_visited, limit_reached, strategy }`.
+İki strategiya var, hər ikisi BFS-dir və ən qısa yolu tapır:
+
+- **packed**: qaydalar qüllələri sıralı saxlayırsa (klassik Hanoi), vəziyyət tam ədəd kimi kodlanır
+  ("hər disk hansı qüllədədir") və axtarış iki tərəfdən aparılır. 4 qüllə / 8 disk ≈ 60 ms.
+- **generic**: `PuzzleState` + `hash_key()` üzərində standart BFS, istənilən qayda dəsti üçün.
+  4 qüllə / 8 disk burada ≈ 15 s çəkir. Səbəb də sürətli yolun yaradılmasıdır.
 
 ## İrəliləyiş
 
 | Gün | Mövzu | Status |
 |---|---|---|
 | 1 | Əsas data strukturu (`PuzzleState`, `Move`, `RuleBase`, `ClassicHanoiRule`, `RuleSet`) | ✅ |
-| 2 | BFS Solver | — |
+| 2 | BFS Solver (4 qüllə / 8 disk: ~60 ms, limit 5 s) | ✅ |
 | 3 | Səviyyə generatoru + validator | — |
 | 4 | Oyun lövhəsi UI | — |
 | 5 | Səviyyə seçimi, tamamlama ekranı, save | — |

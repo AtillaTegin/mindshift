@@ -10,9 +10,16 @@ func get_id() -> String:
 	return ID
 
 
-func is_move_allowed(state: PuzzleState, move: Move) -> bool:
-	var target_top: int = state.get_top_disk(move.to_peg)
-	return target_top == -1 or state.get_top_disk(move.from_peg) < target_top
+func is_disk_move_allowed(disk: int, _from_peg: int, _to_peg: int, target_top: int) -> bool:
+	return target_top == -1 or disk < target_top
+
+
+func supports_disk_move_check() -> bool:
+	return true
+
+
+func keeps_stacks_sorted() -> bool:
+	return true
 
 
 ## Every peg must be strictly decreasing from bottom to top.
