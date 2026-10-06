@@ -5,6 +5,15 @@ Engine: **Godot 4.7.2** (GDScript, statik tiplə). Hədəf platformalar: Android
 
 Tam texniki plan: `../MindShift_Project_Spec.md`.
 
+## Oyunu işə salmaq
+
+```powershell
+& "C:\Users\User\Tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe" --path . --resolution 540x960
+```
+
+Və ya Godot redaktorunda layihəni açıb F5 basın. Hazırda əsas səhnə `scenes/game_board.tscn`-dir:
+qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və disk ora köçür. Qeyri-qanuni gedişdə qüllə qırmızı yanıb-sönür.
+
 ## Testlər
 
 Godot-un console versiyası lazımdır (`Godot_v4.7.2-stable_win64_console.exe`).
@@ -86,7 +95,7 @@ Solver-ə toxunmaq lazım deyil.
 | 1 | Əsas data strukturu (`PuzzleState`, `Move`, `RuleBase`, `ClassicHanoiRule`, `RuleSet`) | ✅ |
 | 2 | BFS Solver (4 qüllə / 8 disk: ~60 ms, limit 5 s) | ✅ |
 | 3 | Səviyyə generatoru + validator (4 × 50 səviyyə, hamısı yoxlanılıb) | ✅ |
-| 4 | Oyun lövhəsi UI | — |
+| 4 | Oyun lövhəsi UI (toxun-seç, toxun-köçür, qırmızı flash, sayğac, hədəf önizləməsi) | ✅ |
 | 5 | Səviyyə seçimi, tamamlama ekranı, save | — |
 | 6 | Hint, Undo, Economy | — |
 | 7 | Android build | — |

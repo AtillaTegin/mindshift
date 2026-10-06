@@ -41,6 +41,13 @@ class ErrorCounter extends Logger:
 
 
 func _initialize() -> void:
+	_run_when_tree_is_live()
+
+
+## The root viewport only enters the tree after the first frame; tests that
+## add scenes need _ready() to run, so wait for it.
+func _run_when_tree_is_live() -> void:
+	await process_frame
 	# Only a completed _run_all() can return true. If the runner itself hits a
 	# script error, the aborted call yields false and the run still fails.
 	quit(0 if _run_all() else 1)

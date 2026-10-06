@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/components/disk.gd" id="1_disk"]
+
+[node name="Disk" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 120.0
+offset_bottom = 36.0
+mouse_filter = 2
+script = ExtResource("1_disk")
