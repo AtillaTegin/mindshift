@@ -4,14 +4,21 @@ extends "res://tests/test_case.gd"
 
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
 const EASY_LEVEL: String = "res://data/levels/easy/easy_001.json"
+## Never the player's real save.
+const SAVE_PATH: String = "user://test_game_board_save.json"
 
 var _board: Control
+var _save: SaveSystem
 var _completed: Array = []
 
 
 func before_each() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
+	_save = SaveSystem.new(SAVE_PATH)
 	_board = BOARD_SCENE.instantiate()
 	_board.level_path = EASY_LEVEL
+	_board.save_system = _save
 	_board.level_completed.connect(func(level: Level, moves: int, seconds: float) -> void:
 		_completed.append([level.id, moves, seconds]))
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
@@ -20,6 +27,14 @@ func before_each() -> void:
 func after_each() -> void:
 	_board.get_parent().remove_child(_board)
 	_board.free()
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
+
+
+func _play(moves: Array[Move]) -> void:
+	for move: Move in moves:
+		_board.on_peg_pressed(move.from_peg)
+		_board.on_peg_pressed(move.to_peg)
 
 
 func _label(unique_name: String) -> String:
@@ -36,7 +51,8 @@ func test_loads_level_and_builds_views() -> void:
 	assert_eq(disk_layer.get_child_count(), session.state.get_disk_count())
 	assert_eq(_label("MovesLabel"), "Gediş: 0")
 	assert_eq(_label("MinLabel"), "Minimum: %d" % session.level.min_moves)
-	assert_eq(_label("LevelLabel"), "Easy · 1")
+	assert_eq(_label("LevelLabel"), "Asan · 1")
+	assert_false(_board.get_popup().visible)
 	assert_true((_board.get_node("%GoalPreview") as BoardPreview).position_state.equals(session.level.goal))
 
 
@@ -103,6 +119,49 @@ func test_restart_resets_counter_and_position() -> void:
 	_board.restart()
 	assert_eq(_label("MovesLabel"), "Gediş: 0")
 	assert_true(session.state.equals(session.level.start))
+
+
+func test_optimal_solution_gives_three_stars_saves_and_shows_popup() -> void:
+	var level: Level = _board.session.level
+	_play(level.solution_path)
+	assert_eq(_board.last_result["stars"], 3)
+	assert_true(_board.last_result["improved"])
+	var popup: LevelCompletePopup = _board.get_popup()
+	assert_true(popup.visible)
+	assert_eq(popup.get_star_count(), 3)
+	assert_eq((popup.get_node("%MovesLabel") as Label).text, "Gediş: %d / min %d" % [level.min_moves, level.min_moves])
+	assert_false((popup.get_node("%NextButton") as Button).disabled)
+	var reopened: SaveSystem = SaveSystem.new(SAVE_PATH)
+	assert_true(reopened.load_save(), "written at once")
+	assert_eq(reopened.get_record(level.id)["stars"], 3)
+	assert_eq(reopened.get_record(level.id)["best_moves"], level.min_moves)
+
+
+func test_detour_gives_fewer_stars() -> void:
+	var level: Level = _board.session.level
+	# Two wasted moves: the first move and its reverse.
+	var first: Move = level.solution_path[0]
+	var moves: Array[Move] = [first, Move.new(first.to_peg, first.from_peg)]
+	moves.append_array(level.solution_path)
+	_play(moves)
+	var expected: int = level.stars_for_moves(level.min_moves + 2)
+	assert_true(expected < 3)
+	assert_eq(_board.last_result["stars"], expected)
+	assert_eq(_save.get_stars(level.id), expected)
+
+
+func test_next_and_replay_buttons() -> void:
+	_play(_board.session.level.solution_path)
+	var popup: LevelCompletePopup = _board.get_popup()
+	(popup.get_node("%ReplayButton") as Button).pressed.emit()
+	assert_false(popup.visible)
+	assert_eq(_board.session.move_count, 0)
+	assert_eq(_board.session.level.id, 1001)
+	_play(_board.session.level.solution_path)
+	(popup.get_node("%NextButton") as Button).pressed.emit()
+	assert_eq(_board.session.level.id, 1002, "next level loaded in place")
+	assert_eq(_label("LevelLabel"), "Asan · 2")
+	assert_false(popup.visible)
 
 
 func test_every_generated_easy_level_loads() -> void:

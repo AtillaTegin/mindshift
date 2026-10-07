@@ -92,6 +92,11 @@ static func load_and_validate(path: String, errors: Array[String]) -> Level:
 	var folder: String = path.get_base_dir().get_file()
 	if folder != level.difficulty:
 		errors.append("difficulty \"%s\" is stored in the \"%s\" folder" % [level.difficulty, folder])
+	elif Difficulty.accepts_id(level.difficulty, level.id):
+		# The game finds a level by id, so the file number must match it.
+		var expected_name: String = Difficulty.level_file_name(level.difficulty, Difficulty.index_of_id(level.id))
+		if path.get_file() != expected_name:
+			errors.append("id %d belongs in %s, not %s" % [level.id, expected_name, path.get_file()])
 	validate_level(level, errors)
 	return level
 

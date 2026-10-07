@@ -7,6 +7,9 @@ extends RefCounted
 
 const ORDER: Array[String] = ["easy", "medium", "hard", "expert"]
 const MAX_LEVELS_PER_TIER: int = 999
+const LEVELS_DIR: String = "res://data/levels"
+## Names shown to the player.
+const DISPLAY_NAMES: Dictionary = {"easy": "Asan", "medium": "Orta", "hard": "Çətin", "expert": "Ekspert"}
 
 ## Inclusive ranges; max_moves -1 means no upper bound. Level ids of a tier run
 ## from first_id to first_id + MAX_LEVELS_PER_TIER - 1.
@@ -49,6 +52,37 @@ static func accepts_id(tier: String, id: int) -> bool:
 	var settings: Dictionary = get_tier(tier)
 	return not settings.is_empty() and id >= settings["first_id"] \
 			and id < settings["first_id"] + MAX_LEVELS_PER_TIER
+
+
+## Tier of a level id, or "" if the id belongs to no tier.
+static func tier_of_id(id: int) -> String:
+	for tier: String in ORDER:
+		if accepts_id(tier, id):
+			return tier
+	return ""
+
+
+## 1-based position of a level inside its tier (also its file number).
+static func index_of_id(id: int) -> int:
+	var tier: String = tier_of_id(id)
+	return id - int(TIERS[tier]["first_id"]) + 1 if not tier.is_empty() else -1
+
+
+static func id_for(tier: String, index: int) -> int:
+	return int(TIERS[tier]["first_id"]) + index - 1
+
+
+## File name of the `index`-th level (1-based) of a tier, e.g. "easy_007.json".
+static func level_file_name(tier: String, index: int) -> String:
+	return "%s_%03d.json" % [tier, index]
+
+
+static func level_path(tier: String, index: int, levels_dir: String = LEVELS_DIR) -> String:
+	return "%s/%s/%s" % [levels_dir, tier, level_file_name(tier, index)]
+
+
+static func display_name(tier: String) -> String:
+	return DISPLAY_NAMES.get(tier, tier.capitalize())
 
 
 ## Human-readable move range, e.g. "3-8" or "36+".

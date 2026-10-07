@@ -60,9 +60,14 @@ func test_random_state_is_legal_and_complete() -> void:
 	assert_eq(LevelGenerator.tower_state(3, 3, 1).to_array(), [[], [3, 2, 1], []])
 
 
-func test_file_names() -> void:
-	assert_eq(LevelGenerator.file_name_for("easy", 7), "easy_007.json")
-	assert_eq(LevelGenerator.file_name_for("expert", 50), "expert_050.json")
+func test_file_names_and_ids() -> void:
+	assert_eq(Difficulty.level_file_name("easy", 7), "easy_007.json")
+	assert_eq(Difficulty.level_path("expert", 50), "res://data/levels/expert/expert_050.json")
+	assert_eq(Difficulty.id_for("medium", 3), 2003)
+	assert_eq(Difficulty.tier_of_id(2003), "medium")
+	assert_eq(Difficulty.index_of_id(2003), 3)
+	assert_eq(Difficulty.tier_of_id(5), "")
+	assert_eq(Difficulty.index_of_id(5), -1)
 
 
 static func _as_json(levels: Array[Level]) -> String:

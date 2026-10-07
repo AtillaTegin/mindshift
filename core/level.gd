@@ -26,6 +26,16 @@ static func two_star_threshold(p_min_moves: int) -> int:
 	return roundi(p_min_moves * TWO_STAR_FACTOR)
 
 
+## Spec 4.6: 3 stars for an optimal solution, 2 up to the two-star threshold,
+## otherwise 1 (solved, but not efficiently).
+func stars_for_moves(moves: int) -> int:
+	if moves <= min_moves:
+		return 3
+	if moves <= two_star_moves:
+		return 2
+	return 1
+
+
 ## A level whose min_moves and star thresholds come from `path`.
 static func create(p_id: int, p_difficulty: String, p_start: PuzzleState, p_goal: PuzzleState,
 		p_rule_ids: Array[String], path: Array[Move]) -> Level:

@@ -6,13 +6,20 @@ signal level_completed(level: Level, moves: int, seconds: float)
 
 const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
 const DISK_SCENE: PackedScene = preload("res://scenes/components/disk.tscn")
+const POPUP_SCENE: PackedScene = preload("res://scenes/level_complete_popup.tscn")
 const MOVE_SECONDS: float = 0.12
 const MAX_DISK_HEIGHT: float = 52.0
 
-## Level loaded in _ready(); empty to wait for start_level().
+## Level loaded in _ready() unless the App autoload asks for another one.
 @export_file("*.json") var level_path: String = "res://data/levels/easy/easy_001.json"
+## Where results are recorded; taken from the App autoload when left empty.
+var save_system: SaveSystem
 
 var session: GameSession
+## Result of the last completion: { stars, improved }.
+var last_result: Dictionary = {}
+
+var _popup: LevelCompletePopup
 
 var _peg_views: Array[PegView] = []
 ## Disk size -> view.
@@ -28,11 +35,28 @@ var _disk_tweens: Dictionary[int, Tween] = {}
 @onready var _peg_layer: Control = %PegLayer
 @onready var _disk_layer: Control = %DiskLayer
 @onready var _restart_button: Button = %RestartButton
+@onready var _back_button: Button = %BackButton
 
 
 func _ready() -> void:
+	var app: Node = get_node_or_null("/root/App")
+	if save_system == null:
+		save_system = app.save if app != null else SaveSystem.new()
 	_restart_button.pressed.connect(restart)
+	_back_button.pressed.connect(_show_level_select)
 	_board.resized.connect(_layout.bind(false))
+	_popup = POPUP_SCENE.instantiate()
+	_popup.visible = false
+	_popup.next_requested.connect(play_next_level)
+	_popup.replay_requested.connect(restart)
+	_popup.levels_requested.connect(_show_level_select)
+	add_child(_popup)
+	var pending: Dictionary = app.take_pending_level() if app != null else {}
+	if not pending.is_empty():
+		var level: Level = LevelCatalog.load_level(pending["tier"], pending["index"])
+		if level != null:
+			start_level(level)
+			return
 	if not level_path.is_empty():
 		load_level_file(level_path)
 
@@ -56,10 +80,11 @@ func load_level_file(path: String) -> bool:
 
 func start_level(level: Level) -> void:
 	session = GameSession.new(level)
+	last_result = {}
+	_popup.visible = false
 	_build_views()
 	_goal_preview.position_state = level.goal
-	var tier: Dictionary = Difficulty.get_tier(level.difficulty)
-	_level_label.text = "%s · %d" % [level.difficulty.capitalize(), level.id - int(tier.get("first_id", 1)) + 1]
+	_level_label.text = "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
 	_min_label.text = "Minimum: %d" % level.min_moves
 	_refresh(false)
 
@@ -68,7 +93,49 @@ func restart() -> void:
 	if session == null:
 		return
 	session.restart()
+	last_result = {}
+	_popup.visible = false
 	_refresh(true)
+
+
+## Opens the level after the current one (next tier after the last level).
+func play_next_level() -> void:
+	var next: Dictionary = _next_level()
+	if next.is_empty():
+		return
+	var level: Level = LevelCatalog.load_level(next["tier"], next["index"])
+	if level == null:
+		return
+	var app: Node = get_node_or_null("/root/App")
+	if app != null:
+		app.selected_tier = next["tier"]
+	start_level(level)
+
+
+func get_popup() -> LevelCompletePopup:
+	return _popup
+
+
+func _next_level() -> Dictionary:
+	var level: Level = session.level
+	return LevelCatalog.next_after(level.difficulty, Difficulty.index_of_id(level.id))
+
+
+func _show_level_select() -> void:
+	var app: Node = get_node_or_null("/root/App")
+	if app != null:
+		app.show_level_select(session.level.difficulty if session != null else "")
+
+
+## Spec 4.6/4.9: stars from the move count, saved right away, then the popup.
+func _on_solved() -> void:
+	var level: Level = session.level
+	var stars: int = level.stars_for_moves(session.move_count)
+	var improved: bool = save_system.record_completion(level.id, stars, session.move_count, session.elapsed_seconds)
+	last_result = {"stars": stars, "improved": improved}
+	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
+			improved, not _next_level().is_empty())
+	level_completed.emit(level, session.move_count, session.elapsed_seconds)
 
 
 ## Handles a tap on peg `peg_index` (also the entry point for tests).
@@ -80,14 +147,14 @@ func on_peg_pressed(peg_index: int) -> void:
 		_peg_views[peg_index].flash_invalid()
 	_refresh(true)
 	if result == GameSession.TapResult.MOVED and session.is_solved():
-		level_completed.emit(session.level, session.move_count, session.elapsed_seconds)
+		_on_solved()
 
 
 func _build_views() -> void:
-	for child: Node in _peg_layer.get_children():
-		child.queue_free()
-	for child: Node in _disk_layer.get_children():
-		child.queue_free()
+	for layer: Control in [_peg_layer, _disk_layer]:
+		for child: Node in layer.get_children():
+			layer.remove_child(child)
+			child.queue_free()
 	_peg_views.clear()
 	_disk_views.clear()
 	_disk_tweens.clear()

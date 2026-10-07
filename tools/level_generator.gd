@@ -10,7 +10,7 @@ extends SceneTree
 ## file is re-read and checked by LevelValidator right after it is written.
 ## Exits with code 0 only when all requested levels were written and validated.
 
-const LEVELS_DIR: String = "res://data/levels"
+const LEVELS_DIR: String = Difficulty.LEVELS_DIR
 const DEFAULT_COUNT: int = 50
 const BASE_SEED: int = 20261006
 const RULE_IDS: Array[String] = ["classic_hanoi"]
@@ -138,10 +138,6 @@ static func tower_state(peg_count: int, disk_count: int, on_peg: int) -> PuzzleS
 	return PuzzleState.new(layout)
 
 
-static func file_name_for(tier: String, index: int) -> String:
-	return "%s_%03d.json" % [tier, index]
-
-
 ## Replaces the tier's level files and validates each one right after writing.
 func _write_tier(tier: String, levels: Array[Level]) -> bool:
 	var dir_path: String = "%s/%s" % [LEVELS_DIR, tier]
@@ -155,7 +151,7 @@ func _write_tier(tier: String, levels: Array[Level]) -> bool:
 			dir.remove(old_file)
 	var ok: bool = true
 	for i: int in levels.size():
-		var path: String = "%s/%s" % [dir_path, file_name_for(tier, i + 1)]
+		var path: String = Difficulty.level_path(tier, i + 1, LEVELS_DIR)
 		var save_error: Error = levels[i].save_file(path)
 		if save_error != OK:
 			printerr("Cannot write %s: %s" % [path, error_string(save_error)])

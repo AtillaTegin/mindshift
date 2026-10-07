@@ -1,0 +1,129 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_complete_popup.gd" id="1_popup"]
+[ext_resource type="Script" path="res://scripts/star_view.gd" id="2_star"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.957, 0.945, 0.918, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+content_margin_left = 40.0
+content_margin_top = 36.0
+content_margin_right = 40.0
+content_margin_bottom = 36.0
+
+[node name="LevelCompletePopup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_popup")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.1, 0.55)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Center/Panel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
+theme_override_font_sizes/font_size = 40
+text = "Səviyyə tamamlandı!"
+horizontal_alignment = 1
+
+[node name="Stars" type="HBoxContainer" parent="Center/Panel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Star1" type="Control" parent="Center/Panel/Layout/Stars"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_star")
+
+[node name="Star2" type="Control" parent="Center/Panel/Layout/Stars"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_star")
+
+[node name="Star3" type="Control" parent="Center/Panel/Layout/Stars"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_star")
+
+[node name="TimeLabel" type="Label" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
+theme_override_font_sizes/font_size = 30
+text = "Vaxt: 0:00"
+horizontal_alignment = 1
+
+[node name="MovesLabel" type="Label" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
+theme_override_font_sizes/font_size = 30
+text = "Gediş: 0 / min 0"
+horizontal_alignment = 1
+
+[node name="RecordLabel" type="Label" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.165, 0.616, 0.561, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="NextButton" type="Button" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Növbəti səviyyə"
+
+[node name="ReplayButton" type="Button" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Təkrar oyna"
+
+[node name="LevelsButton" type="Button" parent="Center/Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Səviyyələr"

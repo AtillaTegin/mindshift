@@ -11,8 +11,12 @@ config_version=5
 [application]
 
 config/name="MindShift: Puzzle Logic"
-run/main_scene="res://scenes/game_board.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
+
+[autoload]
+
+App="*res://scripts/app.gd"
 
 [display]
 
