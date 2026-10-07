@@ -12,6 +12,7 @@ const MOVE_SECONDS: float = 0.25
 
 var _breath: Tween
 var _move: Tween
+var _target: Rect2 = Rect2()
 
 
 func _ready() -> void:
@@ -22,6 +23,7 @@ func _ready() -> void:
 ## Shows the ring around `target` (viewport coordinates); glides there if it
 ## is already visible.
 func show_around(target: Rect2) -> void:
+	_target = target
 	var rect: Rect2 = target.grow(PADDING)
 	if visible and _move_needed(rect):
 		if _move != null:
@@ -43,9 +45,9 @@ func hide_ring() -> void:
 		_breath = null
 
 
-## The rectangle the ring currently surrounds (without padding).
+## The rectangle the ring surrounds (or is gliding to), without padding.
 func get_target() -> Rect2:
-	return Rect2(position, size).grow(-PADDING)
+	return _target
 
 
 func _move_needed(rect: Rect2) -> bool:

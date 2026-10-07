@@ -1,13 +1,21 @@
+class_name GameBoard
 extends Control
 ## Game board screen (spec 5.3): pegs, disks, goal preview, move counter,
 ## coins, hint and undo. Tap a peg to pick up its top disk, tap another peg to
-## move it there.
+## move it there. Hints and the tutorial draw on the shared coaching overlay.
 
 signal level_completed(level: Level, moves: int, seconds: float)
+## The position changed (move, undo, restart or a new level).
+signal position_changed
+## A disk was picked up (peg index) or put back (-1).
+signal selection_changed(peg_index: int)
+## A move was refused by the rules; `message` is the broken rule's text.
+signal illegal_move(move: Move, message: String)
 
 const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
 const DISK_SCENE: PackedScene = preload("res://scenes/components/disk.tscn")
 const POPUP_SCENE: PackedScene = preload("res://scenes/level_complete_popup.tscn")
+const COACHING_SCENE: PackedScene = preload("res://scenes/components/coaching/coaching_layer.tscn")
 const MOVE_SECONDS: float = 0.12
 const MAX_DISK_HEIGHT: float = 52.0
 
@@ -24,22 +32,20 @@ var background_hints: bool = true
 var session: GameSession
 ## Result of the last completion: { stars, improved, reward }.
 var last_result: Dictionary = {}
-## The move the current hint points at, or null.
-var hint_move: Move
+var coaching: CoachingLayer
+var hints: HintController
 
 var _popup: LevelCompletePopup
-## Position the shown hint belongs to; asking again there costs nothing.
-var _hint_key: String = ""
 ## Short notice in the status line (e.g. not enough coins), cleared by the next action.
 var _message: String = ""
-var _hint_thread: Thread
-## Position the running background search belongs to.
-var _pending_hint_key: String = ""
-
 var _peg_views: Array[PegView] = []
 ## Disk size -> view.
 var _disk_views: Dictionary[int, DiskView] = {}
 var _disk_tweens: Dictionary[int, Tween] = {}
+## Disk size -> where the disk is (or is gliding to), in board coordinates.
+var _disk_targets: Dictionary[int, Rect2] = {}
+## Peg index -> peg area (rod, base and the space for a lifted disk), board coordinates.
+var _peg_areas: Array[Rect2] = []
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -68,6 +74,14 @@ func _ready() -> void:
 			economy.setup(save_system)
 			add_child(economy)
 	economy.coins_changed.connect(func(_coins: int) -> void: _update_buttons())
+	coaching = COACHING_SCENE.instantiate()
+	add_child(coaching)
+	hints = HintController.new()
+	hints.name = "HintController"
+	hints.background = background_hints
+	hints.setup(self, coaching, economy)
+	hints.message_changed.connect(show_message)
+	add_child(hints)
 	_hint_button.pressed.connect(request_hint)
 	_undo_button.pressed.connect(request_undo)
 	_restart_button.pressed.connect(restart)
@@ -92,27 +106,6 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if session != null:
 		session.add_time(delta)
-	if _hint_thread != null and not _hint_thread.is_alive():
-		var move: Move = _hint_thread.wait_to_finish()
-		_hint_thread = null
-		var key: String = _pending_hint_key
-		_pending_hint_key = ""
-		# Only show it if the player has not moved on meanwhile (then it is free).
-		if session != null and not session.is_solved() and session.state.hash_key() == key:
-			_apply_hint(move, key)
-		else:
-			_message = ""
-			_refresh(false)
-
-
-func _exit_tree() -> void:
-	if _hint_thread != null:
-		_hint_thread.wait_to_finish()
-		_hint_thread = null
-
-
-func is_hint_pending() -> bool:
-	return _hint_thread != null
 
 
 func load_level_file(path: String) -> bool:
@@ -130,7 +123,6 @@ func load_level_file(path: String) -> bool:
 func start_level(level: Level) -> void:
 	session = GameSession.new(level)
 	last_result = {}
-	_clear_hint()
 	_message = ""
 	_popup.visible = false
 	_build_views()
@@ -138,6 +130,7 @@ func start_level(level: Level) -> void:
 	_level_label.text = "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
 	_min_label.text = "Minimum: %d" % level.min_moves
 	_refresh(false)
+	position_changed.emit()
 
 
 func restart() -> void:
@@ -145,54 +138,16 @@ func restart() -> void:
 		return
 	session.restart()
 	last_result = {}
-	_clear_hint()
 	_message = ""
 	_popup.visible = false
 	_refresh(true)
+	position_changed.emit()
 
 
-## Spec 4.7: marks the disk to move next and its target peg; never moves it.
-## Costs EconomySystem.HINT_COST, except when asking again in the same position.
+## Spec 4.7 hint, shown by the HintController on the coaching overlay.
 func request_hint() -> void:
-	if session == null or session.is_solved() or is_hint_pending():
-		return
-	session.selected_peg = -1
-	var key: String = session.state.hash_key()
-	if hint_move != null and key == _hint_key:
-		_refresh(false)
-		return
-	if not economy.can_afford(EconomySystem.HINT_COST):
-		_message = "Hint üçün coin çatmır"
-		_refresh(false)
-		return
-	var on_path: Move = session.get_path_hint()
-	if on_path != null:
-		_apply_hint(on_path, key)
-		return
-	var from_state: PuzzleState = session.state.duplicate_state()
-	var goal: PuzzleState = session.level.goal
-	var rules: RuleSet = session.rules
-	if not background_hints:
-		_apply_hint(GameSession.solve_hint(from_state, goal, rules), key)
-		return
-	_pending_hint_key = key
-	_hint_thread = Thread.new()
-	_hint_thread.start(func() -> Move: return GameSession.solve_hint(from_state, goal, rules))
-	_message = "Hint hesablanır..."
-	_refresh(false)
-
-
-## Shows a found hint and charges for it; a missing hint costs nothing.
-func _apply_hint(move: Move, key: String) -> void:
-	if move == null:
-		_message = "Hint tapılmadı"
-		_refresh(false)
-		return
-	economy.spend(EconomySystem.HINT_COST)
-	hint_move = move
-	_hint_key = key
-	_message = ""
-	_refresh(false)
+	if session != null and not session.is_solved():
+		hints.request()
 
 
 ## Takes back the last move. The first FREE_UNDOS_PER_ATTEMPT undos are free,
@@ -202,13 +157,12 @@ func request_undo() -> void:
 		return
 	var cost: int = EconomySystem.undo_cost(session.undo_count)
 	if not economy.spend(cost):
-		_message = "Geri qaytarmaq üçün coin çatmır"
-		_refresh(false)
+		show_message("Geri qaytarmaq üçün coin çatmır")
 		return
 	session.undo()
-	_clear_hint()
 	_message = ""
 	_refresh(true)
+	position_changed.emit()
 
 
 ## Opens the level after the current one (next tier after the last level).
@@ -227,6 +181,50 @@ func play_next_level() -> void:
 
 func get_popup() -> LevelCompletePopup:
 	return _popup
+
+
+## Shows a short notice in the status line until the next action.
+func show_message(text: String) -> void:
+	_message = text
+	if session != null:
+		_refresh(false)
+
+
+## Where disk `disk_size` is drawn (or is gliding to), in viewport coordinates.
+func get_disk_rect(disk_size: int) -> Rect2:
+	var rect: Rect2 = _disk_targets.get(disk_size, Rect2())
+	return Rect2(rect.position + _board.global_position, rect.size)
+
+
+## The area of peg `peg_index`: its rod and base plus the room above it where a
+## picked-up disk hovers, in viewport coordinates.
+func get_peg_rect(peg_index: int) -> Rect2:
+	if peg_index < 0 or peg_index >= _peg_areas.size():
+		return Rect2()
+	var rect: Rect2 = _peg_areas[peg_index]
+	return Rect2(rect.position + _board.global_position, rect.size)
+
+
+## Handles a tap on peg `peg_index` (also the entry point for tests).
+func on_peg_pressed(peg_index: int) -> void:
+	if session == null:
+		return
+	var selected_before: int = session.selected_peg
+	var target_move: Move = Move.new(session.selected_peg, peg_index)
+	var result: GameSession.TapResult = session.tap_peg(peg_index)
+	if result != GameSession.TapResult.IGNORED:
+		_message = ""
+	_refresh(true)
+	match result:
+		GameSession.TapResult.ILLEGAL:
+			_peg_views[peg_index].flash_invalid()
+			illegal_move.emit(target_move, session.rules.get_violation_message(session.state, target_move))
+		GameSession.TapResult.MOVED:
+			position_changed.emit()
+			if session.is_solved():
+				_on_solved()
+	if session.selected_peg != selected_before:
+		selection_changed.emit(session.selected_peg)
 
 
 func _next_level() -> Dictionary:
@@ -259,7 +257,7 @@ func _update_buttons() -> void:
 	if session == null:
 		return
 	_coin_label.text = "Coin: %d" % economy.coins
-	_hint_button.disabled = session.is_solved() or is_hint_pending()
+	_hint_button.disabled = session.is_solved() or hints.is_pending()
 	_hint_button.text = "Hint · %d coin" % EconomySystem.HINT_COST
 	_undo_button.disabled = not session.can_undo()
 	var free_left: int = EconomySystem.FREE_UNDOS_PER_ATTEMPT - session.undo_count
@@ -267,27 +265,6 @@ func _update_buttons() -> void:
 		_undo_button.text = "Geri (pulsuz: %d)" % free_left
 	else:
 		_undo_button.text = "Geri · %d coin" % EconomySystem.UNDO_COST
-
-
-func _clear_hint() -> void:
-	hint_move = null
-	_hint_key = ""
-
-
-## Handles a tap on peg `peg_index` (also the entry point for tests).
-func on_peg_pressed(peg_index: int) -> void:
-	if session == null:
-		return
-	var result: GameSession.TapResult = session.tap_peg(peg_index)
-	if result == GameSession.TapResult.ILLEGAL:
-		_peg_views[peg_index].flash_invalid()
-	if result != GameSession.TapResult.IGNORED:
-		_message = ""
-	if result == GameSession.TapResult.MOVED:
-		_clear_hint()
-	_refresh(true)
-	if result == GameSession.TapResult.MOVED and session.is_solved():
-		_on_solved()
 
 
 func _build_views() -> void:
@@ -298,6 +275,8 @@ func _build_views() -> void:
 	_peg_views.clear()
 	_disk_views.clear()
 	_disk_tweens.clear()
+	_disk_targets.clear()
+	_peg_areas.clear()
 	var disk_count: int = session.state.get_disk_count()
 	for peg_index: int in session.state.get_peg_count():
 		var peg: PegView = PEG_SCENE.instantiate()
@@ -322,12 +301,8 @@ func _refresh(animated: bool) -> void:
 	else:
 		_status_label.text = _message
 		_status_label.add_theme_color_override("font_color", UIPalette.ERROR)
-	var hint_disk: int = session.state.get_top_disk(hint_move.from_peg) if hint_move != null else -1
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
-		peg.hint_target = hint_move != null and peg.peg_index == hint_move.to_peg
-	for disk_size: int in _disk_views:
-		_disk_views[disk_size].hinted = disk_size == hint_disk
 	_update_buttons()
 	_layout(animated)
 
@@ -345,10 +320,13 @@ func _layout(animated: bool) -> void:
 	var base_top: float = _board.size.y - base_height
 	var rod_top: float = base_top - disk_height * (disk_count + 0.6)
 	var lifted_y: float = rod_top - disk_height * 1.5
+	_peg_areas.clear()
 	for peg: PegView in _peg_views:
 		peg.position = Vector2(column * peg.peg_index, 0.0)
 		peg.size = Vector2(column, _board.size.y)
 		peg.configure(base_top, base_height, rod_top, maxf(column * 0.05, 6.0), column * 0.96)
+		_peg_areas.append(Rect2(column * peg.peg_index + column * 0.02, lifted_y,
+				column * 0.96, base_top + base_height - lifted_y))
 	var selected_disk: int = session.get_selected_disk()
 	for peg_index: int in peg_count:
 		var peg: Array = session.state.pegs[peg_index]
@@ -361,7 +339,9 @@ func _layout(animated: bool) -> void:
 				y = lifted_y
 			view.selected = disk_size == selected_disk
 			view.size = Vector2(width, disk_height - 4.0)
-			_place_disk(disk_size, Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0), animated)
+			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
+			_disk_targets[disk_size] = Rect2(target, view.size)
+			_place_disk(disk_size, target, animated)
 
 
 func _place_disk(disk_size: int, target: Vector2, animated: bool) -> void:

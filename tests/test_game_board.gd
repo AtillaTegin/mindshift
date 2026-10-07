@@ -165,26 +165,44 @@ func test_next_and_replay_buttons() -> void:
 	assert_false(popup.visible)
 
 
-func test_hint_costs_a_coin_and_marks_disk_and_peg() -> void:
+## Lays out the screen now (containers normally do it on the next frame), so
+## the board geometry used by the coaching overlay is real.
+func _lay_out() -> void:
+	_board.propagate_notification(Container.NOTIFICATION_SORT_CHILDREN)
+
+
+func test_hint_shows_scrim_ring_and_pointer_and_costs_a_coin() -> void:
+	_lay_out()
 	_save.coins = 2
 	var level: Level = _board.session.level
+	var move: Move = level.solution_path[0]
 	_board.request_hint()
-	assert_true(_board.hint_move.equals(level.solution_path[0]))
+	var hints: HintController = _board.hints
+	var coaching: CoachingLayer = _board.coaching
+	assert_true(hints.hint_move.equals(move))
 	assert_eq(_save.coins, 1)
 	assert_eq(_label("CoinLabel"), "Coin: 1")
-	var target: PegView = _board.get_node("%PegLayer").get_child(level.solution_path[0].to_peg)
-	assert_true(target.hint_target)
-	var hinted: Array[int] = []
-	for disk: DiskView in _board.get_node("%DiskLayer").get_children():
-		if disk.hinted:
-			hinted.append(disk.disk_size)
-	assert_eq(hinted, [_board.session.state.get_top_disk(level.solution_path[0].from_peg)] as Array[int])
 	assert_eq(_board.session.move_count, 0, "a hint never moves a disk")
+	var disk_rect: Rect2 = _board.get_disk_rect(_board.session.state.get_top_disk(move.from_peg))
+	var source_rect: Rect2 = _board.get_peg_rect(move.from_peg)
+	var target_rect: Rect2 = _board.get_peg_rect(move.to_peg)
+	assert_true(disk_rect.has_area() and target_rect.has_area(), "board is laid out")
+	assert_true(coaching.scrim.is_shown(), "scrim")
+	assert_true(coaching.scrim.hole.encloses(source_rect) and coaching.scrim.hole.encloses(target_rect), "both pegs stay lit")
+	assert_true(coaching.ring.visible and coaching.ring.get_target().is_equal_approx(disk_rect), "ring on the disk")
+	assert_true(coaching.pointer.is_playing(), "ghost finger")
+	var gesture: Array[Vector2] = coaching.pointer.get_gesture()
+	assert_true(disk_rect.has_point(gesture[0]), "finger starts on the disk")
+	assert_true(target_rect.has_point(gesture[1]), "finger ends on the target peg")
 	_board.request_hint()
 	assert_eq(_save.coins, 1, "asking again in the same position is free")
-	_play([level.solution_path[0]])
-	assert_null(_board.hint_move, "hint cleared after a move")
-	assert_false(target.hint_target)
+	_board.on_peg_pressed(move.from_peg)
+	assert_true(coaching.ring.get_target().is_equal_approx(target_rect), "ring moves to the target once the disk is picked up")
+	_board.on_peg_pressed(move.to_peg)
+	assert_null(hints.hint_move, "hint cleared after the move")
+	assert_false(coaching.scrim.is_shown())
+	assert_false(coaching.ring.visible)
+	assert_false(coaching.pointer.is_playing())
 
 
 func test_hint_off_the_path_uses_the_solver() -> void:
@@ -200,16 +218,18 @@ func test_hint_off_the_path_uses_the_solver() -> void:
 	assert_null(_board.session.get_path_hint(), "off the path")
 	var remaining: int = Solver.solve(_board.session.state, level.goal, _board.session.rules)["min_moves"]
 	_board.request_hint()
-	assert_not_null(_board.hint_move)
+	assert_not_null(_board.hints.hint_move)
 	assert_eq(_save.coins, 4)
-	var after: PuzzleState = _board.session.rules.apply_move(_board.session.state, _board.hint_move)
+	assert_true(_board.coaching.ring.visible)
+	var after: PuzzleState = _board.session.rules.apply_move(_board.session.state, _board.hints.hint_move)
 	assert_eq(Solver.solve(after, level.goal, _board.session.rules)["min_moves"], remaining - 1, "hint is optimal")
 
 
 func test_hint_without_coins_shows_a_message() -> void:
 	_save.coins = 0
 	_board.request_hint()
-	assert_null(_board.hint_move)
+	assert_null(_board.hints.hint_move)
+	assert_false(_board.coaching.scrim.is_shown())
 	assert_eq(_label("StatusLabel"), "Hint üçün coin çatmır")
 	assert_eq(_save.coins, 0)
 

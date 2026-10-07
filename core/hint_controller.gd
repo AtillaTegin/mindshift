@@ -1,0 +1,119 @@
+class_name HintController
+extends Node
+## Spec 4.7 hint, presented on the coaching overlay (addendum 2.3): the scrim
+## dims the board, a ring marks the disk to move and a ghost finger shows where
+## it goes. It never moves the disk. The Day 6 rules are unchanged: a hint costs
+## EconomySystem.HINT_COST, asking again in the same position is free, on the
+## stored solution path the answer is instant, and off the path the Solver runs
+## on a worker thread so the screen never freezes.
+
+## Status text for the board ("" clears it).
+signal message_changed(text: String)
+
+## Run off-path searches on a worker thread (tests turn this off).
+var background: bool = true
+## The move the current hint points at, or null.
+var hint_move: Move
+
+var _board: GameBoard
+var _coaching: CoachingLayer
+var _economy: EconomySystem
+## Position the shown hint belongs to.
+var _hint_key: String = ""
+var _thread: Thread
+## Position the running background search belongs to.
+var _pending_key: String = ""
+
+
+func setup(board: GameBoard, coaching: CoachingLayer, economy: EconomySystem) -> void:
+	_board = board
+	_coaching = coaching
+	_economy = economy
+	board.position_changed.connect(clear)
+	board.selection_changed.connect(_on_selection_changed)
+
+
+func is_pending() -> bool:
+	return _thread != null
+
+
+func is_showing() -> bool:
+	return hint_move != null
+
+
+func request() -> void:
+	var session: GameSession = _board.session
+	if session == null or session.is_solved() or is_pending():
+		return
+	var key: String = session.state.hash_key()
+	if hint_move != null and key == _hint_key:
+		_present()
+		return
+	if not _economy.can_afford(EconomySystem.HINT_COST):
+		message_changed.emit("Hint üçün coin çatmır")
+		return
+	var on_path: Move = session.get_path_hint()
+	if on_path != null:
+		_apply(on_path, key)
+		return
+	var from_state: PuzzleState = session.state.duplicate_state()
+	var goal: PuzzleState = session.level.goal
+	var rules: RuleSet = session.rules
+	if not background:
+		_apply(GameSession.solve_hint(from_state, goal, rules), key)
+		return
+	_pending_key = key
+	_thread = Thread.new()
+	_thread.start(func() -> Move: return GameSession.solve_hint(from_state, goal, rules))
+	message_changed.emit("Hint hesablanır...")
+
+
+## Forgets the hint and hides the overlay (called whenever the position changes).
+func clear() -> void:
+	if hint_move == null:
+		return
+	hint_move = null
+	_hint_key = ""
+	_coaching.clear()
+
+
+func _process(_delta: float) -> void:
+	if _thread == null or _thread.is_alive():
+		return
+	var move: Move = _thread.wait_to_finish()
+	_thread = null
+	var key: String = _pending_key
+	_pending_key = ""
+	var session: GameSession = _board.session
+	# Only show it if the player has not moved on meanwhile (then it is free).
+	if session != null and not session.is_solved() and session.state.hash_key() == key:
+		_apply(move, key)
+	else:
+		message_changed.emit("")
+
+
+func _exit_tree() -> void:
+	if _thread != null:
+		_thread.wait_to_finish()
+		_thread = null
+
+
+## Shows a found hint and charges for it; a missing hint costs nothing.
+func _apply(move: Move, key: String) -> void:
+	if move == null:
+		message_changed.emit("Hint tapılmadı")
+		return
+	_economy.spend(EconomySystem.HINT_COST)
+	hint_move = move
+	_hint_key = key
+	message_changed.emit("")
+	_present()
+
+
+func _present() -> void:
+	MoveCoach.present(_coaching, _board, hint_move, _board.session.selected_peg == hint_move.from_peg)
+
+
+func _on_selection_changed(_peg_index: int) -> void:
+	if hint_move != null:
+		_present()

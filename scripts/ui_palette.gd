@@ -10,7 +10,6 @@ const PEG: Color = Color("8d8a80")
 const ACCENT: Color = Color("2a9d8f")
 const ERROR: Color = Color("e63946")
 const SUCCESS: Color = Color("2a9d8f")
-const HINT: Color = Color("f4b400")
 
 
 ## A distinct colour per disk size, spread evenly over the hue circle.

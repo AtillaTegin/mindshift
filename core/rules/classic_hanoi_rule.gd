@@ -6,6 +6,10 @@ extends RuleBase
 const ID: String = "classic_hanoi"
 
 
+func _init() -> void:
+	violation_message = "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
+
+
 func get_id() -> String:
 	return ID
 

@@ -12,6 +12,11 @@ extends RefCounted
 ## override is_move_allowed() instead.
 
 
+## Shown to the player when this rule refuses a move (addendum 2.2). Each rule
+## sets its own text, so new rules explain themselves without UI changes.
+var violation_message: String = "Bu gediş qaydalara uyğun deyil."
+
+
 ## Identifier used in level JSON, e.g. `"rules": ["classic_hanoi"]`.
 func get_id() -> String:
 	return ""

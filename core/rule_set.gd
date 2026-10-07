@@ -115,6 +115,23 @@ func is_state_valid(state: PuzzleState) -> bool:
 	return true
 
 
+## Why `move` is not allowed: the violation_message of the first active rule
+## that refuses it, or "" if the move is legal or only structurally invalid
+## (no such peg, same peg, empty source).
+func get_violation_message(state: PuzzleState, move: Move) -> String:
+	if state == null or move == null:
+		return ""
+	var peg_count: int = state.pegs.size()
+	if move.from_peg < 0 or move.from_peg >= peg_count or move.to_peg < 0 or move.to_peg >= peg_count:
+		return ""
+	if move.from_peg == move.to_peg or state.pegs[move.from_peg].is_empty():
+		return ""
+	for rule: RuleBase in active_rules:
+		if not rule.is_move_allowed(state, move):
+			return rule.violation_message
+	return ""
+
+
 func _rules_allow(state: PuzzleState, move: Move) -> bool:
 	for rule: RuleBase in active_rules:
 		if not rule.is_move_allowed(state, move):

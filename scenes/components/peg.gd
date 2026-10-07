@@ -19,11 +19,6 @@ var highlighted: bool = false:
 	set(value):
 		highlighted = value
 		queue_redraw()
-## Hint: the peg the hinted disk should go to.
-var hint_target: bool = false:
-	set(value):
-		hint_target = value
-		queue_redraw()
 ## 0..1, how red the peg is (illegal-move flash).
 var flash_amount: float = 0.0:
 	set(value):
@@ -52,11 +47,7 @@ func flash_invalid() -> void:
 
 
 func _draw() -> void:
-	var base_color: Color = UIPalette.PEG
-	if hint_target:
-		base_color = UIPalette.HINT
-	elif highlighted:
-		base_color = UIPalette.ACCENT
+	var base_color: Color = UIPalette.ACCENT if highlighted else UIPalette.PEG
 	var peg_color: Color = base_color.lerp(UIPalette.ERROR, flash_amount)
 	var center_x: float = size.x * 0.5
 	var rod: StyleBoxFlat = StyleBoxFlat.new()
