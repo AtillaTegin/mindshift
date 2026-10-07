@@ -31,6 +31,7 @@ func setup(board: GameBoard, coaching: CoachingLayer, economy: EconomySystem) ->
 	_economy = economy
 	board.position_changed.connect(clear)
 	board.selection_changed.connect(_on_selection_changed)
+	board.layout_changed.connect(_on_layout_changed)
 
 
 func is_pending() -> bool:
@@ -116,4 +117,10 @@ func _present() -> void:
 
 func _on_selection_changed(_peg_index: int) -> void:
 	if hint_move != null:
+		_present()
+
+
+## Follows the board when it is laid out again (e.g. a new screen size).
+func _on_layout_changed() -> void:
+	if hint_move != null and _board.session.state.hash_key() == _hint_key:
 		_present()

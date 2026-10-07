@@ -6,7 +6,9 @@ extends PanelContainer
 const DEFAULT_SECONDS: float = 1.4
 const SLIDE: float = 30.0
 const FADE_SECONDS: float = 0.2
-const BOTTOM_MARGIN: float = 150.0
+
+## Distance from the bottom of the screen; the default keeps it below the board.
+var bottom_margin: float = 36.0
 
 var _label: Label
 var _tween: Tween
@@ -40,7 +42,7 @@ func show_message(text: String, seconds: float = DEFAULT_SECONDS) -> void:
 	_label.text = _wrap(text, viewport_size.x - 140.0)
 	size = Vector2.ZERO
 	reset_size()
-	var resting: Vector2 = Vector2((viewport_size.x - size.x) * 0.5, viewport_size.y - BOTTOM_MARGIN - size.y)
+	var resting: Vector2 = Vector2((viewport_size.x - size.x) * 0.5, viewport_size.y - bottom_margin - size.y)
 	position = resting + Vector2(0, SLIDE)
 	modulate.a = 0.0
 	visible = true

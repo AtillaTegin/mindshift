@@ -5,8 +5,12 @@ extends Control
 ## move it there. Hints and the tutorial draw on the shared coaching overlay.
 
 signal level_completed(level: Level, moves: int, seconds: float)
+## A level was opened or restarted (emitted before position_changed).
+signal level_started
 ## The position changed (move, undo, restart or a new level).
 signal position_changed
+## Pegs and disks were placed again (new position or new screen size).
+signal layout_changed
 ## A disk was picked up (peg index) or put back (-1).
 signal selection_changed(peg_index: int)
 ## A move was refused by the rules; `message` is the broken rule's text.
@@ -28,12 +32,21 @@ var economy: EconomySystem
 ## Off-path hints are searched on a worker thread so the screen never freezes
 ## (an Expert search can take a few seconds on a phone). Tests turn it off.
 var background_hints: bool = true
+## Coaching on the first two levels (tests of other features turn it off).
+var tutorials_enabled: bool = true
+## Restricted input (addendum 2.2): when >= 0, only this peg reacts to taps and
+## the hint, undo and restart buttons are off.
+var restricted_peg: int = -1:
+	set(value):
+		restricted_peg = value
+		_update_buttons()
 
 var session: GameSession
 ## Result of the last completion: { stars, improved, reward }.
 var last_result: Dictionary = {}
 var coaching: CoachingLayer
 var hints: HintController
+var tutorial: TutorialDirector
 
 var _popup: LevelCompletePopup
 ## Short notice in the status line (e.g. not enough coins), cleared by the next action.
@@ -82,6 +95,11 @@ func _ready() -> void:
 	hints.setup(self, coaching, economy)
 	hints.message_changed.connect(show_message)
 	add_child(hints)
+	tutorial = TutorialDirector.new()
+	tutorial.name = "TutorialDirector"
+	tutorial.enabled = tutorials_enabled
+	tutorial.setup(self, coaching, save_system)
+	add_child(tutorial)
 	_hint_button.pressed.connect(request_hint)
 	_undo_button.pressed.connect(request_undo)
 	_restart_button.pressed.connect(restart)
@@ -130,6 +148,7 @@ func start_level(level: Level) -> void:
 	_level_label.text = "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
 	_min_label.text = "Minimum: %d" % level.min_moves
 	_refresh(false)
+	level_started.emit()
 	position_changed.emit()
 
 
@@ -141,6 +160,7 @@ func restart() -> void:
 	_message = ""
 	_popup.visible = false
 	_refresh(true)
+	level_started.emit()
 	position_changed.emit()
 
 
@@ -207,7 +227,7 @@ func get_peg_rect(peg_index: int) -> Rect2:
 
 ## Handles a tap on peg `peg_index` (also the entry point for tests).
 func on_peg_pressed(peg_index: int) -> void:
-	if session == null:
+	if session == null or (restricted_peg >= 0 and peg_index != restricted_peg):
 		return
 	var selected_before: int = session.selected_peg
 	var target_move: Move = Move.new(session.selected_peg, peg_index)
@@ -254,12 +274,14 @@ func _on_solved() -> void:
 
 
 func _update_buttons() -> void:
-	if session == null:
+	if session == null or not is_node_ready():
 		return
+	var locked: bool = restricted_peg >= 0
 	_coin_label.text = "Coin: %d" % economy.coins
-	_hint_button.disabled = session.is_solved() or hints.is_pending()
+	_hint_button.disabled = locked or session.is_solved() or hints.is_pending()
 	_hint_button.text = "Hint · %d coin" % EconomySystem.HINT_COST
-	_undo_button.disabled = not session.can_undo()
+	_undo_button.disabled = locked or not session.can_undo()
+	_restart_button.disabled = locked
 	var free_left: int = EconomySystem.FREE_UNDOS_PER_ATTEMPT - session.undo_count
 	if free_left > 0:
 		_undo_button.text = "Geri (pulsuz: %d)" % free_left
@@ -342,6 +364,7 @@ func _layout(animated: bool) -> void:
 			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
 			_place_disk(disk_size, target, animated)
+	layout_changed.emit()
 
 
 func _place_disk(disk_size: int, target: Vector2, animated: bool) -> void:
