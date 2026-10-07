@@ -14,6 +14,8 @@ signal message_changed(text: String)
 var background: bool = true
 ## The move the current hint points at, or null.
 var hint_move: Move
+## Points idle or stuck players at the Hint button (economy/UX addendum 3).
+var nudge: HintNudgeWatcher
 
 var _board: GameBoard
 var _coaching: CoachingLayer
@@ -32,6 +34,10 @@ func setup(board: GameBoard, coaching: CoachingLayer, economy: EconomySystem) ->
 	board.position_changed.connect(clear)
 	board.selection_changed.connect(_on_selection_changed)
 	board.layout_changed.connect(_on_layout_changed)
+	nudge = HintNudgeWatcher.new()
+	nudge.name = "HintNudgeWatcher"
+	nudge.setup(board, coaching, self, economy)
+	add_child(nudge)
 
 
 func is_pending() -> bool:
@@ -46,6 +52,8 @@ func request() -> void:
 	var session: GameSession = _board.session
 	if session == null or session.is_solved() or is_pending():
 		return
+	# The ring is about to show the hint instead of the button.
+	nudge.dismiss()
 	var key: String = session.state.hash_key()
 	if hint_move != null and key == _hint_key:
 		_present()

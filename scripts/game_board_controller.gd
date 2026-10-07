@@ -239,6 +239,11 @@ func get_peg_rect(peg_index: int) -> Rect2:
 	return Rect2(rect.position + _board.global_position, rect.size)
 
 
+## The Hint button, in viewport coordinates.
+func get_hint_button_rect() -> Rect2:
+	return _hint_button.get_global_rect()
+
+
 ## Handles a tap on peg `peg_index` (also the entry point for tests).
 func on_peg_pressed(peg_index: int) -> void:
 	if session == null or (restricted_peg >= 0 and peg_index != restricted_peg):
