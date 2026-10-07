@@ -4,6 +4,10 @@ extends Control
 
 signal level_chosen(tier: String, index: int)
 
+## Tabs of tiers that are still locked are drawn faded (still tappable, so the
+## player can read what opens them).
+const LOCKED_TAB_ALPHA: float = 0.55
+
 ## Progress to show; taken from the App autoload when left empty.
 var save_system: SaveSystem
 var current_tier: String = ""
@@ -33,6 +37,8 @@ func _ready() -> void:
 		button.custom_minimum_size = Vector2(0, 72)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 26)
+		if not LevelCatalog.is_tier_unlocked(tier, save_system):
+			button.modulate.a = LOCKED_TAB_ALPHA
 		button.pressed.connect(show_tier.bind(tier))
 		_tabs.add_child(button)
 		_tab_buttons[tier] = button
@@ -45,10 +51,7 @@ func show_tier(tier: String) -> void:
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
 		app.selected_tier = tier
-	var settings: Dictionary = Difficulty.get_tier(tier)
-	_tier_info.text = "%s gediş · %s qüllə · %s disk" % [Difficulty.describe_moves(tier),
-			_range_text(settings["min_pegs"], settings["max_pegs"]),
-			_range_text(settings["min_disks"], settings["max_disks"])]
+	_tier_info.text = tier_info_text(tier, save_system)
 	_stars_label.text = "Ulduz: %d" % save_system.get_total_stars()
 	for child: Node in _grid.get_children():
 		_grid.remove_child(child)
@@ -67,6 +70,19 @@ func show_tier(tier: String) -> void:
 ## Cell of the `index`-th level of the current tab (1-based).
 func get_cell(index: int) -> LevelCell:
 	return _grid.get_child(index - 1) as LevelCell
+
+
+## The line under the tabs: the tier's size, or for a locked tier what opens it.
+static func tier_info_text(tier: String, save: SaveSystem) -> String:
+	if not LevelCatalog.is_tier_unlocked(tier, save):
+		var needed: int = Difficulty.unlock_requirement(tier)
+		return "Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)" % [
+				Difficulty.display_name(Difficulty.previous_tier(tier)), needed,
+				LevelCatalog.completed_toward_unlock(tier, save), needed]
+	var settings: Dictionary = Difficulty.get_tier(tier)
+	return "%s gediş · %s qüllə · %s disk" % [Difficulty.describe_moves(tier),
+			_range_text(settings["min_pegs"], settings["max_pegs"]),
+			_range_text(settings["min_disks"], settings["max_disks"])]
 
 
 static func _range_text(low: int, high: int) -> String:

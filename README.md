@@ -16,7 +16,11 @@ Oyunda qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və d
 
 İrəliləyiş `user://save.json`-da saxlanılır (Windows-da `%APPDATA%\Godot\app_userdata\MindShift- Puzzle Logic\`).
 Başqa save faylı ilə işə salmaq üçün: `... -- --save-path=user://test.json`.
-Kilid qaydası: hər çətinliyin 1-ci səviyyəsi açıqdır, digərləri əvvəlki səviyyə tamamlananda açılır.
+Kilid qaydası ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), bölmə 1.2): Asan həmişə açıqdır; Orta Asan-da 15, Çətin Orta-da 10,
+Ekspert Çətin-də 10 səviyyə tamamlananda açılır (say `completed_levels`-dən hesablanır, yeni save sahəsi yoxdur).
+Açıq bölmənin içində səviyyələr ardıcıl açılır. Artıq tamamlanmış səviyyə həmişə açıq qalır.
+"Oyna" ən çətin açıq bölmənin növbəti bitməmiş səviyyəsini açır.
+Rəqəmlər [core/difficulty.gd](core/difficulty.gd)-də `UNLOCK_AFTER_COMPLETED` sabitindədir.
 
 Economy (v1 fərziyyələri, hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir):
 hint 1 coin (eyni vəziyyətdə təkrar basmaq pulsuzdur), hər cəhddə 3 pulsuz undo, sonra hər biri 1 coin,
@@ -68,12 +72,13 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 
 | Çətinlik | Gediş | Qüllə | Disk |
 |---|---|---|---|
-| Easy | 3–8 | 3 | 3–4 |
-| Medium | 9–18 | 3–4 | 5–6 |
-| Hard | 19–35 | 4 | 7–8 |
-| Expert | 36+ | 4 | 9–10 |
+| Easy | 5–11 | 3 | 3–4 |
+| Medium | 12–20 | 3–4 | 5–6 |
+| Hard | 21–33 | 4 | 7–8 |
+| Expert | 34+ | 4 | 9–10 |
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
+Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
 
 ### Yeni qayda əlavə etmək
 
@@ -107,6 +112,7 @@ Solver-ə toxunmaq lazım deyil.
 | 5 | Ana menyu, səviyyə seçimi, tamamlama popup-ı, ulduzlar, save (`user://save.json`) | ✅ |
 | 6 | Hint (yolda: dərhal, yoldan kənar: arxa planda Solver), Undo, Economy | ✅ |
 | 6B | Coaching overlay, tutorial (Asan 1–2), yeni hint təqdimatı, game feel ([əlavə sənəd](../MindShift_Polish_Tutorial_Addendum.md)) | ✅ |
+| UX-1 | Yeni çətinlik aralıqları, qismən-say kilid qaydası ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md)) | ✅ |
 | 7 | Android build | — |
 
 ### 6B qeydləri

@@ -154,7 +154,7 @@ func test_rejects_min_moves_outside_tier() -> void:
 	var level: Level = Level.create(1001, "easy", start, goal, rule_ids, Solver.solve(start, goal, RuleSet.classic())["path"])
 	var errors: Array[String] = []
 	level.check(errors)
-	assert_true(" ".join(errors).contains("min_moves 15 is outside easy (3-8)"), str(errors))
+	assert_true(" ".join(errors).contains("min_moves 15 is outside easy (5-11)"), str(errors))
 
 
 func test_load_file_reports_bad_json_and_missing_file() -> void:
@@ -191,18 +191,41 @@ func test_directory_checks_folder_duplicates_and_counts() -> void:
 
 func test_difficulty_table() -> void:
 	assert_eq(Difficulty.ORDER, ["easy", "medium", "hard", "expert"] as Array[String])
-	assert_true(Difficulty.accepts_moves("easy", 3))
-	assert_true(Difficulty.accepts_moves("easy", 8))
-	assert_false(Difficulty.accepts_moves("easy", 9))
+	assert_false(Difficulty.accepts_moves("easy", 4))
+	assert_true(Difficulty.accepts_moves("easy", 5))
+	assert_true(Difficulty.accepts_moves("easy", 11))
+	assert_false(Difficulty.accepts_moves("easy", 12))
+	assert_true(Difficulty.accepts_moves("medium", 12))
+	assert_true(Difficulty.accepts_moves("medium", 20))
+	assert_true(Difficulty.accepts_moves("hard", 21))
+	assert_true(Difficulty.accepts_moves("hard", 33))
+	assert_true(Difficulty.accepts_moves("expert", 34))
 	assert_true(Difficulty.accepts_moves("expert", 49))
-	assert_false(Difficulty.accepts_moves("expert", 35))
+	assert_false(Difficulty.accepts_moves("expert", 33))
 	assert_false(Difficulty.accepts_moves("nope", 5))
 	assert_true(Difficulty.accepts_size("hard", 4, 7))
-	assert_false(Difficulty.accepts_size("hard", 4, 6), "4p/6d can never reach 19 moves")
+	assert_false(Difficulty.accepts_size("hard", 4, 6), "4p/6d can never reach 21 moves")
 	assert_false(Difficulty.accepts_size("expert", 5, 10), "5 pegs dropped")
 	assert_true(Difficulty.accepts_id("medium", 2001))
 	assert_false(Difficulty.accepts_id("medium", 3001))
-	assert_eq(Difficulty.describe_moves("expert"), "36+")
+	assert_eq(Difficulty.describe_moves("easy"), "5-11")
+	assert_eq(Difficulty.describe_moves("expert"), "34+")
+
+
+func test_tier_ranges_do_not_overlap() -> void:
+	for i: int in range(1, Difficulty.ORDER.size()):
+		var previous: Dictionary = Difficulty.get_tier(Difficulty.ORDER[i - 1])
+		var current: Dictionary = Difficulty.get_tier(Difficulty.ORDER[i])
+		assert_eq(current["min_moves"], previous["max_moves"] + 1, Difficulty.ORDER[i])
+
+
+func test_unlock_requirements() -> void:
+	assert_eq(Difficulty.unlock_requirement("easy"), 0)
+	assert_eq(Difficulty.unlock_requirement("medium"), 15)
+	assert_eq(Difficulty.unlock_requirement("hard"), 10)
+	assert_eq(Difficulty.unlock_requirement("expert"), 10)
+	assert_eq(Difficulty.previous_tier("easy"), "")
+	assert_eq(Difficulty.previous_tier("expert"), "hard")
 
 
 func _remove_temp_dir() -> void:

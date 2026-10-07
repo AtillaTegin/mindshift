@@ -50,25 +50,44 @@ func test_level_select_shows_stars_and_locks() -> void:
 
 func test_level_select_tabs() -> void:
 	var screen: Control = _level_select()
+	screen.show_tier("easy")
+	assert_eq((screen.get_node("%TierInfo") as Label).text, "5-11 gediş · 3 qüllə · 3-4 disk")
 	screen.show_tier("expert")
 	assert_eq(screen.current_tier, "expert")
 	assert_eq(screen.get_node("%Grid").get_child_count(), 50)
-	assert_false(screen.get_cell(1).locked)
-	assert_true(screen.get_cell(2).locked)
-	assert_eq((screen.get_node("%TierInfo") as Label).text, "36+ gediş · 4 qüllə · 9-10 disk")
+	assert_true(screen.get_cell(1).locked, "expert is locked on a fresh save")
+	assert_eq((screen.get_node("%TierInfo") as Label).text, "Açmaq üçün Çətin bölməsində 10 səviyyə bitir (0/10)")
+	var tabs: Array[Node] = screen.get_node("%Tabs").get_children()
+	assert_eq((tabs[0] as Button).modulate.a, 1.0, "easy tab normal")
+	assert_true((tabs[3] as Button).modulate.a < 1.0, "locked expert tab faded")
+
+
+func test_level_select_shows_how_a_tier_opens() -> void:
+	for index: int in range(1, 8):
+		_save.record_completion(Difficulty.id_for("easy", index), 2, 99, 5.0)
+	var screen: Control = _level_select()
 	screen.show_tier("medium")
-	assert_eq((screen.get_node("%TierInfo") as Label).text, "9-18 gediş · 3-4 qüllə · 5-6 disk")
+	var info: Label = screen.get_node("%TierInfo")
+	assert_eq(info.text, "Açmaq üçün Asan bölməsində 15 səviyyə bitir (7/15)")
+	for index: int in range(1, 51):
+		assert_true(screen.get_cell(index).locked, "medium %d locked" % index)
+	for index: int in range(8, 16):
+		_save.record_completion(Difficulty.id_for("easy", index), 2, 99, 5.0)
+	screen.show_tier("medium")
+	assert_eq(info.text, "12-20 gediş · 3-4 qüllə · 5-6 disk")
+	assert_false(screen.get_cell(1).locked, "15 easy levels open medium")
+	assert_true(screen.get_cell(2).locked)
 
 
 func test_level_select_emits_choice() -> void:
 	var screen: Control = _level_select()
-	screen.show_tier("hard")
+	screen.show_tier("easy")
 	var chosen: Array = []
 	screen.level_chosen.connect(func(tier: String, index: int) -> void: chosen.append([tier, index]))
 	# Without the App autoload nothing else happens; with it this would switch scenes.
 	if screen.get_node_or_null("/root/App") == null:
 		screen.get_cell(1).pressed.emit()
-		assert_eq(chosen, [["hard", 1]])
+		assert_eq(chosen, [["easy", 1]])
 
 
 func test_main_menu_builds() -> void:

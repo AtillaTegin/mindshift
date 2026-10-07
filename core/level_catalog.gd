@@ -45,18 +45,38 @@ static func next_after(tier: String, index: int) -> Dictionary:
 	return {}
 
 
-## The first level of each tier is open; every other level opens once the one
-## before it in the same tier is completed.
+## A tier is open once enough levels of the tier before it are completed
+## (Difficulty.UNLOCK_AFTER_COMPLETED); the first tier is always open.
+static func is_tier_unlocked(tier: String, save: SaveSystem) -> bool:
+	return completed_toward_unlock(tier, save) >= Difficulty.unlock_requirement(tier)
+
+
+## Completed levels of the previous tier that count toward opening `tier`.
+static func completed_toward_unlock(tier: String, save: SaveSystem) -> int:
+	var previous: String = Difficulty.previous_tier(tier)
+	return save.completed_count(previous) if not previous.is_empty() else 0
+
+
+## Inside an open tier the first level is open and every other level opens once
+## the one before it is completed. A level already completed always stays open,
+## so progress made under older rules is never taken away.
 static func is_unlocked(tier: String, index: int, save: SaveSystem) -> bool:
 	if index < 1 or index > level_count(tier):
 		return false
-	return index == 1 or save.is_completed(Difficulty.id_for(tier, index - 1))
+	if save.is_completed(Difficulty.id_for(tier, index)):
+		return true
+	return is_tier_unlocked(tier, save) and (index == 1 or save.is_completed(Difficulty.id_for(tier, index - 1)))
 
 
-## Where "Play" continues: the first unlocked, uncompleted level in tier order;
-## the very first level if everything is completed. {} if no levels exist.
+## Where "Play" continues: the first unlocked, uncompleted level of the hardest
+## open tier that still has one, so a player who has opened a new tier moves on
+## instead of being kept in the old one. The very first level if everything is
+## completed; {} if no levels exist.
 static func next_to_play(save: SaveSystem) -> Dictionary:
-	for tier: String in Difficulty.ORDER:
+	for position: int in range(Difficulty.ORDER.size() - 1, -1, -1):
+		var tier: String = Difficulty.ORDER[position]
+		if not is_tier_unlocked(tier, save):
+			continue
 		for index: int in range(1, level_count(tier) + 1):
 			if not save.is_completed(Difficulty.id_for(tier, index)) and is_unlocked(tier, index, save):
 				return {"tier": tier, "index": index}
