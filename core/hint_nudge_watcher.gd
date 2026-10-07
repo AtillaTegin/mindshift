@@ -11,7 +11,8 @@ extends Node
 
 const IDLE_SECONDS: float = 9.0
 const MISTAKES_IN_A_ROW: int = 2
-const MISTAKE_TEXT: String = "Fikrin yoxdursa, Hint sənə kömək edə bilər."
+## Translation key of the one-time toast.
+const MISTAKE_TEXT: String = "NUDGE_MISTAKES"
 const TOAST_SECONDS: float = 2.6
 
 ## Why the ring is shown: "" (not shown), "idle" or "mistakes".
@@ -112,4 +113,4 @@ func _on_illegal_move(_move: Move, _message: String) -> void:
 	_show("mistakes")
 	if not _toast_used:
 		_toast_used = true
-		_coaching.toast.show_message(MISTAKE_TEXT, TOAST_SECONDS)
+		_coaching.toast.show_message(tr(MISTAKE_TEXT), TOAST_SECONDS)

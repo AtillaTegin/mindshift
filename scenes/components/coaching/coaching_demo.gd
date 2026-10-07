@@ -11,11 +11,11 @@ var peg_target: ColorRect
 
 func _ready() -> void:
 	var background: ColorRect = ColorRect.new()
-	background.color = UIPalette.BACKGROUND
+	background.color = ThemeManager.color("background")
 	background.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	add_child(background)
-	disk_target = _target(Rect2(80, 640, 220, 50), UIPalette.disk_color(3, 4))
-	peg_target = _target(Rect2(500, 520, 16, 300), UIPalette.PEG)
+	disk_target = _target(Rect2(80, 640, 220, 50), ThemeManager.disk_color(3, 4))
+	peg_target = _target(Rect2(500, 520, 16, 300), ThemeManager.color("peg"))
 	var buttons: VBoxContainer = VBoxContainer.new()
 	buttons.position = Vector2(40, 40)
 	buttons.custom_minimum_size = Vector2(640, 0)

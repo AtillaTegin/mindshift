@@ -47,8 +47,8 @@ func flash_invalid() -> void:
 
 
 func _draw() -> void:
-	var base_color: Color = UIPalette.ACCENT if highlighted else UIPalette.PEG
-	var peg_color: Color = base_color.lerp(UIPalette.ERROR, flash_amount)
+	var base_color: Color = ThemeManager.color("accent" if highlighted else "peg")
+	var peg_color: Color = base_color.lerp(ThemeManager.color("danger"), flash_amount)
 	var center_x: float = size.x * 0.5
 	var rod: StyleBoxFlat = StyleBoxFlat.new()
 	rod.bg_color = peg_color

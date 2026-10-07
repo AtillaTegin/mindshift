@@ -74,7 +74,7 @@ func test_level_1_lets_only_the_shown_disk_then_peg_be_tapped() -> void:
 		_board.on_peg_pressed(move.to_peg)
 		assert_eq(session.move_count, k + 1)
 		assert_true(coaching.toast.visible, "step %d: toast" % k)
-		assert_eq(coaching.toast.get_text(), TutorialDirector.STEP_DONE_TEXT)
+		assert_eq(coaching.toast.get_text(), tr(TutorialDirector.STEP_DONE_TEXT))
 	assert_true(session.is_solved())
 	assert_eq(tutorial.mode, TutorialDirector.Mode.OFF)
 	assert_eq(_board.restricted_peg, -1, "all pegs free again")
@@ -108,7 +108,7 @@ func test_level_2_is_free_play_with_a_welcome_toast() -> void:
 	assert_eq(tutorial.mode, TutorialDirector.Mode.FREE)
 	assert_eq(_board.restricted_peg, -1, "no restricted input")
 	assert_true(_board.coaching.toast.visible)
-	assert_eq(_board.coaching.toast.get_text(), TutorialDirector.TRY_YOURSELF_TEXT)
+	assert_eq(_board.coaching.toast.get_text(), tr(TutorialDirector.TRY_YOURSELF_TEXT))
 	assert_false(_board.coaching.ring.visible, "no ring")
 	assert_false(_board.coaching.pointer.is_playing(), "no ghost finger")
 	assert_false(_button("HintButton").disabled)
@@ -134,7 +134,7 @@ func test_level_2_wrong_move_shows_the_rule_text() -> void:
 	assert_true(target.flash_amount > 0.9, "the red flash stays")
 	assert_eq(session.move_count, 0)
 	assert_true(_board.coaching.toast.visible)
-	assert_eq(_board.coaching.toast.get_text(), ClassicHanoiRule.new().violation_message,
+	assert_eq(_board.coaching.toast.get_text(), tr(ClassicHanoiRule.new().violation_message),
 			"the rule's own message, not a hard-coded one")
 
 

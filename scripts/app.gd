@@ -25,6 +25,8 @@ func _ready() -> void:
 			save_path = arg.trim_prefix("--save-path=")
 	save = SaveSystem.new(save_path)
 	save.load_save()
+	# The colour mode is applied by the ThemeManager autoload (loaded after this one).
+	Languages.apply(save.language)
 	economy = EconomySystem.new()
 	economy.name = "Economy"
 	economy.setup(save)

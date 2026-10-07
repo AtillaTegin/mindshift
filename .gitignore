@@ -12,3 +12,6 @@
 .DS_Store
 Thumbs.db
 *.tmp
+
+# Godot API dumps (local reference only)
+extension_api.json

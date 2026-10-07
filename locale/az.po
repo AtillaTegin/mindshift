@@ -1,0 +1,140 @@
+# MindShift UI texts, Azerbaijani (the source language: every key has a text).
+# Add new keys here first, then run:
+#   godot --headless --path . --script res://tools/sync_translations.gd
+# to copy them into tr/ru/en.po as "[TODO]" entries.
+msgid ""
+msgstr ""
+"Language: az\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "MENU_PLAY"
+msgstr "Oyna"
+
+msgid "MENU_LEVELS"
+msgstr "Səviyyələr"
+
+msgid "MENU_SETTINGS"
+msgstr "Parametrlər"
+
+msgid "MENU_PROGRESS"
+msgstr "Ulduz: %d / %d"
+
+msgid "SETTINGS_TITLE"
+msgstr "Parametrlər"
+
+msgid "SETTINGS_SOUND"
+msgstr "Səs"
+
+msgid "SETTINGS_DARK_MODE"
+msgstr "Qaranlıq mod"
+
+msgid "SETTINGS_LANGUAGE"
+msgstr "Dil"
+
+msgid "COMMON_CLOSE"
+msgstr "Bağla"
+
+msgid "COMMON_MENU"
+msgstr "Menyu"
+
+msgid "TIER_EASY"
+msgstr "Asan"
+
+msgid "TIER_MEDIUM"
+msgstr "Orta"
+
+msgid "TIER_HARD"
+msgstr "Çətin"
+
+msgid "TIER_EXPERT"
+msgstr "Ekspert"
+
+msgid "SELECT_STARS"
+msgstr "Ulduz: %d"
+
+msgid "SELECT_TIER_INFO"
+msgstr "%s gediş · %s qüllə · %s disk"
+
+msgid "SELECT_TIER_LOCKED"
+msgstr "Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)"
+
+msgid "BOARD_RESTART"
+msgstr "Yenidən"
+
+msgid "BOARD_MOVES"
+msgstr "Gediş: %d"
+
+msgid "BOARD_COINS"
+msgstr "Coin: %d"
+
+msgid "BOARD_MINIMUM"
+msgstr "Minimum: %d"
+
+msgid "BOARD_HINT"
+msgstr "Hint · %d coin"
+
+msgid "BOARD_UNDO_FREE"
+msgstr "Geri (pulsuz: %d)"
+
+msgid "BOARD_UNDO_PAID"
+msgstr "Geri · %d coin"
+
+msgid "BOARD_GOAL"
+msgstr "Hədəf"
+
+msgid "BOARD_SOLVED"
+msgstr "Həll olundu! %d gedişdə (minimum %d)"
+
+msgid "BOARD_LOAD_FAILED"
+msgstr "Səviyyə yüklənmədi"
+
+msgid "BOARD_UNDO_NO_COINS"
+msgstr "Geri qaytarmaq üçün coin çatmır"
+
+msgid "HINT_NO_COINS"
+msgstr "Hint üçün coin çatmır"
+
+msgid "HINT_SEARCHING"
+msgstr "Hint hesablanır..."
+
+msgid "HINT_NOT_FOUND"
+msgstr "Hint tapılmadı"
+
+msgid "NUDGE_MISTAKES"
+msgstr "Fikrin yoxdursa, Hint sənə kömək edə bilər."
+
+msgid "TUTORIAL_STEP_DONE"
+msgstr "Əla!"
+
+msgid "TUTORIAL_TRY_YOURSELF"
+msgstr "İndi özün sına!"
+
+msgid "RULE_ILLEGAL_MOVE"
+msgstr "Bu gediş qaydalara uyğun deyil."
+
+msgid "RULE_CLASSIC_HANOI"
+msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
+
+msgid "POPUP_TITLE"
+msgstr "Səviyyə tamamlandı!"
+
+msgid "POPUP_TIME"
+msgstr "Vaxt: %s"
+
+msgid "POPUP_MOVES"
+msgstr "Gediş: %d / min %d"
+
+msgid "POPUP_RECORD"
+msgstr "Yeni rekord!"
+
+msgid "POPUP_COINS"
+msgstr "+%d coin"
+
+msgid "POPUP_NEXT"
+msgstr "Növbəti səviyyə"
+
+msgid "POPUP_LAST"
+msgstr "Son səviyyə"
+
+msgid "POPUP_REPLAY"
+msgstr "Təkrar oyna"

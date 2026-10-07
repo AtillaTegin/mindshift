@@ -8,7 +8,8 @@ extends RefCounted
 ## { "version": 1, "coins": 120,
 ##   "completed_levels": { "1001": { "stars": 3, "best_moves": 7, "best_time_seconds": 95 } },
 ##   "last_daily_bonus_date": "2026-10-06" or null,
-##   "settings": { "sound_enabled": true } }
+##   "settings": { "sound_enabled": true, "theme": "light", "language": "az" } }
+## (theme and language were added later; older saves without them still load.)
 
 const DEFAULT_PATH: String = "user://save.json"
 const VERSION: int = 1
@@ -20,6 +21,10 @@ var completed_levels: Dictionary = {}
 ## "YYYY-MM-DD", or "" when no bonus was ever claimed.
 var last_daily_bonus_date: String = ""
 var sound_enabled: bool = true
+## "light" or "dark" (ThemeManager modes).
+var theme: String = "light"
+## Language code, e.g. "az" (see Languages).
+var language: String = "az"
 
 
 func _init(p_path: String = DEFAULT_PATH) -> void:
@@ -66,7 +71,7 @@ func to_dict() -> Dictionary:
 		"coins": coins,
 		"completed_levels": completed_levels.duplicate(true),
 		"last_daily_bonus_date": last_daily_bonus_date if not last_daily_bonus_date.is_empty() else null,
-		"settings": {"sound_enabled": sound_enabled},
+		"settings": {"sound_enabled": sound_enabled, "theme": theme, "language": language},
 	}
 
 
@@ -129,11 +134,23 @@ func set_sound_enabled(enabled: bool) -> void:
 	write()
 
 
+func set_theme(mode: String) -> void:
+	theme = mode
+	write()
+
+
+func set_language(code: String) -> void:
+	language = code
+	write()
+
+
 func _reset() -> void:
 	coins = 0
 	completed_levels = {}
 	last_daily_bonus_date = ""
 	sound_enabled = true
+	theme = "light"
+	language = "az"
 
 
 ## Reads what it can; malformed entries are skipped rather than failing the load.
@@ -155,8 +172,13 @@ func _read(data: Dictionary) -> void:
 	if typeof(bonus_date) == TYPE_STRING:
 		last_daily_bonus_date = bonus_date
 	var settings: Variant = data.get("settings")
-	if typeof(settings) == TYPE_DICTIONARY and typeof(settings.get("sound_enabled")) == TYPE_BOOL:
-		sound_enabled = settings["sound_enabled"]
+	if typeof(settings) == TYPE_DICTIONARY:
+		if typeof(settings.get("sound_enabled")) == TYPE_BOOL:
+			sound_enabled = settings["sound_enabled"]
+		if typeof(settings.get("theme")) == TYPE_STRING:
+			theme = settings["theme"]
+		if typeof(settings.get("language")) == TYPE_STRING:
+			language = settings["language"]
 
 
 static func _as_int(value: Variant, fallback: int) -> int:

@@ -9,8 +9,8 @@ extends RefCounted
 const ORDER: Array[String] = ["easy", "medium", "hard", "expert"]
 const MAX_LEVELS_PER_TIER: int = 999
 const LEVELS_DIR: String = "res://data/levels"
-## Names shown to the player.
-const DISPLAY_NAMES: Dictionary = {"easy": "Asan", "medium": "Orta", "hard": "Çətin", "expert": "Ekspert"}
+## Translation keys of the names shown to the player.
+const DISPLAY_NAMES: Dictionary = {"easy": "TIER_EASY", "medium": "TIER_MEDIUM", "hard": "TIER_HARD", "expert": "TIER_EXPERT"}
 
 ## Inclusive ranges; max_moves -1 means no upper bound. Level ids of a tier run
 ## from first_id to first_id + MAX_LEVELS_PER_TIER - 1.
@@ -97,8 +97,11 @@ static func unlock_requirement(tier: String) -> int:
 	return UNLOCK_AFTER_COMPLETED.get(tier, 0)
 
 
+## The tier's name in the current language.
 static func display_name(tier: String) -> String:
-	return DISPLAY_NAMES.get(tier, tier.capitalize())
+	if not DISPLAY_NAMES.has(tier):
+		return tier.capitalize()
+	return String(TranslationServer.translate(DISPLAY_NAMES[tier]))
 
 
 ## Human-readable move range, e.g. "5-11" or "34+".

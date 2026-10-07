@@ -3,8 +3,6 @@ extends Control
 ## A five-pointed star, gold when earned and grey otherwise. Drawn as a polygon
 ## so it does not depend on a font having a star glyph.
 
-const GOLD: Color = Color("f4b400")
-const EMPTY: Color = Color("d6d1c4")
 
 var filled: bool = false:
 	set(value):
@@ -30,4 +28,4 @@ func _ready() -> void:
 
 func _draw() -> void:
 	var radius: float = minf(size.x, size.y) * 0.5
-	draw_colored_polygon(star_points(size * 0.5, radius), GOLD if filled else EMPTY)
+	draw_colored_polygon(star_points(size * 0.5, radius), ThemeManager.color("star_filled" if filled else "star_empty"))

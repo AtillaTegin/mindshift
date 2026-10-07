@@ -140,7 +140,7 @@ func load_level_file(path: String) -> bool:
 	var errors: Array[String] = []
 	var level: Level = Level.load_file(path, errors)
 	if level == null:
-		_status_label.text = "Səviyyə yüklənmədi"
+		_status_label.text = tr("BOARD_LOAD_FAILED")
 		push_error("Cannot load level %s: %s" % [path, "; ".join(errors)])
 		return false
 	level_path = path
@@ -156,7 +156,7 @@ func start_level(level: Level) -> void:
 	_build_views()
 	_goal_preview.position_state = level.goal
 	_level_label.text = "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
-	_min_label.text = "Minimum: %d" % level.min_moves
+	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
 	_refresh(false)
 	level_started.emit()
 	position_changed.emit()
@@ -187,7 +187,7 @@ func request_undo() -> void:
 		return
 	var cost: int = EconomySystem.undo_cost(session.undo_count)
 	if not economy.spend(cost):
-		show_message("Geri qaytarmaq üçün coin çatmır")
+		show_message(tr("BOARD_UNDO_NO_COINS"))
 		return
 	session.undo()
 	_message = ""
@@ -257,7 +257,7 @@ func on_peg_pressed(peg_index: int) -> void:
 	match result:
 		GameSession.TapResult.ILLEGAL:
 			_peg_views[peg_index].flash_invalid()
-			illegal_move.emit(target_move, session.rules.get_violation_message(session.state, target_move))
+			illegal_move.emit(target_move, tr(session.rules.get_violation_message(session.state, target_move)))
 		GameSession.TapResult.MOVED:
 			position_changed.emit()
 			if session.is_solved():
@@ -296,16 +296,16 @@ func _update_buttons() -> void:
 	if session == null or not is_node_ready():
 		return
 	var locked: bool = restricted_peg >= 0
-	_coin_label.text = "Coin: %d" % economy.coins
+	_coin_label.text = tr("BOARD_COINS") % economy.coins
 	_hint_button.disabled = locked or session.is_solved() or hints.is_pending()
-	_hint_button.text = "Hint · %d coin" % EconomySystem.HINT_COST
+	_hint_button.text = tr("BOARD_HINT") % EconomySystem.HINT_COST
 	_undo_button.disabled = locked or not session.can_undo()
 	_restart_button.disabled = locked
 	var free_left: int = EconomySystem.FREE_UNDOS_PER_ATTEMPT - session.undo_count
 	if free_left > 0:
-		_undo_button.text = "Geri (pulsuz: %d)" % free_left
+		_undo_button.text = tr("BOARD_UNDO_FREE") % free_left
 	else:
-		_undo_button.text = "Geri · %d coin" % EconomySystem.UNDO_COST
+		_undo_button.text = tr("BOARD_UNDO_PAID") % EconomySystem.UNDO_COST
 
 
 func _build_views() -> void:
@@ -328,20 +328,20 @@ func _build_views() -> void:
 		for disk_size: int in peg:
 			var disk: DiskView = DISK_SCENE.instantiate()
 			disk.disk_size = disk_size
-			disk.color = UIPalette.disk_color(disk_size, disk_count)
+			disk.color = ThemeManager.disk_color(disk_size, disk_count)
 			_disk_layer.add_child(disk)
 			_disk_views[disk_size] = disk
 
 
 func _refresh(animated: bool) -> void:
-	_moves_label.text = "Gediş: %d" % session.move_count
+	_moves_label.text = tr("BOARD_MOVES") % session.move_count
 	_update_clock()
 	if session.is_solved():
-		_status_label.text = "Həll olundu! %d gedişdə (minimum %d)" % [session.move_count, session.level.min_moves]
-		_status_label.add_theme_color_override("font_color", UIPalette.SUCCESS)
+		_status_label.text = tr("BOARD_SOLVED") % [session.move_count, session.level.min_moves]
+		_status_label.theme_type_variation = &"SuccessLabel"
 	else:
 		_status_label.text = _message
-		_status_label.add_theme_color_override("font_color", UIPalette.ERROR)
+		_status_label.theme_type_variation = &"DangerLabel"
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
 	_update_buttons()

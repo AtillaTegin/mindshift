@@ -30,7 +30,8 @@ func test_every_scene_button_is_polished() -> void:
 		var scene: Node = (load(path) as PackedScene).instantiate()
 		var plain: Array[String] = []
 		for node: Node in scene.find_children("*", "Button", true, false):
-			if not node is PolishedButton and not node is CheckButton:
+			# Switches and drop-downs are form controls, not tappable buttons.
+			if not node is PolishedButton and not node is CheckButton and not node is OptionButton:
 				plain.append(node.name)
 		assert_eq(plain, [] as Array[String], "%s has plain buttons" % path.get_file())
 		scene.free()

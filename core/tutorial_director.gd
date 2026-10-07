@@ -16,8 +16,9 @@ enum Mode { OFF, GUIDED, FREE }
 
 const GUIDED_LEVEL_ID: int = 1001
 const FREE_LEVEL_ID: int = 1002
-const STEP_DONE_TEXT: String = "Əla!"
-const TRY_YOURSELF_TEXT: String = "İndi özün sına!"
+## Translation keys of the toasts.
+const STEP_DONE_TEXT: String = "TUTORIAL_STEP_DONE"
+const TRY_YOURSELF_TEXT: String = "TUTORIAL_TRY_YOURSELF"
 
 var enabled: bool = true
 var mode: Mode = Mode.OFF
@@ -52,13 +53,13 @@ func _on_level_started() -> void:
 		_show_next_step()
 	elif level.id == FREE_LEVEL_ID:
 		mode = Mode.FREE
-		_coaching.toast.show_message(TRY_YOURSELF_TEXT)
+		_coaching.toast.show_message(tr(TRY_YOURSELF_TEXT))
 
 
 func _on_position_changed() -> void:
 	var moves: int = _board.session.move_count
 	if mode == Mode.GUIDED and moves > _last_move_count:
-		_coaching.toast.show_message(STEP_DONE_TEXT)
+		_coaching.toast.show_message(tr(STEP_DONE_TEXT))
 		_last_move_count = moves
 		_show_next_step()
 	_last_move_count = moves

@@ -106,7 +106,7 @@ func test_two_mistakes_in_a_row_show_ring_and_one_toast() -> void:
 	assert_true(_ring_on_hint_button())
 	assert_eq(nudge.reason, "mistakes")
 	assert_true(_board.coaching.toast.visible)
-	assert_eq(_board.coaching.toast.get_text(), HintNudgeWatcher.MISTAKE_TEXT)
+	assert_eq(_board.coaching.toast.get_text(), tr(HintNudgeWatcher.MISTAKE_TEXT))
 	_board.coaching.toast.hide_now()
 	_try_illegal()
 	assert_true(_ring_on_hint_button(), "more mistakes keep pointing at Hint")

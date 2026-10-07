@@ -52,7 +52,7 @@ func show_tier(tier: String) -> void:
 	if app != null:
 		app.selected_tier = tier
 	_tier_info.text = tier_info_text(tier, save_system)
-	_stars_label.text = "Ulduz: %d" % save_system.get_total_stars()
+	_stars_label.text = tr("SELECT_STARS") % save_system.get_total_stars()
 	for child: Node in _grid.get_children():
 		_grid.remove_child(child)
 		child.queue_free()
@@ -76,11 +76,11 @@ func get_cell(index: int) -> LevelCell:
 static func tier_info_text(tier: String, save: SaveSystem) -> String:
 	if not LevelCatalog.is_tier_unlocked(tier, save):
 		var needed: int = Difficulty.unlock_requirement(tier)
-		return "Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)" % [
+		return Languages.text("SELECT_TIER_LOCKED") % [
 				Difficulty.display_name(Difficulty.previous_tier(tier)), needed,
 				LevelCatalog.completed_toward_unlock(tier, save), needed]
 	var settings: Dictionary = Difficulty.get_tier(tier)
-	return "%s gediş · %s qüllə · %s disk" % [Difficulty.describe_moves(tier),
+	return Languages.text("SELECT_TIER_INFO") % [Difficulty.describe_moves(tier),
 			_range_text(settings["min_pegs"], settings["max_pegs"]),
 			_range_text(settings["min_disks"], settings["max_disks"])]
 

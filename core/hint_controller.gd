@@ -59,7 +59,7 @@ func request() -> void:
 		_present()
 		return
 	if not _economy.can_afford(EconomySystem.HINT_COST):
-		message_changed.emit("Hint üçün coin çatmır")
+		message_changed.emit(tr("HINT_NO_COINS"))
 		return
 	var on_path: Move = session.get_path_hint()
 	if on_path != null:
@@ -74,7 +74,7 @@ func request() -> void:
 	_pending_key = key
 	_thread = Thread.new()
 	_thread.start(func() -> Move: return GameSession.solve_hint(from_state, goal, rules))
-	message_changed.emit("Hint hesablanır...")
+	message_changed.emit(tr("HINT_SEARCHING"))
 
 
 ## Forgets the hint and hides the overlay (called whenever the position changes).
@@ -110,7 +110,7 @@ func _exit_tree() -> void:
 ## Shows a found hint and charges for it; a missing hint costs nothing.
 func _apply(move: Move, key: String) -> void:
 	if move == null:
-		message_changed.emit("Hint tapılmadı")
+		message_changed.emit(tr("HINT_NOT_FOUND"))
 		return
 	_economy.spend(EconomySystem.HINT_COST)
 	hint_move = move

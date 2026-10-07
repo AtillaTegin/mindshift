@@ -6,7 +6,6 @@ extends Control
 
 const MOVE_SECONDS: float = 0.22
 const SHADOW_OFFSET: Vector2 = Vector2(3.0, 5.0)
-const SHADOW_COLOR: Color = Color(0.1, 0.1, 0.15, 0.18)
 
 var disk_size: int = 1:
 	set(value):
@@ -27,7 +26,7 @@ var _move: Tween
 
 
 func _ready() -> void:
-	_shadow.color = SHADOW_COLOR
+	_shadow.color = ThemeManager.color("shadow")
 	_shadow.position = SHADOW_OFFSET
 	resized.connect(_update_shadow)
 	_update_shadow()
@@ -44,6 +43,11 @@ func move_to(target: Vector2, animated: bool) -> void:
 		return
 	_move = create_tween()
 	_move.tween_property(self, "position", target, MOVE_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED and is_node_ready():
+		_shadow.color = ThemeManager.color("shadow")
 
 
 func _corner_radius() -> float:
@@ -71,11 +75,11 @@ func _draw() -> void:
 	box.set_corner_radius_all(int(_corner_radius()))
 	if selected:
 		box.set_border_width_all(4)
-		box.border_color = UIPalette.TEXT_PRIMARY
+		box.border_color = ThemeManager.color("text_primary")
 	draw_style_box(box, Rect2(Vector2.ZERO, size))
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))
 	var text: String = str(disk_size)
 	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var baseline: Vector2 = Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
-	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, UIPalette.TEXT_PRIMARY)
+	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ThemeManager.color("text_on_disk"))

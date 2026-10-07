@@ -85,16 +85,16 @@ static func format_time(seconds: float) -> String:
 ## Fills in the result and plays the appear animation.
 func show_result(stars: int, moves: int, min_moves: int, seconds: float, improved: bool, has_next: bool,
 		coins_earned: int = 0) -> void:
-	_time_label.text = "Vaxt: %s" % format_time(seconds)
-	_moves_label.text = "Gediş: %d / min %d" % [moves, min_moves]
+	_time_label.text = tr("POPUP_TIME") % format_time(seconds)
+	_moves_label.text = tr("POPUP_MOVES") % [moves, min_moves]
 	var notes: PackedStringArray = PackedStringArray()
 	if improved:
-		notes.append("Yeni rekord!")
+		notes.append(tr("POPUP_RECORD"))
 	if coins_earned > 0:
-		notes.append("+%d coin" % coins_earned)
+		notes.append(tr("POPUP_COINS") % coins_earned)
 	_record_label.text = "  ·  ".join(notes)
 	_next_button.disabled = not has_next
-	_next_button.text = "Növbəti səviyyə" if has_next else "Son səviyyə"
+	_next_button.text = tr("POPUP_NEXT") if has_next else tr("POPUP_LAST")
 	visible = true
 	modulate.a = 0.0
 	_panel.scale = Vector2(0.85, 0.85)

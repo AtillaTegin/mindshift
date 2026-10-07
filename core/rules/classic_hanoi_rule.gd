@@ -7,7 +7,7 @@ const ID: String = "classic_hanoi"
 
 
 func _init() -> void:
-	violation_message = "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
+	violation_message = "RULE_CLASSIC_HANOI"
 
 
 func get_id() -> String:

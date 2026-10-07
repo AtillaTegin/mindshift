@@ -12,9 +12,10 @@ extends RefCounted
 ## override is_move_allowed() instead.
 
 
-## Shown to the player when this rule refuses a move (addendum 2.2). Each rule
-## sets its own text, so new rules explain themselves without UI changes.
-var violation_message: String = "Bu gediş qaydalara uyğun deyil."
+## Translation key of the text shown when this rule refuses a move (addendum
+## 2.2). Each rule sets its own, so new rules explain themselves without UI
+## changes; add the key to locale/az.po.
+var violation_message: String = "RULE_ILLEGAL_MOVE"
 
 
 ## Identifier used in level JSON, e.g. `"rules": ["classic_hanoi"]`.

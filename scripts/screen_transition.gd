@@ -6,7 +6,6 @@ extends CanvasLayer
 signal finished
 
 const FADE_SECONDS: float = 0.18
-const COLOR: Color = Color("f4f1ea")
 
 var _cover: ColorRect
 var _busy: bool = false
@@ -15,7 +14,6 @@ var _busy: bool = false
 func _ready() -> void:
 	layer = 100
 	_cover = ColorRect.new()
-	_cover.color = COLOR
 	_cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_cover.mouse_filter = Control.MOUSE_FILTER_STOP
 	_cover.modulate.a = 0.0
@@ -42,6 +40,8 @@ func run(switch: Callable) -> void:
 	if _busy:
 		return
 	_busy = true
+	# The cover matches the current (light or dark) background.
+	_cover.color = ThemeManager.color("background")
 	_cover.visible = true
 	var tween: Tween = create_tween()
 	tween.tween_property(_cover, "modulate:a", 1.0, FADE_SECONDS)

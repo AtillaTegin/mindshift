@@ -1,7 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
 [ext_resource type="Script" path="res://scripts/level_select_controller.gd" id="1_select"]
+[ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
 
 [node name="LevelSelect" type="Control"]
 layout_mode = 3
@@ -20,7 +21,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.957, 0.945, 0.918, 1)
+script = ExtResource("themed_rect")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -51,21 +52,19 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Menyu"
+text = "COMMON_MENU"
 
 [node name="Title" type="Label" parent="Margin/Layout/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 36
-text = "Səviyyələr"
+text = "MENU_LEVELS"
 
 [node name="StarsLabel" type="Label" parent="Margin/Layout/TopBar"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.424, 0.435, 0.498, 1)
+theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 26
-text = "Ulduz: 0"
 
 [node name="Tabs" type="HBoxContainer" parent="Margin/Layout"]
 unique_name_in_owner = true
@@ -75,7 +74,7 @@ theme_override_constants/separation = 8
 [node name="TierInfo" type="Label" parent="Margin/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.424, 0.435, 0.498, 1)
+theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
 

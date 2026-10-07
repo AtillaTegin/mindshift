@@ -1,8 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
 [ext_resource type="Script" path="res://scripts/game_board_controller.gd" id="1_board"]
 [ext_resource type="Script" path="res://scripts/board_preview.gd" id="2_preview"]
+[ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
 
 [node name="GameBoard" type="Control"]
 layout_mode = 3
@@ -21,7 +22,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.957, 0.945, 0.918, 1)
+script = ExtResource("themed_rect")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -51,15 +52,13 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Səviyyələr"
+text = "MENU_LEVELS"
 
 [node name="LevelLabel" type="Label" parent="Margin/Layout/TopBar"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 34
-text = "Asan · 1"
 horizontal_alignment = 1
 
 [node name="RestartButton" type="Button" parent="Margin/Layout/TopBar"]
@@ -68,7 +67,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Yenidən"
+text = "BOARD_RESTART"
 
 [node name="Counters" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -78,15 +77,12 @@ mouse_filter = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 32
-text = "Gediş: 0"
 
 [node name="TimeLabel" type="Label" parent="Margin/Layout/Counters"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 32
 text = "00:00"
 horizontal_alignment = 1
@@ -95,18 +91,16 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.776, 0.537, 0, 1)
+theme_type_variation = &"CoinLabel"
 theme_override_font_sizes/font_size = 28
-text = "Coin: 0"
 horizontal_alignment = 1
 
 [node name="MinLabel" type="Label" parent="Margin/Layout/Counters"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.424, 0.435, 0.498, 1)
+theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 28
-text = "Minimum: 0"
 horizontal_alignment = 2
 
 [node name="Actions" type="HBoxContainer" parent="Margin/Layout"]
@@ -120,7 +114,6 @@ custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 26
-text = "Hint · 1 coin"
 
 [node name="UndoButton" type="Button" parent="Margin/Layout/Actions"]
 script = ExtResource("pb_polished")
@@ -129,13 +122,12 @@ custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 26
-text = "Geri"
 
 [node name="GoalTitle" type="Label" parent="Margin/Layout"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.424, 0.435, 0.498, 1)
+theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 24
-text = "Hədəf"
+text = "BOARD_GOAL"
 
 [node name="GoalPreview" type="Control" parent="Margin/Layout"]
 unique_name_in_owner = true
@@ -174,7 +166,6 @@ mouse_filter = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 vertical_alignment = 1

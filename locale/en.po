@@ -1,0 +1,182 @@
+# MindShift UI texts, en. Generated from az.po by tools/sync_translations.gd;
+# fill in msgstr, keep msgid. An empty msgstr shows the Azerbaijani text.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#. [TODO: EN] az: Oyna
+msgid "MENU_PLAY"
+msgstr ""
+
+#. [TODO: EN] az: Səviyyələr
+msgid "MENU_LEVELS"
+msgstr ""
+
+#. [TODO: EN] az: Parametrlər
+msgid "MENU_SETTINGS"
+msgstr ""
+
+#. [TODO: EN] az: Ulduz: %d / %d
+msgid "MENU_PROGRESS"
+msgstr ""
+
+#. [TODO: EN] az: Parametrlər
+msgid "SETTINGS_TITLE"
+msgstr ""
+
+#. [TODO: EN] az: Səs
+msgid "SETTINGS_SOUND"
+msgstr ""
+
+#. [TODO: EN] az: Qaranlıq mod
+msgid "SETTINGS_DARK_MODE"
+msgstr ""
+
+#. [TODO: EN] az: Dil
+msgid "SETTINGS_LANGUAGE"
+msgstr ""
+
+#. [TODO: EN] az: Bağla
+msgid "COMMON_CLOSE"
+msgstr ""
+
+#. [TODO: EN] az: Menyu
+msgid "COMMON_MENU"
+msgstr ""
+
+#. [TODO: EN] az: Asan
+msgid "TIER_EASY"
+msgstr ""
+
+#. [TODO: EN] az: Orta
+msgid "TIER_MEDIUM"
+msgstr ""
+
+#. [TODO: EN] az: Çətin
+msgid "TIER_HARD"
+msgstr ""
+
+#. [TODO: EN] az: Ekspert
+msgid "TIER_EXPERT"
+msgstr ""
+
+#. [TODO: EN] az: Ulduz: %d
+msgid "SELECT_STARS"
+msgstr ""
+
+#. [TODO: EN] az: %s gediş · %s qüllə · %s disk
+msgid "SELECT_TIER_INFO"
+msgstr ""
+
+#. [TODO: EN] az: Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)
+msgid "SELECT_TIER_LOCKED"
+msgstr ""
+
+#. [TODO: EN] az: Yenidən
+msgid "BOARD_RESTART"
+msgstr ""
+
+#. [TODO: EN] az: Gediş: %d
+msgid "BOARD_MOVES"
+msgstr ""
+
+#. [TODO: EN] az: Coin: %d
+msgid "BOARD_COINS"
+msgstr ""
+
+#. [TODO: EN] az: Minimum: %d
+msgid "BOARD_MINIMUM"
+msgstr ""
+
+#. [TODO: EN] az: Hint · %d coin
+msgid "BOARD_HINT"
+msgstr ""
+
+#. [TODO: EN] az: Geri (pulsuz: %d)
+msgid "BOARD_UNDO_FREE"
+msgstr ""
+
+#. [TODO: EN] az: Geri · %d coin
+msgid "BOARD_UNDO_PAID"
+msgstr ""
+
+#. [TODO: EN] az: Hədəf
+msgid "BOARD_GOAL"
+msgstr ""
+
+#. [TODO: EN] az: Həll olundu! %d gedişdə (minimum %d)
+msgid "BOARD_SOLVED"
+msgstr ""
+
+#. [TODO: EN] az: Səviyyə yüklənmədi
+msgid "BOARD_LOAD_FAILED"
+msgstr ""
+
+#. [TODO: EN] az: Geri qaytarmaq üçün coin çatmır
+msgid "BOARD_UNDO_NO_COINS"
+msgstr ""
+
+#. [TODO: EN] az: Hint üçün coin çatmır
+msgid "HINT_NO_COINS"
+msgstr ""
+
+#. [TODO: EN] az: Hint hesablanır...
+msgid "HINT_SEARCHING"
+msgstr ""
+
+#. [TODO: EN] az: Hint tapılmadı
+msgid "HINT_NOT_FOUND"
+msgstr ""
+
+#. [TODO: EN] az: Fikrin yoxdursa, Hint sənə kömək edə bilər.
+msgid "NUDGE_MISTAKES"
+msgstr ""
+
+#. [TODO: EN] az: Əla!
+msgid "TUTORIAL_STEP_DONE"
+msgstr ""
+
+#. [TODO: EN] az: İndi özün sına!
+msgid "TUTORIAL_TRY_YOURSELF"
+msgstr ""
+
+#. [TODO: EN] az: Bu gediş qaydalara uyğun deyil.
+msgid "RULE_ILLEGAL_MOVE"
+msgstr ""
+
+#. [TODO: EN] az: Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz.
+msgid "RULE_CLASSIC_HANOI"
+msgstr ""
+
+#. [TODO: EN] az: Səviyyə tamamlandı!
+msgid "POPUP_TITLE"
+msgstr ""
+
+#. [TODO: EN] az: Vaxt: %s
+msgid "POPUP_TIME"
+msgstr ""
+
+#. [TODO: EN] az: Gediş: %d / min %d
+msgid "POPUP_MOVES"
+msgstr ""
+
+#. [TODO: EN] az: Yeni rekord!
+msgid "POPUP_RECORD"
+msgstr ""
+
+#. [TODO: EN] az: +%d coin
+msgid "POPUP_COINS"
+msgstr ""
+
+#. [TODO: EN] az: Növbəti səviyyə
+msgid "POPUP_NEXT"
+msgstr ""
+
+#. [TODO: EN] az: Son səviyyə
+msgid "POPUP_LAST"
+msgstr ""
+
+#. [TODO: EN] az: Təkrar oyna
+msgid "POPUP_REPLAY"
+msgstr ""
