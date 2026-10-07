@@ -73,6 +73,27 @@ func test_easy_level_plays_start_to_finish() -> void:
 	assert_eq(_completed[0][1], path.size())
 
 
+func test_stopwatch_runs_from_first_move_until_solved() -> void:
+	# Economy/UX addendum, section 2: a count-up clock next to the move counter.
+	var path: Array[Move] = _board.session.level.solution_path
+	assert_eq(_label("TimeLabel"), "00:00")
+	assert_eq(_board.get_node("%TimeLabel").get_index(), _board.get_node("%MovesLabel").get_index() + 1,
+			"right next to the move counter")
+	_board._process(4.0)
+	assert_eq(_label("TimeLabel"), "00:00", "waits for the first move")
+	_play([path[0]])
+	_board._process(65.4)
+	assert_eq(_label("TimeLabel"), "01:05")
+	_play(path.slice(1))
+	assert_true(_board.session.is_solved())
+	_board._process(30.0)
+	assert_eq(_label("TimeLabel"), "01:05", "stopped when solved")
+	assert_eq((_board.get_popup().get_node("%TimeLabel") as Label).text, "Vaxt: 01:05", "popup shows the same time")
+	assert_eq(_save.get_record(1001)["best_time_seconds"], 65)
+	_board.restart()
+	assert_eq(_label("TimeLabel"), "00:00", "restart resets the clock")
+
+
 func test_illegal_move_flashes_target_and_does_not_count() -> void:
 	var session: GameSession = _board.session
 	# Find a peg pair whose move is illegal in the start position.

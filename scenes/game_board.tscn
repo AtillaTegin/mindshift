@@ -82,6 +82,15 @@ theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
 theme_override_font_sizes/font_size = 32
 text = "Gediş: 0"
 
+[node name="TimeLabel" type="Label" parent="Margin/Layout/Counters"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.169, 0.176, 0.259, 1)
+theme_override_font_sizes/font_size = 32
+text = "00:00"
+horizontal_alignment = 1
+
 [node name="CoinLabel" type="Label" parent="Margin/Layout/Counters"]
 unique_name_in_owner = true
 layout_mode = 2

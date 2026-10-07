@@ -62,6 +62,9 @@ var _peg_areas: Array[Rect2] = []
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
+## Count-up stopwatch (economy/UX addendum, section 2). Not the same thing as a
+## level's time_limit_seconds countdown, which would get its own label.
+@onready var _time_label: Label = %TimeLabel
 @onready var _min_label: Label = %MinLabel
 @onready var _status_label: Label = %StatusLabel
 @onready var _goal_preview: BoardPreview = %GoalPreview
@@ -124,6 +127,13 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if session != null:
 		session.add_time(delta)
+		_update_clock()
+
+
+func _update_clock() -> void:
+	var text: String = GameSession.format_clock(session.elapsed_seconds)
+	if _time_label.text != text:
+		_time_label.text = text
 
 
 func load_level_file(path: String) -> bool:
@@ -320,6 +330,7 @@ func _build_views() -> void:
 
 func _refresh(animated: bool) -> void:
 	_moves_label.text = "Gediş: %d" % session.move_count
+	_update_clock()
 	if session.is_solved():
 		_status_label.text = "Həll olundu! %d gedişdə (minimum %d)" % [session.move_count, session.level.min_moves]
 		_status_label.add_theme_color_override("font_color", UIPalette.SUCCESS)

@@ -84,6 +84,36 @@ func test_restart_and_time() -> void:
 	assert_false(session.state == session.level.start, "restart copies the start position")
 
 
+func test_clock_starts_with_the_first_move() -> void:
+	var session: GameSession = _session()
+	session.add_time(5.0)
+	session.tap_peg(0)
+	session.add_time(5.0)
+	assert_eq(session.elapsed_seconds, 0.0, "picking a disk up is not a move")
+	assert_false(session.clock_started)
+	var first: Move = session.level.solution_path[0]
+	session.selected_peg = -1
+	session.tap_peg(first.from_peg)
+	session.tap_peg(first.to_peg)
+	assert_true(session.clock_started)
+	session.add_time(2.0)
+	session.undo()
+	session.add_time(1.0)
+	assert_eq(session.elapsed_seconds, 3.0, "undoing the first move keeps the clock running")
+	session.restart()
+	assert_false(session.clock_started, "restart waits for a new first move")
+	session.add_time(4.0)
+	assert_eq(session.elapsed_seconds, 0.0)
+
+
+func test_format_clock() -> void:
+	assert_eq(GameSession.format_clock(0.0), "00:00")
+	assert_eq(GameSession.format_clock(9.99), "00:09", "rounded down like a stopwatch")
+	assert_eq(GameSession.format_clock(67.2), "01:07")
+	assert_eq(GameSession.format_clock(6000.0), "100:00")
+	assert_eq(GameSession.format_clock(-1.0), "00:00")
+
+
 func test_time_stops_when_solved() -> void:
 	var session: GameSession = _session()
 	for move: Move in session.level.solution_path:

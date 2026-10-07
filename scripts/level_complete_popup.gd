@@ -77,9 +77,9 @@ func _burst_confetti() -> void:
 	_confetti.emitting = true
 
 
+## Same text as the board's stopwatch showed when the level was solved.
 static func format_time(seconds: float) -> String:
-	var whole: int = maxi(roundi(seconds), 0)
-	return "%d:%02d" % [whole / 60, whole % 60]
+	return GameSession.format_clock(seconds)
 
 
 ## Fills in the result and plays the appear animation.

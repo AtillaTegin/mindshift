@@ -26,6 +26,10 @@ Economy (v1 fərziyyələri, hamısı [scripts/economy_system.gd](scripts/econom
 hint 1 coin (eyni vəziyyətdə təkrar basmaq pulsuzdur), hər cəhddə 3 pulsuz undo, sonra hər biri 1 coin,
 hər yeni qazanılan ulduz üçün 2 coin, gündəlik giriş bonusu 5 coin. Undo gedişi sayğacdan da geri alır.
 
+Saniyəölçən gediş sayğacının yanındadır: ilk gedişlə başlayır, səviyyə həll olunanda dayanır, "Yenidən" ilə sıfırlanır.
+Popup və save-dəki `best_time_seconds` eyni vaxtı göstərir (saniyə aşağı kəsilir).
+Bu, spesifikasiyadakı `time_limit_seconds` (aşağı sayan, uduzduran taymer) deyil. O gələcəkdə ayrıca element olacaq.
+
 ## Testlər
 
 Godot-un console versiyası lazımdır (`Godot_v4.7.2-stable_win64_console.exe`).
@@ -113,6 +117,7 @@ Solver-ə toxunmaq lazım deyil.
 | 6 | Hint (yolda: dərhal, yoldan kənar: arxa planda Solver), Undo, Economy | ✅ |
 | 6B | Coaching overlay, tutorial (Asan 1–2), yeni hint təqdimatı, game feel ([əlavə sənəd](../MindShift_Polish_Tutorial_Addendum.md)) | ✅ |
 | UX-1 | Yeni çətinlik aralıqları, qismən-say kilid qaydası ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md)) | ✅ |
+| UX-2 | Yuxarı sayan saniyəölçən (ilk gedişlə başlayır, həll olunanda dayanır) | ✅ |
 | 7 | Android build | — |
 
 ### 6B qeydləri

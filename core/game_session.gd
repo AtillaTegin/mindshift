@@ -19,7 +19,10 @@ var move_count: int = 0
 var selected_peg: int = -1
 var history: Array[Move] = []
 var undo_count: int = 0
+## Play time of this attempt. The clock starts with the first move (thinking
+## before it is free) and stops when the level is solved.
 var elapsed_seconds: float = 0.0
+var clock_started: bool = false
 
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
@@ -47,6 +50,7 @@ func restart() -> void:
 	_previous_states.clear()
 	undo_count = 0
 	elapsed_seconds = 0.0
+	clock_started = false
 
 
 func is_solved() -> bool:
@@ -89,6 +93,7 @@ func try_move(move: Move) -> bool:
 	move_count += 1
 	history.append(move)
 	selected_peg = -1
+	clock_started = true
 	return true
 
 
@@ -136,7 +141,14 @@ static func solve_hint(from_state: PuzzleState, goal: PuzzleState, rule_set: Rul
 	return result["path"][0] if result["solvable"] and not result["path"].is_empty() else null
 
 
-## Counts play time until the level is solved.
+## Stopwatch text, e.g. "01:07" (whole seconds, rounded down; minutes keep
+## counting past 59).
+static func format_clock(seconds: float) -> String:
+	var whole: int = maxi(floori(seconds), 0)
+	return "%02d:%02d" % [whole / 60, whole % 60]
+
+
+## Counts play time from the first move until the level is solved.
 func add_time(delta: float) -> void:
-	if not is_solved():
+	if clock_started and not is_solved():
 		elapsed_seconds += delta

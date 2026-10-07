@@ -100,9 +100,10 @@ func get_total_stars() -> int:
 
 
 ## Records a finished level, keeping the best stars, moves and time (each on
-## its own), and writes the save. Returns true if anything improved.
+## its own), and writes the save. Returns true if anything improved. Seconds
+## are rounded down, like the stopwatch the player saw.
 func record_completion(level_id: int, stars: int, moves: int, seconds: float) -> bool:
-	var whole_seconds: int = maxi(roundi(seconds), 0)
+	var whole_seconds: int = maxi(floori(seconds), 0)
 	var key: String = str(level_id)
 	var record: Dictionary = completed_levels.get(key, {})
 	var improved: bool = record.is_empty()

@@ -41,7 +41,7 @@ func test_progress_survives_reopening() -> void:
 	assert_eq(second.coins, 120)
 	assert_eq(second.last_daily_bonus_date, "2026-10-06")
 	assert_eq(second.get_record(1001), {"stars": 3, "best_moves": 7, "best_time_seconds": 12})
-	assert_eq(second.get_record(1002), {"stars": 2, "best_moves": 10, "best_time_seconds": 96})
+	assert_eq(second.get_record(1002), {"stars": 2, "best_moves": 10, "best_time_seconds": 95}, "rounded down like the stopwatch")
 	assert_true(second.is_completed(1001))
 	assert_false(second.is_completed(1003))
 	assert_eq(second.get_total_stars(), 5)
