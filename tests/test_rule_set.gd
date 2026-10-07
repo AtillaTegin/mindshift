@@ -219,6 +219,26 @@ func test_classic_move_check_uses_disk_check() -> void:
 			assert_eq(rule.is_move_allowed(state, move), expected, "%s %s" % [state.hash_key(), str(move)])
 
 
+func test_violation_message_comes_from_the_refusing_rule() -> void:
+	var rules: RuleSet = RuleSet.classic()
+	var state: PuzzleState = PuzzleState.new([[3, 2], [1], []])
+	var classic_text: String = ClassicHanoiRule.new().violation_message
+	assert_false(classic_text.is_empty())
+	assert_eq(rules.get_violation_message(state, Move.new(0, 1)), classic_text, "2 onto 1")
+	assert_eq(rules.get_violation_message(state, Move.new(0, 2)), "", "legal move")
+	assert_eq(rules.get_violation_message(state, Move.new(2, 0)), "", "empty source is not a rule")
+	assert_eq(rules.get_violation_message(state, Move.new(0, 0)), "", "same peg is not a rule")
+	assert_eq(rules.get_violation_message(state, Move.new(0, 5)), "", "no such peg")
+	assert_eq(rules.get_violation_message(null, Move.new(0, 1)), "")
+	# A new rule explains itself without any change elsewhere.
+	var forbidden: ForbiddenTargetRule = ForbiddenTargetRule.new(2)
+	forbidden.violation_message = "Bu qülləyə disk qoymaq olmaz."
+	rules.active_rules.append(forbidden)
+	assert_eq(rules.get_violation_message(state, Move.new(0, 2)), "Bu qülləyə disk qoymaq olmaz.")
+	assert_eq(rules.get_violation_message(state, Move.new(0, 1)), classic_text, "first refusing rule wins")
+	assert_false(RuleBase.new().violation_message.is_empty(), "every rule has a default text")
+
+
 func test_constructor_copies_rule_array() -> void:
 	var source: Array[RuleBase] = [ClassicHanoiRule.new()]
 	var rules: RuleSet = RuleSet.new(source)

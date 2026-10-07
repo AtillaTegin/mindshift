@@ -102,6 +102,62 @@ func test_level_1_tutorial_restarts_when_reopened_before_finishing() -> void:
 	assert_true(_board.tutorial.step_move.equals(first), "back to the first step")
 
 
+func test_level_2_is_free_play_with_a_welcome_toast() -> void:
+	_open("easy", 2)
+	var tutorial: TutorialDirector = _board.tutorial
+	assert_eq(tutorial.mode, TutorialDirector.Mode.FREE)
+	assert_eq(_board.restricted_peg, -1, "no restricted input")
+	assert_true(_board.coaching.toast.visible)
+	assert_eq(_board.coaching.toast.get_text(), TutorialDirector.TRY_YOURSELF_TEXT)
+	assert_false(_board.coaching.ring.visible, "no ring")
+	assert_false(_board.coaching.pointer.is_playing(), "no ghost finger")
+	assert_false(_button("HintButton").disabled)
+	assert_false(_button("RestartButton").disabled)
+	# Any peg with a disk can be picked up, not just the optimal one.
+	var session: GameSession = _board.session
+	for peg: int in session.state.get_peg_count():
+		if session.state.pegs[peg].is_empty():
+			continue
+		_board.on_peg_pressed(peg)
+		assert_eq(session.selected_peg, peg, "peg %d can be picked" % peg)
+		_board.on_peg_pressed(peg)
+
+
+func test_level_2_wrong_move_shows_the_rule_text() -> void:
+	_open("easy", 2)
+	var session: GameSession = _board.session
+	var illegal: Move = _first_illegal_move(session)
+	assert_not_null(illegal)
+	_board.on_peg_pressed(illegal.from_peg)
+	_board.on_peg_pressed(illegal.to_peg)
+	var target: PegView = _board.get_node("%PegLayer").get_child(illegal.to_peg)
+	assert_true(target.flash_amount > 0.9, "the red flash stays")
+	assert_eq(session.move_count, 0)
+	assert_true(_board.coaching.toast.visible)
+	assert_eq(_board.coaching.toast.get_text(), ClassicHanoiRule.new().violation_message,
+			"the rule's own message, not a hard-coded one")
+
+
+func test_level_2_after_completion_has_no_tutorial() -> void:
+	_save.record_completion(1002, 2, 4, 9.0)
+	_open("easy", 2)
+	assert_eq(_board.tutorial.mode, TutorialDirector.Mode.OFF)
+	var illegal: Move = _first_illegal_move(_board.session)
+	_board.on_peg_pressed(illegal.from_peg)
+	_board.on_peg_pressed(illegal.to_peg)
+	assert_false(_board.coaching.toast.visible, "no coaching text outside the tutorial")
+
+
+static func _first_illegal_move(session: GameSession) -> Move:
+	for from_peg: int in session.state.get_peg_count():
+		for to_peg: int in session.state.get_peg_count():
+			var move: Move = Move.new(from_peg, to_peg)
+			if from_peg != to_peg and not session.state.pegs[from_peg].is_empty() \
+					and not session.rules.is_move_legal(session.state, move):
+				return move
+	return null
+
+
 func test_other_levels_have_no_tutorial() -> void:
 	_open("easy", 3)
 	assert_eq(_board.tutorial.mode, TutorialDirector.Mode.OFF)
