@@ -15,6 +15,24 @@ var selected: bool = false:
 	set(value):
 		selected = value
 		queue_redraw()
+## Hint: the disk to move next blinks with a gold outline.
+var hinted: bool = false:
+	set(value):
+		hinted = value
+		_blink_time = 0.0
+		set_process(hinted)
+		queue_redraw()
+
+var _blink_time: float = 0.0
+
+
+func _ready() -> void:
+	set_process(hinted)
+
+
+func _process(delta: float) -> void:
+	_blink_time += delta
+	queue_redraw()
 
 
 func _draw() -> void:
@@ -24,6 +42,9 @@ func _draw() -> void:
 	if selected:
 		box.set_border_width_all(4)
 		box.border_color = UIPalette.TEXT_PRIMARY
+	elif hinted:
+		box.set_border_width_all(6)
+		box.border_color = UIPalette.HINT.lerp(color, 0.5 - 0.5 * cos(_blink_time * TAU * 1.5))
 	draw_style_box(box, Rect2(Vector2.ZERO, size))
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))

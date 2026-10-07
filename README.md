@@ -18,6 +18,10 @@ Oyunda qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və d
 Başqa save faylı ilə işə salmaq üçün: `... -- --save-path=user://test.json`.
 Kilid qaydası: hər çətinliyin 1-ci səviyyəsi açıqdır, digərləri əvvəlki səviyyə tamamlananda açılır.
 
+Economy (v1 fərziyyələri, hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir):
+hint 1 coin (eyni vəziyyətdə təkrar basmaq pulsuzdur), hər cəhddə 3 pulsuz undo, sonra hər biri 1 coin,
+hər yeni qazanılan ulduz üçün 2 coin, gündəlik giriş bonusu 5 coin. Undo gedişi sayğacdan da geri alır.
+
 ## Testlər
 
 Godot-un console versiyası lazımdır (`Godot_v4.7.2-stable_win64_console.exe`).
@@ -101,5 +105,5 @@ Solver-ə toxunmaq lazım deyil.
 | 3 | Səviyyə generatoru + validator (4 × 50 səviyyə, hamısı yoxlanılıb) | ✅ |
 | 4 | Oyun lövhəsi UI (toxun-seç, toxun-köçür, qırmızı flash, sayğac, hədəf önizləməsi) | ✅ |
 | 5 | Ana menyu, səviyyə seçimi, tamamlama popup-ı, ulduzlar, save (`user://save.json`) | ✅ |
-| 6 | Hint, Undo, Economy | — |
+| 6 | Hint (yolda: dərhal, yoldan kənar: arxa planda Solver), Undo, Economy | ✅ |
 | 7 | Android build | — |

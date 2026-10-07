@@ -5,8 +5,10 @@ extends Node
 const MAIN_MENU: String = "res://scenes/main_menu.tscn"
 const LEVEL_SELECT: String = "res://scenes/level_select.tscn"
 const GAME_BOARD: String = "res://scenes/game_board.tscn"
+const SCRIPT_RUN_SAVE_PATH: String = "user://script_run_save.json"
 
 var save: SaveSystem
+var economy: EconomySystem
 ## Tab the level select screen opens on.
 var selected_tier: String = "easy"
 
@@ -15,11 +17,20 @@ var _pending_level: Dictionary = {}
 
 func _ready() -> void:
 	var save_path: String = SaveSystem.DEFAULT_PATH
+	# Tools and tests run with --script; they must never write the player's save.
+	if "--script" in OS.get_cmdline_args():
+		save_path = SCRIPT_RUN_SAVE_PATH
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--save-path="):
 			save_path = arg.trim_prefix("--save-path=")
 	save = SaveSystem.new(save_path)
 	save.load_save()
+	economy = EconomySystem.new()
+	economy.name = "Economy"
+	economy.setup(save)
+	add_child(economy)
+	# Daily login bonus (spec 4.8); its own UI comes in a later phase.
+	economy.claim_daily_bonus(Time.get_date_string_from_system())
 
 
 func play_level(tier: String, index: int) -> void:

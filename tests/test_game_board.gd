@@ -19,6 +19,7 @@ func before_each() -> void:
 	_board = BOARD_SCENE.instantiate()
 	_board.level_path = EASY_LEVEL
 	_board.save_system = _save
+	_board.background_hints = false
 	_board.level_completed.connect(func(level: Level, moves: int, seconds: float) -> void:
 		_completed.append([level.id, moves, seconds]))
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
@@ -162,6 +163,90 @@ func test_next_and_replay_buttons() -> void:
 	assert_eq(_board.session.level.id, 1002, "next level loaded in place")
 	assert_eq(_label("LevelLabel"), "Asan · 2")
 	assert_false(popup.visible)
+
+
+func test_hint_costs_a_coin_and_marks_disk_and_peg() -> void:
+	_save.coins = 2
+	var level: Level = _board.session.level
+	_board.request_hint()
+	assert_true(_board.hint_move.equals(level.solution_path[0]))
+	assert_eq(_save.coins, 1)
+	assert_eq(_label("CoinLabel"), "Coin: 1")
+	var target: PegView = _board.get_node("%PegLayer").get_child(level.solution_path[0].to_peg)
+	assert_true(target.hint_target)
+	var hinted: Array[int] = []
+	for disk: DiskView in _board.get_node("%DiskLayer").get_children():
+		if disk.hinted:
+			hinted.append(disk.disk_size)
+	assert_eq(hinted, [_board.session.state.get_top_disk(level.solution_path[0].from_peg)] as Array[int])
+	assert_eq(_board.session.move_count, 0, "a hint never moves a disk")
+	_board.request_hint()
+	assert_eq(_save.coins, 1, "asking again in the same position is free")
+	_play([level.solution_path[0]])
+	assert_null(_board.hint_move, "hint cleared after a move")
+	assert_false(target.hint_target)
+
+
+func test_hint_off_the_path_uses_the_solver() -> void:
+	_save.coins = 5
+	var level: Level = _board.session.level
+	var first: Move = level.solution_path[0]
+	# A legal move that leaves the stored solution.
+	var detour: Move = null
+	for move: Move in _board.session.rules.get_legal_moves(_board.session.state):
+		if not move.equals(first):
+			detour = move
+	_play([detour])
+	assert_null(_board.session.get_path_hint(), "off the path")
+	var remaining: int = Solver.solve(_board.session.state, level.goal, _board.session.rules)["min_moves"]
+	_board.request_hint()
+	assert_not_null(_board.hint_move)
+	assert_eq(_save.coins, 4)
+	var after: PuzzleState = _board.session.rules.apply_move(_board.session.state, _board.hint_move)
+	assert_eq(Solver.solve(after, level.goal, _board.session.rules)["min_moves"], remaining - 1, "hint is optimal")
+
+
+func test_hint_without_coins_shows_a_message() -> void:
+	_save.coins = 0
+	_board.request_hint()
+	assert_null(_board.hint_move)
+	assert_eq(_label("StatusLabel"), "Hint üçün coin çatmır")
+	assert_eq(_save.coins, 0)
+
+
+func test_undo_is_free_three_times_then_costs() -> void:
+	_save.coins = 1
+	var first: Move = _board.session.level.solution_path[0]
+	var back: Move = Move.new(first.to_peg, first.from_peg)
+	for i: int in EconomySystem.FREE_UNDOS_PER_ATTEMPT:
+		_play([first])
+		_board.request_undo()
+		assert_eq(_board.session.move_count, 0)
+	assert_eq(_save.coins, 1, "free undos")
+	assert_eq((_board.get_node("%UndoButton") as Button).text, "Geri · 1 coin")
+	_play([first])
+	_board.request_undo()
+	assert_eq(_save.coins, 0, "fourth undo paid")
+	assert_eq(_board.session.move_count, 0)
+	_play([first])
+	_board.request_undo()
+	assert_eq(_board.session.move_count, 1, "no coins, no undo")
+	assert_eq(_label("StatusLabel"), "Geri qaytarmaq üçün coin çatmır")
+	_play([back])
+	assert_eq(_board.session.move_count, 2)
+
+
+func test_completion_pays_for_new_stars_only() -> void:
+	_save.coins = 0
+	_play(_board.session.level.solution_path)
+	assert_eq(_board.last_result["reward"], 3 * EconomySystem.COINS_PER_NEW_STAR)
+	assert_eq(_save.coins, 3 * EconomySystem.COINS_PER_NEW_STAR)
+	var popup_text: String = (_board.get_popup().get_node("%RecordLabel") as Label).text
+	assert_true(popup_text.contains("+%d coin" % (3 * EconomySystem.COINS_PER_NEW_STAR)), popup_text)
+	_board.restart()
+	_play(_board.session.level.solution_path)
+	assert_eq(_board.last_result["reward"], 0, "replay pays nothing")
+	assert_eq(_save.coins, 3 * EconomySystem.COINS_PER_NEW_STAR)
 
 
 func test_every_generated_easy_level_loads() -> void:
