@@ -1,0 +1,37 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/components/coaching/coaching_layer.gd" id="1_layer"]
+[ext_resource type="Script" path="res://scenes/components/coaching/scrim.gd" id="2_scrim"]
+[ext_resource type="Script" path="res://scenes/components/coaching/focus_ring.gd" id="3_ring"]
+[ext_resource type="Script" path="res://scenes/components/coaching/ghost_pointer.gd" id="4_pointer"]
+[ext_resource type="Script" path="res://scenes/components/coaching/coach_toast.gd" id="5_toast"]
+
+[node name="CoachingLayer" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_layer")
+
+[node name="Scrim" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_scrim")
+
+[node name="FocusRing" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("3_ring")
+
+[node name="GhostPointer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("4_pointer")
+
+[node name="CoachToast" type="PanelContainer" parent="."]
+mouse_filter = 2
+script = ExtResource("5_toast")
