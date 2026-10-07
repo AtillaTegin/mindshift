@@ -26,7 +26,7 @@ func _ready() -> void:
 			app.show_main_menu())
 	var group: ButtonGroup = ButtonGroup.new()
 	for tier: String in Difficulty.ORDER:
-		var button: Button = Button.new()
+		var button: Button = PolishedButton.new()
 		button.text = Difficulty.display_name(tier)
 		button.toggle_mode = true
 		button.button_group = group

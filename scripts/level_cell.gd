@@ -1,5 +1,5 @@
 class_name LevelCell
-extends Button
+extends PolishedButton
 ## One level in the level select grid: its number, earned stars underneath, or
 ## a padlock when locked.
 

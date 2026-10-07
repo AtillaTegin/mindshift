@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7", "Mobile")
 [autoload]
 
 App="*res://scripts/app.gd"
+ScreenTransition="*res://scripts/screen_transition.gd"
 
 [display]
 

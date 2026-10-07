@@ -20,7 +20,6 @@ const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
 const DISK_SCENE: PackedScene = preload("res://scenes/components/disk.tscn")
 const POPUP_SCENE: PackedScene = preload("res://scenes/level_complete_popup.tscn")
 const COACHING_SCENE: PackedScene = preload("res://scenes/components/coaching/coaching_layer.tscn")
-const MOVE_SECONDS: float = 0.12
 const MAX_DISK_HEIGHT: float = 52.0
 
 ## Level loaded in _ready() unless the App autoload asks for another one.
@@ -34,6 +33,8 @@ var economy: EconomySystem
 var background_hints: bool = true
 ## Coaching on the first two levels (tests of other features turn it off).
 var tutorials_enabled: bool = true
+## Fade through ScreenTransition when "next level" swaps the board (tests turn it off).
+var animate_transitions: bool = true
 ## Restricted input (addendum 2.2): when >= 0, only this peg reacts to taps and
 ## the hint, undo and restart buttons are off.
 var restricted_peg: int = -1:
@@ -54,7 +55,6 @@ var _message: String = ""
 var _peg_views: Array[PegView] = []
 ## Disk size -> view.
 var _disk_views: Dictionary[int, DiskView] = {}
-var _disk_tweens: Dictionary[int, Tween] = {}
 ## Disk size -> where the disk is (or is gliding to), in board coordinates.
 var _disk_targets: Dictionary[int, Rect2] = {}
 ## Peg index -> peg area (rod, base and the space for a lifted disk), board coordinates.
@@ -196,7 +196,11 @@ func play_next_level() -> void:
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
 		app.selected_tier = next["tier"]
-	start_level(level)
+	var transition: Node = get_node_or_null("/root/ScreenTransition")
+	if animate_transitions and transition != null:
+		transition.run(start_level.bind(level))
+	else:
+		start_level(level)
 
 
 func get_popup() -> LevelCompletePopup:
@@ -296,7 +300,6 @@ func _build_views() -> void:
 			child.queue_free()
 	_peg_views.clear()
 	_disk_views.clear()
-	_disk_tweens.clear()
 	_disk_targets.clear()
 	_peg_areas.clear()
 	var disk_count: int = session.state.get_disk_count()
@@ -363,18 +366,5 @@ func _layout(animated: bool) -> void:
 			view.size = Vector2(width, disk_height - 4.0)
 			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
-			_place_disk(disk_size, target, animated)
+			view.move_to(target, animated)
 	layout_changed.emit()
-
-
-func _place_disk(disk_size: int, target: Vector2, animated: bool) -> void:
-	var view: DiskView = _disk_views[disk_size]
-	if _disk_tweens.has(disk_size):
-		_disk_tweens[disk_size].kill()
-		_disk_tweens.erase(disk_size)
-	if not animated or view.position.distance_to(target) < 0.5:
-		view.position = target
-		return
-	var tween: Tween = create_tween()
-	tween.tween_property(view, "position", target, MOVE_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_disk_tweens[disk_size] = tween

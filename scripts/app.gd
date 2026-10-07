@@ -36,7 +36,7 @@ func _ready() -> void:
 func play_level(tier: String, index: int) -> void:
 	selected_tier = tier
 	_pending_level = {"tier": tier, "index": index}
-	get_tree().change_scene_to_file(GAME_BOARD)
+	_go(GAME_BOARD)
 
 
 ## The level the game board should open, once; {} if none was requested.
@@ -49,8 +49,17 @@ func take_pending_level() -> Dictionary:
 func show_level_select(tier: String = "") -> void:
 	if not tier.is_empty():
 		selected_tier = tier
-	get_tree().change_scene_to_file(LEVEL_SELECT)
+	_go(LEVEL_SELECT)
 
 
 func show_main_menu() -> void:
-	get_tree().change_scene_to_file(MAIN_MENU)
+	_go(MAIN_MENU)
+
+
+## Every scene change fades through the ScreenTransition autoload.
+func _go(scene_path: String) -> void:
+	var transition: Node = get_node_or_null("/root/ScreenTransition")
+	if transition != null:
+		transition.change_scene(scene_path)
+	else:
+		get_tree().change_scene_to_file(scene_path)

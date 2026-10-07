@@ -21,6 +21,7 @@ func before_each() -> void:
 	_board.save_system = _save
 	_board.background_hints = false
 	_board.tutorials_enabled = false  # covered by test_tutorial.gd
+	_board.animate_transitions = false
 	_board.level_completed.connect(func(level: Level, moves: int, seconds: float) -> void:
 		_completed.append([level.id, moves, seconds]))
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)

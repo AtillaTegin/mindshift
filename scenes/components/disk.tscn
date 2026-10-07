@@ -9,3 +9,7 @@ offset_right = 120.0
 offset_bottom = 36.0
 mouse_filter = 2
 script = ExtResource("1_disk")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+show_behind_parent = true
+color = Color(0.1, 0.1, 0.15, 0.18)
