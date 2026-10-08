@@ -76,6 +76,9 @@ const ICON_COLORS: Dictionary = {
 	"hint": Color("9d8cff"),
 	"hint_base": Color("5b4fc4"),
 	"undo": Color("b4c3d6"),
+	# Bonus levels: gift box and ribbon.
+	"gift": Color("e76f51"),
+	"gift_ribbon": Color("f4b400"),
 	# Frozen disk (bonus mechanics): frosted rim and cracks.
 	"ice": Color("e6f7ff"),
 	"ice_edge": Color("4fb3e8"),
@@ -167,6 +170,13 @@ static func build_theme(colors: Dictionary) -> Theme:
 	card.content_margin_top = 36.0
 	card.content_margin_bottom = 36.0
 	built.set_stylebox("panel", "CardPanel", card)
+
+	# Bonus level cells in the level select: an accent tile, unlike the grey levels.
+	built.set_type_variation("BonusButton", "Button")
+	built.set_stylebox("normal", "BonusButton", _box(colors["accent"]))
+	built.set_stylebox("hover", "BonusButton", _box(colors["accent"].lightened(0.1)))
+	built.set_stylebox("pressed", "BonusButton", _box(colors["accent"].darkened(0.15)))
+	built.set_stylebox("hover_pressed", "BonusButton", _box(colors["accent"].darkened(0.15)))
 
 	# One product row in the shop.
 	built.set_type_variation("RowPanel", "PanelContainer")

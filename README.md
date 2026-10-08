@@ -105,6 +105,30 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
 
+### Bonus səviyyələr
+
+8 bonus səviyyə [data/levels/bonus/](data/levels/bonus/)-dadır. Hər tabın sonunda bir dondurulmuş və bir dumanlı səviyyə var.
+
+- **Necə işləyir:**
+  - Bonus səviyyələr həmişə açıqdır və açılma sayğacına (15/10/10) daxil olmur.
+  - Ulduzları ümumi saya düşür (624), coin verir.
+- **Faylların quruluşu:**
+  - ID-lər 9001-dən başlayır, `"difficulty": "bonus"`.
+  - Hansı səviyyənin hansı tabda olduğunu `index.json` göstərir.
+- **Dondurulmuş disk:** `"rules": [..., "frozen_disk"]`, `"rule_params": {"frozen_disk": {"disk_size": 2}}`.
+  - Disk heç vaxt tərpənmir, üstünə kiçik disk qoyula bilər.
+  - Solver və Generator dəyişməyib.
+- **Örtülü qüllə:** `"covered_pegs": [1, 2]`. Yalnız vizual qatdır: qüllədən ilk istifadədə duman açılır, "Yenidən" ilə qayıdır. Hədəf önizləməsində də eyni duman var.
+- **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
+
+  ```powershell
+  godot --headless --path . --script res://tools/bonus_level_builder.gd
+  ```
+- **Validator-un dizayn qaydaları:**
+  - dondurulmuş disk ən alt disk ola bilməz və ən qısa həlli uzatmalıdır;
+  - örtülü qüllədə ən azı 2 disk olmalıdır;
+  - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır.
+
 ### Yeni qayda əlavə etmək
 
 1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın:
@@ -145,6 +169,9 @@ Solver-ə toxunmaq lazım deyil.
 | UX-6 | Hədəf önizləməsində hər diskin üstündə ölçü rəqəmi; önizləmə hündürlüyü disk sayına uyğunlaşır | ✅ |
 | UX-7 | Kodla çəkilən ikonlar (coin, hint lampası, undo oxu), sabit funksional rənglər, `PolishedButton.icon_kind` | ✅ |
 | UX-8 | Yeni coin balansı, mağaza (stub alış, reklam, 24 s limitsiz Hint), gündəlik pulsuz undo | ✅ |
+| B-1 | Bonus: Dondurulmuş disk (`FrozenDiskRule`), 4 səviyyə ([əlavə sənəd 4](../MindShift_Bonus_Mechanics_Addendum.md)) | ✅ |
+| B-2 | Bonus: Örtülü qüllə (`PegFog`, yalnız vizual), 4 səviyyə | ✅ |
+| B-3 | Bonus xanaları hər tabın sonunda (hədiyyə ikonu, həmişə açıq) | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər

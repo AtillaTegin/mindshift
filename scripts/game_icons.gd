@@ -6,7 +6,7 @@ extends RefCounted
 ## - hint: a light bulb (a circle on a narrowing base)
 ## - undo: a counter-clockwise curved arrow (a polyline with an arrowhead)
 
-const KINDS: Array[String] = ["coin", "hint", "undo"]
+const KINDS: Array[String] = ["coin", "hint", "undo", "gift"]
 ## Alpha of an icon on a disabled button.
 const DIMMED_ALPHA: float = 0.4
 
@@ -26,6 +26,8 @@ static func draw(canvas: CanvasItem, kind: String, rect: Rect2, dimmed: bool = f
 			_draw_hint(canvas, square, alpha)
 		"undo":
 			_draw_undo(canvas, square, alpha)
+		"gift":
+			_draw_gift(canvas, square, alpha)
 
 
 static func _square(rect: Rect2) -> Rect2:
@@ -66,6 +68,20 @@ static func _draw_hint(canvas: CanvasItem, square: Rect2, alpha: float) -> void:
 	# Small reflection.
 	canvas.draw_arc(bulb_center, bulb_radius * 0.6, deg_to_rad(200.0), deg_to_rad(250.0), 6,
 			_color("coin_shine", 0.8 * alpha), 0.05 * s, true)
+
+
+## Gift (bonus levels): a box with a lid, a ribbon cross and a two-loop bow.
+static func _draw_gift(canvas: CanvasItem, square: Rect2, alpha: float) -> void:
+	var s: float = square.size.x
+	var o: Vector2 = square.position
+	var box: Color = _color("gift", alpha)
+	var ribbon: Color = _color("gift_ribbon", alpha)
+	canvas.draw_rect(Rect2(o + Vector2(0.14, 0.42) * s, Vector2(0.72, 0.48) * s), box)
+	canvas.draw_rect(Rect2(o + Vector2(0.08, 0.3) * s, Vector2(0.84, 0.16) * s), box.lightened(0.15))
+	canvas.draw_rect(Rect2(o + Vector2(0.44, 0.3) * s, Vector2(0.12, 0.6) * s), ribbon)
+	canvas.draw_rect(Rect2(o + Vector2(0.08, 0.34) * s, Vector2(0.84, 0.07) * s), ribbon)
+	for side: float in [-1.0, 1.0]:
+		canvas.draw_circle(o + Vector2(0.5 + side * 0.13, 0.22) * s, 0.1 * s, ribbon, false, 0.05 * s, true)
 
 
 static func _draw_undo(canvas: CanvasItem, square: Rect2, alpha: float) -> void:

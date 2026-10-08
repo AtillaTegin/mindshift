@@ -43,7 +43,14 @@ func play_level(tier: String, index: int) -> void:
 	_go(GAME_BOARD)
 
 
-## The level the game board should open, once; {} if none was requested.
+## Opens bonus level `file_name` (data/levels/bonus/).
+func play_bonus(file_name: String) -> void:
+	_pending_level = {"bonus": file_name}
+	_go(GAME_BOARD)
+
+
+## The level the game board should open, once: {tier, index}, {bonus: file},
+## or {} if none was requested.
 func take_pending_level() -> Dictionary:
 	var pending: Dictionary = _pending_level
 	_pending_level = {}

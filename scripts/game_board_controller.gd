@@ -130,7 +130,8 @@ func _ready() -> void:
 	add_child(_popup)
 	var pending: Dictionary = app.take_pending_level() if app != null else {}
 	if not pending.is_empty():
-		var level: Level = LevelCatalog.load_level(pending["tier"], pending["index"])
+		var level: Level = LevelCatalog.load_bonus(pending["bonus"]) if pending.has("bonus") \
+				else LevelCatalog.load_level(pending["tier"], pending["index"])
 		if level != null:
 			start_level(level)
 			return
@@ -302,15 +303,21 @@ func _pinned_disks() -> Array[int]:
 	return pinned
 
 
+## The main level after this one; {} after the last one and for bonus levels
+## (they are side trips, so "Next" never leads out of them).
 func _next_level() -> Dictionary:
 	var level: Level = session.level
+	if level.is_bonus():
+		return {}
 	return LevelCatalog.next_after(level.difficulty, Difficulty.index_of_id(level.id))
 
 
+## Back to the level select, on the tab this level belongs to (a bonus
+## level's own tab).
 func _show_level_select() -> void:
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
-		app.show_level_select(session.level.difficulty if session != null else "")
+		app.show_level_select(LevelCatalog.economy_tier(session.level) if session != null else "")
 
 
 ## Spec 4.6/4.9: stars from the move count, saved right away, coins for the
@@ -325,6 +332,8 @@ func _on_solved() -> void:
 	last_result = {"stars": stars, "improved": improved, "reward": reward}
 	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
 			improved, not _next_level().is_empty(), reward)
+	# A bonus level has no "next": the popup offers replay and the level list only.
+	_popup.set_next_visible(not level.is_bonus())
 	level_completed.emit(level, session.move_count, session.elapsed_seconds)
 
 

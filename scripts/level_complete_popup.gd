@@ -114,6 +114,11 @@ func show_result(stars: int, moves: int, min_moves: int, seconds: float, improve
 	_star_count = stars
 
 
+## Hides the "next level" button (bonus levels have no next level).
+func set_next_visible(shown: bool) -> void:
+	_next_button.visible = shown
+
+
 ## Stars earned in the shown result (the animation fills them one by one).
 func get_star_count() -> int:
 	return _star_count

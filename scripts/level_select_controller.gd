@@ -3,6 +3,7 @@ extends Control
 ## stars earned, locked levels greyed out.
 
 signal level_chosen(tier: String, index: int)
+signal bonus_chosen(file_name: String)
 
 ## Tabs of tiers that are still locked are drawn faded (still tappable, so the
 ## player can read what opens them).
@@ -48,6 +49,10 @@ func _ready() -> void:
 func show_tier(tier: String) -> void:
 	current_tier = tier
 	_tab_buttons[tier].set_pressed_no_signal(true)
+	# Locked tabs are faded, except the one being shown, so it is clear which is open.
+	for other: String in _tab_buttons:
+		var faded: bool = other != tier and not LevelCatalog.is_tier_unlocked(other, save_system)
+		_tab_buttons[other].modulate.a = LOCKED_TAB_ALPHA if faded else 1.0
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
 		app.selected_tier = tier
@@ -65,11 +70,31 @@ func show_tier(tier: String) -> void:
 				not LevelCatalog.is_unlocked(tier, index, save_system))
 		cell.pressed.connect(_on_cell_pressed.bind(index))
 		_grid.add_child(cell)
+	# Bonus levels close the tab: always open, never counted toward unlocking.
+	for entry: Dictionary in LevelCatalog.bonus_for_tab(tier):
+		var bonus_cell: LevelCell = LevelCell.new()
+		bonus_cell.custom_minimum_size = Vector2(0, 124)
+		bonus_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bonus_cell.setup_bonus(save_system.get_stars(entry["id"]))
+		bonus_cell.pressed.connect(_on_bonus_pressed.bind(entry["file"]))
+		_grid.add_child(bonus_cell)
 
 
 ## Cell of the `index`-th level of the current tab (1-based).
 func get_cell(index: int) -> LevelCell:
 	return _grid.get_child(index - 1) as LevelCell
+
+
+## The `index`-th bonus cell of the current tab (1-based), after the levels.
+func get_bonus_cell(index: int) -> LevelCell:
+	return _grid.get_child(LevelCatalog.level_count(current_tier) + index - 1) as LevelCell
+
+
+func _on_bonus_pressed(file_name: String) -> void:
+	bonus_chosen.emit(file_name)
+	var app: Node = get_node_or_null("/root/App")
+	if app != null:
+		app.play_bonus(file_name)
 
 
 ## The line under the tabs: the tier's size, or for a locked tier what opens it.

@@ -63,7 +63,8 @@ func _notification(what: int) -> void:
 
 
 func _update_progress() -> void:
-	var total_levels: int = 0
+	# Bonus stars count too (user decision 2026-10-09); only unlocking ignores them.
+	var total_levels: int = LevelCatalog.bonus_entries().size()
 	for tier: String in Difficulty.ORDER:
 		total_levels += LevelCatalog.level_count(tier)
 	_progress_label.text = tr("MENU_PROGRESS") % [_save.get_total_stars(), total_levels * 3]
