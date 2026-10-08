@@ -90,6 +90,7 @@ func _ready() -> void:
 			economy.setup(save_system)
 			add_child(economy)
 	economy.coins_changed.connect(func(_coins: int) -> void: _update_buttons())
+	economy.allowances_changed.connect(_update_buttons)
 	coaching = COACHING_SCENE.instantiate()
 	add_child(coaching)
 	hints = HintController.new()
@@ -180,13 +181,12 @@ func request_hint() -> void:
 		hints.request()
 
 
-## Takes back the last move. The first FREE_UNDOS_PER_ATTEMPT undos are free,
-## later ones cost EconomySystem.UNDO_COST.
+## Takes back the last move. The first EconomySystem.FREE_UNDOS_PER_DAY undos
+## of a day are free (over all levels), later ones cost EconomySystem.UNDO_COST.
 func request_undo() -> void:
 	if session == null or not session.can_undo():
 		return
-	var cost: int = EconomySystem.undo_cost(session.undo_count)
-	if not economy.spend(cost):
+	if not economy.pay_for_undo():
 		show_message(tr("BOARD_UNDO_NO_COINS"))
 		return
 	session.undo()
@@ -277,8 +277,8 @@ func _show_level_select() -> void:
 		app.show_level_select(session.level.difficulty if session != null else "")
 
 
-## Spec 4.6/4.9: stars from the move count, saved right away, coins for newly
-## earned stars (spec 4.8), then the popup.
+## Spec 4.6/4.9: stars from the move count, saved right away, coins for the
+## improvement over the best result so far (addendum 8.1), then the popup.
 func _on_solved() -> void:
 	var level: Level = session.level
 	var stars: int = level.stars_for_moves(session.move_count)
@@ -299,10 +299,13 @@ func _update_buttons() -> void:
 	# The coin icon next to it says what the number is.
 	_coin_label.text = str(economy.coins)
 	_hint_button.disabled = locked or session.is_solved() or hints.is_pending()
-	_hint_button.text = tr("BOARD_HINT") % EconomySystem.HINT_COST
+	if economy.has_unlimited_hints():
+		_hint_button.text = tr("BOARD_HINT_UNLIMITED")
+	else:
+		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(session.level.difficulty)
 	_undo_button.disabled = locked or not session.can_undo()
 	_restart_button.disabled = locked
-	var free_left: int = EconomySystem.FREE_UNDOS_PER_ATTEMPT - session.undo_count
+	var free_left: int = economy.free_undos_left()
 	if free_left > 0:
 		_undo_button.text = tr("BOARD_UNDO_FREE") % free_left
 	else:

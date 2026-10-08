@@ -162,6 +162,15 @@ static func build_theme(colors: Dictionary) -> Theme:
 	card.content_margin_top = 36.0
 	card.content_margin_bottom = 36.0
 	built.set_stylebox("panel", "CardPanel", card)
+
+	# One product row in the shop.
+	built.set_type_variation("RowPanel", "PanelContainer")
+	var row: StyleBoxFlat = _box(colors["surface"], 18)
+	row.content_margin_left = 20.0
+	row.content_margin_right = 16.0
+	row.content_margin_top = 14.0
+	row.content_margin_bottom = 14.0
+	built.set_stylebox("panel", "RowPanel", row)
 	return built
 
 

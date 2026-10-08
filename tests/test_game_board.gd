@@ -194,9 +194,9 @@ func _lay_out() -> void:
 	_board.propagate_notification(Container.NOTIFICATION_SORT_CHILDREN)
 
 
-func test_hint_shows_scrim_ring_and_pointer_and_costs_a_coin() -> void:
+func test_hint_shows_scrim_ring_and_pointer_and_costs_coins() -> void:
 	_lay_out()
-	_save.coins = 2
+	_save.coins = EconomySystem.hint_cost_for_tier("easy") + 1
 	var level: Level = _board.session.level
 	var move: Move = level.solution_path[0]
 	_board.request_hint()
@@ -229,7 +229,7 @@ func test_hint_shows_scrim_ring_and_pointer_and_costs_a_coin() -> void:
 
 
 func test_hint_off_the_path_uses_the_solver() -> void:
-	_save.coins = 5
+	_save.coins = 8
 	var level: Level = _board.session.level
 	var first: Move = level.solution_path[0]
 	# A legal move that leaves the stored solution.
@@ -242,7 +242,7 @@ func test_hint_off_the_path_uses_the_solver() -> void:
 	var remaining: int = Solver.solve(_board.session.state, level.goal, _board.session.rules)["min_moves"]
 	_board.request_hint()
 	assert_not_null(_board.hints.hint_move)
-	assert_eq(_save.coins, 4)
+	assert_eq(_save.coins, 8 - EconomySystem.hint_cost_for_tier("easy"))
 	assert_true(_board.coaching.ring.visible)
 	var after: PuzzleState = _board.session.rules.apply_move(_board.session.state, _board.hints.hint_move)
 	assert_eq(Solver.solve(after, level.goal, _board.session.rules)["min_moves"], remaining - 1, "hint is optimal")
@@ -261,7 +261,7 @@ func test_undo_is_free_three_times_then_costs() -> void:
 	_save.coins = 1
 	var first: Move = _board.session.level.solution_path[0]
 	var back: Move = Move.new(first.to_peg, first.from_peg)
-	for i: int in EconomySystem.FREE_UNDOS_PER_ATTEMPT:
+	for i: int in EconomySystem.FREE_UNDOS_PER_DAY:
 		_play([first])
 		_board.request_undo()
 		assert_eq(_board.session.move_count, 0)
@@ -277,19 +277,30 @@ func test_undo_is_free_three_times_then_costs() -> void:
 	assert_eq(_label("StatusLabel"), "Geri qaytarmaq üçün coin çatmır")
 	_play([back])
 	assert_eq(_board.session.move_count, 2)
-
-
-func test_completion_pays_for_new_stars_only() -> void:
-	_save.coins = 0
-	_play(_board.session.level.solution_path)
-	assert_eq(_board.last_result["reward"], 3 * EconomySystem.COINS_PER_NEW_STAR)
-	assert_eq(_save.coins, 3 * EconomySystem.COINS_PER_NEW_STAR)
-	var popup_text: String = (_board.get_popup().get_node("%RecordLabel") as Label).text
-	assert_true(popup_text.contains("+%d coin" % (3 * EconomySystem.COINS_PER_NEW_STAR)), popup_text)
 	_board.restart()
-	_play(_board.session.level.solution_path)
-	assert_eq(_board.last_result["reward"], 0, "replay pays nothing")
-	assert_eq(_save.coins, 3 * EconomySystem.COINS_PER_NEW_STAR)
+	assert_eq(_board.economy.free_undos_left(), 0, "free undos are per day, a restart does not refill them")
+
+
+func test_completion_pays_by_stars_and_replays_only_the_improvement() -> void:
+	_save.coins = 0
+	var level: Level = _board.session.level
+	var first: Move = level.solution_path[0]
+	var detour: Array[Move] = [first, Move.new(first.to_peg, first.from_peg)]
+	detour.append_array(level.solution_path)
+	_play(detour)
+	var stars: int = _board.last_result["stars"]
+	assert_true(stars < 3)
+	assert_eq(_board.last_result["reward"], EconomySystem.star_reward(stars), "first completion pays the full table value")
+	_board.restart()
+	_play(level.solution_path)
+	assert_eq(_board.last_result["reward"], 8 - EconomySystem.star_reward(stars), "3 stars pay only the difference")
+	assert_eq(_save.coins, 8)
+	var popup_text: String = (_board.get_popup().get_node("%RecordLabel") as Label).text
+	assert_true(popup_text.contains("+%d coin" % (8 - EconomySystem.star_reward(stars))), popup_text)
+	_board.restart()
+	_play(level.solution_path)
+	assert_eq(_board.last_result["reward"], 0, "replaying for coins pays nothing")
+	assert_eq(_save.coins, 8)
 
 
 func test_every_generated_easy_level_loads() -> void:

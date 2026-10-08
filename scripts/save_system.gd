@@ -8,8 +8,11 @@ extends RefCounted
 ## { "version": 1, "coins": 120,
 ##   "completed_levels": { "1001": { "stars": 3, "best_moves": 7, "best_time_seconds": 95 } },
 ##   "last_daily_bonus_date": "2026-10-06" or null,
-##   "settings": { "sound_enabled": true, "theme": "light", "language": "az" } }
-## (theme and language were added later; older saves without them still load.)
+##   "settings": { "sound_enabled": true, "theme": "light", "language": "az" },
+##   "daily": { "date": "2026-10-09", "free_undos_used": 1, "ads_watched": 0 },
+##   "unlimited_hints_until": 0 }
+## (settings.theme/language, daily and unlimited_hints_until were added later;
+## older saves without them still load.)
 
 const DEFAULT_PATH: String = "user://save.json"
 const VERSION: int = 1
@@ -25,6 +28,13 @@ var sound_enabled: bool = true
 var theme: String = "light"
 ## Language code, e.g. "az" (see Languages).
 var language: String = "az"
+## Day the daily counters below belong to ("YYYY-MM-DD"); EconomySystem resets
+## them when the day changes.
+var daily_date: String = ""
+var free_undos_used: int = 0
+var ads_watched: int = 0
+## Unix time (seconds) until which hints are free; 0 = never bought.
+var unlimited_hints_until: int = 0
 
 
 func _init(p_path: String = DEFAULT_PATH) -> void:
@@ -72,6 +82,8 @@ func to_dict() -> Dictionary:
 		"completed_levels": completed_levels.duplicate(true),
 		"last_daily_bonus_date": last_daily_bonus_date if not last_daily_bonus_date.is_empty() else null,
 		"settings": {"sound_enabled": sound_enabled, "theme": theme, "language": language},
+		"daily": {"date": daily_date, "free_undos_used": free_undos_used, "ads_watched": ads_watched},
+		"unlimited_hints_until": unlimited_hints_until,
 	}
 
 
@@ -151,6 +163,10 @@ func _reset() -> void:
 	sound_enabled = true
 	theme = "light"
 	language = "az"
+	daily_date = ""
+	free_undos_used = 0
+	ads_watched = 0
+	unlimited_hints_until = 0
 
 
 ## Reads what it can; malformed entries are skipped rather than failing the load.
@@ -179,6 +195,12 @@ func _read(data: Dictionary) -> void:
 			theme = settings["theme"]
 		if typeof(settings.get("language")) == TYPE_STRING:
 			language = settings["language"]
+	var daily: Variant = data.get("daily")
+	if typeof(daily) == TYPE_DICTIONARY and typeof(daily.get("date")) == TYPE_STRING:
+		daily_date = daily["date"]
+		free_undos_used = maxi(_as_int(daily.get("free_undos_used"), 0), 0)
+		ads_watched = maxi(_as_int(daily.get("ads_watched"), 0), 0)
+	unlimited_hints_until = maxi(_as_int(data.get("unlimited_hints_until"), 0), 0)
 
 
 static func _as_int(value: Variant, fallback: int) -> int:

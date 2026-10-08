@@ -97,7 +97,7 @@ func test_undo_restores_position_and_count() -> void:
 	assert_eq(session.move_count, 0)
 	assert_false(session.undo())
 	session.restart()
-	assert_eq(session.undo_count, 0, "free undos come back with a restart")
+	assert_eq(session.undo_count, 0, "the per-attempt count restarts (free undos are daily, see test_economy)")
 
 
 func test_no_undo_after_solving() -> void:

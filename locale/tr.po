@@ -25,8 +25,80 @@ msgstr ""
 msgid "SHOP_TITLE"
 msgstr ""
 
-#. [TODO: TR] az: Tezliklə: coin paketləri və xüsusi təkliflər
-msgid "SHOP_COMING_SOON"
+#. [TODO: TR] az: Demo rejimi: alışlar pulsuzdur, real ödəniş hələ qoşulmayıb.
+msgid "SHOP_DEMO_NOTE"
+msgstr ""
+
+#. [TODO: TR] az: Kiçik coin paketi
+msgid "SHOP_COINS_SMALL"
+msgstr ""
+
+#. [TODO: TR] az: Orta coin paketi
+msgid "SHOP_COINS_MEDIUM"
+msgstr ""
+
+#. [TODO: TR] az: Böyük coin paketi
+msgid "SHOP_COINS_LARGE"
+msgstr ""
+
+#. [TODO: TR] az: +%d coin
+msgid "SHOP_COINS_DETAIL"
+msgstr ""
+
+#. [TODO: TR] az: Reklam izlə
+msgid "SHOP_AD_TITLE"
+msgstr ""
+
+#. [TODO: TR] az: +%d coin · bu gün %d/%d qaldı
+msgid "SHOP_AD_DETAIL"
+msgstr ""
+
+#. [TODO: TR] az: İzlə
+msgid "SHOP_AD_BUTTON"
+msgstr ""
+
+#. [TODO: TR] az: Limitsiz Hint
+msgid "SHOP_HINTS_TITLE"
+msgstr ""
+
+#. [TODO: TR] az: %d saat ərzində bütün hint-lər pulsuz
+msgid "SHOP_HINTS_DETAIL"
+msgstr ""
+
+#. [TODO: TR] az: Aktivdir, %s qaldı
+msgid "SHOP_HINTS_ACTIVE"
+msgstr ""
+
+#. [TODO: TR] az: Reklamları sil
+msgid "SHOP_REMOVE_ADS_TITLE"
+msgstr ""
+
+#. [TODO: TR] az: Reklamlar əlavə olunanda
+msgid "SHOP_REMOVE_ADS_DETAIL"
+msgstr ""
+
+#. [TODO: TR] az: Tezliklə
+msgid "SHOP_SOON"
+msgstr ""
+
+#. [TODO: TR] az: Bu məhsul hələ satışda deyil
+msgid "SHOP_NOT_AVAILABLE"
+msgstr ""
+
+#. [TODO: TR] az: +%d coin əlavə olundu (demo)
+msgid "SHOP_BOUGHT_COINS"
+msgstr ""
+
+#. [TODO: TR] az: %d saatlıq limitsiz Hint aktivdir (demo)
+msgid "SHOP_BOUGHT_HINTS"
+msgstr ""
+
+#. [TODO: TR] az: +%d coin (demo reklam)
+msgid "SHOP_AD_DONE"
+msgstr ""
+
+#. [TODO: TR] az: Bu günlük reklam limiti bitdi
+msgid "SHOP_AD_LIMIT"
 msgstr ""
 
 #. [TODO: TR] az: Ulduz: %d / %d
@@ -99,6 +171,10 @@ msgstr ""
 
 #. [TODO: TR] az: Hint · %d coin
 msgid "BOARD_HINT"
+msgstr ""
+
+#. [TODO: TR] az: Hint · limitsiz
+msgid "BOARD_HINT_UNLIMITED"
 msgstr ""
 
 #. [TODO: TR] az: Geri (pulsuz: %d)

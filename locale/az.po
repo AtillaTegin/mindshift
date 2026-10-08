@@ -22,8 +22,62 @@ msgstr "Parametrlər"
 msgid "SHOP_TITLE"
 msgstr "Mağaza"
 
-msgid "SHOP_COMING_SOON"
-msgstr "Tezliklə: coin paketləri və xüsusi təkliflər"
+msgid "SHOP_DEMO_NOTE"
+msgstr "Demo rejimi: alışlar pulsuzdur, real ödəniş hələ qoşulmayıb."
+
+msgid "SHOP_COINS_SMALL"
+msgstr "Kiçik coin paketi"
+
+msgid "SHOP_COINS_MEDIUM"
+msgstr "Orta coin paketi"
+
+msgid "SHOP_COINS_LARGE"
+msgstr "Böyük coin paketi"
+
+msgid "SHOP_COINS_DETAIL"
+msgstr "+%d coin"
+
+msgid "SHOP_AD_TITLE"
+msgstr "Reklam izlə"
+
+msgid "SHOP_AD_DETAIL"
+msgstr "+%d coin · bu gün %d/%d qaldı"
+
+msgid "SHOP_AD_BUTTON"
+msgstr "İzlə"
+
+msgid "SHOP_HINTS_TITLE"
+msgstr "Limitsiz Hint"
+
+msgid "SHOP_HINTS_DETAIL"
+msgstr "%d saat ərzində bütün hint-lər pulsuz"
+
+msgid "SHOP_HINTS_ACTIVE"
+msgstr "Aktivdir, %s qaldı"
+
+msgid "SHOP_REMOVE_ADS_TITLE"
+msgstr "Reklamları sil"
+
+msgid "SHOP_REMOVE_ADS_DETAIL"
+msgstr "Reklamlar əlavə olunanda"
+
+msgid "SHOP_SOON"
+msgstr "Tezliklə"
+
+msgid "SHOP_NOT_AVAILABLE"
+msgstr "Bu məhsul hələ satışda deyil"
+
+msgid "SHOP_BOUGHT_COINS"
+msgstr "+%d coin əlavə olundu (demo)"
+
+msgid "SHOP_BOUGHT_HINTS"
+msgstr "%d saatlıq limitsiz Hint aktivdir (demo)"
+
+msgid "SHOP_AD_DONE"
+msgstr "+%d coin (demo reklam)"
+
+msgid "SHOP_AD_LIMIT"
+msgstr "Bu günlük reklam limiti bitdi"
 
 msgid "MENU_PROGRESS"
 msgstr "Ulduz: %d / %d"
@@ -78,6 +132,9 @@ msgstr "Minimum: %d"
 
 msgid "BOARD_HINT"
 msgstr "Hint · %d coin"
+
+msgid "BOARD_HINT_UNLIMITED"
+msgstr "Hint · limitsiz"
 
 msgid "BOARD_UNDO_FREE"
 msgstr "Geri (pulsuz: %d)"

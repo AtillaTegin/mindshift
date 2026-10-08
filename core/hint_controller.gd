@@ -3,7 +3,8 @@ extends Node
 ## Spec 4.7 hint, presented on the coaching overlay (addendum 2.3): the scrim
 ## dims the board, a ring marks the disk to move and a ghost finger shows where
 ## it goes. It never moves the disk. The Day 6 rules are unchanged: a hint costs
-## EconomySystem.HINT_COST, asking again in the same position is free, on the
+## EconomySystem.hint_cost() for the level's tier (free while unlimited hints are
+## active), asking again in the same position is free, on the
 ## stored solution path the answer is instant, and off the path the Solver runs
 ## on a worker thread so the screen never freezes.
 
@@ -58,7 +59,7 @@ func request() -> void:
 	if hint_move != null and key == _hint_key:
 		_present()
 		return
-	if not _economy.can_afford(EconomySystem.HINT_COST):
+	if not _economy.can_afford(_economy.hint_cost(session.level.difficulty)):
 		message_changed.emit(tr("HINT_NO_COINS"))
 		return
 	var on_path: Move = session.get_path_hint()
@@ -112,7 +113,7 @@ func _apply(move: Move, key: String) -> void:
 	if move == null:
 		message_changed.emit(tr("HINT_NOT_FOUND"))
 		return
-	_economy.spend(EconomySystem.HINT_COST)
+	_economy.spend(_economy.hint_cost(_board.session.level.difficulty))
 	hint_move = move
 	_hint_key = key
 	message_changed.emit("")

@@ -26,9 +26,18 @@ Açıq bölmənin içində səviyyələr ardıcıl açılır. Artıq tamamlanmı
 "Oyna" ən çətin açıq bölmənin növbəti bitməmiş səviyyəsini açır.
 Rəqəmlər [core/difficulty.gd](core/difficulty.gd)-də `UNLOCK_AFTER_COMPLETED` sabitindədir.
 
-Economy (v1 fərziyyələri, hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir):
-hint 1 coin (eyni vəziyyətdə təkrar basmaq pulsuzdur), hər cəhddə 3 pulsuz undo, sonra hər biri 1 coin,
-hər yeni qazanılan ulduz üçün 2 coin, gündəlik giriş bonusu 5 coin. Undo gedişi sayğacdan da geri alır.
+Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), 8.1). Hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir:
+- Mükafat: 3★ = 8, 2★ = 5, 1★ = 3 coin. Təkrar oyunda yalnız əvvəlki ən yaxşı nəticədən fərq verilir.
+- Gündəlik giriş bonusu 10 coin.
+- Hint Asan/Orta-da 3, Çətin/Ekspert-də 5 coin. Eyni vəziyyətdə təkrar basmaq pulsuzdur.
+- Gündə 3 pulsuz undo var (bütün səviyyələr üçün ortaq), sonra hər biri 1 coin. Undo gedişi sayğacdan da geri alır.
+
+Mağaza ([scripts/shop_catalog.gd](scripts/shop_catalog.gd)) **stub rejimindədir**: alış məhsulu dərhal verir, real ödəniş yoxdur.
+- Coin paketləri: 60 / 200 / 500 coin ($0.99 / $2.99 / $6.99).
+- Reklam: 5 coin, gündə 5 dəfə.
+- "24 saat limitsiz Hint": $0.99.
+- "Reklamları sil" reklam sistemi gələnə qədər bağlıdır.
+- Google Play Billing [scripts/store_service.gd](scripts/store_service.gd)-dəki `# TODO: real Billing SDK` yerlərinə qoşulacaq.
 
 Saniyəölçən gediş sayğacının yanındadır: ilk gedişlə başlayır, səviyyə həll olunanda dayanır, "Yenidən" ilə sıfırlanır.
 Popup və save-dəki `best_time_seconds` eyni vaxtı göstərir (saniyə aşağı kəsilir).
@@ -132,6 +141,7 @@ Solver-ə toxunmaq lazım deyil.
 | UX-5 | Ana menyu: Oyna, Səviyyələr, Mağaza (ekran hələlik boşdur, Bölmə 8 doldurur), Parametrlər | ✅ |
 | UX-6 | Hədəf önizləməsində hər diskin üstündə ölçü rəqəmi; önizləmə hündürlüyü disk sayına uyğunlaşır | ✅ |
 | UX-7 | Kodla çəkilən ikonlar (coin, hint lampası, undo oxu), sabit funksional rənglər, `PolishedButton.icon_kind` | ✅ |
+| UX-8 | Yeni coin balansı, mağaza (stub alış, reklam, 24 s limitsiz Hint), gündəlik pulsuz undo | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
