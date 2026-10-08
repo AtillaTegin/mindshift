@@ -59,7 +59,7 @@ func request() -> void:
 	if hint_move != null and key == _hint_key:
 		_present()
 		return
-	if not _economy.can_afford(_economy.hint_cost(session.level.difficulty)):
+	if not _economy.can_afford(_economy.hint_cost(LevelCatalog.economy_tier(session.level))):
 		message_changed.emit(tr("HINT_NO_COINS"))
 		return
 	var on_path: Move = session.get_path_hint()
@@ -113,7 +113,7 @@ func _apply(move: Move, key: String) -> void:
 	if move == null:
 		message_changed.emit(tr("HINT_NOT_FOUND"))
 		return
-	_economy.spend(_economy.hint_cost(_board.session.level.difficulty))
+	_economy.spend(_economy.hint_cost(LevelCatalog.economy_tier(_board.session.level)))
 	hint_move = move
 	_hint_key = key
 	message_changed.emit("")

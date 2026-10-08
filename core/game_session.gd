@@ -4,7 +4,8 @@ extends RefCounted
 ## history, undo and hints, elapsed time. Pure logic without nodes, shared by
 ## the board UI and the tests.
 
-enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED }
+## BLOCKED: the top disk of the tapped peg may not be picked up (e.g. frozen).
+enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED }
 
 ## Search budget for hints off the stored solution path. The packed solver
 ## stays far below it for every shipped level size.
@@ -71,6 +72,8 @@ func tap_peg(peg_index: int) -> TapResult:
 	if selected_peg == -1:
 		if state.pegs[peg_index].is_empty():
 			return TapResult.IGNORED
+		if not rules.can_pick_up(state, peg_index):
+			return TapResult.BLOCKED
 		selected_peg = peg_index
 		return TapResult.SELECTED
 	if peg_index == selected_peg:

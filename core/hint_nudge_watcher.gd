@@ -36,6 +36,7 @@ func setup(board: GameBoard, coaching: CoachingLayer, hints: HintController, eco
 	board.position_changed.connect(_on_position_changed)
 	board.selection_changed.connect(_on_player_acted.unbind(1))
 	board.illegal_move.connect(_on_illegal_move)
+	board.pick_up_refused.connect(func(_peg: int, _message: String) -> void: _count_mistake())
 
 
 func is_showing() -> bool:
@@ -75,7 +76,7 @@ func _may_nudge() -> bool:
 	return session != null and not session.is_solved() \
 			and (_board.tutorial == null or _board.tutorial.mode == TutorialDirector.Mode.OFF) \
 			and _board.restricted_peg < 0 and not _hints.is_showing() and not _hints.is_pending() \
-			and _economy.can_afford(_economy.hint_cost(session.level.difficulty))
+			and _economy.can_afford(_economy.hint_cost(LevelCatalog.economy_tier(session.level)))
 
 
 func _show(why: String) -> void:
@@ -106,6 +107,11 @@ func _on_player_acted() -> void:
 
 
 func _on_illegal_move(_move: Move, _message: String) -> void:
+	_count_mistake()
+
+
+## A refused move or a tap on a pinned disk.
+func _count_mistake() -> void:
 	dismiss()
 	mistakes_in_a_row += 1
 	if mistakes_in_a_row < MISTAKES_IN_A_ROW or not _may_nudge():

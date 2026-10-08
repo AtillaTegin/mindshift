@@ -34,6 +34,8 @@ func _run() -> bool:
 			print("     - %s" % error)
 	var ok: bool = failures.is_empty() and report["files"] > 0
 	var counts: Dictionary = report["valid_counts"]
+	if counts.has(Difficulty.BONUS):
+		print("%-7s %4d valid levels" % [Difficulty.BONUS, counts[Difficulty.BONUS]])
 	for tier: String in Difficulty.ORDER:
 		var count: int = counts.get(tier, 0)
 		var status: String = ""
@@ -60,7 +62,7 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 		var file_names: Array = Array(DirAccess.get_files_at("%s/%s" % [levels_dir, tier]))
 		file_names.sort()
 		for file_name: String in file_names:
-			if not file_name.ends_with(".json"):
+			if not file_name.ends_with(".json") or file_name == LevelCatalog.BONUS_INDEX_FILE:
 				continue
 			files += 1
 			var path: String = "%s/%s/%s" % [levels_dir, tier, file_name]
@@ -80,7 +82,61 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 				valid_counts[tier] = valid_counts.get(tier, 0) + 1
 			else:
 				failures[path] = errors
+	if DirAccess.dir_exists_absolute("%s/%s" % [levels_dir, Difficulty.BONUS]):
+		var index_errors: Array[String] = validate_bonus_index(levels_dir)
+		if not index_errors.is_empty():
+			failures["%s/%s/%s" % [levels_dir, Difficulty.BONUS, LevelCatalog.BONUS_INDEX_FILE]] = index_errors
 	return {"files": files, "failures": failures, "valid_counts": valid_counts}
+
+
+## The bonus index must list every bonus level file exactly once, with the
+## level's own id and a tier tab, at most BONUS_PER_TAB per tab.
+static func validate_bonus_index(levels_dir: String) -> Array[String]:
+	var errors: Array[String] = []
+	var bonus_dir: String = "%s/%s" % [levels_dir, Difficulty.BONUS]
+	var entries: Array[Dictionary] = LevelCatalog.read_bonus_index("%s/%s" % [bonus_dir, LevelCatalog.BONUS_INDEX_FILE], errors)
+	var listed: Array[String] = []
+	var per_tab: Dictionary = {}
+	for entry: Dictionary in entries:
+		var file_name: String = entry["file"]
+		if listed.has(file_name):
+			errors.append("%s is listed twice" % file_name)
+		listed.append(file_name)
+		per_tab[entry["tab"]] = per_tab.get(entry["tab"], 0) + 1
+		var level_errors: Array[String] = []
+		var level: Level = Level.load_file("%s/%s" % [bonus_dir, file_name], level_errors)
+		if level == null:
+			errors.append("%s cannot be read" % file_name)
+		elif level.id != entry["id"]:
+			errors.append("%s has id %d, the index says %d" % [file_name, level.id, entry["id"]])
+	for tab: String in per_tab:
+		if per_tab[tab] > LevelCatalog.BONUS_PER_TAB:
+			errors.append("%d bonus levels in the %s tab (at most %d)" % [per_tab[tab], tab, LevelCatalog.BONUS_PER_TAB])
+	for file_name: String in DirAccess.get_files_at(bonus_dir):
+		if file_name.ends_with(".json") and file_name != LevelCatalog.BONUS_INDEX_FILE and not listed.has(file_name):
+			errors.append("%s is not in the index" % file_name)
+	return errors
+
+
+## Design rules of the bonus mechanics, on top of the normal checks. A frozen
+## disk must sit on another disk (a frozen bottom disk would just be a peg
+## base) and the freeze must make the level longer than plain Hanoi.
+static func validate_bonus_design(level: Level, errors: Array[String]) -> void:
+	var rules: RuleSet = level.get_rule_set()
+	if rules == null:
+		return
+	var pinned: Array[int] = []
+	for disk: int in range(1, level.get_disk_count() + 1):
+		if not rules.is_disk_movable(disk):
+			pinned.append(disk)
+	for disk: int in pinned:
+		for peg: Array in level.start.pegs:
+			if not peg.is_empty() and peg[0] == disk:
+				errors.append("frozen disk %d is the bottom disk of its peg" % disk)
+	if not pinned.is_empty():
+		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
+		if plain >= level.min_moves:
+			errors.append("the frozen disk changes nothing (%d moves without it)" % plain)
 
 
 ## Loads one level file and checks it on its own (folder must match the
@@ -92,6 +148,8 @@ static func load_and_validate(path: String, errors: Array[String]) -> Level:
 	var folder: String = path.get_base_dir().get_file()
 	if folder != level.difficulty:
 		errors.append("difficulty \"%s\" is stored in the \"%s\" folder" % [level.difficulty, folder])
+	elif level.is_bonus():
+		validate_bonus_design(level, errors)
 	elif Difficulty.accepts_id(level.difficulty, level.id):
 		# The game finds a level by id, so the file number must match it.
 		var expected_name: String = Difficulty.level_file_name(level.difficulty, Difficulty.index_of_id(level.id))

@@ -1,0 +1,24 @@
+{
+  "levels": [
+    {
+      "file": "frozen_01.json",
+      "id": 9001,
+      "tab": "easy"
+    },
+    {
+      "file": "frozen_02.json",
+      "id": 9002,
+      "tab": "medium"
+    },
+    {
+      "file": "frozen_03.json",
+      "id": 9003,
+      "tab": "hard"
+    },
+    {
+      "file": "frozen_04.json",
+      "id": 9004,
+      "tab": "expert"
+    }
+  ]
+}

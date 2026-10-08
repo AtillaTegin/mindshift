@@ -4,7 +4,16 @@ extends RefCounted
 ## no gaps (the generator writes them that way and the validator checks it).
 ## Files are probed by name, which also works inside an exported game.
 
+## Bonus levels (bonus mechanics addendum) are listed in
+## data/levels/bonus/index.json: { "levels": [{ "file", "id", "tab" }] }.
+## They are optional extras: always open, shown at the end of their tab, and
+## never counted toward unlocking a tier.
+const BONUS_INDEX_FILE: String = "index.json"
+const BONUS_PER_TAB: int = 2
+
 static var _counts: Dictionary = {}
+static var _bonus_entries: Array[Dictionary] = []
+static var _bonus_loaded: bool = false
 
 
 static func level_count(tier: String) -> int:
@@ -19,6 +28,83 @@ static func level_count(tier: String) -> int:
 
 static func clear_cache() -> void:
 	_counts.clear()
+	_bonus_entries.clear()
+	_bonus_loaded = false
+
+
+## Every bonus level in index order: [{ file, id, tab }].
+static func bonus_entries() -> Array[Dictionary]:
+	if not _bonus_loaded:
+		var errors: Array[String] = []
+		_bonus_entries = read_bonus_index(bonus_dir() + "/" + BONUS_INDEX_FILE, errors)
+		for error: String in errors:
+			push_error("Bonus index: %s" % error)
+		_bonus_loaded = true
+	return _bonus_entries
+
+
+## The bonus levels shown at the end of `tier`'s tab.
+static func bonus_for_tab(tier: String) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for entry: Dictionary in bonus_entries():
+		if entry["tab"] == tier:
+			entries.append(entry)
+	return entries
+
+
+## The index entry of bonus level `id`, or {}.
+static func bonus_entry_for_id(id: int) -> Dictionary:
+	for entry: Dictionary in bonus_entries():
+		if entry["id"] == id:
+			return entry
+	return {}
+
+
+## The tier whose prices apply to `level` (hint cost): its own tier, or for a
+## bonus level the tab it is shown in.
+static func economy_tier(level: Level) -> String:
+	if level.is_bonus():
+		return bonus_entry_for_id(level.id).get("tab", Difficulty.ORDER[0])
+	return level.difficulty
+
+
+## Short name for the board header: "Asan · 7", or "Bonus · 2" (index order).
+static func level_title(level: Level) -> String:
+	if level.is_bonus():
+		return "%s · %d" % [Difficulty.display_name(Difficulty.BONUS), level.id - Difficulty.BONUS_FIRST_ID + 1]
+	return "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
+
+
+static func bonus_dir() -> String:
+	return "%s/%s" % [Difficulty.LEVELS_DIR, Difficulty.BONUS]
+
+
+## The bonus level stored in `file_name`, or null.
+static func load_bonus(file_name: String) -> Level:
+	var errors: Array[String] = []
+	var level: Level = Level.load_file("%s/%s" % [bonus_dir(), file_name], errors)
+	if level == null:
+		push_error("Cannot load bonus %s: %s" % [file_name, "; ".join(errors)])
+	return level
+
+
+## Parses a bonus index file; problems go to `errors`. A missing file means
+## "no bonus levels" and is not an error.
+static func read_bonus_index(path: String, errors: Array[String]) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	if not FileAccess.file_exists(path):
+		return entries
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if typeof(data) != TYPE_DICTIONARY or typeof(data.get("levels")) != TYPE_ARRAY:
+		errors.append("index must be {\"levels\": [...]}")
+		return entries
+	for item: Variant in data["levels"]:
+		if typeof(item) != TYPE_DICTIONARY or typeof(item.get("file")) != TYPE_STRING \
+				or typeof(item.get("id")) not in [TYPE_INT, TYPE_FLOAT] or not Difficulty.ORDER.has(item.get("tab")):
+			errors.append("bad index entry %s" % str(item))
+			continue
+		entries.append({"file": item["file"], "id": int(item["id"]), "tab": item["tab"]})
+	return entries
 
 
 ## The level, or null if it does not exist or cannot be parsed.

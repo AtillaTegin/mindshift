@@ -1,23 +1,28 @@
 class_name Level
 extends RefCounted
 ## One puzzle level, stored as data/levels/<difficulty>/<difficulty>_NNN.json
-## (format: spec 4.5).
+## (format: spec 4.5). Bonus levels (bonus mechanics addendum) live in
+## data/levels/bonus/ with difficulty "bonus" and may use the optional keys.
 
 const TWO_STAR_FACTOR: float = 1.25
 ## Top-level keys, in the order they are written.
 const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal", "rules",
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
+## Keys a level may leave out; written only when not empty, so files without
+## them (all 200 main levels) keep exactly their old form.
+const OPTIONAL_KEYS: Array[String] = ["rule_params"]
 
 var id: int = 0
 var difficulty: String = ""
 var start: PuzzleState
 var goal: PuzzleState
 var rule_ids: Array[String] = []
+## Rule id -> that rule's settings ("rule_params"); empty for most levels.
+var rule_params: Dictionary = {}
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
 var two_star_moves: int = 0
-## Seconds, or null for no limit.
 ## Seconds to solve the level, or null. Kept in the format for a later
 ## "against the clock" mode; v1 ships no timed levels (LevelValidator enforces it).
 var time_limit_seconds: Variant = null
@@ -40,13 +45,14 @@ func stars_for_moves(moves: int) -> int:
 
 ## A level whose min_moves and star thresholds come from `path`.
 static func create(p_id: int, p_difficulty: String, p_start: PuzzleState, p_goal: PuzzleState,
-		p_rule_ids: Array[String], path: Array[Move]) -> Level:
+		p_rule_ids: Array[String], path: Array[Move], p_rule_params: Dictionary = {}) -> Level:
 	var level: Level = Level.new()
 	level.id = p_id
 	level.difficulty = p_difficulty
 	level.start = p_start.duplicate_state()
 	level.goal = p_goal.duplicate_state()
 	level.rule_ids.assign(p_rule_ids)
+	level.rule_params = p_rule_params.duplicate(true)
 	level.solution_path.assign(path)
 	level.min_moves = path.size()
 	level.two_star_moves = two_star_threshold(level.min_moves)
@@ -61,16 +67,20 @@ func get_disk_count() -> int:
 	return start.get_disk_count()
 
 
-## Null if a rule id is unknown.
-func get_rule_set() -> RuleSet:
-	return RuleSet.from_ids(rule_ids)
+## Null if a rule id is unknown or its rule_params do not fit (reason in errors).
+func get_rule_set(errors: Array[String] = []) -> RuleSet:
+	return RuleSet.from_ids(rule_ids, rule_params, errors)
+
+
+func is_bonus() -> bool:
+	return difficulty == Difficulty.BONUS
 
 
 func to_dict() -> Dictionary:
 	var path: Array = []
 	for move: Move in solution_path:
 		path.append(move.to_array())
-	return {
+	var data: Dictionary = {
 		"id": id,
 		"difficulty": difficulty,
 		"pegs": get_peg_count(),
@@ -83,14 +93,19 @@ func to_dict() -> Dictionary:
 		"star_thresholds": {"three": min_moves, "two": two_star_moves},
 		"time_limit_seconds": time_limit_seconds,
 	}
+	# Optional keys only when used, so main levels keep the exact spec format.
+	if not rule_params.is_empty():
+		data["rule_params"] = rule_params.duplicate(true)
+	return data
 
 
 ## One key per line with compact values, so files stay short and diff well.
 func to_json() -> String:
 	var data: Dictionary = to_dict()
 	var lines: PackedStringArray = PackedStringArray()
-	for key: String in KEYS:
-		lines.append("  %s: %s" % [JSON.stringify(key), JSON.stringify(data[key])])
+	for key: String in KEYS + OPTIONAL_KEYS:
+		if data.has(key):
+			lines.append("  %s: %s" % [JSON.stringify(key), JSON.stringify(data[key])])
 	return "{\n%s\n}\n" % ",\n".join(lines)
 
 
@@ -127,7 +142,7 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		if not data.has(key):
 			errors.append("missing key \"%s\"" % key)
 	for key: Variant in data:
-		if not key in KEYS:
+		if not key in KEYS and not key in OPTIONAL_KEYS:
 			errors.append("unknown key \"%s\"" % str(key))
 	if errors.size() > error_count:
 		return null
@@ -148,6 +163,11 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.rule_ids.assign(data["rules"])
 	else:
 		errors.append("\"rules\" must be an array of strings")
+	var params: Variant = data.get("rule_params", {})
+	if typeof(params) == TYPE_DICTIONARY and params.values().all(func(v: Variant) -> bool: return typeof(v) == TYPE_DICTIONARY):
+		level.rule_params = _whole_numbers_as_ints(params)
+	else:
+		errors.append("\"rule_params\" must be an object of objects")
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:
@@ -183,15 +203,22 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 ## state validity, solution_path replay and star thresholds. Appends problems
 ## to `errors`. Optimality of min_moves is checked by LevelValidator.
 func check(errors: Array[String]) -> void:
-	if not Difficulty.is_known(difficulty):
+	if is_bonus():
+		# Bonus levels sit outside the tiers: own id range, no move range.
+		if not Difficulty.is_bonus_id(id):
+			errors.append("id %d is outside the bonus range" % id)
+		if not Difficulty.accepts_bonus_size(get_peg_count(), get_disk_count()):
+			errors.append("%d pegs / %d disks is not a bonus size" % [get_peg_count(), get_disk_count()])
+	elif not Difficulty.is_known(difficulty):
 		errors.append("unknown difficulty \"%s\"" % difficulty)
 		return
-	if not Difficulty.accepts_id(difficulty, id):
-		errors.append("id %d is outside the %s range" % [id, difficulty])
-	if not Difficulty.accepts_size(difficulty, get_peg_count(), get_disk_count()):
-		errors.append("%d pegs / %d disks is not a %s size" % [get_peg_count(), get_disk_count(), difficulty])
-	if not Difficulty.accepts_moves(difficulty, min_moves):
-		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
+	else:
+		if not Difficulty.accepts_id(difficulty, id):
+			errors.append("id %d is outside the %s range" % [id, difficulty])
+		if not Difficulty.accepts_size(difficulty, get_peg_count(), get_disk_count()):
+			errors.append("%d pegs / %d disks is not a %s size" % [get_peg_count(), get_disk_count(), difficulty])
+		if not Difficulty.accepts_moves(difficulty, min_moves):
+			errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
 	if two_star_moves != two_star_threshold(min_moves):
 		errors.append("star_thresholds.two is %d, expected round(%d * 1.25) = %d" % [
 				two_star_moves, min_moves, two_star_threshold(min_moves)])
@@ -204,9 +231,11 @@ func check(errors: Array[String]) -> void:
 	if _sorted_disks(start) != expected_disks or _sorted_disks(goal) != expected_disks:
 		errors.append("start and goal must both hold exactly the disks 1..%d" % get_disk_count())
 		return
-	var rules: RuleSet = get_rule_set()
+	var rule_errors: Array[String] = []
+	var rules: RuleSet = get_rule_set(rule_errors)
 	if rules == null or rule_ids.is_empty():
-		errors.append("rules %s are empty or unknown" % str(rule_ids))
+		errors.append("rules %s are empty or unknown%s" % [str(rule_ids),
+				"" if rule_errors.is_empty() else ": " + "; ".join(rule_errors)])
 		return
 	if not rules.is_state_valid(start):
 		errors.append("start is not a valid position")
@@ -224,6 +253,22 @@ func check(errors: Array[String]) -> void:
 			return
 	if not state.equals(goal):
 		errors.append("solution_path does not end at the goal")
+
+
+## JSON numbers parse as floats; whole ones become ints again so a level writes
+## back exactly as it was read ("disk_size": 2, not 2.0).
+static func _whole_numbers_as_ints(value: Variant) -> Variant:
+	match typeof(value):
+		TYPE_FLOAT:
+			return int(value) if is_finite(value) and value == floorf(value) else value
+		TYPE_DICTIONARY:
+			var copy: Dictionary = {}
+			for key: Variant in value:
+				copy[key] = _whole_numbers_as_ints(value[key])
+			return copy
+		TYPE_ARRAY:
+			return (value as Array).map(_whole_numbers_as_ints)
+	return value
 
 
 static func _read_int(data: Dictionary, key: String, errors: Array[String]) -> int:

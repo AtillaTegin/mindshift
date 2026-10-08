@@ -10,7 +10,8 @@ const ORDER: Array[String] = ["easy", "medium", "hard", "expert"]
 const MAX_LEVELS_PER_TIER: int = 999
 const LEVELS_DIR: String = "res://data/levels"
 ## Translation keys of the names shown to the player.
-const DISPLAY_NAMES: Dictionary = {"easy": "TIER_EASY", "medium": "TIER_MEDIUM", "hard": "TIER_HARD", "expert": "TIER_EXPERT"}
+const DISPLAY_NAMES: Dictionary = {"easy": "TIER_EASY", "medium": "TIER_MEDIUM", "hard": "TIER_HARD",
+		"expert": "TIER_EXPERT", "bonus": "TIER_BONUS"}
 
 ## Inclusive ranges; max_moves -1 means no upper bound. Level ids of a tier run
 ## from first_id to first_id + MAX_LEVELS_PER_TIER - 1.
@@ -24,6 +25,16 @@ const TIERS: Dictionary = {
 	"expert": {"min_moves": 34, "max_moves": -1, "min_pegs": 4, "max_pegs": 4,
 			"min_disks": 9, "max_disks": 10, "first_id": 4001},
 }
+
+## Bonus levels (bonus mechanics addendum): optional extras outside the tiers.
+## Their ids never fall in a tier range, so they never count toward unlocking.
+const BONUS: String = "bonus"
+const BONUS_FIRST_ID: int = 9001
+const BONUS_MAX_LEVELS: int = 99
+const BONUS_MIN_PEGS: int = 3
+const BONUS_MAX_PEGS: int = 5
+const BONUS_MIN_DISKS: int = 3
+const BONUS_MAX_DISKS: int = 10
 
 ## A tier opens once this many levels of the tier before it are completed
 ## (any star count). The first tier is always open.
@@ -59,7 +70,16 @@ static func accepts_id(tier: String, id: int) -> bool:
 			and id < settings["first_id"] + MAX_LEVELS_PER_TIER
 
 
-## Tier of a level id, or "" if the id belongs to no tier.
+static func is_bonus_id(id: int) -> bool:
+	return id >= BONUS_FIRST_ID and id < BONUS_FIRST_ID + BONUS_MAX_LEVELS
+
+
+static func accepts_bonus_size(peg_count: int, disk_count: int) -> bool:
+	return peg_count >= BONUS_MIN_PEGS and peg_count <= BONUS_MAX_PEGS \
+			and disk_count >= BONUS_MIN_DISKS and disk_count <= BONUS_MAX_DISKS
+
+
+## Tier of a level id, or "" if the id belongs to no tier (bonus ids included).
 static func tier_of_id(id: int) -> String:
 	for tier: String in ORDER:
 		if accepts_id(tier, id):

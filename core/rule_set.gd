@@ -18,17 +18,35 @@ static func classic() -> RuleSet:
 	return RuleSet.new(rules)
 
 
-## Builds a RuleSet from the level JSON `rules` array.
-## Returns null if `ids` is not an array or contains an unknown id.
-static func from_ids(ids: Variant) -> RuleSet:
+## Builds a RuleSet from the level JSON `rules` array and the optional
+## `rule_params` object ({ rule id: settings }). Returns null if `ids` is not an
+## array, holds an unknown id, or the settings do not fit; the reason goes to
+## `errors`.
+static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] = []) -> RuleSet:
 	if typeof(ids) != TYPE_ARRAY:
+		errors.append("rules must be an array")
 		return null
+	if typeof(params) != TYPE_DICTIONARY:
+		errors.append("rule_params must be an object")
+		return null
+	for key: Variant in params:
+		if not key in ids:
+			errors.append("rule_params has \"%s\", which is not in rules" % str(key))
+			return null
 	var rules: Array[RuleBase] = []
 	for id: Variant in ids:
 		if typeof(id) != TYPE_STRING:
+			errors.append("rule ids must be strings")
 			return null
 		var rule: RuleBase = create_rule(id)
 		if rule == null:
+			errors.append("unknown rule \"%s\"" % id)
+			return null
+		var settings: Variant = params.get(id, {})
+		var problem: String = rule.configure(settings) if typeof(settings) == TYPE_DICTIONARY \
+				else "rule_params.%s must be an object" % id
+		if not problem.is_empty():
+			errors.append(problem)
 			return null
 		rules.append(rule)
 	return RuleSet.new(rules)
@@ -36,9 +54,45 @@ static func from_ids(ids: Variant) -> RuleSet:
 
 ## Rule registry: a fresh rule for a level JSON id, or null if the id is unknown.
 static func create_rule(id: String) -> RuleBase:
-	if id == ClassicHanoiRule.ID:
-		return ClassicHanoiRule.new()
+	match id:
+		ClassicHanoiRule.ID:
+			return ClassicHanoiRule.new()
+		FrozenDiskRule.ID:
+			return FrozenDiskRule.new()
 	return null
+
+
+## The non-empty settings of the active rules, as written to level JSON.
+func get_rule_params() -> Dictionary:
+	var params: Dictionary = {}
+	for rule: RuleBase in active_rules:
+		if not rule.get_params().is_empty():
+			params[rule.get_id()] = rule.get_params()
+	return params
+
+
+## Whether every active rule lets `disk` move at all.
+func is_disk_movable(disk: int) -> bool:
+	for rule: RuleBase in active_rules:
+		if not rule.is_disk_movable(disk):
+			return false
+	return true
+
+
+## Whether the top disk of `peg_index` may be picked up (false for an empty peg).
+func can_pick_up(state: PuzzleState, peg_index: int) -> bool:
+	var disk: int = state.get_top_disk(peg_index)
+	return disk != -1 and is_disk_movable(disk)
+
+
+## Why the top disk of `peg_index` cannot be picked up: the violation_message
+## of the first rule that pins it, or "".
+func get_pick_up_violation_message(state: PuzzleState, peg_index: int) -> String:
+	var disk: int = state.get_top_disk(peg_index)
+	for rule: RuleBase in active_rules:
+		if disk != -1 and not rule.is_disk_movable(disk):
+			return rule.violation_message
+	return ""
 
 
 func get_rule_ids() -> Array[String]:

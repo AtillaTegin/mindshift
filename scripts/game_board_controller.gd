@@ -15,6 +15,8 @@ signal layout_changed
 signal selection_changed(peg_index: int)
 ## A move was refused by the rules; `message` is the broken rule's text.
 signal illegal_move(move: Move, message: String)
+## The top disk of `peg_index` may not be picked up (e.g. it is frozen).
+signal pick_up_refused(peg_index: int, message: String)
 
 const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
 const DISK_SCENE: PackedScene = preload("res://scenes/components/disk.tscn")
@@ -156,8 +158,9 @@ func start_level(level: Level) -> void:
 	_message = ""
 	_popup.visible = false
 	_build_views()
+	_goal_preview.pinned_disks = _pinned_disks()
 	_goal_preview.position_state = level.goal
-	_level_label.text = "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
+	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
 	_refresh(false)
 	level_started.emit()
@@ -263,8 +266,22 @@ func on_peg_pressed(peg_index: int) -> void:
 			position_changed.emit()
 			if session.is_solved():
 				_on_solved()
+		GameSession.TapResult.BLOCKED:
+			_disk_views[session.state.get_top_disk(peg_index)].wobble()
+			var message: String = tr(session.rules.get_pick_up_violation_message(session.state, peg_index))
+			show_message(message)
+			pick_up_refused.emit(peg_index, message)
 	if session.selected_peg != selected_before:
 		selection_changed.emit(session.selected_peg)
+
+
+## Disks the active rules never let move (drawn as ice on the board and preview).
+func _pinned_disks() -> Array[int]:
+	var pinned: Array[int] = []
+	for disk: int in range(1, session.state.get_disk_count() + 1):
+		if not session.rules.is_disk_movable(disk):
+			pinned.append(disk)
+	return pinned
 
 
 func _next_level() -> Dictionary:
@@ -303,7 +320,7 @@ func _update_buttons() -> void:
 	if economy.has_unlimited_hints():
 		_hint_button.text = tr("BOARD_HINT_UNLIMITED")
 	else:
-		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(session.level.difficulty)
+		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(LevelCatalog.economy_tier(session.level))
 	_undo_button.disabled = locked or not session.can_undo()
 	_restart_button.disabled = locked
 	var free_left: int = economy.free_undos_left()
@@ -334,6 +351,7 @@ func _build_views() -> void:
 			var disk: DiskView = DISK_SCENE.instantiate()
 			disk.disk_size = disk_size
 			disk.color = ThemeManager.disk_color(disk_size, disk_count)
+			disk.frozen = not session.rules.is_disk_movable(disk_size)
 			_disk_layer.add_child(disk)
 			_disk_views[disk_size] = disk
 

@@ -237,6 +237,14 @@ msgstr ""
 msgid "RULE_CLASSIC_HANOI"
 msgstr ""
 
+#. [TODO: TR] az: Bu disk dondurulub, yerindən tərpənmir.
+msgid "RULE_FROZEN_DISK"
+msgstr ""
+
+#. [TODO: TR] az: Bonus
+msgid "TIER_BONUS"
+msgstr ""
+
 #. [TODO: TR] az: Səviyyə tamamlandı!
 msgid "POPUP_TITLE"
 msgstr ""

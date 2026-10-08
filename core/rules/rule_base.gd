@@ -23,6 +23,25 @@ func get_id() -> String:
 	return ""
 
 
+## Takes this rule's settings from the level JSON `"rule_params": { "<id>": {...} }`
+## (an empty Dictionary when the level gives none). Returns "" when they are
+## fine, otherwise what is wrong. Rules without settings accept only {}.
+func configure(params: Dictionary) -> String:
+	return "" if params.is_empty() else "rule \"%s\" takes no parameters" % get_id()
+
+
+## The settings to write back to the level JSON ({} for none).
+func get_params() -> Dictionary:
+	return {}
+
+
+## Whether `disk` may ever be picked up. A rule that pins a disk returns false
+## here (the UI then refuses the tap) and also in is_disk_move_allowed() (so
+## every search sees the same rule).
+func is_disk_movable(_disk: int) -> bool:
+	return true
+
+
 ## Whether the top disk of `move.from_peg` may be placed on `move.to_peg`.
 ## RuleSet only calls this for structurally valid moves: both peg indices are in
 ## range, they differ, and the source peg is not empty.

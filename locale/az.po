@@ -181,6 +181,12 @@ msgstr "Bu gediş qaydalara uyğun deyil."
 msgid "RULE_CLASSIC_HANOI"
 msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 
+msgid "RULE_FROZEN_DISK"
+msgstr "Bu disk dondurulub, yerindən tərpənmir."
+
+msgid "TIER_BONUS"
+msgstr "Bonus"
+
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"
 

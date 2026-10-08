@@ -74,6 +74,9 @@ const ICON_COLORS: Dictionary = {
 	"hint": Color("9d8cff"),
 	"hint_base": Color("5b4fc4"),
 	"undo": Color("b4c3d6"),
+	# Frozen disk (bonus mechanics): frosted rim and cracks.
+	"ice": Color("e6f7ff"),
+	"ice_edge": Color("4fb3e8"),
 }
 
 var mode: String = LIGHT
