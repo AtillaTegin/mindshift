@@ -11,6 +11,8 @@ extends SceneTree
 const LEVELS_DIR: String = "res://data/levels"
 ## Offline checks can afford a far larger search than in-game hints.
 const SOLVER_MAX_STATES: int = 5000000
+## A covered peg must be used within this many moves of the stored solution.
+const COVERED_REVEAL_WITHIN: int = 3
 
 
 func _initialize() -> void:
@@ -137,6 +139,20 @@ static func validate_bonus_design(level: Level, errors: Array[String]) -> void:
 		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
 		if plain >= level.min_moves:
 			errors.append("the frozen disk changes nothing (%d moves without it)" % plain)
+	# A covered peg must hide something and be opened early by the stored
+	# optimal solution, so three stars never depend on luck (user decision
+	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).
+	for peg_index: int in level.covered_pegs:
+		if peg_index < 0 or peg_index >= level.get_peg_count():
+			continue  # reported by Level.check()
+		if level.start.pegs[peg_index].size() < 2:
+			errors.append("covered peg %d hides nothing (fewer than 2 disks)" % peg_index)
+		var used: bool = false
+		for i: int in mini(COVERED_REVEAL_WITHIN, level.solution_path.size()):
+			var move: Move = level.solution_path[i]
+			used = used or move.from_peg == peg_index or move.to_peg == peg_index
+		if not used:
+			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
 
 
 ## Loads one level file and checks it on its own (folder must match the

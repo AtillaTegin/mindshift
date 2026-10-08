@@ -22,6 +22,7 @@ const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
 const DISK_SCENE: PackedScene = preload("res://scenes/components/disk.tscn")
 const POPUP_SCENE: PackedScene = preload("res://scenes/level_complete_popup.tscn")
 const COACHING_SCENE: PackedScene = preload("res://scenes/components/coaching/coaching_layer.tscn")
+const PEG_FOG_SCENE: PackedScene = preload("res://scenes/components/peg_fog.tscn")
 const MAX_DISK_HEIGHT: float = 52.0
 
 ## Level loaded in _ready() unless the App autoload asks for another one.
@@ -61,6 +62,10 @@ var _disk_views: Dictionary[int, DiskView] = {}
 var _disk_targets: Dictionary[int, Rect2] = {}
 ## Peg index -> peg area (rod, base and the space for a lifted disk), board coordinates.
 var _peg_areas: Array[Rect2] = []
+## Covered pegs (bonus mechanics addendum 2): peg index -> its fog, drawn on
+## a layer above the disks.
+var _fogs: Dictionary[int, PegFog] = {}
+var _fog_layer: Control
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -112,6 +117,11 @@ func _ready() -> void:
 	_restart_button.pressed.connect(restart)
 	_back_button.pressed.connect(_show_level_select)
 	_board.resized.connect(_layout.bind(false))
+	_fog_layer = Control.new()
+	_fog_layer.name = "FogLayer"
+	_fog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fog_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_board.add_child(_fog_layer)
 	_popup = POPUP_SCENE.instantiate()
 	_popup.visible = false
 	_popup.next_requested.connect(play_next_level)
@@ -159,6 +169,7 @@ func start_level(level: Level) -> void:
 	_popup.visible = false
 	_build_views()
 	_goal_preview.pinned_disks = _pinned_disks()
+	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
@@ -174,6 +185,8 @@ func restart() -> void:
 	last_result = {}
 	_message = ""
 	_popup.visible = false
+	# A new attempt: every covered peg is under fog again.
+	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_refresh(true)
 	level_started.emit()
 	position_changed.emit()
@@ -246,6 +259,11 @@ func get_peg_rect(peg_index: int) -> Rect2:
 ## The Hint button, in viewport coordinates.
 func get_hint_button_rect() -> Rect2:
 	return _hint_button.get_global_rect()
+
+
+## The fog over covered peg `peg_index`, or null if that peg never had one.
+func get_peg_fog(peg_index: int) -> PegFog:
+	return _fogs.get(peg_index)
 
 
 ## Handles a tap on peg `peg_index` (also the entry point for tests).
@@ -339,6 +357,14 @@ func _build_views() -> void:
 	_disk_views.clear()
 	_disk_targets.clear()
 	_peg_areas.clear()
+	for fog: PegFog in _fogs.values():
+		_fog_layer.remove_child(fog)
+		fog.queue_free()
+	_fogs.clear()
+	for peg_index: int in session.level.covered_pegs:
+		var fog: PegFog = PEG_FOG_SCENE.instantiate()
+		_fog_layer.add_child(fog)
+		_fogs[peg_index] = fog
 	var disk_count: int = session.state.get_disk_count()
 	for peg_index: int in session.state.get_peg_count():
 		var peg: PegView = PEG_SCENE.instantiate()
@@ -406,4 +432,26 @@ func _layout(animated: bool) -> void:
 			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
 			view.move_to(target, animated)
+	_sync_fogs(column, disk_height, base_top, base_top + base_height)
 	layout_changed.emit()
+
+
+## Keeps each fog over its peg's disks below the top one, and fades it out
+## (on the board and in the goal preview) once a move has used the peg.
+func _sync_fogs(column: float, disk_height: float, base_top: float, bottom: float) -> void:
+	for peg_index: int in _fogs:
+		var fog: PegFog = _fogs[peg_index]
+		if not session.is_covered(peg_index):
+			if fog.is_shown():
+				fog.reveal()
+				_goal_preview.reveal_peg(peg_index)
+			continue
+		var stack: int = session.state.pegs[peg_index].size()
+		# From the top of the second disk from the top down to the base; the top
+		# disk (and the space above it) stays visible.
+		var top: float = base_top - disk_height * (stack - 1)
+		var area: Rect2 = Rect2(column * peg_index + column * 0.02, top, column * 0.96, bottom - top)
+		if fog.is_shown():
+			fog.follow(area)
+		else:
+			fog.cover(area)

@@ -24,6 +24,14 @@ const FROZEN_SPECS: Array[Dictionary] = [
 	{"file": "frozen_04.json", "tab": "expert", "pegs": 4, "disks": 8, "min": 26, "max": 33},
 ]
 
+## One covered-peg level per tab. `covered`: how many pegs start under fog.
+const FOG_SPECS: Array[Dictionary] = [
+	{"file": "fog_01.json", "tab": "easy", "pegs": 3, "disks": 4, "min": 6, "max": 11, "covered": 1},
+	{"file": "fog_02.json", "tab": "medium", "pegs": 3, "disks": 5, "min": 12, "max": 20, "covered": 1},
+	{"file": "fog_03.json", "tab": "hard", "pegs": 4, "disks": 7, "min": 18, "max": 26, "covered": 2},
+	{"file": "fog_04.json", "tab": "expert", "pegs": 4, "disks": 8, "min": 26, "max": 33, "covered": 2},
+]
+
 
 func _initialize() -> void:
 	quit(0 if _run() else 1)
@@ -37,6 +45,11 @@ func _run() -> bool:
 	for i: int in FROZEN_SPECS.size():
 		var spec: Dictionary = FROZEN_SPECS[i]
 		var level: Level = build_frozen(spec, next_id, BASE_SEED + i)
+		ok = _write(level, spec, index) and ok
+		next_id += 1
+	for i: int in FOG_SPECS.size():
+		var spec: Dictionary = FOG_SPECS[i]
+		var level: Level = build_fog(spec, next_id, BASE_SEED + 100 + i)
 		ok = _write(level, spec, index) and ok
 		next_id += 1
 	var file: FileAccess = FileAccess.open("%s/%s" % [BONUS_DIR, INDEX_FILE], FileAccess.WRITE)
@@ -76,6 +89,48 @@ static func build_frozen(spec: Dictionary, id: int, seed_value: int) -> Level:
 		push_error("No frozen level found for %s" % spec["file"])
 		return null
 	return Level.create(id, Difficulty.BONUS, best["start"], best["goal"], rule_ids, best["path"], best["params"])
+
+
+## A covered-peg level: plain Hanoi, with `spec.covered` pegs under fog. Only
+## pegs that hold at least two disks and that the stored optimal solution uses
+## within its first LevelValidator.COVERED_REVEAL_WITHIN moves may be covered.
+static func build_fog(spec: Dictionary, id: int, seed_value: int) -> Level:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var best: Dictionary = {}
+	var rule_ids: Array[String] = ["classic_hanoi"]
+	for attempt: int in MAX_ATTEMPTS / 4:
+		var start: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
+		var goal: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
+		if rng.randf() < LevelGenerator.TOWER_GOAL_CHANCE:
+			goal = LevelGenerator.tower_state(spec["pegs"], spec["disks"], rng.randi_range(0, spec["pegs"] - 1))
+		if goal.equals(start):
+			continue
+		var result: Dictionary = Solver.solve(start, goal, RuleSet.classic(), LevelValidator.SOLVER_MAX_STATES)
+		var moves: int = result["min_moves"]
+		if not result["solvable"] or moves < spec["min"] or moves > spec["max"]:
+			continue
+		var path: Array[Move] = result["path"]
+		var candidates: Array[int] = []
+		for peg_index: int in spec["pegs"]:
+			if start.pegs[peg_index].size() < 2:
+				continue
+			for i: int in mini(LevelValidator.COVERED_REVEAL_WITHIN, path.size()):
+				if (path[i].from_peg == peg_index or path[i].to_peg == peg_index) and not candidates.has(peg_index):
+					candidates.append(peg_index)
+		if candidates.size() < spec["covered"]:
+			continue
+		if best.is_empty() or moves > best["moves"]:
+			candidates.shuffle()
+			var covered: Array[int] = candidates.slice(0, spec["covered"])
+			covered.sort()
+			best = {"moves": moves, "start": start, "goal": goal, "path": path, "covered": covered}
+	if best.is_empty():
+		push_error("No fog level found for %s" % spec["file"])
+		return null
+	var level: Level = Level.create(id, Difficulty.BONUS, best["start"], best["goal"], rule_ids, best["path"])
+	level.covered_pegs = best["covered"]
+	return level
 
 
 ## A random disk that has at least one disk below it on its peg and is not the

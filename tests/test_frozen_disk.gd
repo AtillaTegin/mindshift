@@ -205,5 +205,7 @@ func test_bonus_levels_never_count_toward_unlocking() -> void:
 	for tier: String in Difficulty.ORDER:
 		assert_eq(save.completed_count(tier), 0, tier)
 	assert_false(LevelCatalog.is_tier_unlocked("medium", save))
-	assert_eq(LevelCatalog.bonus_for_tab("easy").size(), 1)
+	for tier: String in Difficulty.ORDER:
+		assert_eq(LevelCatalog.bonus_for_tab(tier).size(), 2, "%s: one frozen and one fog level" % tier)
 	assert_eq(LevelCatalog.bonus_for_tab("easy")[0]["file"], "frozen_01.json")
+	assert_eq(LevelCatalog.bonus_for_tab("easy")[1]["file"], "fog_01.json")

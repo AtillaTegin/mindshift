@@ -26,6 +26,7 @@ const LIGHT_PALETTE: Dictionary = {
 	# Game-specific roles.
 	"card": Color("f4f1ea"),
 	"text_on_disk": Color("2b2d42"),
+	"fog": Color("d9d3c4"),
 	"peg": Color("8d8a80"),
 	"button": Color("716f6b"),
 	"button_hover": Color("7d7b77"),
@@ -50,6 +51,7 @@ const DARK_PALETTE: Dictionary = {
 	"danger": Color("ff5964"),
 	"card": Color("232634"),
 	"text_on_disk": Color("1b1d29"),
+	"fog": Color("2f3346"),
 	"peg": Color("5d6072"),
 	"button": Color("383c50"),
 	"button_hover": Color("42475e"),

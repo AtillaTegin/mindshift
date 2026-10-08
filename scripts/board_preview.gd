@@ -15,6 +15,21 @@ var pinned_disks: Array[int] = []:
 	set(value):
 		pinned_disks = value
 		queue_redraw()
+## Covered pegs (bonus mechanics addendum 2): the goal shows the same fog,
+## lifted together with the board's (reveal_peg), so the goal does not give
+## the hidden disks away.
+var covered_pegs: Array[int] = []:
+	set(value):
+		covered_pegs = value
+		for fade: Tween in _fog_fades:
+			fade.kill()
+		_fog_fades.clear()
+		_fog_alpha.clear()
+		for peg_index: int in value:
+			_fog_alpha[peg_index] = 1.0
+		queue_redraw()
+var _fog_alpha: Dictionary[int, float] = {}
+var _fog_fades: Array[Tween] = []
 var position_state: PuzzleState:
 	set(value):
 		position_state = value
@@ -22,6 +37,22 @@ var position_state: PuzzleState:
 			# Tall enough for full-height disks, so the numbers stay legible.
 			custom_minimum_size.y = preferred_height(value.get_disk_count())
 		queue_redraw()
+
+
+## Fades the goal fog of `peg_index` away (same timing as the board's PegFog).
+func reveal_peg(peg_index: int) -> void:
+	if not covered_pegs.has(peg_index):
+		return
+	covered_pegs.erase(peg_index)
+	var fade: Tween = create_tween()
+	fade.tween_method(func(alpha: float) -> void:
+		_fog_alpha[peg_index] = alpha
+		queue_redraw(), 1.0, 0.0, Scrim.FADE_SECONDS)
+	_fog_fades.append(fade)
+
+
+func is_peg_fogged(peg_index: int) -> bool:
+	return _fog_alpha.get(peg_index, 0.0) > 0.0
 
 
 ## Height that fits `disk_count` disks at DISK_HEIGHT plus the peg base.
@@ -80,3 +111,26 @@ func _draw() -> void:
 		var baseline: Vector2 = Vector2(rect.position.x + (rect.size.x - text_width) * 0.5,
 				rect.position.y + (rect.size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
 		draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color)
+	_draw_fog(column, disk_height, base_top, font)
+
+
+## The goal's fog: covers a covered peg's goal disks below its top one.
+func _draw_fog(column: float, disk_height: float, base_top: float, font: Font) -> void:
+	for peg_index: int in _fog_alpha:
+		var alpha: float = _fog_alpha[peg_index]
+		var stack: int = position_state.pegs[peg_index].size() if peg_index < position_state.get_peg_count() else 0
+		if alpha <= 0.0 or stack < 2:
+			continue
+		var top: float = base_top - disk_height * (stack - 1)
+		# Wider than the widest disk (BoardLayout.MAX_DISK_SHARE) so no edge peeks out.
+		var area: Rect2 = Rect2(column * peg_index + column * 0.01, top, column * 0.98, size.y - top)
+		var fog: Color = ThemeManager.color("fog")
+		fog.a *= alpha
+		draw_rect(area, fog)
+		var mark: Color = ThemeManager.color("text_secondary")
+		mark.a *= alpha
+		var mark_size: int = int(clampf(area.size.y * 0.5, MIN_FONT_SIZE, 28.0))
+		var mark_width: float = font.get_string_size("?", HORIZONTAL_ALIGNMENT_LEFT, -1, mark_size).x
+		draw_string(font, Vector2(area.get_center().x - mark_width * 0.5,
+				area.position.y + (area.size.y + font.get_ascent(mark_size) - font.get_descent(mark_size)) * 0.5),
+				"?", HORIZONTAL_ALIGNMENT_LEFT, -1, mark_size, mark)

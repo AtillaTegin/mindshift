@@ -24,6 +24,10 @@ var undo_count: int = 0
 ## before it is free) and stops when the level is solved.
 var elapsed_seconds: float = 0.0
 var clock_started: bool = false
+## Pegs still under fog in this attempt (bonus mechanics addendum 2). A move
+## from or to a peg clears its fog for the rest of the attempt (undo does not
+## bring it back); restart covers them again. Never saved.
+var covered_pegs: Array[int] = []
 
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
@@ -52,6 +56,7 @@ func restart() -> void:
 	undo_count = 0
 	elapsed_seconds = 0.0
 	clock_started = false
+	covered_pegs = level.covered_pegs.duplicate()
 
 
 func is_solved() -> bool:
@@ -97,7 +102,13 @@ func try_move(move: Move) -> bool:
 	history.append(move)
 	selected_peg = -1
 	clock_started = true
+	covered_pegs.erase(move.from_peg)
+	covered_pegs.erase(move.to_peg)
 	return true
+
+
+func is_covered(peg_index: int) -> bool:
+	return covered_pegs.has(peg_index)
 
 
 func can_undo() -> bool:

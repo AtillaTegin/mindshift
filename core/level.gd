@@ -10,7 +10,7 @@ const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -19,6 +19,9 @@ var goal: PuzzleState
 var rule_ids: Array[String] = []
 ## Rule id -> that rule's settings ("rule_params"); empty for most levels.
 var rule_params: Dictionary = {}
+## Pegs that start under fog ("covered_pegs", bonus mechanics addendum 2):
+## only their top disk shows until a move uses the peg. Purely visual.
+var covered_pegs: Array[int] = []
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
@@ -96,6 +99,8 @@ func to_dict() -> Dictionary:
 	# Optional keys only when used, so main levels keep the exact spec format.
 	if not rule_params.is_empty():
 		data["rule_params"] = rule_params.duplicate(true)
+	if not covered_pegs.is_empty():
+		data["covered_pegs"] = covered_pegs.duplicate()
 	return data
 
 
@@ -168,6 +173,11 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.rule_params = _whole_numbers_as_ints(params)
 	else:
 		errors.append("\"rule_params\" must be an object of objects")
+	var covered: Variant = data.get("covered_pegs", [])
+	if typeof(covered) == TYPE_ARRAY and covered.all(func(v: Variant) -> bool: return typeof(_whole_numbers_as_ints(v)) == TYPE_INT):
+		level.covered_pegs.assign(_whole_numbers_as_ints(covered))
+	else:
+		errors.append("\"covered_pegs\" must be an array of peg indices")
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:
@@ -222,6 +232,10 @@ func check(errors: Array[String]) -> void:
 	if two_star_moves != two_star_threshold(min_moves):
 		errors.append("star_thresholds.two is %d, expected round(%d * 1.25) = %d" % [
 				two_star_moves, min_moves, two_star_threshold(min_moves)])
+	for peg_index: int in covered_pegs:
+		if peg_index < 0 or peg_index >= get_peg_count() or covered_pegs.count(peg_index) > 1:
+			errors.append("covered_pegs %s must be distinct peg indices" % str(covered_pegs))
+			break
 	if goal.get_peg_count() != get_peg_count():
 		errors.append("goal has %d pegs, start has %d" % [goal.get_peg_count(), get_peg_count()])
 		return
