@@ -11,7 +11,11 @@ Tam texniki plan: `../MindShift_Project_Spec.md`.
 & "C:\Users\User\Tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe" --path . --resolution 540x960
 ```
 
-Və ya Godot redaktorunda layihəni açıb F5 basın. Oyun Ana menyu ilə açılır: "Oyna" növbəti bitməmiş səviyyəni açır, "Səviyyələr" isə seçim ekranını.
+Və ya Godot redaktorunda layihəni açıb F5 basın. Oyun Ana menyu ilə açılır:
+- "Oyna" növbəti bitməmiş səviyyəni açır;
+- "Səviyyələr" seçim ekranını açır;
+- "Mağaza" mağaza ekranını açır;
+- "Parametrlər"də səs, qaranlıq mod və dil var.
 Oyunda qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və disk ora köçür. Qeyri-qanuni gedişdə qüllə qırmızı yanıb-sönür.
 
 İrəliləyiş `user://save.json`-da saxlanılır (Windows-da `%APPDATA%\Godot\app_userdata\MindShift- Puzzle Logic\`).
@@ -125,6 +129,7 @@ Solver-ə toxunmaq lazım deyil.
 | UX-2 | Yuxarı sayan saniyəölçən (ilk gedişlə başlayır, həll olunanda dayanır) | ✅ |
 | UX-3 | Hint-ə yönləndirmə: 9 s hərəkətsizlik və ya ardıcıl 2 səhv → Hint düyməsində FocusRing | ✅ |
 | UX-4 | ThemeManager (işıqlı/qaranlıq mod), dil infrastrukturu (az tam; tr/ru/en `[TODO]`) | ✅ |
+| UX-5 | Ana menyu: Oyna, Səviyyələr, Mağaza (ekran hələlik boşdur, Bölmə 8 doldurur), Parametrlər | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər

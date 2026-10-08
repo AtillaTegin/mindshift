@@ -13,8 +13,17 @@ msgstr "Oyna"
 msgid "MENU_LEVELS"
 msgstr "Səviyyələr"
 
+msgid "MENU_SHOP"
+msgstr "Mağaza"
+
 msgid "MENU_SETTINGS"
 msgstr "Parametrlər"
+
+msgid "SHOP_TITLE"
+msgstr "Mağaza"
+
+msgid "SHOP_COMING_SOON"
+msgstr "Tezliklə: coin paketləri və xüsusi təkliflər"
 
 msgid "MENU_PROGRESS"
 msgstr "Ulduz: %d / %d"

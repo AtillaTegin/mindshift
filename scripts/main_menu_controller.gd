@@ -1,10 +1,11 @@
 extends Control
-## Main menu (spec 5.1): Play continues with the next unfinished level,
-## Levels opens the level select, Settings holds sound, dark mode and language
-## (economy/UX addendum 4).
+## Main menu (spec 5.1, economy/UX addendum 5): four buttons. Play continues
+## with the next unfinished level, Levels opens the level select, Shop opens the
+## shop, Settings holds sound, dark mode and language (addendum 4).
 
 @onready var _play_button: Button = %PlayButton
 @onready var _levels_button: Button = %LevelsButton
+@onready var _shop_button: Button = %ShopButton
 @onready var _settings_button: Button = %SettingsButton
 @onready var _progress_label: Label = %ProgressLabel
 @onready var _settings_panel: Control = %SettingsPanel
@@ -27,6 +28,9 @@ func _ready() -> void:
 	_levels_button.pressed.connect(func() -> void:
 		if app != null:
 			app.show_level_select())
+	_shop_button.pressed.connect(func() -> void:
+		if app != null:
+			app.show_shop())
 	_sound_toggle.button_pressed = _save.sound_enabled
 	_sound_toggle.toggled.connect(_save.set_sound_enabled)
 	_dark_mode_toggle.button_pressed = ThemeManager.is_dark()

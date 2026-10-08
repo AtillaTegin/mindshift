@@ -6,6 +6,7 @@ const SCENES_WITH_BUTTONS: Array[String] = [
 	"res://scenes/level_select.tscn",
 	"res://scenes/game_board.tscn",
 	"res://scenes/level_complete_popup.tscn",
+	"res://scenes/shop.tscn",
 ]
 
 var _nodes: Array[Node] = []

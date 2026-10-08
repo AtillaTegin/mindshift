@@ -5,6 +5,7 @@ extends Node
 const MAIN_MENU: String = "res://scenes/main_menu.tscn"
 const LEVEL_SELECT: String = "res://scenes/level_select.tscn"
 const GAME_BOARD: String = "res://scenes/game_board.tscn"
+const SHOP: String = "res://scenes/shop.tscn"
 const SCRIPT_RUN_SAVE_PATH: String = "user://script_run_save.json"
 
 var save: SaveSystem
@@ -56,6 +57,10 @@ func show_level_select(tier: String = "") -> void:
 
 func show_main_menu() -> void:
 	_go(MAIN_MENU)
+
+
+func show_shop() -> void:
+	_go(SHOP)
 
 
 ## Every scene change fades through the ScreenTransition autoload.

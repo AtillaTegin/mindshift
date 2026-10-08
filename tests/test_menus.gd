@@ -90,6 +90,34 @@ func test_level_select_emits_choice() -> void:
 		assert_eq(chosen, [["easy", 1]])
 
 
+func test_main_menu_has_four_polished_buttons() -> void:
+	# Economy/UX addendum 5: Play, Levels, Shop, Settings, in this order.
+	var menu: Control = MENU_SCENE.instantiate()
+	(Engine.get_main_loop() as SceneTree).root.add_child(menu)
+	_nodes.append(menu)
+	var buttons: Array[String] = []
+	for child: Node in menu.get_node("Center/Layout").get_children():
+		if child is Button:
+			assert_true(child is PolishedButton, "%s dips when pressed" % child.name)
+			buttons.append((child as Button).text)
+	assert_eq(buttons, ["MENU_PLAY", "MENU_LEVELS", "MENU_SHOP", "MENU_SETTINGS"] as Array[String])
+	assert_eq(menu.tr("MENU_SHOP"), "Mağaza")
+
+
+func test_shop_screen_shows_coins() -> void:
+	var shop: Control = (load("res://scenes/shop.tscn") as PackedScene).instantiate()
+	var economy: EconomySystem = EconomySystem.new()
+	_save.coins = 7
+	economy.setup(_save)
+	shop.economy = economy
+	(Engine.get_main_loop() as SceneTree).root.add_child(shop)
+	_nodes.append(shop)
+	assert_eq((shop.get_node("%CoinLabel") as Label).text, "Coin: 7")
+	economy.earn(3, "test")
+	assert_eq((shop.get_node("%CoinLabel") as Label).text, "Coin: 10", "follows the balance")
+	economy.free()
+
+
 func test_main_menu_builds() -> void:
 	var menu: Control = MENU_SCENE.instantiate()
 	(Engine.get_main_loop() as SceneTree).root.add_child(menu)

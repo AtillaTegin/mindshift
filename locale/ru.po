@@ -13,8 +13,20 @@ msgstr ""
 msgid "MENU_LEVELS"
 msgstr ""
 
+#. [TODO: RU] az: Mağaza
+msgid "MENU_SHOP"
+msgstr ""
+
 #. [TODO: RU] az: Parametrlər
 msgid "MENU_SETTINGS"
+msgstr ""
+
+#. [TODO: RU] az: Mağaza
+msgid "SHOP_TITLE"
+msgstr ""
+
+#. [TODO: RU] az: Tezliklə: coin paketləri və xüsusi təkliflər
+msgid "SHOP_COMING_SOON"
 msgstr ""
 
 #. [TODO: RU] az: Ulduz: %d / %d

@@ -1,0 +1,82 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
+[ext_resource type="Script" path="res://scripts/shop_controller.gd" id="1_shop"]
+[ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
+
+[node name="Shop" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_shop")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("themed_rect")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 32
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 18
+
+[node name="TopBar" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="Margin/Layout/TopBar"]
+script = ExtResource("pb_polished")
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "COMMON_MENU"
+
+[node name="Title" type="Label" parent="Margin/Layout/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 36
+text = "SHOP_TITLE"
+
+[node name="CoinLabel" type="Label" parent="Margin/Layout/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CoinLabel"
+theme_override_font_sizes/font_size = 28
+
+[node name="Items" type="VBoxContainer" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="ComingSoon" type="Label" parent="Margin/Layout/Items"]
+layout_mode = 2
+size_flags_vertical = 6
+theme_type_variation = &"SecondaryLabel"
+theme_override_font_sizes/font_size = 28
+text = "SHOP_COMING_SOON"
+horizontal_alignment = 1
+autowrap_mode = 3
