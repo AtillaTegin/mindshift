@@ -73,9 +73,6 @@ msgstr "Yenidən"
 msgid "BOARD_MOVES"
 msgstr "Gediş: %d"
 
-msgid "BOARD_COINS"
-msgstr "Coin: %d"
-
 msgid "BOARD_MINIMUM"
 msgstr "Minimum: %d"
 

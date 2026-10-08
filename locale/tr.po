@@ -93,10 +93,6 @@ msgstr ""
 msgid "BOARD_MOVES"
 msgstr ""
 
-#. [TODO: TR] az: Coin: %d
-msgid "BOARD_COINS"
-msgstr ""
-
 #. [TODO: TR] az: Minimum: %d
 msgid "BOARD_MINIMUM"
 msgstr ""

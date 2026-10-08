@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
 [ext_resource type="Script" path="res://scripts/shop_controller.gd" id="1_shop"]
 [ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
+[ext_resource type="Script" path="res://scripts/icon_view.gd" id="icon_view"]
 
 [node name="Shop" type="Control"]
 layout_mode = 3
@@ -59,6 +60,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 36
 text = "SHOP_TITLE"
+
+[node name="CoinIcon" type="Control" parent="Margin/Layout/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("icon_view")
 
 [node name="CoinLabel" type="Label" parent="Margin/Layout/TopBar"]
 unique_name_in_owner = true

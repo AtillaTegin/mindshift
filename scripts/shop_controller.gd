@@ -26,4 +26,4 @@ func _ready() -> void:
 
 
 func _update_coins() -> void:
-	_coin_label.text = tr("BOARD_COINS") % economy.coins
+	_coin_label.text = str(economy.coins)

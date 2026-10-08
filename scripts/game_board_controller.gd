@@ -296,7 +296,8 @@ func _update_buttons() -> void:
 	if session == null or not is_node_ready():
 		return
 	var locked: bool = restricted_peg >= 0
-	_coin_label.text = tr("BOARD_COINS") % economy.coins
+	# The coin icon next to it says what the number is.
+	_coin_label.text = str(economy.coins)
 	_hint_button.disabled = locked or session.is_solved() or hints.is_pending()
 	_hint_button.text = tr("BOARD_HINT") % EconomySystem.HINT_COST
 	_undo_button.disabled = locked or not session.can_undo()

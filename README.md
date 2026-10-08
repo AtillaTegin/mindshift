@@ -131,6 +131,7 @@ Solver-ə toxunmaq lazım deyil.
 | UX-4 | ThemeManager (işıqlı/qaranlıq mod), dil infrastrukturu (az tam; tr/ru/en `[TODO]`) | ✅ |
 | UX-5 | Ana menyu: Oyna, Səviyyələr, Mağaza (ekran hələlik boşdur, Bölmə 8 doldurur), Parametrlər | ✅ |
 | UX-6 | Hədəf önizləməsində hər diskin üstündə ölçü rəqəmi; önizləmə hündürlüyü disk sayına uyğunlaşır | ✅ |
+| UX-7 | Kodla çəkilən ikonlar (coin, hint lampası, undo oxu), sabit funksional rənglər, `PolishedButton.icon_kind` | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
@@ -140,6 +141,11 @@ Solver-ə toxunmaq lazım deyil.
   - İki palitra ([scripts/theme_manager.gd](scripts/theme_manager.gd)) eyni rolları təyin edir. Rejim Parametrlərdə dəyişir və save-də saxlanılır.
   - Ekran fonları üçün `ThemedColorRect` istifadə olunur.
   - İstisnalar (coaching overlay, konfeti) `tests/test_theme.gd`-də siyahıdadır.
+- **İkonlar**: [scripts/game_icons.gd](scripts/game_icons.gd) coin, hint və undo ikonlarını kodla çəkir.
+  - Rəngləri `ThemeManager.ICON_COLORS`-dadır: coin qızılı, hint mavi-bənövşəyi, undo boz-mavi. Bu rənglər hər iki modda eynidir.
+  - Düyməyə ikon vermək üçün `PolishedButton.icon_kind = "hint"` yazmaq kifayətdir. Düymə söndürüləndə ikon solğun görünür.
+  - Ayrıca ikon üçün `IconView` istifadə olunur. Məsələn, coin balansının yanındakı ikon budur.
+  - İkonların çəkilməsi real pəncərədə yoxlanılıb, çünki headless test kadr çəkmir.
 - **Mətnlər**: hər mətn [locale/az.po](locale/az.po)-da açarla saxlanılır (`MENU_PLAY` → "Oyna"). Kodda `tr("MENU_PLAY")` yazılır, səhnələrdə isə mətn kimi açarın özü.
   - Yeni mətn əlavə etmək üçün açarı `az.po`-ya yazın, sonra `godot --headless --path . --script res://tools/sync_translations.gd` işə salın.
   - Bu əmr açarı `tr/ru/en.po`-ya boş `msgstr` və `#. [TODO: XX] az: ...` qeydi ilə köçürür.

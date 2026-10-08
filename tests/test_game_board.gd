@@ -204,7 +204,7 @@ func test_hint_shows_scrim_ring_and_pointer_and_costs_a_coin() -> void:
 	var coaching: CoachingLayer = _board.coaching
 	assert_true(hints.hint_move.equals(move))
 	assert_eq(_save.coins, 1)
-	assert_eq(_label("CoinLabel"), "Coin: 1")
+	assert_eq(_label("CoinLabel"), "1")
 	assert_eq(_board.session.move_count, 0, "a hint never moves a disk")
 	var disk_rect: Rect2 = _board.get_disk_rect(_board.session.state.get_top_disk(move.from_peg))
 	var source_rect: Rect2 = _board.get_peg_rect(move.from_peg)

@@ -64,6 +64,18 @@ const DARK_PALETTE: Dictionary = {
 	"shadow": Color(0.0, 0.0, 0.0, 0.35),
 }
 
+## Functional icon colours (economy/UX addendum 7). Fixed: the same in both
+## modes and independent of the accent, because they mark what a thing is.
+## Coin is warm gold, hint blue-violet, undo neutral grey-blue.
+const ICON_COLORS: Dictionary = {
+	"coin": Color("f5b72a"),
+	"coin_rim": Color("c98a0c"),
+	"coin_shine": Color(1.0, 1.0, 1.0, 0.85),
+	"hint": Color("9d8cff"),
+	"hint_base": Color("5b4fc4"),
+	"undo": Color("b4c3d6"),
+}
+
 var mode: String = LIGHT
 var theme: Theme
 
@@ -87,6 +99,14 @@ func color(role: String) -> Color:
 		push_error("Unknown colour role \"%s\"" % role)
 		return Color.MAGENTA
 	return colors[role]
+
+
+## A fixed icon colour (ICON_COLORS); the same in light and dark mode.
+func icon_color(role: String) -> Color:
+	if not ICON_COLORS.has(role):
+		push_error("Unknown icon colour \"%s\"" % role)
+		return Color.MAGENTA
+	return ICON_COLORS[role]
 
 
 ## Switches to `new_mode` (LIGHT or DARK; anything else means LIGHT).

@@ -112,9 +112,9 @@ func test_shop_screen_shows_coins() -> void:
 	shop.economy = economy
 	(Engine.get_main_loop() as SceneTree).root.add_child(shop)
 	_nodes.append(shop)
-	assert_eq((shop.get_node("%CoinLabel") as Label).text, "Coin: 7")
+	assert_eq((shop.get_node("%CoinLabel") as Label).text, "7")
 	economy.earn(3, "test")
-	assert_eq((shop.get_node("%CoinLabel") as Label).text, "Coin: 10", "follows the balance")
+	assert_eq((shop.get_node("%CoinLabel") as Label).text, "10", "follows the balance")
 	economy.free()
 
 

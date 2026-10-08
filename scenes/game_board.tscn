@@ -1,9 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
 [ext_resource type="Script" path="res://scripts/game_board_controller.gd" id="1_board"]
 [ext_resource type="Script" path="res://scripts/board_preview.gd" id="2_preview"]
 [ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
+[ext_resource type="Script" path="res://scripts/icon_view.gd" id="icon_view"]
 
 [node name="GameBoard" type="Control"]
 layout_mode = 3
@@ -87,13 +88,26 @@ theme_override_font_sizes/font_size = 32
 text = "00:00"
 horizontal_alignment = 1
 
-[node name="CoinLabel" type="Label" parent="Margin/Layout/Counters"]
-unique_name_in_owner = true
+[node name="CoinBox" type="HBoxContainer" parent="Margin/Layout/Counters"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CoinIcon" type="Control" parent="Margin/Layout/Counters/CoinBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("icon_view")
+
+[node name="CoinLabel" type="Label" parent="Margin/Layout/Counters/CoinBox"]
+unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"CoinLabel"
 theme_override_font_sizes/font_size = 28
-horizontal_alignment = 1
 
 [node name="MinLabel" type="Label" parent="Margin/Layout/Counters"]
 unique_name_in_owner = true
@@ -109,6 +123,7 @@ theme_override_constants/separation = 16
 
 [node name="HintButton" type="Button" parent="Margin/Layout/Actions"]
 script = ExtResource("pb_polished")
+icon_kind = "hint"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -117,6 +132,7 @@ theme_override_font_sizes/font_size = 26
 
 [node name="UndoButton" type="Button" parent="Margin/Layout/Actions"]
 script = ExtResource("pb_polished")
+icon_kind = "undo"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
