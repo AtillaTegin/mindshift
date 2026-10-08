@@ -131,7 +131,7 @@ text = "BOARD_GOAL"
 
 [node name="GoalPreview" type="Control" parent="Margin/Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_preview")
