@@ -35,7 +35,7 @@ msgid "SHOP_COINS_LARGE"
 msgstr "Böyük coin paketi"
 
 msgid "SHOP_COINS_DETAIL"
-msgstr "+%d coin"
+msgstr "%d coin → %s"
 
 msgid "SHOP_AD_TITLE"
 msgstr "Reklam izlə"
@@ -50,7 +50,7 @@ msgid "SHOP_HINTS_TITLE"
 msgstr "Limitsiz Hint"
 
 msgid "SHOP_HINTS_DETAIL"
-msgstr "%d saat ərzində bütün hint-lər pulsuz"
+msgstr "%d saat pulsuz hint → %s"
 
 msgid "SHOP_HINTS_ACTIVE"
 msgstr "Aktivdir, %s qaldı"
@@ -60,6 +60,9 @@ msgstr "Reklamları sil"
 
 msgid "SHOP_REMOVE_ADS_DETAIL"
 msgstr "Reklamlar əlavə olunanda"
+
+msgid "SHOP_BUY"
+msgstr "Al"
 
 msgid "SHOP_SOON"
 msgstr "Tezliklə"

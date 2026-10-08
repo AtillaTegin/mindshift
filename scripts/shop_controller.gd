@@ -45,6 +45,11 @@ func get_buy_button(product_id: String) -> Button:
 	return _buttons.get(product_id)
 
 
+## The second line of `product_id`'s row (amount and price, offer state, ...).
+func get_detail_text(product_id: String) -> String:
+	return _details[product_id].text
+
+
 func get_status_text() -> String:
 	return _status_label.text
 
@@ -102,8 +107,9 @@ func _refresh() -> void:
 		var detail: Label = _details[id]
 		match product["kind"]:
 			"coins":
-				detail.text = tr("SHOP_COINS_DETAIL") % product["coins"]
-				button.text = product["price"]
+				# The price sits next to the amount ("60 coin → $0.99"); demo mode, nothing is charged.
+				detail.text = tr("SHOP_COINS_DETAIL") % [product["coins"], product["price"]]
+				button.text = tr("SHOP_BUY")
 			"rewarded_ad":
 				detail.text = tr("SHOP_AD_DETAIL") % [EconomySystem.AD_REWARD, economy.ads_left(), EconomySystem.ADS_PER_DAY]
 				button.text = tr("SHOP_AD_BUTTON")
@@ -113,8 +119,8 @@ func _refresh() -> void:
 					var minutes: int = economy.unlimited_hints_seconds_left() / 60
 					detail.text = tr("SHOP_HINTS_ACTIVE") % ("%d:%02d" % [minutes / 60, minutes % 60])
 				else:
-					detail.text = tr("SHOP_HINTS_DETAIL") % product["hours"]
-				button.text = product["price"]
+					detail.text = tr("SHOP_HINTS_DETAIL") % [product["hours"], product["price"]]
+				button.text = tr("SHOP_BUY")
 			"remove_ads":
 				detail.text = tr("SHOP_REMOVE_ADS_DETAIL")
 				button.text = tr("SHOP_SOON")

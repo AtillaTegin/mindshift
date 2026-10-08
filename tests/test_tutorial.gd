@@ -5,7 +5,7 @@ extends "res://tests/test_case.gd"
 ## step. 6B-4: easy_002 allows free taps and a refused move shows the rule text.
 
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
-const SAVE_PATH: String = "user://test_tutorial_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_tutorial_save.json"
 
 var _board: GameBoard
 var _save: SaveSystem

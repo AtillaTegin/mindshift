@@ -18,6 +18,8 @@ var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
 var two_star_moves: int = 0
 ## Seconds, or null for no limit.
+## Seconds to solve the level, or null. Kept in the format for a later
+## "against the clock" mode; v1 ships no timed levels (LevelValidator enforces it).
 var time_limit_seconds: Variant = null
 
 

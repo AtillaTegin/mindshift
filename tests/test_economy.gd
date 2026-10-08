@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## EconomySystem (spec 4.8, economy/UX addendum 8.1).
 
-const PATH: String = "user://test_economy_save.json"
+const PATH: String = "res://.test_saves/test_economy_save.json"
 
 var _economy: EconomySystem
 

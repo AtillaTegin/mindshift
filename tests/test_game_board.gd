@@ -5,7 +5,7 @@ extends "res://tests/test_case.gd"
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
 const EASY_LEVEL: String = "res://data/levels/easy/easy_001.json"
 ## Never the player's real save.
-const SAVE_PATH: String = "user://test_game_board_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_game_board_save.json"
 
 var _board: Control
 var _save: SaveSystem

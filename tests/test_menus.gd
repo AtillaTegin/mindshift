@@ -3,7 +3,7 @@ extends "res://tests/test_case.gd"
 
 const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")
 const MENU_SCENE: PackedScene = preload("res://scenes/main_menu.tscn")
-const SAVE_PATH: String = "user://test_menus_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_menus_save.json"
 
 var _save: SaveSystem
 var _nodes: Array[Node] = []

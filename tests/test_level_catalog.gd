@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## LevelCatalog (shipped levels, unlocking, next level) and star rules.
 
-const PATH: String = "user://test_level_catalog.json"
+const PATH: String = "res://.test_saves/test_level_catalog.json"
 
 
 func after_each() -> void:
@@ -19,6 +19,23 @@ func test_counts_and_loading() -> void:
 	assert_eq(level.difficulty, "hard")
 	assert_null(LevelCatalog.load_level("hard", 0))
 	assert_null(LevelCatalog.load_level("hard", 51))
+
+
+func test_no_shipped_level_has_a_time_limit() -> void:
+	# Decision 2026-10-09: v1 has no timed levels; the field stays for a later mode.
+	for tier: String in Difficulty.ORDER:
+		for index: int in range(1, LevelCatalog.level_count(tier) + 1):
+			assert_null(LevelCatalog.load_level(tier, index).time_limit_seconds, "%s %d" % [tier, index])
+
+
+func test_validator_rejects_an_active_time_limit() -> void:
+	var level: Level = LevelCatalog.load_level("easy", 1)
+	level.time_limit_seconds = 60
+	var errors: Array[String] = []
+	LevelValidator.validate_level(level, errors)
+	assert_true(" ".join(errors).contains("v1 has no timed levels"), str(errors))
+	var data: Dictionary = level.to_dict()
+	assert_true(data.has("time_limit_seconds"), "the field stays in the format")
 
 
 func test_next_after() -> void:

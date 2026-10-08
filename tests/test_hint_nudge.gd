@@ -4,7 +4,7 @@ extends "res://tests/test_case.gd"
 ## MISTAKES_IN_A_ROW refused moves (plus a one-time toast).
 
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
-const SAVE_PATH: String = "user://test_hint_nudge_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_hint_nudge_save.json"
 
 var _board: GameBoard
 var _save: SaveSystem

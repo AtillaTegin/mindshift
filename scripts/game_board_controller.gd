@@ -63,7 +63,8 @@ var _peg_areas: Array[Rect2] = []
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
 ## Count-up stopwatch (economy/UX addendum, section 2). Not the same thing as a
-## level's time_limit_seconds countdown, which would get its own label.
+## level's time_limit_seconds countdown (none in v1; kept for a later
+## "against the clock" mode, which would get its own label).
 @onready var _time_label: Label = %TimeLabel
 @onready var _min_label: Label = %MinLabel
 @onready var _status_label: Label = %StatusLabel

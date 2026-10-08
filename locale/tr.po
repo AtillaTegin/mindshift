@@ -41,7 +41,7 @@ msgstr ""
 msgid "SHOP_COINS_LARGE"
 msgstr ""
 
-#. [TODO: TR] az: +%d coin
+#. [TODO: TR] az: %d coin → %s
 msgid "SHOP_COINS_DETAIL"
 msgstr ""
 
@@ -61,7 +61,7 @@ msgstr ""
 msgid "SHOP_HINTS_TITLE"
 msgstr ""
 
-#. [TODO: TR] az: %d saat ərzində bütün hint-lər pulsuz
+#. [TODO: TR] az: %d saat pulsuz hint → %s
 msgid "SHOP_HINTS_DETAIL"
 msgstr ""
 
@@ -75,6 +75,10 @@ msgstr ""
 
 #. [TODO: TR] az: Reklamlar əlavə olunanda
 msgid "SHOP_REMOVE_ADS_DETAIL"
+msgstr ""
+
+#. [TODO: TR] az: Al
+msgid "SHOP_BUY"
 msgstr ""
 
 #. [TODO: TR] az: Tezliklə

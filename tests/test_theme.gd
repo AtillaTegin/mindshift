@@ -2,7 +2,7 @@ extends "res://tests/test_case.gd"
 ## ThemeManager (economy/UX addendum 4.1): light/dark palettes with semantic
 ## roles, one Theme on the root window, and no colour codes in UI code.
 
-const SAVE_PATH: String = "user://test_theme_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_theme_save.json"
 ## Files allowed to contain colour literals, and why.
 const COLOUR_LITERAL_ALLOWED: Array[String] = [
 	"res://scripts/theme_manager.gd",  # the palettes themselves

@@ -18,8 +18,9 @@ var _pending_level: Dictionary = {}
 
 func _ready() -> void:
 	var save_path: String = SaveSystem.DEFAULT_PATH
-	# Tools and tests run with --script; they must never write the player's save.
-	if "--script" in OS.get_cmdline_args():
+	# Tools, tests and e2e scripts run with --script; they must never write the
+	# player's save. Their files also land in StoragePaths.SANDBOX_DIR, not in user://.
+	if StoragePaths.is_script_run():
 		save_path = SCRIPT_RUN_SAVE_PATH
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--save-path="):

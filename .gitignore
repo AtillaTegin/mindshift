@@ -15,3 +15,6 @@ Thumbs.db
 
 # Godot API dumps (local reference only)
 extension_api.json
+
+# Files written by tests and e2e scripts (StoragePaths.SANDBOX_DIR)
+.test_saves/

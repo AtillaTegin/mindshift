@@ -102,8 +102,13 @@ static func load_and_validate(path: String, errors: Array[String]) -> Level:
 
 
 ## Level.check() plus a fresh Solver run proving min_moves is the minimum.
+## Shipped levels must not use time_limit_seconds: v1 has no timed levels
+## (decision 2026-10-09, spec section 8; timers are kept for a later separate
+## "against the clock" mode). The field itself stays in the level format.
 static func validate_level(level: Level, errors: Array[String]) -> void:
 	var error_count: int = errors.size()
+	if level.time_limit_seconds != null:
+		errors.append("time_limit_seconds must be null: v1 has no timed levels")
 	level.check(errors)
 	if errors.size() > error_count:
 		return

@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## Shop (economy/UX addendum 8.2/8.3): products, stub purchases and the screen.
 
-const SAVE_PATH: String = "user://test_shop_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_shop_save.json"
 const SHOP_SCENE: PackedScene = preload("res://scenes/shop.tscn")
 
 var _economy: EconomySystem
@@ -73,8 +73,12 @@ func test_billing_hook_is_marked() -> void:
 
 func test_shop_screen_buy_buttons() -> void:
 	_open_shop()
+	assert_eq(_shop.get_detail_text("coins_small"), "60 coin → $0.99")
+	assert_eq(_shop.get_detail_text("coins_medium"), "200 coin → $2.99")
+	assert_eq(_shop.get_detail_text("coins_large"), "500 coin → $6.99")
+	assert_eq(_shop.get_detail_text("unlimited_hints_24h"), "24 saat pulsuz hint → $0.99")
 	var small: Button = _shop.get_buy_button("coins_small")
-	assert_eq(small.text, "$0.99")
+	assert_eq(small.text, "Al")
 	assert_true(small is PolishedButton)
 	small.pressed.emit()
 	assert_eq(_economy.coins, 60)

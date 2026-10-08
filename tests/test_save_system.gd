@@ -2,7 +2,7 @@ extends "res://tests/test_case.gd"
 ## SaveSystem. Day 5 acceptance: progress survives closing and reopening the
 ## game, i.e. a fresh SaveSystem reading the same file sees the same progress.
 
-const PATH: String = "user://test_save_system.json"
+const PATH: String = "res://.test_saves/test_save_system.json"
 
 
 func before_each() -> void:

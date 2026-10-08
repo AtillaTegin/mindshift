@@ -1,7 +1,7 @@
 extends "res://tests/test_case.gd"
 ## Level model (spec 4.5 JSON) and LevelValidator.
 
-const TEMP_DIR: String = "user://test_levels"
+const TEMP_DIR: String = "res://.test_saves/test_levels"
 
 
 func after_each() -> void:

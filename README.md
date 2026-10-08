@@ -20,6 +20,9 @@ Oyunda qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və d
 
 İrəliləyiş `user://save.json`-da saxlanılır (Windows-da `%APPDATA%\Godot\app_userdata\MindShift- Puzzle Logic\`).
 Başqa save faylı ilə işə salmaq üçün: `... -- --save-path=user://test.json`.
+Testlər, e2e skriptləri və alətlər (`--script` ilə işləyənlər) bu qovluğa heç vaxt yazmır.
+Onların `user://` faylları layihədəki `.test_saves/` qovluğuna yönləndirilir ([scripts/storage_paths.gd](scripts/storage_paths.gd)). Bu qovluq git-ə düşmür.
+Vaxt limiti: v1-də heç bir səviyyədə yoxdur. `time_limit_seconds` sahəsi formatda qalır, amma validator dolu dəyəri rədd edir. Vaxt limiti gələcəkdə ayrıca "Vaxta Qarşı" rejimində olacaq.
 Kilid qaydası ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), bölmə 1.2): Asan həmişə açıqdır; Orta Asan-da 15, Çətin Orta-da 10,
 Ekspert Çətin-də 10 səviyyə tamamlananda açılır (say `completed_levels`-dən hesablanır, yeni save sahəsi yoxdur).
 Açıq bölmənin içində səviyyələr ardıcıl açılır. Artıq tamamlanmış səviyyə həmişə açıq qalır.
@@ -33,7 +36,7 @@ Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), 8.1). Hamıs�
 - Gündə 3 pulsuz undo var (bütün səviyyələr üçün ortaq), sonra hər biri 1 coin. Undo gedişi sayğacdan da geri alır.
 
 Mağaza ([scripts/shop_catalog.gd](scripts/shop_catalog.gd)) **stub rejimindədir**: alış məhsulu dərhal verir, real ödəniş yoxdur.
-- Coin paketləri: 60 / 200 / 500 coin ($0.99 / $2.99 / $6.99).
+- Coin paketləri: 60 / 200 / 500 coin ($0.99 / $2.99 / $6.99). Qiymət sırada "60 coin → $0.99" kimi görünür, düymədə "Al" yazılıb.
 - Reklam: 5 coin, gündə 5 dəfə.
 - "24 saat limitsiz Hint": $0.99.
 - "Reklamları sil" reklam sistemi gələnə qədər bağlıdır.

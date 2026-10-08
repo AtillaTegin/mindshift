@@ -3,7 +3,7 @@ extends "res://tests/test_case.gd"
 ## colours, shown through the PolishedButton icon slot and next to coin labels.
 
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
-const SAVE_PATH: String = "user://test_icons_save.json"
+const SAVE_PATH: String = "res://.test_saves/test_icons_save.json"
 
 var _nodes: Array[Node] = []
 var _mode_before: String = ""

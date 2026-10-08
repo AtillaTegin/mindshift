@@ -55,6 +55,8 @@ func _run_when_tree_is_live() -> void:
 
 func _run_all() -> bool:
 	var filter: String = _parse_filter(OS.get_cmdline_user_args())
+	# Every file a test writes goes here, never into the player's user:// folder.
+	DirAccess.make_dir_recursive_absolute(StoragePaths.SANDBOX_DIR)
 	var error_counter: ErrorCounter = ErrorCounter.new()
 	OS.add_logger(error_counter)
 

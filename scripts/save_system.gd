@@ -37,8 +37,10 @@ var ads_watched: int = 0
 var unlimited_hints_until: int = 0
 
 
+## In --script runs (tests, tools) a user:// path is moved into the test
+## sandbox, so they can never write the player's real save folder.
 func _init(p_path: String = DEFAULT_PATH) -> void:
-	path = p_path
+	path = StoragePaths.resolve(p_path)
 
 
 ## Loads the file. A missing file means a fresh start. A damaged file is kept
