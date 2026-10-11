@@ -1,21 +1,184 @@
 class_name LevelCatalog
 extends RefCounted
-## The shipped levels: data/levels/<tier>/<tier>_001.json, _002.json, ... with
-## no gaps (the generator writes them that way and the validator checks it).
-## Files are probed by name, which also works inside an exported game.
+## The level path (level structure addendum v3): one numbered road through the
+## levels, plus a side branch, the "island", that appears once main level
+## `branch_after` is completed. Tiers and mechanics stay inside the level
+## files; the player only sees numbered positions on the path.
+##
+## data/levels/path.json, written by tools/path_builder.gd:
+## { "branch_after": 50,
+##   "main": [{ "file": "easy/easy_001.json", "id": 1001 }, ...],
+##   "branch": [{ "file": "hard/hard_067.json", "id": 3067 }, ...] }
+##
+## A level opens once the one before it on its track is completed, and a
+## completed level always stays open. There is no other lock.
 
-## Bonus levels (bonus mechanics addendum) are listed in
-## data/levels/bonus/index.json: { "levels": [{ "file", "id", "tab" }] }.
-## They are optional extras: always open, shown at the end of their tab, and
-## never counted toward unlocking a tier.
-const BONUS_INDEX_FILE: String = "index.json"
-const BONUS_PER_TAB: int = 2
+const PATH_FILE: String = "path.json"
+const MAIN: String = "main"
+const BRANCH: String = "branch"
+const TRACKS: Array[String] = [MAIN, BRANCH]
 
+static var _path: Dictionary = {}
+## Level id -> {track, position}.
+static var _places: Dictionary = {}
+## Mechanic level file -> its Level.mechanic().
+static var _mechanics: Dictionary = {}
+## Classic level files per tier (tools and tests).
 static var _counts: Dictionary = {}
-static var _bonus_entries: Array[Dictionary] = []
-static var _bonus_loaded: bool = false
 
 
+static func clear_cache() -> void:
+	_path = {}
+	_places = {}
+	_mechanics.clear()
+	_counts.clear()
+
+
+## The parsed path file (see the class comment); both tracks always exist.
+static func path_data() -> Dictionary:
+	if _path.is_empty():
+		var errors: Array[String] = []
+		_path = read_path("%s/%s" % [Difficulty.LEVELS_DIR, PATH_FILE], errors)
+		for error: String in errors:
+			push_error("Level path: %s" % error)
+		for track: String in TRACKS:
+			var entries: Array = _path[track]
+			for i: int in entries.size():
+				_places[entries[i]["id"]] = {"track": track, "position": i + 1}
+	return _path
+
+
+## Parses a path file; problems go to `errors`. The result always has
+## "branch_after" and both tracks, possibly empty.
+static func read_path(file_path: String, errors: Array[String]) -> Dictionary:
+	var result: Dictionary = {"branch_after": 0, MAIN: [] as Array[Dictionary], BRANCH: [] as Array[Dictionary]}
+	if not FileAccess.file_exists(file_path):
+		errors.append("%s not found" % file_path)
+		return result
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(file_path))
+	if typeof(data) != TYPE_DICTIONARY:
+		errors.append("the path must be a JSON object")
+		return result
+	var after: Variant = data.get("branch_after")
+	if typeof(after) in [TYPE_INT, TYPE_FLOAT] and after == floorf(after):
+		result["branch_after"] = int(after)
+	else:
+		errors.append("\"branch_after\" must be an integer")
+	for track: String in TRACKS:
+		if typeof(data.get(track)) != TYPE_ARRAY:
+			errors.append("\"%s\" must be a list" % track)
+			continue
+		for item: Variant in data[track]:
+			if typeof(item) != TYPE_DICTIONARY or typeof(item.get("file")) != TYPE_STRING \
+					or typeof(item.get("id")) not in [TYPE_INT, TYPE_FLOAT]:
+				errors.append("bad %s entry %s" % [track, str(item)])
+				continue
+			(result[track] as Array).append({"file": item["file"], "id": int(item["id"])})
+	return result
+
+
+static func track_length(track: String) -> int:
+	return (path_data().get(track, []) as Array).size()
+
+
+## Main path position whose completion opens the branch.
+static func branch_after() -> int:
+	return path_data()["branch_after"]
+
+
+## Levels on both tracks.
+static func total_levels() -> int:
+	return track_length(MAIN) + track_length(BRANCH)
+
+
+## {file, id} of the level at `position` (1-based) on `track`, or {}.
+static func entry(track: String, position: int) -> Dictionary:
+	if position < 1 or position > track_length(track):
+		return {}
+	return path_data()[track][position - 1]
+
+
+static func level_id_at(track: String, position: int) -> int:
+	return entry(track, position).get("id", -1)
+
+
+## The level at `position` on `track`, or null if there is none or it cannot be read.
+static func load_at(track: String, position: int) -> Level:
+	var place: Dictionary = entry(track, position)
+	if place.is_empty():
+		return null
+	var errors: Array[String] = []
+	var level: Level = Level.load_file("%s/%s" % [Difficulty.LEVELS_DIR, place["file"]], errors)
+	if level == null:
+		push_error("Cannot load %s %d: %s" % [track, position, "; ".join(errors)])
+	return level
+
+
+## Level.mechanic() of the level at a path position, without reading classic
+## files: tier folders only hold classic levels (LevelValidator checks it).
+static func mechanic_at(track: String, position: int) -> String:
+	var file: String = entry(track, position).get("file", "")
+	if not file.begins_with(Difficulty.MECHANICS + "/"):
+		return Level.CLASSIC
+	if not _mechanics.has(file):
+		var level: Level = load_at(track, position)
+		_mechanics[file] = level.mechanic() if level != null else Level.CLASSIC
+	return _mechanics[file]
+
+
+## Where level `level_id` sits: {track, position}, or {} if it is not on the path.
+static func place_of(level_id: int) -> Dictionary:
+	path_data()
+	return _places.get(level_id, {})
+
+
+## The island shows up (and its first level opens) once main level
+## branch_after() is completed; progress made on it keeps it open.
+static func is_branch_open(save: SaveSystem) -> bool:
+	return save.is_completed(level_id_at(MAIN, branch_after())) or save.is_completed(level_id_at(BRANCH, 1))
+
+
+static func is_unlocked(track: String, position: int, save: SaveSystem) -> bool:
+	var level_id: int = level_id_at(track, position)
+	if level_id == -1:
+		return false
+	if save.is_completed(level_id):
+		return true
+	if track == BRANCH and not is_branch_open(save):
+		return false
+	return position == 1 or save.is_completed(level_id_at(track, position - 1))
+
+
+## The level after (track, position) on the same track: {track, position}, or
+## {} after the last one.
+static func next_after(track: String, position: int) -> Dictionary:
+	if position < 1 or position >= track_length(track):
+		return {}
+	return {"track": track, "position": position + 1}
+
+
+## Where "Play" continues: the first open, uncompleted level of the main path;
+## once the main path is done, of the island. The very first level if
+## everything is completed; {} if there are no levels.
+static func next_to_play(save: SaveSystem) -> Dictionary:
+	for track: String in TRACKS:
+		for position: int in range(1, track_length(track) + 1):
+			if not save.is_completed(level_id_at(track, position)) and is_unlocked(track, position, save):
+				return {"track": track, "position": position}
+	return {"track": MAIN, "position": 1} if track_length(MAIN) > 0 else {}
+
+
+## Board header: "Səviyyə 7", "Ada · 3" on the island, or "Səviyyə" for a level
+## that is not on the path (tests, tools).
+static func level_title(level: Level) -> String:
+	var place: Dictionary = place_of(level.id)
+	if place.is_empty():
+		return Languages.text("LEVEL_TITLE_PLAIN")
+	return Languages.text("LEVEL_TITLE_BRANCH" if place["track"] == BRANCH else "LEVEL_TITLE") % place["position"]
+
+
+## Classic level files of one tier (data/levels/<tier>/<tier>_NNN.json, no
+## gaps); used by tools and tests, the game itself goes by the path.
 static func level_count(tier: String) -> int:
 	if not _counts.has(tier):
 		var count: int = 0
@@ -26,88 +189,7 @@ static func level_count(tier: String) -> int:
 	return _counts[tier]
 
 
-static func clear_cache() -> void:
-	_counts.clear()
-	_bonus_entries.clear()
-	_bonus_loaded = false
-
-
-## Every bonus level in index order: [{ file, id, tab }].
-static func bonus_entries() -> Array[Dictionary]:
-	if not _bonus_loaded:
-		var errors: Array[String] = []
-		_bonus_entries = read_bonus_index(bonus_dir() + "/" + BONUS_INDEX_FILE, errors)
-		for error: String in errors:
-			push_error("Bonus index: %s" % error)
-		_bonus_loaded = true
-	return _bonus_entries
-
-
-## The bonus levels shown at the end of `tier`'s tab.
-static func bonus_for_tab(tier: String) -> Array[Dictionary]:
-	var entries: Array[Dictionary] = []
-	for entry: Dictionary in bonus_entries():
-		if entry["tab"] == tier:
-			entries.append(entry)
-	return entries
-
-
-## The index entry of bonus level `id`, or {}.
-static func bonus_entry_for_id(id: int) -> Dictionary:
-	for entry: Dictionary in bonus_entries():
-		if entry["id"] == id:
-			return entry
-	return {}
-
-
-## The tier whose prices apply to `level` (hint cost): its own tier, or for a
-## bonus level the tab it is shown in.
-static func economy_tier(level: Level) -> String:
-	if level.is_bonus():
-		return bonus_entry_for_id(level.id).get("tab", Difficulty.ORDER[0])
-	return level.difficulty
-
-
-## Short name for the board header: "Asan · 7", or "Bonus · 2" (index order).
-static func level_title(level: Level) -> String:
-	if level.is_bonus():
-		return "%s · %d" % [Difficulty.display_name(Difficulty.BONUS), level.id - Difficulty.BONUS_FIRST_ID + 1]
-	return "%s · %d" % [Difficulty.display_name(level.difficulty), Difficulty.index_of_id(level.id)]
-
-
-static func bonus_dir() -> String:
-	return "%s/%s" % [Difficulty.LEVELS_DIR, Difficulty.BONUS]
-
-
-## The bonus level stored in `file_name`, or null.
-static func load_bonus(file_name: String) -> Level:
-	var errors: Array[String] = []
-	var level: Level = Level.load_file("%s/%s" % [bonus_dir(), file_name], errors)
-	if level == null:
-		push_error("Cannot load bonus %s: %s" % [file_name, "; ".join(errors)])
-	return level
-
-
-## Parses a bonus index file; problems go to `errors`. A missing file means
-## "no bonus levels" and is not an error.
-static func read_bonus_index(path: String, errors: Array[String]) -> Array[Dictionary]:
-	var entries: Array[Dictionary] = []
-	if not FileAccess.file_exists(path):
-		return entries
-	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if typeof(data) != TYPE_DICTIONARY or typeof(data.get("levels")) != TYPE_ARRAY:
-		errors.append("index must be {\"levels\": [...]}")
-		return entries
-	for item: Variant in data["levels"]:
-		if typeof(item) != TYPE_DICTIONARY or typeof(item.get("file")) != TYPE_STRING \
-				or typeof(item.get("id")) not in [TYPE_INT, TYPE_FLOAT] or not Difficulty.ORDER.has(item.get("tab")):
-			errors.append("bad index entry %s" % str(item))
-			continue
-		entries.append({"file": item["file"], "id": int(item["id"]), "tab": item["tab"]})
-	return entries
-
-
-## The level, or null if it does not exist or cannot be parsed.
+## The `index`-th classic level of `tier`, or null.
 static func load_level(tier: String, index: int) -> Level:
 	if index < 1 or index > level_count(tier):
 		return null
@@ -118,55 +200,14 @@ static func load_level(tier: String, index: int) -> Level:
 	return level
 
 
-## The level after (tier, index): the next one in the tier, otherwise the first
-## level of the next tier. Returns {"tier", "index"}, or {} after the last level.
-static func next_after(tier: String, index: int) -> Dictionary:
-	if index < level_count(tier):
-		return {"tier": tier, "index": index + 1}
-	var position: int = Difficulty.ORDER.find(tier)
-	for next_position: int in range(position + 1, Difficulty.ORDER.size()):
-		var next_tier: String = Difficulty.ORDER[next_position]
-		if level_count(next_tier) > 0:
-			return {"tier": next_tier, "index": 1}
-	return {}
+## Path of a mechanic level file, e.g. mechanic_path("frozen_01.json").
+static func mechanic_path(file_name: String) -> String:
+	return "%s/%s/%s" % [Difficulty.LEVELS_DIR, Difficulty.MECHANICS, file_name]
 
 
-## A tier is open once enough levels of the tier before it are completed
-## (Difficulty.UNLOCK_AFTER_COMPLETED); the first tier is always open.
-static func is_tier_unlocked(tier: String, save: SaveSystem) -> bool:
-	return completed_toward_unlock(tier, save) >= Difficulty.unlock_requirement(tier)
-
-
-## Completed levels of the previous tier that count toward opening `tier`.
-static func completed_toward_unlock(tier: String, save: SaveSystem) -> int:
-	var previous: String = Difficulty.previous_tier(tier)
-	return save.completed_count(previous) if not previous.is_empty() else 0
-
-
-## Inside an open tier the first level is open and every other level opens once
-## the one before it is completed. A level already completed always stays open,
-## so progress made under older rules is never taken away.
-static func is_unlocked(tier: String, index: int, save: SaveSystem) -> bool:
-	if index < 1 or index > level_count(tier):
-		return false
-	if save.is_completed(Difficulty.id_for(tier, index)):
-		return true
-	return is_tier_unlocked(tier, save) and (index == 1 or save.is_completed(Difficulty.id_for(tier, index - 1)))
-
-
-## Where "Play" continues: the first unlocked, uncompleted level of the hardest
-## open tier that still has one, so a player who has opened a new tier moves on
-## instead of being kept in the old one. The very first level if everything is
-## completed; {} if no levels exist.
-static func next_to_play(save: SaveSystem) -> Dictionary:
-	for position: int in range(Difficulty.ORDER.size() - 1, -1, -1):
-		var tier: String = Difficulty.ORDER[position]
-		if not is_tier_unlocked(tier, save):
-			continue
-		for index: int in range(1, level_count(tier) + 1):
-			if not save.is_completed(Difficulty.id_for(tier, index)) and is_unlocked(tier, index, save):
-				return {"tier": tier, "index": index}
-	for tier: String in Difficulty.ORDER:
-		if level_count(tier) > 0:
-			return {"tier": tier, "index": 1}
-	return {}
+static func load_mechanic(file_name: String) -> Level:
+	var errors: Array[String] = []
+	var level: Level = Level.load_file(mechanic_path(file_name), errors)
+	if level == null:
+		push_error("Cannot load %s: %s" % [file_name, "; ".join(errors)])
+	return level

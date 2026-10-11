@@ -76,7 +76,7 @@ func _may_nudge() -> bool:
 	return session != null and not session.is_solved() \
 			and (_board.tutorial == null or _board.tutorial.mode == TutorialDirector.Mode.OFF) \
 			and _board.restricted_peg < 0 and not _hints.is_showing() and not _hints.is_pending() \
-			and _economy.can_afford(_economy.hint_cost(LevelCatalog.economy_tier(session.level)))
+			and _economy.can_afford(_economy.hint_cost(session.level.difficulty))
 
 
 func _show(why: String) -> void:

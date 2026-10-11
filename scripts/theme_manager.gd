@@ -6,7 +6,8 @@ extends Node
 ## restyles every open screen at once.
 ##
 ## Themed type variations for scenes: SecondaryLabel, SuccessLabel,
-## DangerLabel, CoinLabel (Label) and CardPanel (PanelContainer).
+## DangerLabel, CoinLabel (Label), CardPanel and RowPanel (PanelContainer),
+## AccentButton, MapStop and MapStopCurrent (Button).
 
 signal theme_changed(mode: String)
 
@@ -14,6 +15,8 @@ const LIGHT: String = "light"
 const DARK: String = "dark"
 ## The semantic roles every palette must define (addendum 4.1).
 const CORE_ROLES: Array[String] = ["background", "surface", "text_primary", "text_secondary", "accent", "success", "danger"]
+## Corner radius that turns a map stop into a circle (larger than half its size).
+const MAP_STOP_RADIUS: int = 80
 
 const LIGHT_PALETTE: Dictionary = {
 	"background": Color("f4f1ea"),
@@ -76,13 +79,28 @@ const ICON_COLORS: Dictionary = {
 	"hint": Color("9d8cff"),
 	"hint_base": Color("5b4fc4"),
 	"undo": Color("b4c3d6"),
-	# Bonus levels: gift box and ribbon.
-	"gift": Color("e76f51"),
-	"gift_ribbon": Color("f4b400"),
-	# Frozen disk (bonus mechanics): frosted rim and cracks.
+	# Frozen disk: frosted rim and cracks.
 	"ice": Color("e6f7ff"),
 	"ice_edge": Color("4fb3e8"),
 }
+
+## Visual dress of the levels with a special mechanic (level structure addendum
+## v3, section 3): the board, its pattern, the pegs and the ring on the map
+## stop. Code-drawn palettes and patterns, no textures; classic levels wear none.
+const SKINS: Dictionary = {
+	# Frozen disk: green jade, after the Chinese Nine Rings puzzle.
+	"jade": {
+		LIGHT: {"board": Color("e1efe5"), "pattern": Color("a9d1b7"), "peg": Color("3f8f6b"), "mark": Color("2f8a5f")},
+		DARK: {"board": Color("17302a"), "pattern": Color("2b5a47"), "peg": Color("4fae84"), "mark": Color("4fbf8a")},
+	},
+	# Covered pegs: wood and marquetry, after Japanese karakuri puzzle boxes.
+	"wood": {
+		LIGHT: {"board": Color("f0e2cb"), "pattern": Color("d4b48c"), "peg": Color("8a5a33"), "mark": Color("a0663a")},
+		DARK: {"board": Color("2e2319"), "pattern": Color("4b3828"), "peg": Color("b07a4a"), "mark": Color("c58a52")},
+	},
+}
+## Level.mechanic() -> skin.
+const MECHANIC_SKINS: Dictionary = {"frozen_disk": "jade", "covered_pegs": "wood"}
 
 var mode: String = LIGHT
 var theme: Theme
@@ -115,6 +133,23 @@ func icon_color(role: String) -> Color:
 		push_error("Unknown icon colour \"%s\"" % role)
 		return Color.MAGENTA
 	return ICON_COLORS[role]
+
+
+## The dress of a level with mechanic `mechanic`, "" for none.
+func skin_for(mechanic: String) -> String:
+	return MECHANIC_SKINS.get(mechanic, "")
+
+
+## Colour `role` of `skin` in the current mode. With no skin ("") it is the
+## palette colour of the same role, so "peg" works for every level.
+func skin_color(skin: String, role: String) -> Color:
+	if skin.is_empty():
+		return color(role)
+	var colors: Dictionary = SKINS.get(skin, {}).get(mode, {})
+	if not colors.has(role):
+		push_error("Unknown skin colour \"%s\" / \"%s\"" % [skin, role])
+		return Color.MAGENTA
+	return colors[role]
 
 
 ## Switches to `new_mode` (LIGHT or DARK; anything else means LIGHT).
@@ -171,12 +206,11 @@ static func build_theme(colors: Dictionary) -> Theme:
 	card.content_margin_bottom = 36.0
 	built.set_stylebox("panel", "CardPanel", card)
 
-	# Bonus level cells in the level select: an accent tile, unlike the grey levels.
-	built.set_type_variation("BonusButton", "Button")
-	built.set_stylebox("normal", "BonusButton", _box(colors["accent"]))
-	built.set_stylebox("hover", "BonusButton", _box(colors["accent"].lightened(0.1)))
-	built.set_stylebox("pressed", "BonusButton", _box(colors["accent"].darkened(0.15)))
-	built.set_stylebox("hover_pressed", "BonusButton", _box(colors["accent"].darkened(0.15)))
+	# An accent button (the island marker on the level map).
+	_add_button_variation(built, "AccentButton", colors["accent"], 8, colors)
+	# Stops on the level map: round buttons; the next level to play is accent.
+	_add_button_variation(built, "MapStop", colors["button"], MAP_STOP_RADIUS, colors)
+	_add_button_variation(built, "MapStopCurrent", colors["accent"], MAP_STOP_RADIUS, colors)
 
 	# One product row in the shop.
 	built.set_type_variation("RowPanel", "PanelContainer")
@@ -187,6 +221,15 @@ static func build_theme(colors: Dictionary) -> Theme:
 	row.content_margin_bottom = 14.0
 	built.set_stylebox("panel", "RowPanel", row)
 	return built
+
+
+static func _add_button_variation(built: Theme, variation: String, fill: Color, radius: int, colors: Dictionary) -> void:
+	built.set_type_variation(variation, "Button")
+	built.set_stylebox("normal", variation, _box(fill, radius))
+	built.set_stylebox("hover", variation, _box(fill.lightened(0.1), radius))
+	built.set_stylebox("pressed", variation, _box(fill.darkened(0.15), radius))
+	built.set_stylebox("hover_pressed", variation, _box(fill.darkened(0.15), radius))
+	built.set_stylebox("disabled", variation, _box(colors["button_disabled"], radius))
 
 
 static func _box(fill: Color, radius: int = 8, margin: float = 6.0) -> StyleBoxFlat:

@@ -103,26 +103,29 @@ msgstr "Bağla"
 msgid "COMMON_MENU"
 msgstr "Menyu"
 
-msgid "TIER_EASY"
-msgstr "Asan"
-
-msgid "TIER_MEDIUM"
-msgstr "Orta"
-
-msgid "TIER_HARD"
-msgstr "Çətin"
-
-msgid "TIER_EXPERT"
-msgstr "Ekspert"
-
 msgid "SELECT_STARS"
 msgstr "Ulduz: %d"
 
-msgid "SELECT_TIER_INFO"
-msgstr "%s gediş · %s qüllə · %s disk"
+msgid "LEVEL_TITLE"
+msgstr "Səviyyə %d"
 
-msgid "SELECT_TIER_LOCKED"
-msgstr "Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)"
+msgid "LEVEL_TITLE_BRANCH"
+msgstr "Ada · %d"
+
+msgid "LEVEL_TITLE_PLAIN"
+msgstr "Səviyyə"
+
+msgid "MAP_ISLAND"
+msgstr "Gizli ada"
+
+msgid "MAP_TO_ISLAND"
+msgstr "Gizli adaya keç"
+
+msgid "MAP_TO_MAIN"
+msgstr "Əsas yola qayıt"
+
+msgid "POPUP_ISLAND_OPENED"
+msgstr "Gizli ada açıldı! Səviyyələr xəritəsində onu tap."
 
 msgid "BOARD_RESTART"
 msgstr "Yenidən"
@@ -183,9 +186,6 @@ msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 
 msgid "RULE_FROZEN_DISK"
 msgstr "Bu disk dondurulub, yerindən tərpənmir."
-
-msgid "TIER_BONUS"
-msgstr "Bonus"
 
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"

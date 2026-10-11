@@ -102,15 +102,6 @@ func get_stars(level_id: int) -> int:
 	return int(get_record(level_id).get("stars", 0))
 
 
-## Completed levels of one difficulty tier, counted from completed_levels.
-func completed_count(tier: String) -> int:
-	var count: int = 0
-	for key: String in completed_levels:
-		if Difficulty.tier_of_id(key.to_int()) == tier:
-			count += 1
-	return count
-
-
 func get_total_stars() -> int:
 	var total: int = 0
 	for record: Dictionary in completed_levels.values():

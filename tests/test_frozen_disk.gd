@@ -104,7 +104,7 @@ func test_solver_finds_the_minimum_with_a_frozen_middle_disk() -> void:
 
 func test_solver_matches_the_oracle_where_the_freeze_matters() -> void:
 	for file_name: String in ["frozen_01.json", "frozen_02.json"]:
-		var level: Level = LevelCatalog.load_bonus(file_name)
+		var level: Level = LevelCatalog.load_mechanic(file_name)
 		var frozen: int = level.rule_params["frozen_disk"]["disk_size"]
 		assert_eq(Solver.solve(level.start, level.goal, level.get_rule_set())["min_moves"], level.min_moves, file_name)
 		assert_eq(_oracle_min_moves(level.start.to_array(), level.goal.to_array(), frozen), level.min_moves,
@@ -117,7 +117,7 @@ func test_session_refuses_to_pick_up_the_frozen_disk() -> void:
 	var start: PuzzleState = PuzzleState.new([[5, 3], [4, 2, 1], [], []])
 	var goal: PuzzleState = PuzzleState.new([[5, 3, 1], [4, 2], [], []])
 	var path: Array[Move] = [Move.new(1, 0)]
-	var session: GameSession = GameSession.new(Level.create(9050, "bonus", start, goal, FROZEN_RULES, path,
+	var session: GameSession = GameSession.new(Level.create(9050, "hard", start, goal, FROZEN_RULES, path,
 			{"frozen_disk": {"disk_size": 3}}))
 	assert_eq(session.tap_peg(0), GameSession.TapResult.BLOCKED)
 	assert_eq(session.selected_peg, -1)
@@ -131,11 +131,11 @@ func test_board_shows_ice_and_wobbles_on_tap() -> void:
 	_board.save_system = SaveSystem.new(SAVE_PATH)
 	_board.tutorials_enabled = false
 	_board.background_hints = false
-	_board.level_path = LevelCatalog.bonus_dir() + "/frozen_01.json"
+	_board.level_path = LevelCatalog.mechanic_path("frozen_01.json")
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
 	var frozen: int = _board.session.level.rule_params["frozen_disk"]["disk_size"]
-	assert_eq((_board.get_node("%LevelLabel") as Label).text, "Bonus · 1")
-	assert_eq((_board.get_node("%HintButton") as Button).text, "Hint · 3 coin", "priced like its tab (easy)")
+	assert_eq((_board.get_node("%LevelLabel") as Label).text, "Səviyyə %d" % LevelCatalog.place_of(9001)["position"], "a numbered stop on the road")
+	assert_eq((_board.get_node("%HintButton") as Button).text, "Hint · 3 coin", "priced by its own tier (easy)")
 	var disks: Node = _board.get_node("%DiskLayer")
 	for view: DiskView in disks.get_children():
 		assert_eq(view.frozen, view.disk_size == frozen, "only disk %d looks frozen" % frozen)
@@ -171,41 +171,41 @@ func test_main_level_files_keep_their_exact_form() -> void:
 			assert_eq(level.to_json(), FileAccess.get_file_as_string(path), path)
 
 
-func test_bonus_level_round_trip() -> void:
-	var level: Level = LevelCatalog.load_bonus("frozen_03.json")
-	assert_true(level.is_bonus())
+func test_mechanic_level_round_trip() -> void:
+	var level: Level = LevelCatalog.load_mechanic("frozen_03.json")
+	assert_eq(level.mechanic(), "frozen_disk")
+	assert_eq(level.difficulty, "hard")
 	assert_eq(Level.from_dict(JSON.parse_string(level.to_json()), [] as Array[String]).to_json(), level.to_json())
-	assert_eq(FileAccess.get_file_as_string(LevelCatalog.bonus_dir() + "/frozen_03.json"), level.to_json())
+	assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path("frozen_03.json")), level.to_json())
 
 
-func test_validator_checks_the_bonus_design() -> void:
+func test_validator_checks_the_mechanic_design() -> void:
 	# A frozen bottom disk is just a peg base.
 	var start: PuzzleState = PuzzleState.new([[4], [3, 2, 1], [], []])
 	var goal: PuzzleState = PuzzleState.new([[4], [], [], [3, 2, 1]])
 	var rules: RuleSet = _frozen(4)
-	var level: Level = Level.create(9060, "bonus", start, goal, FROZEN_RULES, Solver.solve(start, goal, rules)["path"],
+	var level: Level = Level.create(9060, "medium", start, goal, FROZEN_RULES, Solver.solve(start, goal, rules)["path"],
 			{"frozen_disk": {"disk_size": 4}})
 	var errors: Array[String] = []
-	LevelValidator.validate_bonus_design(level, errors)
+	LevelValidator.validate_mechanic_design(level, errors)
 	var text: String = " ".join(errors)
 	assert_true(text.contains("bottom disk"), text)
 	assert_true(text.contains("changes nothing"), text)
-	assert_eq(LevelValidator.validate_bonus_index(Difficulty.LEVELS_DIR), [] as Array[String], "index is valid")
-	for entry: Dictionary in LevelCatalog.bonus_entries():
+	for file_name: String in ["frozen_01.json", "frozen_02.json", "frozen_03.json", "frozen_04.json"]:
 		var file_errors: Array[String] = []
-		LevelValidator.load_and_validate(LevelCatalog.bonus_dir() + "/" + entry["file"], file_errors)
-		assert_eq(file_errors, [] as Array[String], entry["file"])
+		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), file_errors)
+		assert_eq(file_errors, [] as Array[String], file_name)
 
 
-func test_bonus_levels_never_count_toward_unlocking() -> void:
-	var save: SaveSystem = SaveSystem.new(SAVE_PATH)
-	for entry: Dictionary in LevelCatalog.bonus_entries():
-		save.record_completion(entry["id"], 3, 10, 10.0)
-		assert_eq(Difficulty.tier_of_id(entry["id"]), "")
-	for tier: String in Difficulty.ORDER:
-		assert_eq(save.completed_count(tier), 0, tier)
-	assert_false(LevelCatalog.is_tier_unlocked("medium", save))
-	for tier: String in Difficulty.ORDER:
-		assert_eq(LevelCatalog.bonus_for_tab(tier).size(), 2, "%s: one frozen and one fog level" % tier)
-	assert_eq(LevelCatalog.bonus_for_tab("easy")[0]["file"], "frozen_01.json")
-	assert_eq(LevelCatalog.bonus_for_tab("easy")[1]["file"], "fog_01.json")
+func test_mechanic_levels_take_the_tier_of_their_length() -> void:
+	# Level structure addendum v3: no bonus corner; each level carries a real tier.
+	for file_name: String in ["frozen_01.json", "frozen_02.json", "frozen_03.json", "frozen_04.json"]:
+		var level: Level = LevelCatalog.load_mechanic(file_name)
+		assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), file_name)
+		assert_true(Difficulty.is_mechanic_id(level.id), file_name)
+		assert_eq(LevelCatalog.place_of(level.id).get("track"), LevelCatalog.MAIN, "%s is on the road" % file_name)
+	var level: Level = LevelCatalog.load_mechanic("frozen_01.json")
+	level.difficulty = "medium"
+	var errors: Array[String] = []
+	level.check(errors)
+	assert_true(" ".join(errors).contains("outside medium"), "the tier must fit the length: %s" % str(errors))

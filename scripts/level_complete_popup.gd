@@ -21,6 +21,7 @@ var _confetti: CPUParticles2D
 @onready var _time_label: Label = %TimeLabel
 @onready var _moves_label: Label = %MovesLabel
 @onready var _record_label: Label = %RecordLabel
+@onready var _note_label: Label = %NoteLabel
 @onready var _next_button: Button = %NextButton
 @onready var _replay_button: Button = %ReplayButton
 @onready var _levels_button: Button = %LevelsButton
@@ -114,9 +115,14 @@ func show_result(stars: int, moves: int, min_moves: int, seconds: float, improve
 	_star_count = stars
 
 
-## Hides the "next level" button (bonus levels have no next level).
-func set_next_visible(shown: bool) -> void:
-	_next_button.visible = shown
+## An extra line under the result (e.g. the island just opened); "" hides it.
+func set_note(text: String) -> void:
+	_note_label.text = text
+	_note_label.visible = not text.is_empty()
+
+
+func get_note() -> String:
+	return _note_label.text if _note_label.visible else ""
 
 
 ## Stars earned in the shown result (the animation fills them one by one).

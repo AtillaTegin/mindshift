@@ -133,32 +133,36 @@ msgstr ""
 msgid "COMMON_MENU"
 msgstr ""
 
-#. [TODO: TR] az: Asan
-msgid "TIER_EASY"
-msgstr ""
-
-#. [TODO: TR] az: Orta
-msgid "TIER_MEDIUM"
-msgstr ""
-
-#. [TODO: TR] az: Çətin
-msgid "TIER_HARD"
-msgstr ""
-
-#. [TODO: TR] az: Ekspert
-msgid "TIER_EXPERT"
-msgstr ""
-
 #. [TODO: TR] az: Ulduz: %d
 msgid "SELECT_STARS"
 msgstr ""
 
-#. [TODO: TR] az: %s gediş · %s qüllə · %s disk
-msgid "SELECT_TIER_INFO"
+#. [TODO: TR] az: Səviyyə %d
+msgid "LEVEL_TITLE"
 msgstr ""
 
-#. [TODO: TR] az: Açmaq üçün %s bölməsində %d səviyyə bitir (%d/%d)
-msgid "SELECT_TIER_LOCKED"
+#. [TODO: TR] az: Ada · %d
+msgid "LEVEL_TITLE_BRANCH"
+msgstr ""
+
+#. [TODO: TR] az: Səviyyə
+msgid "LEVEL_TITLE_PLAIN"
+msgstr ""
+
+#. [TODO: TR] az: Gizli ada
+msgid "MAP_ISLAND"
+msgstr ""
+
+#. [TODO: TR] az: Gizli adaya keç
+msgid "MAP_TO_ISLAND"
+msgstr ""
+
+#. [TODO: TR] az: Əsas yola qayıt
+msgid "MAP_TO_MAIN"
+msgstr ""
+
+#. [TODO: TR] az: Gizli ada açıldı! Səviyyələr xəritəsində onu tap.
+msgid "POPUP_ISLAND_OPENED"
 msgstr ""
 
 #. [TODO: TR] az: Yenidən
@@ -239,10 +243,6 @@ msgstr ""
 
 #. [TODO: TR] az: Bu disk dondurulub, yerindən tərpənmir.
 msgid "RULE_FROZEN_DISK"
-msgstr ""
-
-#. [TODO: TR] az: Bonus
-msgid "TIER_BONUS"
 msgstr ""
 
 #. [TODO: TR] az: Səviyyə tamamlandı!

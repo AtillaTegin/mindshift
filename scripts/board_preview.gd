@@ -10,6 +10,11 @@ const MIN_HEIGHT: float = 130.0
 const MIN_FONT_SIZE: int = 14
 const MAX_FONT_SIZE: int = 20
 
+## Dress of the level (ThemeManager.SKINS): the pegs take its colour, "" for none.
+var skin: String = "":
+	set(value):
+		skin = value
+		queue_redraw()
 ## Disks a rule pins (frozen): drawn with an ice rim here too.
 var pinned_disks: Array[int] = []:
 	set(value):
@@ -93,7 +98,7 @@ func _draw() -> void:
 	var column: float = size.x / peg_count
 	var disk_height: float = _disk_height(disk_count)
 	var base_top: float = size.y - BASE_HEIGHT
-	var peg_color: Color = ThemeManager.color("peg")
+	var peg_color: Color = ThemeManager.skin_color(skin, "peg")
 	for peg_index: int in peg_count:
 		var center_x: float = column * (peg_index + 0.5)
 		draw_rect(Rect2(center_x - 3.0, base_top - disk_height * (disk_count + 0.5), 6.0, disk_height * (disk_count + 0.5)), peg_color)

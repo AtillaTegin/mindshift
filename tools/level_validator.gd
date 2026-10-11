@@ -5,7 +5,9 @@ extends SceneTree
 ##   godot --headless --path . --script res://tools/level_validator.gd
 ##   godot --headless --path . --script res://tools/level_validator.gd -- --require=50
 ##   godot --headless --path . --script res://tools/level_validator.gd -- --dir=res://data/levels
-## --require=N also fails unless every difficulty has at least N valid levels.
+## --require=N also fails unless every difficulty has at least N valid classic levels.
+## The level path (data/levels/path.json) is checked too: every level on it
+## exactly once, the tutorial first, expert levels only on the branch.
 ## Exits with code 0 only when everything is valid.
 
 const LEVELS_DIR: String = "res://data/levels"
@@ -13,6 +15,10 @@ const LEVELS_DIR: String = "res://data/levels"
 const SOLVER_MAX_STATES: int = 5000000
 ## A covered peg must be used within this many moves of the stored solution.
 const COVERED_REVEAL_WITHIN: int = 3
+## The tutorial levels that must open the path: TutorialDirector.GUIDED_LEVEL_ID
+## and FREE_LEVEL_ID (not referenced: TutorialDirector pulls in UI scripts that
+## need the autoloads, which --script tools do not have). A test keeps them equal.
+const TUTORIAL_LEVEL_IDS: Array[int] = [1001, 1002]
 
 
 func _initialize() -> void:
@@ -35,25 +41,29 @@ func _run() -> bool:
 		for error: String in failures[path]:
 			print("     - %s" % error)
 	var ok: bool = failures.is_empty() and report["files"] > 0
+	if not FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]):
+		print("FAIL %s/%s is missing (run tools/path_builder.gd)" % [levels_dir, LevelCatalog.PATH_FILE])
+		ok = false
 	var counts: Dictionary = report["valid_counts"]
-	if counts.has(Difficulty.BONUS):
-		print("%-7s %4d valid levels" % [Difficulty.BONUS, counts[Difficulty.BONUS]])
+	if counts.has(Difficulty.MECHANICS):
+		print("%-9s %4d valid levels" % [Difficulty.MECHANICS, counts[Difficulty.MECHANICS]])
 	for tier: String in Difficulty.ORDER:
 		var count: int = counts.get(tier, 0)
 		var status: String = ""
 		if count < required:
 			status = "  <-- fewer than %d" % required
 			ok = false
-		print("%-7s %4d valid levels%s" % [tier, count, status])
+		print("%-9s %4d valid levels%s" % [tier, count, status])
 	print("%d files checked, %d invalid (%d ms)" % [report["files"], failures.size(), Time.get_ticks_msec() - started_ms])
 	if report["files"] == 0:
 		print("No level files found in %s" % levels_dir)
 	return ok
 
 
-## Validates every <tier>/*.json under `levels_dir`, including checks across
-## files (unique ids, unique start/goal pairs). Returns
-## { files: int, failures: { path: Array[String] }, valid_counts: { tier: int } }.
+## Validates every <tier>/*.json and mechanics/*.json under `levels_dir`,
+## including checks across files (unique ids, unique start/goal pairs) and,
+## when `levels_dir` has one, the level path. Returns
+## { files: int, failures: { path: Array[String] }, valid_counts: { folder: int } }.
 static func validate_directory(levels_dir: String) -> Dictionary:
 	var failures: Dictionary = {}
 	var valid_counts: Dictionary = {}
@@ -64,7 +74,7 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 		var file_names: Array = Array(DirAccess.get_files_at("%s/%s" % [levels_dir, tier]))
 		file_names.sort()
 		for file_name: String in file_names:
-			if not file_name.ends_with(".json") or file_name == LevelCatalog.BONUS_INDEX_FILE:
+			if not file_name.ends_with(".json"):
 				continue
 			files += 1
 			var path: String = "%s/%s/%s" % [levels_dir, tier, file_name]
@@ -84,46 +94,56 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 				valid_counts[tier] = valid_counts.get(tier, 0) + 1
 			else:
 				failures[path] = errors
-	if DirAccess.dir_exists_absolute("%s/%s" % [levels_dir, Difficulty.BONUS]):
-		var index_errors: Array[String] = validate_bonus_index(levels_dir)
-		if not index_errors.is_empty():
-			failures["%s/%s/%s" % [levels_dir, Difficulty.BONUS, LevelCatalog.BONUS_INDEX_FILE]] = index_errors
+	if FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]):
+		var path_errors: Array[String] = validate_path(levels_dir)
+		if not path_errors.is_empty():
+			failures["%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]] = path_errors
 	return {"files": files, "failures": failures, "valid_counts": valid_counts}
 
 
-## The bonus index must list every bonus level file exactly once, with the
-## level's own id and a tier tab, at most BONUS_PER_TAB per tab.
-static func validate_bonus_index(levels_dir: String) -> Array[String]:
+## The level path lists every level file under `levels_dir` exactly once, with
+## the file's own id. The two tutorial levels open it, then classic easy levels
+## up to PathBuilder.FIRST_EASY; expert levels only appear on the branch, and
+## the branch opens after a level that exists.
+static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
-	var bonus_dir: String = "%s/%s" % [levels_dir, Difficulty.BONUS]
-	var entries: Array[Dictionary] = LevelCatalog.read_bonus_index("%s/%s" % [bonus_dir, LevelCatalog.BONUS_INDEX_FILE], errors)
-	var listed: Array[String] = []
-	var per_tab: Dictionary = {}
-	for entry: Dictionary in entries:
-		var file_name: String = entry["file"]
-		if listed.has(file_name):
-			errors.append("%s is listed twice" % file_name)
-		listed.append(file_name)
-		per_tab[entry["tab"]] = per_tab.get(entry["tab"], 0) + 1
-		var level_errors: Array[String] = []
-		var level: Level = Level.load_file("%s/%s" % [bonus_dir, file_name], level_errors)
-		if level == null:
-			errors.append("%s cannot be read" % file_name)
-		elif level.id != entry["id"]:
-			errors.append("%s has id %d, the index says %d" % [file_name, level.id, entry["id"]])
-	for tab: String in per_tab:
-		if per_tab[tab] > LevelCatalog.BONUS_PER_TAB:
-			errors.append("%d bonus levels in the %s tab (at most %d)" % [per_tab[tab], tab, LevelCatalog.BONUS_PER_TAB])
-	for file_name: String in DirAccess.get_files_at(bonus_dir):
-		if file_name.ends_with(".json") and file_name != LevelCatalog.BONUS_INDEX_FILE and not listed.has(file_name):
-			errors.append("%s is not in the index" % file_name)
+	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
+	var listed: Dictionary = {}
+	for track: String in LevelCatalog.TRACKS:
+		var entries: Array = path[track]
+		for i: int in entries.size():
+			var file: String = entries[i]["file"]
+			if listed.has(file):
+				errors.append("%s is on the path twice" % file)
+			listed[file] = true
+			var level_errors: Array[String] = []
+			var level: Level = Level.load_file("%s/%s" % [levels_dir, file], level_errors)
+			if level == null:
+				errors.append("%s %d: %s cannot be read" % [track, i + 1, file])
+				continue
+			if level.id != entries[i]["id"]:
+				errors.append("%s has id %d, the path says %d" % [file, level.id, entries[i]["id"]])
+			if track == LevelCatalog.MAIN and level.difficulty == "expert":
+				errors.append("main %d: expert level %s belongs on the branch" % [i + 1, file])
+			if track == LevelCatalog.MAIN and i < PathBuilder.FIRST_EASY \
+					and (level.difficulty != "easy" or level.mechanic() != Level.CLASSIC):
+				errors.append("main %d: %s is not a classic easy level" % [i + 1, file])
+	var main: Array = path[LevelCatalog.MAIN]
+	for i: int in TUTORIAL_LEVEL_IDS.size():
+		if main.size() <= i or main[i]["id"] != TUTORIAL_LEVEL_IDS[i]:
+			errors.append("main %d must be tutorial level %d" % [i + 1, TUTORIAL_LEVEL_IDS[i]])
+	if path["branch_after"] < 1 or path["branch_after"] > main.size():
+		errors.append("branch_after %d is not a main path position" % path["branch_after"])
+	for folder: String in DirAccess.get_directories_at(levels_dir):
+		for file_name: String in DirAccess.get_files_at("%s/%s" % [levels_dir, folder]):
+			if file_name.ends_with(".json") and not listed.has("%s/%s" % [folder, file_name]):
+				errors.append("%s/%s is not on the path" % [folder, file_name])
 	return errors
 
-
-## Design rules of the bonus mechanics, on top of the normal checks. A frozen
+## Design rules of the mechanic levels, on top of the normal checks. A frozen
 ## disk must sit on another disk (a frozen bottom disk would just be a peg
 ## base) and the freeze must make the level longer than plain Hanoi.
-static func validate_bonus_design(level: Level, errors: Array[String]) -> void:
+static func validate_mechanic_design(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
 	if rules == null:
 		return
@@ -155,17 +175,22 @@ static func validate_bonus_design(level: Level, errors: Array[String]) -> void:
 			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
 
 
-## Loads one level file and checks it on its own (folder must match the
-## difficulty). Problems go to `errors`; returns the level if it could be parsed.
+## Loads one level file and checks it on its own: a tier folder holds classic
+## levels of that difficulty, data/levels/mechanics/ the levels with a special
+## mechanic. Problems go to `errors`; returns the level if it could be parsed.
 static func load_and_validate(path: String, errors: Array[String]) -> Level:
 	var level: Level = Level.load_file(path, errors)
 	if level == null:
 		return null
 	var folder: String = path.get_base_dir().get_file()
-	if folder != level.difficulty:
+	if folder == Difficulty.MECHANICS:
+		if level.mechanic() == Level.CLASSIC:
+			errors.append("a level in the mechanics folder needs a special rule or covered pegs")
+		validate_mechanic_design(level, errors)
+	elif folder != level.difficulty:
 		errors.append("difficulty \"%s\" is stored in the \"%s\" folder" % [level.difficulty, folder])
-	elif level.is_bonus():
-		validate_bonus_design(level, errors)
+	elif level.mechanic() != Level.CLASSIC:
+		errors.append("a %s level belongs in the mechanics folder" % level.mechanic())
 	elif Difficulty.accepts_id(level.difficulty, level.id):
 		# The game finds a level by id, so the file number must match it.
 		var expected_name: String = Difficulty.level_file_name(level.difficulty, Difficulty.index_of_id(level.id))

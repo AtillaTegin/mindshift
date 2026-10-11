@@ -1,17 +1,17 @@
 class_name LevelGenerator
 extends SceneTree
 ## Generates levels into data/levels/<difficulty>/ (spec 4.4).
-##   godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=50
+##   godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=76
 ##   godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all
 ## Options: --difficulty=easy|medium|hard|expert|all (default all), --count=N
-## (default 50), --seed=N (default: a fixed seed per difficulty, so reruns give
-## the same files).
+## (default: the tier's Difficulty.default_count), --seed=N (default: a fixed
+## seed per difficulty, so reruns give the same files).
+## Afterwards run tools/path_builder.gd: it places the levels on the level path.
 ## A run replaces the difficulty's previous <difficulty>_NNN.json files. Every
 ## file is re-read and checked by LevelValidator right after it is written.
 ## Exits with code 0 only when all requested levels were written and validated.
 
 const LEVELS_DIR: String = Difficulty.LEVELS_DIR
-const DEFAULT_COUNT: int = 50
 const BASE_SEED: int = 20261006
 const RULE_IDS: Array[String] = ["classic_hanoi"]
 ## Share of goals that are a full tower on one peg; the rest are random positions.
@@ -26,7 +26,8 @@ func _initialize() -> void:
 
 func _run() -> bool:
 	var tiers: Array[String] = Difficulty.ORDER.duplicate()
-	var count: int = DEFAULT_COUNT
+	# -1: each tier's own default count.
+	var count: int = -1
 	var seed_override: int = -1
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--difficulty="):
@@ -40,7 +41,7 @@ func _run() -> bool:
 			count = arg.trim_prefix("--count=").to_int()
 		elif arg.begins_with("--seed="):
 			seed_override = arg.trim_prefix("--seed=").to_int()
-	if count < 1 or count > Difficulty.MAX_LEVELS_PER_TIER:
+	if count != -1 and (count < 1 or count > Difficulty.MAX_LEVELS_PER_TIER):
 		printerr("--count must be between 1 and %d" % Difficulty.MAX_LEVELS_PER_TIER)
 		return false
 
@@ -49,11 +50,12 @@ func _run() -> bool:
 		var started_ms: int = Time.get_ticks_msec()
 		var seed_value: int = seed_override if seed_override >= 0 else default_seed(tier)
 		var stats: Dictionary = {}
-		var levels: Array[Level] = generate(tier, count, seed_value, stats)
+		var tier_count: int = count if count != -1 else Difficulty.default_count(tier)
+		var levels: Array[Level] = generate(tier, tier_count, seed_value, stats)
 		print("%s: %d/%d levels, %d puzzles tried, min_moves %s, seed %d (%d ms)" % [
-				tier, levels.size(), count, stats["attempts"], _range_text(levels), seed_value,
+				tier, levels.size(), tier_count, stats["attempts"], _range_text(levels), seed_value,
 				Time.get_ticks_msec() - started_ms])
-		if levels.size() < count:
+		if levels.size() < tier_count:
 			printerr("%s: gave up after %d attempts" % [tier, stats["attempts"]])
 			ok = false
 			continue

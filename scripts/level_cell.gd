@@ -1,13 +1,28 @@
 class_name LevelCell
 extends PolishedButton
-## One level in the level select grid: its number, earned stars underneath, or
-## a padlock when locked. A bonus cell (bonus mechanics addendum 3) shows a
-## gift instead of a number, has its own colour and is never locked.
+## One round stop on the level map: its number with the earned stars under it
+## (none before the level is played), or a padlock when locked. The next level
+## to play is filled with the accent colour; a level with a special mechanic
+## wears a ring in its dress colour.
 
 var level_index: int = 0
 var stars: int = 0
 var locked: bool = false
-var bonus: bool = false
+## The next level to play on its track.
+var current: bool = false:
+	set(value):
+		current = value
+		theme_type_variation = &"MapStopCurrent" if current else &"MapStop"
+		queue_redraw()
+## Visual dress (ThemeManager.SKINS), "" for a classic level.
+var skin: String = "":
+	set(value):
+		skin = value
+		queue_redraw()
+
+
+func _init() -> void:
+	theme_type_variation = &"MapStop"
 
 
 func setup(p_level_index: int, p_stars: int, p_locked: bool) -> void:
@@ -19,25 +34,16 @@ func setup(p_level_index: int, p_stars: int, p_locked: bool) -> void:
 	queue_redraw()
 
 
-func setup_bonus(p_stars: int) -> void:
-	bonus = true
-	stars = p_stars
-	locked = false
-	disabled = false
-	text = ""
-	theme_type_variation = &"BonusButton"
-	queue_redraw()
-
-
 func _draw() -> void:
+	if not skin.is_empty():
+		draw_arc(size * 0.5, size.x * 0.5 - 4.0, 0.0, TAU, 48, ThemeManager.skin_color(skin, "mark"), 8.0, true)
 	if locked:
 		_draw_padlock(size * Vector2(0.5, 0.5), size.y * 0.16)
 		return
-	if bonus:
-		var side: float = size.y * 0.46
-		GameIcons.draw(self, "gift", Rect2(Vector2((size.x - side) * 0.5, size.y * 0.12), Vector2(side, side)))
-	var radius: float = size.y * 0.09
-	var y: float = size.y * 0.8
+	if stars == 0:
+		return  # not played yet: just the number
+	var radius: float = size.y * 0.085
+	var y: float = size.y * 0.78
 	for i: int in 3:
 		var center: Vector2 = Vector2(size.x * 0.5 + (i - 1) * radius * 2.4, y)
 		draw_colored_polygon(StarView.star_points(center, radius), ThemeManager.color("star_filled" if i < stars else "star_empty"))

@@ -10,8 +10,9 @@ const SCRIPT_RUN_SAVE_PATH: String = "user://script_run_save.json"
 
 var save: SaveSystem
 var economy: EconomySystem
-## Tab the level select screen opens on.
-var selected_tier: String = "easy"
+## Track the level map shows and the position it centres on (0: the next level to play).
+var map_track: String = LevelCatalog.MAIN
+var map_focus: int = 0
 
 var _pending_level: Dictionary = {}
 
@@ -39,29 +40,28 @@ func _ready() -> void:
 	economy.claim_daily_bonus(Time.get_date_string_from_system())
 
 
-func play_level(tier: String, index: int) -> void:
-	selected_tier = tier
-	_pending_level = {"tier": tier, "index": index}
+## Opens the level at `position` on `track` (LevelCatalog.MAIN or BRANCH).
+func play_level(track: String, position: int) -> void:
+	map_track = track
+	map_focus = position
+	_pending_level = {"track": track, "position": position}
 	_go(GAME_BOARD)
 
 
-## Opens bonus level `file_name` (data/levels/bonus/).
-func play_bonus(file_name: String) -> void:
-	_pending_level = {"bonus": file_name}
-	_go(GAME_BOARD)
-
-
-## The level the game board should open, once: {tier, index}, {bonus: file},
-## or {} if none was requested.
+## The level the game board should open, once: {track, position}, or {} if
+## none was requested.
 func take_pending_level() -> Dictionary:
 	var pending: Dictionary = _pending_level
 	_pending_level = {}
 	return pending
 
 
-func show_level_select(tier: String = "") -> void:
-	if not tier.is_empty():
-		selected_tier = tier
+## Opens the level map on `track`, centred on `position` (0: the next level
+## to play). An empty track keeps the last one.
+func show_level_select(track: String = "", position: int = 0) -> void:
+	if not track.is_empty():
+		map_track = track
+	map_focus = position
 	_go(LEVEL_SELECT)
 
 

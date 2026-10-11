@@ -1,24 +1,23 @@
 extends Control
-## Level select (spec 5.2): one tab per difficulty, a grid of levels with the
-## stars earned, locked levels greyed out.
+## Level map (level structure addendum v3): one winding road of numbered
+## levels, no difficulty tabs. Completed levels can be replayed to improve
+## their stars. Once the island (the side branch) is open, its marker on the
+## road and the button under the title switch between the road and the island.
 
-signal level_chosen(tier: String, index: int)
-signal bonus_chosen(file_name: String)
-
-## Tabs of tiers that are still locked are drawn faded (still tappable, so the
-## player can read what opens them).
-const LOCKED_TAB_ALPHA: float = 0.55
+signal level_chosen(track: String, position: int)
 
 ## Progress to show; taken from the App autoload when left empty.
 var save_system: SaveSystem
-var current_tier: String = ""
+var track: String = LevelCatalog.MAIN
 
-var _tab_buttons: Dictionary[String, Button] = {}
+## Stop to scroll to once the scroll container knows the map's height.
+var _scroll_target: int = 0
 
-@onready var _tabs: HBoxContainer = %Tabs
-@onready var _grid: GridContainer = %Grid
-@onready var _tier_info: Label = %TierInfo
+@onready var _map: PathMap = %Map
+@onready var _scroll: ScrollContainer = %Scroll
+@onready var _title: Label = %Title
 @onready var _stars_label: Label = %StarsLabel
+@onready var _track_button: Button = %TrackButton
 @onready var _back_button: Button = %BackButton
 
 
@@ -29,93 +28,60 @@ func _ready() -> void:
 	_back_button.pressed.connect(func() -> void:
 		if app != null:
 			app.show_main_menu())
-	var group: ButtonGroup = ButtonGroup.new()
-	for tier: String in Difficulty.ORDER:
-		var button: Button = PolishedButton.new()
-		button.text = Difficulty.display_name(tier)
-		button.toggle_mode = true
-		button.button_group = group
-		button.custom_minimum_size = Vector2(0, 72)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 26)
-		if not LevelCatalog.is_tier_unlocked(tier, save_system):
-			button.modulate.a = LOCKED_TAB_ALPHA
-		button.pressed.connect(show_tier.bind(tier))
-		_tabs.add_child(button)
-		_tab_buttons[tier] = button
-	show_tier(app.selected_tier if app != null else Difficulty.ORDER[0])
+	_map.level_pressed.connect(_on_level_pressed)
+	_map.island_pressed.connect(show_track.bind(LevelCatalog.BRANCH, 0))
+	_track_button.pressed.connect(func() -> void:
+		show_track(LevelCatalog.MAIN if track == LevelCatalog.BRANCH else LevelCatalog.BRANCH))
+	_scroll.get_v_scroll_bar().changed.connect(_apply_scroll)
+	_map.resized.connect(_apply_scroll)
+	var start_track: String = app.map_track if app != null else LevelCatalog.MAIN
+	if start_track == LevelCatalog.BRANCH and not LevelCatalog.is_branch_open(save_system):
+		start_track = LevelCatalog.MAIN
+	show_track(start_track, app.map_focus if app != null else 0)
 
 
-func show_tier(tier: String) -> void:
-	current_tier = tier
-	_tab_buttons[tier].set_pressed_no_signal(true)
-	# Locked tabs are faded, except the one being shown, so it is clear which is open.
-	for other: String in _tab_buttons:
-		var faded: bool = other != tier and not LevelCatalog.is_tier_unlocked(other, save_system)
-		_tab_buttons[other].modulate.a = LOCKED_TAB_ALPHA if faded else 1.0
+## Shows the road (MAIN) or the island (BRANCH), scrolled to stop `focus`
+## (0: the next level to play there).
+func show_track(p_track: String, focus: int = 0) -> void:
+	track = p_track
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
-		app.selected_tier = tier
-	_tier_info.text = tier_info_text(tier, save_system)
+		app.map_track = track
+	_scroll.scroll_vertical = 0
+	_map.setup(track, save_system)
+	# The map's height changed: sort again once its new minimum size is known, so
+	# the scroll range never keeps the old track's length.
+	_scroll.queue_sort.call_deferred()
+	_title.text = tr("MAP_ISLAND") if track == LevelCatalog.BRANCH else tr("MENU_LEVELS")
 	_stars_label.text = tr("SELECT_STARS") % save_system.get_total_stars()
-	for child: Node in _grid.get_children():
-		_grid.remove_child(child)
-		child.queue_free()
-	for index: int in range(1, LevelCatalog.level_count(tier) + 1):
-		var cell: LevelCell = LevelCell.new()
-		cell.custom_minimum_size = Vector2(0, 124)
-		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		cell.add_theme_font_size_override("font_size", 34)
-		cell.setup(index, save_system.get_stars(Difficulty.id_for(tier, index)),
-				not LevelCatalog.is_unlocked(tier, index, save_system))
-		cell.pressed.connect(_on_cell_pressed.bind(index))
-		_grid.add_child(cell)
-	# Bonus levels close the tab: always open, never counted toward unlocking.
-	for entry: Dictionary in LevelCatalog.bonus_for_tab(tier):
-		var bonus_cell: LevelCell = LevelCell.new()
-		bonus_cell.custom_minimum_size = Vector2(0, 124)
-		bonus_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bonus_cell.setup_bonus(save_system.get_stars(entry["id"]))
-		bonus_cell.pressed.connect(_on_bonus_pressed.bind(entry["file"]))
-		_grid.add_child(bonus_cell)
+	_track_button.visible = LevelCatalog.is_branch_open(save_system)
+	_track_button.text = tr("MAP_TO_MAIN") if track == LevelCatalog.BRANCH else tr("MAP_TO_ISLAND")
+	if focus < 1 or focus > _map.shown_count():
+		focus = _map.current_position() if _map.current_position() > 0 else _map.shown_count()
+	_scroll_target = focus
+	_apply_scroll()
 
 
-## Cell of the `index`-th level of the current tab (1-based).
-func get_cell(index: int) -> LevelCell:
-	return _grid.get_child(index - 1) as LevelCell
+func get_map() -> PathMap:
+	return _map
 
 
-## The `index`-th bonus cell of the current tab (1-based), after the levels.
-func get_bonus_cell(index: int) -> LevelCell:
-	return _grid.get_child(LevelCatalog.level_count(current_tier) + index - 1) as LevelCell
+## Stop `position` of the shown track (1-based), or null if not shown.
+func get_cell(position: int) -> LevelCell:
+	return _map.get_cell(position)
 
 
-func _on_bonus_pressed(file_name: String) -> void:
-	bonus_chosen.emit(file_name)
+## Centres the target stop once the map has its final height.
+func _apply_scroll() -> void:
+	if _scroll_target < 1 or _map.size.y < _map.custom_minimum_size.y:
+		return
+	var center: float = _map.stop_center(_scroll_target).y
+	_scroll.scroll_vertical = int(center - _scroll.size.y * 0.5)
+
+
+func _on_level_pressed(p_track: String, position: int) -> void:
+	_scroll_target = 0
+	level_chosen.emit(p_track, position)
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
-		app.play_bonus(file_name)
-
-
-## The line under the tabs: the tier's size, or for a locked tier what opens it.
-static func tier_info_text(tier: String, save: SaveSystem) -> String:
-	if not LevelCatalog.is_tier_unlocked(tier, save):
-		var needed: int = Difficulty.unlock_requirement(tier)
-		return Languages.text("SELECT_TIER_LOCKED") % [
-				Difficulty.display_name(Difficulty.previous_tier(tier)), needed,
-				LevelCatalog.completed_toward_unlock(tier, save), needed]
-	var settings: Dictionary = Difficulty.get_tier(tier)
-	return Languages.text("SELECT_TIER_INFO") % [Difficulty.describe_moves(tier),
-			_range_text(settings["min_pegs"], settings["max_pegs"]),
-			_range_text(settings["min_disks"], settings["max_disks"])]
-
-
-static func _range_text(low: int, high: int) -> String:
-	return str(low) if low == high else "%d-%d" % [low, high]
-
-
-func _on_cell_pressed(index: int) -> void:
-	level_chosen.emit(current_tier, index)
-	var app: Node = get_node_or_null("/root/App")
-	if app != null:
-		app.play_level(current_tier, index)
+		app.play_level(p_track, position)

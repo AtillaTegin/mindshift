@@ -25,7 +25,7 @@ func _open(file_name: String) -> void:
 	_board.tutorials_enabled = false
 	_board.background_hints = false
 	_board.animate_transitions = false
-	_board.level_path = LevelCatalog.bonus_dir() + "/" + file_name
+	_board.level_path = LevelCatalog.mechanic_path(file_name)
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
 	_board.propagate_notification(Container.NOTIFICATION_SORT_CHILDREN)
 
@@ -41,10 +41,10 @@ func _disk_rect(disk: int) -> Rect2:
 
 
 func test_level_format() -> void:
-	var level: Level = LevelCatalog.load_bonus(FOG_LEVEL)
+	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
 	assert_eq(level.covered_pegs, [1, 2] as Array[int])
 	assert_eq(level.rule_ids, ["classic_hanoi"] as Array[String], "no rule involved")
-	assert_eq(FileAccess.get_file_as_string(LevelCatalog.bonus_dir() + "/" + FOG_LEVEL), level.to_json(), "round trip")
+	assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path(FOG_LEVEL)), level.to_json(), "round trip")
 	var data: Dictionary = JSON.parse_string(level.to_json())
 	for bad: Variant in [[7], [1, 1], [-1], "1", [1.5]]:
 		data["covered_pegs"] = bad
@@ -56,13 +56,13 @@ func test_level_format() -> void:
 
 
 func test_solver_ignores_the_fog() -> void:
-	var level: Level = LevelCatalog.load_bonus(FOG_LEVEL)
+	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
 	var result: Dictionary = Solver.solve(level.start, level.goal, level.get_rule_set())
 	assert_eq(result["min_moves"], level.min_moves, "the fog changes nothing for the Solver")
 
 
 func test_session_opens_a_peg_on_its_first_move_until_restart() -> void:
-	var level: Level = LevelCatalog.load_bonus(FOG_LEVEL)
+	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
 	var session: GameSession = GameSession.new(level)
 	assert_eq(session.covered_pegs, [1, 2] as Array[int])
 	session.tap_peg(1)
@@ -144,17 +144,17 @@ func test_hint_and_solve_work_under_fog() -> void:
 func test_validator_rules_for_covered_pegs() -> void:
 	var start: PuzzleState = PuzzleState.new([[3, 2, 1], [], [4]])
 	var goal: PuzzleState = PuzzleState.new([[], [], [4, 3, 2, 1]])
-	var level: Level = Level.create(9070, "bonus", start, goal, ["classic_hanoi"] as Array[String],
+	var level: Level = Level.create(9070, "easy", start, goal, ["classic_hanoi"] as Array[String],
 			Solver.solve(start, goal, RuleSet.classic())["path"])
 	level.covered_pegs = [2]
 	var errors: Array[String] = []
-	LevelValidator.validate_bonus_design(level, errors)
+	LevelValidator.validate_mechanic_design(level, errors)
 	assert_true(" ".join(errors).contains("hides nothing"), str(errors))
 	level.covered_pegs = [0]
 	errors.clear()
-	LevelValidator.validate_bonus_design(level, errors)
+	LevelValidator.validate_mechanic_design(level, errors)
 	assert_eq(errors, [] as Array[String], "peg 0 is used by the first move")
-	for entry: Dictionary in LevelCatalog.bonus_entries():
+	for file_name: String in ["fog_01.json", "fog_02.json", "fog_03.json", "fog_04.json"]:
 		var file_errors: Array[String] = []
-		LevelValidator.load_and_validate(LevelCatalog.bonus_dir() + "/" + entry["file"], file_errors)
-		assert_eq(file_errors, [] as Array[String], entry["file"])
+		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), file_errors)
+		assert_eq(file_errors, [] as Array[String], file_name)

@@ -1,8 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
 [ext_resource type="Script" path="res://scripts/level_select_controller.gd" id="1_select"]
 [ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
+[ext_resource type="Script" path="res://scripts/path_map.gd" id="path_map"]
 
 [node name="LevelSelect" type="Control"]
 layout_mode = 3
@@ -34,12 +35,12 @@ mouse_filter = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 32
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_bottom = 24
 
 [node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 16
 
 [node name="TopBar" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -55,6 +56,7 @@ theme_override_font_sizes/font_size = 26
 text = "COMMON_MENU"
 
 [node name="Title" type="Label" parent="Margin/Layout/TopBar"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 36
@@ -66,27 +68,23 @@ layout_mode = 2
 theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 26
 
-[node name="Tabs" type="HBoxContainer" parent="Margin/Layout"]
+[node name="TrackButton" type="Button" parent="Margin/Layout"]
+script = ExtResource("pb_polished")
 unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="TierInfo" type="Label" parent="Margin/Layout"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"SecondaryLabel"
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Layout"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Grid" type="GridContainer" parent="Margin/Layout/Scroll"]
+[node name="Map" type="Control" parent="Margin/Layout/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 5
+size_flags_vertical = 3
+script = ExtResource("path_map")

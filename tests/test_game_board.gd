@@ -54,7 +54,7 @@ func test_loads_level_and_builds_views() -> void:
 	assert_eq(disk_layer.get_child_count(), session.state.get_disk_count())
 	assert_eq(_label("MovesLabel"), "Gediş: 0")
 	assert_eq(_label("MinLabel"), "Minimum: %d" % session.level.min_moves)
-	assert_eq(_label("LevelLabel"), "Asan · 1")
+	assert_eq(_label("LevelLabel"), "Səviyyə 1")
 	assert_false(_board.get_popup().visible)
 	assert_true((_board.get_node("%GoalPreview") as BoardPreview).position_state.equals(session.level.goal))
 
@@ -184,7 +184,7 @@ func test_next_and_replay_buttons() -> void:
 	_play(_board.session.level.solution_path)
 	(popup.get_node("%NextButton") as Button).pressed.emit()
 	assert_eq(_board.session.level.id, 1002, "next level loaded in place")
-	assert_eq(_label("LevelLabel"), "Asan · 2")
+	assert_eq(_label("LevelLabel"), "Səviyyə 2")
 	assert_false(popup.visible)
 
 

@@ -55,7 +55,7 @@ func test_untranslated_text_falls_back_to_azerbaijani() -> void:
 		Languages.apply(code)
 		assert_eq(TranslationServer.get_locale(), code)
 		assert_eq(tr("MENU_PLAY"), "Oyna", "%s shows the az text, never an empty one" % code)
-		assert_eq(Difficulty.display_name("hard"), "Çətin")
+		assert_eq(Languages.text("LEVEL_TITLE") % 7, "Səviyyə 7", "static code too")
 
 
 func test_a_filled_translation_wins_over_the_fallback() -> void:

@@ -66,6 +66,8 @@ var _peg_areas: Array[Rect2] = []
 ## a layer above the disks.
 var _fogs: Dictionary[int, PegFog] = {}
 var _fog_layer: Control
+## Dress of a level with a special mechanic, behind the pegs.
+var _board_skin: BoardSkin
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -117,6 +119,11 @@ func _ready() -> void:
 	_restart_button.pressed.connect(restart)
 	_back_button.pressed.connect(_show_level_select)
 	_board.resized.connect(_layout.bind(false))
+	_board_skin = BoardSkin.new()
+	_board_skin.name = "BoardSkin"
+	_board_skin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_board.add_child(_board_skin)
+	_board.move_child(_board_skin, 0)
 	_fog_layer = Control.new()
 	_fog_layer.name = "FogLayer"
 	_fog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -130,8 +137,7 @@ func _ready() -> void:
 	add_child(_popup)
 	var pending: Dictionary = app.take_pending_level() if app != null else {}
 	if not pending.is_empty():
-		var level: Level = LevelCatalog.load_bonus(pending["bonus"]) if pending.has("bonus") \
-				else LevelCatalog.load_level(pending["tier"], pending["index"])
+		var level: Level = LevelCatalog.load_at(pending["track"], pending["position"])
 		if level != null:
 			start_level(level)
 			return
@@ -168,7 +174,9 @@ func start_level(level: Level) -> void:
 	last_result = {}
 	_message = ""
 	_popup.visible = false
+	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
 	_build_views()
+	_goal_preview.skin = _board_skin.skin
 	_goal_preview.pinned_disks = _pinned_disks()
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
@@ -213,17 +221,18 @@ func request_undo() -> void:
 	position_changed.emit()
 
 
-## Opens the level after the current one (next tier after the last level).
+## Opens the level after the current one on its track of the level path.
 func play_next_level() -> void:
 	var next: Dictionary = _next_level()
 	if next.is_empty():
 		return
-	var level: Level = LevelCatalog.load_level(next["tier"], next["index"])
+	var level: Level = LevelCatalog.load_at(next["track"], next["position"])
 	if level == null:
 		return
 	var app: Node = get_node_or_null("/root/App")
 	if app != null:
-		app.selected_tier = next["tier"]
+		app.map_track = next["track"]
+		app.map_focus = next["position"]
 	var transition: Node = get_node_or_null("/root/ScreenTransition")
 	if animate_transitions and transition != null:
 		transition.run(start_level.bind(level))
@@ -267,6 +276,10 @@ func get_peg_fog(peg_index: int) -> PegFog:
 	return _fogs.get(peg_index)
 
 
+func get_board_skin() -> BoardSkin:
+	return _board_skin
+
+
 ## Handles a tap on peg `peg_index` (also the entry point for tests).
 func on_peg_pressed(peg_index: int) -> void:
 	if session == null or (restricted_peg >= 0 and peg_index != restricted_peg):
@@ -303,21 +316,20 @@ func _pinned_disks() -> Array[int]:
 	return pinned
 
 
-## The main level after this one; {} after the last one and for bonus levels
-## (they are side trips, so "Next" never leads out of them).
+## The level after this one on its track: {track, position}, or {} after the
+## last one (and for a level that is not on the path).
 func _next_level() -> Dictionary:
-	var level: Level = session.level
-	if level.is_bonus():
-		return {}
-	return LevelCatalog.next_after(level.difficulty, Difficulty.index_of_id(level.id))
+	var place: Dictionary = LevelCatalog.place_of(session.level.id)
+	return {} if place.is_empty() else LevelCatalog.next_after(place["track"], place["position"])
 
 
-## Back to the level select, on the tab this level belongs to (a bonus
-## level's own tab).
+## Back to the level map, centred on this level.
 func _show_level_select() -> void:
 	var app: Node = get_node_or_null("/root/App")
-	if app != null:
-		app.show_level_select(LevelCatalog.economy_tier(session.level) if session != null else "")
+	if app == null:
+		return
+	var place: Dictionary = LevelCatalog.place_of(session.level.id) if session != null else {}
+	app.show_level_select(place.get("track", ""), place.get("position", 0))
 
 
 ## Spec 4.6/4.9: stars from the move count, saved right away, coins for the
@@ -326,14 +338,15 @@ func _on_solved() -> void:
 	var level: Level = session.level
 	var stars: int = level.stars_for_moves(session.move_count)
 	var previous_stars: int = save_system.get_stars(level.id)
+	var island_was_open: bool = LevelCatalog.is_branch_open(save_system)
 	var improved: bool = save_system.record_completion(level.id, stars, session.move_count, session.elapsed_seconds)
 	var reward: int = EconomySystem.level_reward(stars, previous_stars)
 	economy.earn(reward, "level_complete")
 	last_result = {"stars": stars, "improved": improved, "reward": reward}
 	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
 			improved, not _next_level().is_empty(), reward)
-	# A bonus level has no "next": the popup offers replay and the level list only.
-	_popup.set_next_visible(not level.is_bonus())
+	# The island appears as a surprise (level structure addendum v3): say so once.
+	_popup.set_note(tr("POPUP_ISLAND_OPENED") if not island_was_open and LevelCatalog.is_branch_open(save_system) else "")
 	level_completed.emit(level, session.move_count, session.elapsed_seconds)
 
 
@@ -347,7 +360,7 @@ func _update_buttons() -> void:
 	if economy.has_unlimited_hints():
 		_hint_button.text = tr("BOARD_HINT_UNLIMITED")
 	else:
-		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(LevelCatalog.economy_tier(session.level))
+		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(session.level.difficulty)
 	_undo_button.disabled = locked or not session.can_undo()
 	_restart_button.disabled = locked
 	var free_left: int = economy.free_undos_left()
@@ -378,6 +391,7 @@ func _build_views() -> void:
 	for peg_index: int in session.state.get_peg_count():
 		var peg: PegView = PEG_SCENE.instantiate()
 		peg.peg_index = peg_index
+		peg.skin = _board_skin.skin
 		peg.pressed.connect(on_peg_pressed)
 		_peg_layer.add_child(peg)
 		_peg_views.append(peg)

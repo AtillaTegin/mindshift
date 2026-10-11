@@ -1,10 +1,13 @@
 class_name Level
 extends RefCounted
-## One puzzle level, stored as data/levels/<difficulty>/<difficulty>_NNN.json
-## (format: spec 4.5). Bonus levels (bonus mechanics addendum) live in
-## data/levels/bonus/ with difficulty "bonus" and may use the optional keys.
+## One puzzle level (format: spec 4.5). Classic levels are stored as
+## data/levels/<difficulty>/<difficulty>_NNN.json; levels with a special
+## mechanic as data/levels/mechanics/<name>.json, using the optional keys.
+## Where a level sits on the level path is data/levels/path.json (LevelCatalog).
 
 const TWO_STAR_FACTOR: float = 1.25
+## mechanic() of a level with plain Hanoi rules and nothing covered.
+const CLASSIC: String = "classic"
 ## Top-level keys, in the order they are written.
 const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal", "rules",
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
@@ -75,8 +78,16 @@ func get_rule_set(errors: Array[String] = []) -> RuleSet:
 	return RuleSet.from_ids(rule_ids, rule_params, errors)
 
 
-func is_bonus() -> bool:
-	return difficulty == Difficulty.BONUS
+## What makes the level special: the first rule beyond classic Hanoi (e.g.
+## "frozen_disk"), "covered_pegs" for fog, or CLASSIC. It picks the level's
+## visual dress; it is never shown as a category.
+func mechanic() -> String:
+	for rule_id: String in rule_ids:
+		if rule_id != ClassicHanoiRule.ID:
+			return rule_id
+	if not covered_pegs.is_empty():
+		return "covered_pegs"
+	return CLASSIC
 
 
 func to_dict() -> Dictionary:
@@ -213,22 +224,23 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 ## state validity, solution_path replay and star thresholds. Appends problems
 ## to `errors`. Optimality of min_moves is checked by LevelValidator.
 func check(errors: Array[String]) -> void:
-	if is_bonus():
-		# Bonus levels sit outside the tiers: own id range, no move range.
-		if not Difficulty.is_bonus_id(id):
-			errors.append("id %d is outside the bonus range" % id)
-		if not Difficulty.accepts_bonus_size(get_peg_count(), get_disk_count()):
-			errors.append("%d pegs / %d disks is not a bonus size" % [get_peg_count(), get_disk_count()])
-	elif not Difficulty.is_known(difficulty):
+	if not Difficulty.is_known(difficulty):
 		errors.append("unknown difficulty \"%s\"" % difficulty)
 		return
-	else:
+	if not Difficulty.accepts_moves(difficulty, min_moves):
+		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
+	if mechanic() == CLASSIC:
 		if not Difficulty.accepts_id(difficulty, id):
 			errors.append("id %d is outside the %s range" % [id, difficulty])
 		if not Difficulty.accepts_size(difficulty, get_peg_count(), get_disk_count()):
 			errors.append("%d pegs / %d disks is not a %s size" % [get_peg_count(), get_disk_count(), difficulty])
-		if not Difficulty.accepts_moves(difficulty, min_moves):
-			errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
+	else:
+		# A mechanic may need another size than the classic tier (a frozen disk
+		# only matters with 4 pegs and 6+ disks); it has its own id range.
+		if not Difficulty.is_mechanic_id(id):
+			errors.append("id %d is outside the mechanic range" % id)
+		if not Difficulty.accepts_mechanic_size(get_peg_count(), get_disk_count()):
+			errors.append("%d pegs / %d disks is not a mechanic level size" % [get_peg_count(), get_disk_count()])
 	if two_star_moves != two_star_threshold(min_moves):
 		errors.append("star_thresholds.two is %d, expected round(%d * 1.25) = %d" % [
 				two_star_moves, min_moves, two_star_threshold(min_moves)])

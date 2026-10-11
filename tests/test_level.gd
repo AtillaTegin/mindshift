@@ -219,13 +219,12 @@ func test_tier_ranges_do_not_overlap() -> void:
 		assert_eq(current["min_moves"], previous["max_moves"] + 1, Difficulty.ORDER[i])
 
 
-func test_unlock_requirements() -> void:
-	assert_eq(Difficulty.unlock_requirement("easy"), 0)
-	assert_eq(Difficulty.unlock_requirement("medium"), 15)
-	assert_eq(Difficulty.unlock_requirement("hard"), 10)
-	assert_eq(Difficulty.unlock_requirement("expert"), 10)
-	assert_eq(Difficulty.previous_tier("easy"), "")
-	assert_eq(Difficulty.previous_tier("expert"), "hard")
+func test_tier_for_moves() -> void:
+	assert_eq(Difficulty.tier_for_moves(4), "")
+	assert_eq(Difficulty.tier_for_moves(5), "easy")
+	assert_eq(Difficulty.tier_for_moves(12), "medium")
+	assert_eq(Difficulty.tier_for_moves(33), "hard")
+	assert_eq(Difficulty.tier_for_moves(80), "expert")
 
 
 func _remove_temp_dir() -> void:

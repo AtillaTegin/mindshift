@@ -2,15 +2,15 @@ extends "res://tests/test_case.gd"
 ## Hints (spec 4.7). Day 6 acceptance: the hint gives a correct next move both
 ## on the optimal path and after the player has left it.
 
-## Levels checked in every tier (1-based positions).
-const SAMPLE_INDEXES: Array[int] = [1, 25, 50]
+## Levels checked in every tier: first, middle and last (shares of the tier).
+const SAMPLE_SHARES: Array[float] = [0.0, 0.5, 1.0]
 
 
 func _sample_levels() -> Array[Level]:
 	var levels: Array[Level] = []
 	for tier: String in Difficulty.ORDER:
-		for index: int in SAMPLE_INDEXES:
-			levels.append(LevelCatalog.load_level(tier, index))
+		for share: float in SAMPLE_SHARES:
+			levels.append(LevelCatalog.load_level(tier, 1 + roundi(share * (LevelCatalog.level_count(tier) - 1))))
 	return levels
 
 

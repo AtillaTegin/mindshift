@@ -1,7 +1,6 @@
 extends "res://tests/test_case.gd"
-## Level select and main menu screens.
+## Main menu and shop screens (the level map: test_level_map.gd).
 
-const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")
 const MENU_SCENE: PackedScene = preload("res://scenes/main_menu.tscn")
 const SAVE_PATH: String = "res://.test_saves/test_menus_save.json"
 
@@ -22,75 +21,6 @@ func after_each() -> void:
 	_nodes.clear()
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
-
-
-func _level_select() -> Control:
-	var screen: Control = SELECT_SCENE.instantiate()
-	screen.save_system = _save
-	(Engine.get_main_loop() as SceneTree).root.add_child(screen)
-	_nodes.append(screen)
-	return screen
-
-
-func test_level_select_shows_stars_and_locks() -> void:
-	_save.record_completion(1001, 3, 5, 5.0)
-	_save.record_completion(1002, 1, 20, 5.0)
-	var screen: Control = _level_select()
-	screen.show_tier("easy")
-	var grid: GridContainer = screen.get_node("%Grid")
-	assert_eq(grid.get_child_count(), 50 + LevelCatalog.bonus_for_tab("easy").size())
-	assert_eq(screen.get_cell(1).stars, 3)
-	assert_eq(screen.get_cell(2).stars, 1)
-	assert_false(screen.get_cell(3).locked, "unlocked by level 2")
-	assert_eq(screen.get_cell(3).stars, 0)
-	assert_true(screen.get_cell(4).locked)
-	assert_true(screen.get_cell(4).disabled)
-	assert_eq((screen.get_node("%StarsLabel") as Label).text, "Ulduz: 4")
-
-
-func test_level_select_tabs() -> void:
-	var screen: Control = _level_select()
-	screen.show_tier("easy")
-	assert_eq((screen.get_node("%TierInfo") as Label).text, "5-11 gediş · 3 qüllə · 3-4 disk")
-	screen.show_tier("expert")
-	assert_eq(screen.current_tier, "expert")
-	assert_eq(screen.get_node("%Grid").get_child_count(), 50 + LevelCatalog.bonus_for_tab("expert").size())
-	assert_true(screen.get_cell(1).locked, "expert is locked on a fresh save")
-	assert_eq((screen.get_node("%TierInfo") as Label).text, "Açmaq üçün Çətin bölməsində 10 səviyyə bitir (0/10)")
-	var tabs: Array[Node] = screen.get_node("%Tabs").get_children()
-	assert_eq((tabs[0] as Button).modulate.a, 1.0, "easy tab normal")
-	assert_eq((tabs[3] as Button).modulate.a, 1.0, "the shown tab is never faded, even when locked")
-	assert_true((tabs[2] as Button).modulate.a < 1.0, "other locked tabs are faded")
-	screen.show_tier("easy")
-	assert_true((tabs[3] as Button).modulate.a < 1.0, "locked expert tab faded when not shown")
-
-
-func test_level_select_shows_how_a_tier_opens() -> void:
-	for index: int in range(1, 8):
-		_save.record_completion(Difficulty.id_for("easy", index), 2, 99, 5.0)
-	var screen: Control = _level_select()
-	screen.show_tier("medium")
-	var info: Label = screen.get_node("%TierInfo")
-	assert_eq(info.text, "Açmaq üçün Asan bölməsində 15 səviyyə bitir (7/15)")
-	for index: int in range(1, 51):
-		assert_true(screen.get_cell(index).locked, "medium %d locked" % index)
-	for index: int in range(8, 16):
-		_save.record_completion(Difficulty.id_for("easy", index), 2, 99, 5.0)
-	screen.show_tier("medium")
-	assert_eq(info.text, "12-20 gediş · 3-4 qüllə · 5-6 disk")
-	assert_false(screen.get_cell(1).locked, "15 easy levels open medium")
-	assert_true(screen.get_cell(2).locked)
-
-
-func test_level_select_emits_choice() -> void:
-	var screen: Control = _level_select()
-	screen.show_tier("easy")
-	var chosen: Array = []
-	screen.level_chosen.connect(func(tier: String, index: int) -> void: chosen.append([tier, index]))
-	# Without the App autoload nothing else happens; with it this would switch scenes.
-	if screen.get_node_or_null("/root/App") == null:
-		screen.get_cell(1).pressed.emit()
-		assert_eq(chosen, [["easy", 1]])
 
 
 func test_main_menu_has_four_polished_buttons() -> void:
@@ -125,7 +55,8 @@ func test_main_menu_builds() -> void:
 	var menu: Control = MENU_SCENE.instantiate()
 	(Engine.get_main_loop() as SceneTree).root.add_child(menu)
 	_nodes.append(menu)
-	assert_true((menu.get_node("%ProgressLabel") as Label).text.ends_with("/ 624"), "200 main + 8 bonus levels, 3 stars each")
+	assert_true((menu.get_node("%ProgressLabel") as Label).text.ends_with("/ %d" % (LevelCatalog.total_levels() * 3)), "every level on the path, 3 stars each")
+	assert_eq(LevelCatalog.total_levels(), 208, "200 generated + 8 mechanic levels")
 	assert_false((menu.get_node("%SettingsPanel") as Control).visible)
 	(menu.get_node("%SettingsButton") as Button).pressed.emit()
 	assert_true((menu.get_node("%SettingsPanel") as Control).visible)

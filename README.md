@@ -12,8 +12,8 @@ Tam texniki plan: `../MindShift_Project_Spec.md`.
 ```
 
 Və ya Godot redaktorunda layihəni açıb F5 basın. Oyun Ana menyu ilə açılır:
-- "Oyna" növbəti bitməmiş səviyyəni açır;
-- "Səviyyələr" seçim ekranını açır;
+- "Oyna" oyunçunun qaldığı yeri açır (yoldakı ilk bitməmiş səviyyə);
+- "Səviyyələr" səviyyə xəritəsini açır;
 - "Mağaza" mağaza ekranını açır;
 - "Parametrlər"də səs, qaranlıq mod və dil var.
 Oyunda qülləyə toxunun və üst disk qalxır, başqa qülləyə toxunun və disk ora köçür. Qeyri-qanuni gedişdə qüllə qırmızı yanıb-sönür.
@@ -23,11 +23,11 @@ Başqa save faylı ilə işə salmaq üçün: `... -- --save-path=user://test.js
 Testlər, e2e skriptləri və alətlər (`--script` ilə işləyənlər) bu qovluğa heç vaxt yazmır.
 Onların `user://` faylları layihədəki `.test_saves/` qovluğuna yönləndirilir ([scripts/storage_paths.gd](scripts/storage_paths.gd)). Bu qovluq git-ə düşmür.
 Vaxt limiti: v1-də heç bir səviyyədə yoxdur. `time_limit_seconds` sahəsi formatda qalır, amma validator dolu dəyəri rədd edir. Vaxt limiti gələcəkdə ayrıca "Vaxta Qarşı" rejimində olacaq.
-Kilid qaydası ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), bölmə 1.2): Asan həmişə açıqdır; Orta Asan-da 15, Çətin Orta-da 10,
-Ekspert Çətin-də 10 səviyyə tamamlananda açılır (say `completed_levels`-dən hesablanır, yeni save sahəsi yoxdur).
-Açıq bölmənin içində səviyyələr ardıcıl açılır. Artıq tamamlanmış səviyyə həmişə açıq qalır.
-"Oyna" ən çətin açıq bölmənin növbəti bitməmiş səviyyəsini açır.
-Rəqəmlər [core/difficulty.gd](core/difficulty.gd)-də `UNLOCK_AFTER_COMPLETED` sabitindədir.
+Səviyyə yolu ([səviyyə strukturu v3](../MindShift_Level_Structure_Addendum.md)): tab, bölmə adı və bonus guşəsi yoxdur.
+- Bütün səviyyələr bir nömrəli yoldadır (`data/levels/path.json`, [core/level_catalog.gd](core/level_catalog.gd)). Hər səviyyə yolda özündən əvvəlki bitəndə açılır, başqa kilid yoxdur. Bitmiş səviyyə həmişə açıq qalır.
+- Əsas yolun 50-ci səviyyəsi bitəndə yolun kənarında "Gizli ada" (ayrıca budaq) görünür: bütün Ekspert səviyyələri, ən çətin Çətin-lər və bir neçə Orta "nəfəs" səviyyəsi. O vaxta qədər heç bir işarəsi yoxdur.
+- Xəritə ([scripts/path_map.gd](scripts/path_map.gd)) aşağıdan yuxarı qıvrılan yoldur: bitmiş səviyyələr (təkrar oynayıb ulduz artırmaq olar), növbəti səviyyə (vurğulu) və 3 kilidli dayanacaq görünür.
+- Çətinlik yalnız daxildə qalır: generasiya, yol sırası və hint qiyməti üçün.
 
 Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md) 8.1, [iqtisadiyyat düsturları v2.1](../MindShift_Economy_Formulas_Addendum.md)). Hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir:
 - Mükafat: 3★ = 3, 2★ = 2, 1★ = 1 coin (bilərəkdən kiçik: əsas mənbə reklamdır). Təkrar oyunda yalnız əvvəlki ən yaxşı nəticədən fərq verilir.
@@ -77,7 +77,7 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 |---|---|
 | `core/` | Oyun məntiqi: `PuzzleState`, `Move`, `RuleSet`, `rules/` (qaydalar), `solver.gd` |
 | `tools/` | Headless skriptlər: səviyyə generatoru və validatoru |
-| `data/levels/` | Generasiya olunmuş səviyyə JSON-ları (`easy/`, `medium/`, `hard/`, `expert/`) |
+| `data/levels/` | Səviyyə JSON-ları (`easy/`, `medium/`, `hard/`, `expert/`, `mechanics/`) və yol (`path.json`) |
 | `scenes/`, `scripts/` | UI səhnələri və controller-lər |
 | `tests/` | Headless testlər (`test_runner.gd`, `test_case.gd` bazası) |
 | `assets/` | Sprite və şriftlər (hələlik placeholder) |
@@ -86,49 +86,62 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 
 ```powershell
 # generasiya (hər çətinliyin köhnə fayllarını əvəz edir; seed sabitdir, nəticə təkrarlanır)
-godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all --count=50
-godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=50 --seed=7
-# yoxlama (hər faylı Solver ilə yenidən həll edir; --require=N hər çətinlikdə ən azı N səviyyə tələb edir)
-godot --headless --path . --script res://tools/level_validator.gd -- --require=50
+godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all
+godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=76 --seed=7
+# mexanika səviyyələri və yol (generasiyadan sonra həmişə path_builder-i yenidən işə salın)
+godot --headless --path . --script res://tools/mechanic_level_builder.gd
+godot --headless --path . --script res://tools/path_builder.gd
+# yoxlama (hər faylı Solver ilə yenidən həll edir, yolu da yoxlayır; --require=N hər çətinlikdə ən azı N klassik səviyyə tələb edir)
+godot --headless --path . --script res://tools/level_validator.gd -- --require=22
 ```
 
 Fayllar `data/levels/<çətinlik>/<çətinlik>_NNN.json` adlanır (asandan çətinə sıralanıb).
 ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəli [core/difficulty.gd](core/difficulty.gd)-dədir.
 
-| Çətinlik | Gediş | Qüllə | Disk |
-|---|---|---|---|
-| Easy | 5–11 | 3 | 3–4 |
-| Medium | 12–20 | 3–4 | 5–6 |
-| Hard | 21–33 | 4 | 7–8 |
-| Expert | 34+ | 4 | 9–10 |
+| Çətinlik | Gediş | Qüllə | Disk | Say |
+|---|---|---|---|---|
+| Easy | 5–11 | 3 | 3–4 | 22 |
+| Medium | 12–20 | 3–4 | 5–6 | 76 |
+| Hard | 21–33 | 4 | 7–8 | 74 |
+| Expert | 34+ | 4 | 9–10 | 28 |
+
+Üstəgəl 8 mexanika səviyyəsi: cəmi 208 səviyyə (624 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
 
-### Bonus səviyyələr
+### Yol necə qurulur
 
-8 bonus səviyyə [data/levels/bonus/](data/levels/bonus/)-dadır. Hər tabın sonunda bir dondurulmuş və bir dumanlı səviyyə var.
+[tools/path_builder.gd](tools/path_builder.gd) səviyyələri yola düzür (sabit seed, nəticə təkrarlanır):
 
-- **Necə işləyir:**
-  - Bonus səviyyələr həmişə açıqdır və açılma sayğacına (15/10/10) daxil olmur.
-  - Ulduzları ümumi saya düşür (624), coin verir.
-- **Faylların quruluşu:**
-  - ID-lər 9001-dən başlayır, `"difficulty": "bonus"`.
-  - Hansı səviyyənin hansı tabda olduğunu `index.json` göstərir.
+- İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
+- Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
+- Hər çətinliyin içində səviyyələr asandan çətinə gedir.
+- Mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
+- Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
+
+### Mexanika səviyyələri
+
+8 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 dondurulmuş disk, 4 örtülü qüllə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+
+- **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (dondurulmuş disk yalnız 4 qüllə və 6+ diskdə həlli dəyişir).
 - **Dondurulmuş disk:** `"rules": [..., "frozen_disk"]`, `"rule_params": {"frozen_disk": {"disk_size": 2}}`.
   - Disk heç vaxt tərpənmir, üstünə kiçik disk qoyula bilər.
-  - Solver və Generator dəyişməyib.
+  - Solver dəyişməyib.
 - **Örtülü qüllə:** `"covered_pegs": [1, 2]`. Yalnız vizual qatdır: qüllədən ilk istifadədə duman açılır, "Yenidən" ilə qayıdır. Hədəf önizləməsində də eyni duman var.
+- **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
+  - Dondurulmuş disk: jadeit yaşılı, bir-birinə keçən halqalar (Çin Doqquz Halqa).
+  - Örtülü qüllə: ağac damarı və yosegi romb zolağı (Yapon karakuri qutusu).
+  - Lövhənin arxası, qüllələr, hədəf önizləməsi və xəritədəki dayanacağın halqası bu rəngdədir. Klassik səviyyələrin donu yoxdur.
 - **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
 
   ```powershell
-  godot --headless --path . --script res://tools/bonus_level_builder.gd
+  godot --headless --path . --script res://tools/mechanic_level_builder.gd
   ```
 - **Validator-un dizayn qaydaları:**
   - dondurulmuş disk ən alt disk ola bilməz və ən qısa həlli uzatmalıdır;
   - örtülü qüllədə ən azı 2 disk olmalıdır;
   - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır.
-
 ### Yeni qayda əlavə etmək
 
 1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın:
@@ -156,7 +169,7 @@ Solver-ə toxunmaq lazım deyil.
 |---|---|---|
 | 1 | Əsas data strukturu (`PuzzleState`, `Move`, `RuleBase`, `ClassicHanoiRule`, `RuleSet`) | ✅ |
 | 2 | BFS Solver (4 qüllə / 8 disk: ~60 ms, limit 5 s) | ✅ |
-| 3 | Səviyyə generatoru + validator (4 × 50 səviyyə, hamısı yoxlanılıb) | ✅ |
+| 3 | Səviyyə generatoru + validator (ilk versiya 4 × 50 səviyyə, hamısı yoxlanılıb) | ✅ |
 | 4 | Oyun lövhəsi UI (toxun-seç, toxun-köçür, qırmızı flash, sayğac, hədəf önizləməsi) | ✅ |
 | 5 | Ana menyu, səviyyə seçimi, tamamlama popup-ı, ulduzlar, save (`user://save.json`) | ✅ |
 | 6 | Hint (yolda: dərhal, yoldan kənar: arxa planda Solver), Undo, Economy | ✅ |
@@ -171,7 +184,9 @@ Solver-ə toxunmaq lazım deyil.
 | UX-8 | Yeni coin balansı, mağaza (stub alış, reklam, 24 s limitsiz Hint), gündəlik pulsuz undo | ✅ |
 | B-1 | Bonus: Dondurulmuş disk (`FrozenDiskRule`), 4 səviyyə ([əlavə sənəd 4](../MindShift_Bonus_Mechanics_Addendum.md)) | ✅ |
 | B-2 | Bonus: Örtülü qüllə (`PegFog`, yalnız vizual), 4 səviyyə | ✅ |
-| B-3 | Bonus xanaları hər tabın sonunda (hədiyyə ikonu, həmişə açıq) | ✅ |
+| B-3 | Bonus xanaları hər tabın sonunda (hədiyyə ikonu, həmişə açıq) | ✅ (v3 ilə əvəz olundu) |
+| E-2.1 | İqtisadiyyat düsturları: 1/2/3 coin, reklam 4 coin, başlanğıc 20 coin ([əlavə](../MindShift_Economy_Formulas_Addendum.md)) | ✅ |
+| L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər

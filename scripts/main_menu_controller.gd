@@ -1,6 +1,6 @@
 extends Control
 ## Main menu (spec 5.1, economy/UX addendum 5): four buttons. Play continues
-## with the next unfinished level, Levels opens the level select, Shop opens the
+## where the player stopped on the level path, Levels opens the map, Shop opens the
 ## shop, Settings holds sound, dark mode and language (addendum 4).
 
 @onready var _play_button: Button = %PlayButton
@@ -24,7 +24,7 @@ func _ready() -> void:
 	_play_button.pressed.connect(func() -> void:
 		var next: Dictionary = LevelCatalog.next_to_play(_save)
 		if app != null and not next.is_empty():
-			app.play_level(next["tier"], next["index"]))
+			app.play_level(next["track"], next["position"]))
 	_levels_button.pressed.connect(func() -> void:
 		if app != null:
 			app.show_level_select())
@@ -63,8 +63,4 @@ func _notification(what: int) -> void:
 
 
 func _update_progress() -> void:
-	# Bonus stars count too (user decision 2026-10-09); only unlocking ignores them.
-	var total_levels: int = LevelCatalog.bonus_entries().size()
-	for tier: String in Difficulty.ORDER:
-		total_levels += LevelCatalog.level_count(tier)
-	_progress_label.text = tr("MENU_PROGRESS") % [_save.get_total_stars(), total_levels * 3]
+	_progress_label.text = tr("MENU_PROGRESS") % [_save.get_total_stars(), LevelCatalog.total_levels() * 3]

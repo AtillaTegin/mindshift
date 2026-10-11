@@ -8,6 +8,11 @@ signal pressed(peg_index: int)
 const FLASH_SECONDS: float = 0.35
 
 var peg_index: int = 0
+## Dress of the level (ThemeManager.SKINS): the rod and base take its colour.
+var skin: String = "":
+	set(value):
+		skin = value
+		queue_redraw()
 ## Y of the top of the base, i.e. where the bottom disk sits.
 var base_top: float = 0.0
 var base_height: float = 14.0
@@ -47,7 +52,7 @@ func flash_invalid() -> void:
 
 
 func _draw() -> void:
-	var base_color: Color = ThemeManager.color("accent" if highlighted else "peg")
+	var base_color: Color = ThemeManager.color("accent") if highlighted else ThemeManager.skin_color(skin, "peg")
 	var peg_color: Color = base_color.lerp(ThemeManager.color("danger"), flash_amount)
 	var center_x: float = size.x * 0.5
 	var rod: StyleBoxFlat = StyleBoxFlat.new()
