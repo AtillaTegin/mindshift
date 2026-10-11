@@ -109,7 +109,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 8 mexanika səviyyəsi: cəmi 208 səviyyə (624 ulduz).
+Üstəgəl 24 mexanika səviyyəsi (4 dondurulmuş disk, 20 karakuri): cəmi 224 səviyyə (672 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -121,12 +121,13 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 - İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
 - Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
 - Hər çətinliyin içində səviyyələr asandan çətinə gedir.
-- Mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
+- Karakuri səviyyələri tez və tez-tez gəlir: birincisi 12-ci yerdə (tutorialdan qısa sonra), sonrakılar 5–9 səviyyə aralıqla (seed-li təsadüfi), kiçikdən (3 disk, 1 qutu) böyüyə (8 disk, 2 qutu).
+- Digər mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-8 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 dondurulmuş disk, 4 örtülü qüllə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+24 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 dondurulmuş disk, 20 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (dondurulmuş disk yalnız 4 qüllə və 6+ diskdə həlli dəyişir).
 - **Dondurulmuş disk:** `"rules": [..., "frozen_disk"]`, `"rule_params": {"frozen_disk": {"disk_size": 2}}`.

@@ -226,7 +226,7 @@ func test_mechanic_boards_wear_their_dress_and_classic_ones_do_not() -> void:
 func test_mechanic_levels_reward_and_save_like_any_level() -> void:
 	var board: GameBoard = _board()
 	board.start_level(LevelCatalog.load_mechanic("fog_02.json"))
-	assert_eq(board.session.level.difficulty, "medium", "its own tier")
+	assert_eq(board.session.level.difficulty, Difficulty.tier_for_moves(board.session.level.min_moves), "its own tier")
 	_solve(board)
 	assert_eq(board.last_result["stars"], 3)
 	assert_eq(board.last_result["tokens"], 3, "chest tokens like any level")

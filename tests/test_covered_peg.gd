@@ -5,7 +5,8 @@ extends "res://tests/test_case.gd"
 ## until the box opens. Rules, Solver and generator know nothing about it.
 
 const SAVE_PATH: String = "res://.test_saves/test_covered_peg_save.json"
-const FOG_LEVEL: String = "fog_03.json"
+## A shipped karakuri level with two boxes (file format checks).
+const FOG_LEVEL: String = "fog_20.json"
 
 var _board: GameBoard
 
@@ -19,15 +20,29 @@ func after_each() -> void:
 		DirAccess.remove_absolute(SAVE_PATH)
 
 
-func _open(file_name: String) -> void:
+## A fixed two-box puzzle, so these tests never depend on how the shipped
+## levels are generated: boxes on peg 1 [6,5,4,3] and peg 2 [7,2].
+static func _box_level() -> Level:
+	var start: PuzzleState = PuzzleState.new([[], [6, 5, 4, 3], [7, 2], [1]])
+	var goal: PuzzleState = PuzzleState.new([[], [7, 6, 5, 4, 3, 2, 1], [], []])
+	var path: Array[Move] = []
+	for pair: Array in [[1, 0], [2, 0], [3, 0], [1, 3], [1, 2], [3, 2], [1, 3], [2, 1], [2, 3], [1, 3], [2, 1], [3, 1],
+			[3, 2], [1, 2], [3, 1], [2, 3], [2, 1], [0, 2], [3, 1], [0, 3], [0, 1], [3, 1], [2, 1]]:
+		path.append(Move.from_array(pair))
+	var level: Level = Level.create(9900, "hard", start, goal, ["classic_hanoi"] as Array[String], path)
+	level.covered_pegs = [1, 2]
+	return level
+
+
+func _open_box_level() -> void:
 	_board = (load("res://scenes/game_board.tscn") as PackedScene).instantiate()
 	_board.save_system = SaveSystem.new(SAVE_PATH)
 	_board.save_system.coins = 20
 	_board.tutorials_enabled = false
 	_board.background_hints = false
 	_board.animate_transitions = false
-	_board.level_path = LevelCatalog.mechanic_path(file_name)
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
+	_board.start_level(_box_level())
 	_board.propagate_notification(Container.NOTIFICATION_SORT_CHILDREN)
 
 
@@ -43,7 +58,7 @@ func _disk_rect(disk: int) -> Rect2:
 
 func test_level_format() -> void:
 	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
-	assert_eq(level.covered_pegs, [1, 2] as Array[int])
+	assert_eq(level.covered_pegs.size(), 2, "the last karakuri level has two boxes")
 	assert_eq(level.rule_ids, ["classic_hanoi"] as Array[String], "no rule involved")
 	assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path(FOG_LEVEL)), level.to_json(), "round trip")
 	var data: Dictionary = JSON.parse_string(level.to_json())
@@ -63,8 +78,8 @@ func test_solver_ignores_the_fog() -> void:
 
 
 func test_session_boxes_open_one_layer_at_a_time() -> void:
-	# Cultural integration addendum 2: fog_03 has boxes on peg 1 [6,5,4,3] and peg 2 [7,2].
-	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
+	# Cultural integration addendum 2: boxes on peg 1 [6,5,4,3] and peg 2 [7,2].
+	var level: Level = _box_level()
 	var session: GameSession = GameSession.new(level)
 	assert_eq(session.covered_pegs, [1, 2] as Array[int], "both boxes start closed")
 	assert_eq(session.hidden_count(1), 4, "a closed box hides its whole stack")
@@ -91,7 +106,7 @@ func test_session_boxes_open_one_layer_at_a_time() -> void:
 
 
 func test_disks_put_on_a_box_stay_visible() -> void:
-	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
+	var level: Level = _box_level()
 	var session: GameSession = GameSession.new(level)
 	session.tap_peg(1)
 	assert_true(session.try_move(Move.new(3, 1)), "disk 1 onto the opened box")
@@ -101,7 +116,7 @@ func test_disks_put_on_a_box_stay_visible() -> void:
 
 
 func test_closed_box_hides_the_whole_peg_then_shrinks() -> void:
-	_open(FOG_LEVEL)
+	_open_box_level()
 	var state: PuzzleState = _board.session.state
 	var first: PegFog = _board.get_peg_fog(1)
 	var second: PegFog = _board.get_peg_fog(2)
@@ -140,7 +155,7 @@ func test_closed_box_hides_the_whole_peg_then_shrinks() -> void:
 
 
 func test_box_layers_open_as_disks_leave_and_restart_closes_it() -> void:
-	_open(FOG_LEVEL)
+	_open_box_level()
 	var fog: PegFog = _board.get_peg_fog(2)  # [7, 2]
 	_board.on_peg_pressed(2)  # open: disk 2 shows
 	_board.on_peg_pressed(2)
@@ -156,7 +171,7 @@ func test_box_layers_open_as_disks_leave_and_restart_closes_it() -> void:
 
 
 func test_hint_and_solve_work_with_boxes() -> void:
-	_open(FOG_LEVEL)
+	_open_box_level()
 	_board.request_hint()
 	assert_not_null(_board.hints.hint_move, "the hint sees the full position")
 	for peg_index: int in _board.session.level.covered_pegs:
@@ -180,7 +195,12 @@ func test_validator_rules_for_covered_pegs() -> void:
 	errors.clear()
 	LevelValidator.validate_mechanic_design(level, errors)
 	assert_eq(errors, [] as Array[String], "peg 0 is used by the first move")
-	for file_name: String in ["fog_01.json", "fog_02.json", "fog_03.json", "fog_04.json"]:
+	var karakuri: int = 0
+	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
+		if not file_name.begins_with("fog_") or not file_name.ends_with(".json"):
+			continue
+		karakuri += 1
 		var file_errors: Array[String] = []
 		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), file_errors)
 		assert_eq(file_errors, [] as Array[String], file_name)
+	assert_eq(karakuri, 20)

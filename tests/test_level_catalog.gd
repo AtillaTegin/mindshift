@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 8, "the four frozen-disk and four covered-peg levels")
+	assert_eq(mechanic_files, 24, "four frozen-disk and twenty karakuri levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -98,7 +98,29 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 			assert_true(Difficulty.is_known(_level_at(MAIN, position).difficulty), "a real tier")
 			found.append(mechanic)
 	assert_eq(found.count("frozen_disk"), 4)
-	assert_eq(found.count("covered_pegs"), 4)
+	assert_eq(found.count("covered_pegs"), 20)
+
+
+func test_karakuri_levels_come_early_often_and_get_harder() -> void:
+	# User request 2026-10-12: ~15-20 karakuri levels, the first one soon after
+	# the tutorial, then every 5-9 levels, from small and easy to large and hard.
+	var positions: Array[int] = []
+	var levels: Array[Level] = []
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		if LevelCatalog.mechanic_at(MAIN, position) == "covered_pegs":
+			positions.append(position)
+			levels.append(_level_at(MAIN, position))
+	assert_true(positions.size() >= 15 and positions.size() <= 20, "%d karakuri levels" % positions.size())
+	assert_true(positions[0] >= 10 and positions[0] <= 14, "the first one at %d" % positions[0])
+	for i: int in range(1, positions.size()):
+		var gap: int = positions[i] - positions[i - 1]
+		assert_true(gap >= 5 and gap <= 9, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
+		assert_true(levels[i].min_moves >= levels[i - 1].min_moves, "never easier than the one before (%d)" % positions[i])
+	assert_eq(levels[0].get_disk_count(), 3, "the first one is small")
+	assert_eq(levels[0].covered_pegs.size(), 1, "with a single box")
+	assert_eq(levels[0].difficulty, "easy")
+	assert_eq(levels[-1].get_disk_count(), 8, "the last ones are large")
+	assert_eq(levels[-1].covered_pegs.size(), 2, "with two boxes")
 
 
 func test_no_shipped_level_has_a_time_limit() -> void:

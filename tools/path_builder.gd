@@ -11,8 +11,12 @@ extends SceneTree
 ## hard takes over towards the end. Each step takes the tier that lags its
 ## curve the most, with a little seeded jitter, so the order is neither blocks
 ## nor random. Inside a tier levels always come easiest first.
-## Mechanic levels are spread evenly over the main path from MECHANICS_FROM on,
-## easiest first; each counts as a level of its own tier.
+## Karakuri (covered-peg) levels come early and often (user request
+## 2026-10-12): the first at KARAKURI_FROM, right after the tutorial, then one
+## every KARAKURI_GAP_MIN..KARAKURI_GAP_MAX levels (seeded), easiest first.
+## Other mechanic levels are spread evenly over the main path from
+## MECHANICS_FROM on, easiest first, taking the next free slot on a clash.
+## Each mechanic level counts as a level of its own tier.
 ## Branch ("island", shown once main level BRANCH_AFTER is completed): every
 ## expert level plus the hardest BRANCH_HARD hard and BRANCH_MEDIUM medium
 ## levels as breathers, opening with a hard one.
@@ -22,6 +26,9 @@ const SEED: int = 20261011
 const FIRST_EASY: int = 5
 const BRANCH_AFTER: int = 50
 const MECHANICS_FROM: int = 10
+const KARAKURI_FROM: int = 12
+const KARAKURI_GAP_MIN: int = 5
+const KARAKURI_GAP_MAX: int = 9
 const BRANCH_HARD: int = 8
 const BRANCH_MEDIUM: int = 4
 ## Largest random boost of a tier's lag (as a share of it) when picking the
@@ -91,13 +98,11 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 	if main_size < BRANCH_AFTER:
 		errors.append("the main path has %d levels, the branch needs %d" % [main_size, BRANCH_AFTER])
 		return {}
-	# Fixed slots for the mechanic levels, evenly spread from MECHANICS_FROM on.
-	var pinned: Dictionary = {}
-	var span: float = float(main_size - MECHANICS_FROM) / maxf(mechanics.size(), 1.0)
-	for i: int in mechanics.size():
-		pinned[MECHANICS_FROM + roundi((i + 0.5) * span)] = mechanics[i]
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = SEED
+	var pinned: Dictionary = _pin_mechanics(mechanics, main_size, errors)
+	if not errors.is_empty():
+		return {}
 	var main: Array[Dictionary] = first.duplicate()
 	main.append_array(_mix(main_pools, MAIN_CURVES, main_size - first.size(), pinned, first.size(), rng))
 	var branch: Array[Dictionary] = []
@@ -105,6 +110,36 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 		branch.append((branch_pools["hard"] as Array).pop_front())
 	branch.append_array(_mix(branch_pools, BRANCH_CURVES, _total(branch_pools), {}, 0, rng))
 	return {"branch_after": BRANCH_AFTER, LevelCatalog.MAIN: _entries(main), LevelCatalog.BRANCH: _entries(branch)}
+
+
+## Fixed main path slots for the mechanic levels (1-based position -> level):
+## karakuri ones from KARAKURI_FROM with seeded gaps, the others evenly spread
+## from MECHANICS_FROM. Both lists are easiest first.
+static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors: Array[String]) -> Dictionary:
+	var karakuri: Array[Dictionary] = []
+	var others: Array[Dictionary] = []
+	for entry: Dictionary in mechanics:
+		if (entry["level"] as Level).mechanic() == "covered_pegs":
+			karakuri.append(entry)
+		else:
+			others.append(entry)
+	var pinned: Dictionary = {}
+	var gaps: RandomNumberGenerator = RandomNumberGenerator.new()
+	gaps.seed = SEED + 1
+	var position: int = KARAKURI_FROM
+	for entry: Dictionary in karakuri:
+		if position > main_size:
+			errors.append("karakuri level %s does not fit on the main path" % entry["file"])
+			return {}
+		pinned[position] = entry
+		position += gaps.randi_range(KARAKURI_GAP_MIN, KARAKURI_GAP_MAX)
+	var span: float = float(main_size - MECHANICS_FROM) / maxf(others.size(), 1.0)
+	for i: int in others.size():
+		var slot: int = MECHANICS_FROM + roundi((i + 0.5) * span)
+		while pinned.has(slot):
+			slot += 1
+		pinned[slot] = others[i]
+	return pinned
 
 
 ## `count` levels from `pools`, following `curves`. `pinned` maps 1-based track
