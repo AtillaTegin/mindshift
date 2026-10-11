@@ -5,6 +5,10 @@ extends RefCounted
 ## positive integers (-1 is reserved as the "empty peg" value).
 
 var pegs: Array[Array] = []
+## The disk whose move led to this position (0: none, e.g. a level start).
+## Rules may look at it (RuleBase.uses_last_move); it is not part of the
+## position itself, so equals() and hash_key() ignore it.
+var last_moved_disk: int = 0
 
 
 ## `p_pegs` is deep-copied, so the caller's arrays are never shared.
@@ -47,6 +51,7 @@ func duplicate_state() -> PuzzleState:
 	var copy: PuzzleState = PuzzleState.new()
 	for peg: Array in pegs:
 		copy.pegs.append(peg.duplicate())
+	copy.last_moved_disk = last_moved_disk
 	return copy
 
 

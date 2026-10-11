@@ -10,7 +10,11 @@ extends RefCounted
 ##   "which peg each disk is on" and fits in one int. The search runs from both
 ##   ends and meets in the middle. This is what makes 4-5 peg / 8-10 disk levels
 ##   and in-game hints fast enough.
-## - Generic search: standard BFS over PuzzleState with a hash_key() visited set.
+## - Packed search with history: when a rule also looks at the disk that moved
+##   last (RuleBase.uses_last_move), that disk is part of the search state.
+##   The packed code then carries it too, and the search runs one way only
+##   (a predecessor's own last disk is not known going backwards).
+## - Generic search: standard BFS over PuzzleState keyed by RuleSet.search_key().
 ##   Works for any RuleSet.
 ## The Solver never refers to concrete rule classes; new rules only need to
 ## implement RuleBase.
@@ -26,7 +30,7 @@ const MAX_PACKED_CODE: int = 1 << 62
 ##   path: Array[Move]    - the moves, start -> goal (empty when start equals goal)
 ##   states_visited: int  - distinct positions the search stored
 ##   limit_reached: bool  - the search stopped at max_states before finding an answer
-##   strategy: String     - "packed", "generic", or "none" when no search was needed
+##   strategy: String     - "packed", "packed_history", "generic", or "none" when no search was needed
 ## Neither `start` nor `goal` is modified.
 static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		max_states: int = DEFAULT_MAX_STATES) -> Dictionary:
@@ -38,7 +42,10 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		# Moves never add or remove pegs or disks.
 		return _result(false, [], 1, false)
 	var result: Dictionary
-	if _can_pack(start, goal, rules):
+	if _can_pack(start, goal, rules) and rules.uses_last_move():
+		result = _solve_packed_history(start, goal, rules, max_states)
+		result["strategy"] = "packed_history"
+	elif _can_pack(start, goal, rules):
 		result = _solve_packed(start, goal, rules, max_states)
 		result["strategy"] = "packed"
 	else:
@@ -49,7 +56,7 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 
 static func _solve_generic(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		max_states: int) -> Dictionary:
-	var start_key: String = start.hash_key()
+	var start_key: String = rules.search_key(start)
 	# key -> [previous key, move from previous]; the start maps to [].
 	var parents: Dictionary[String, Array] = {start_key: []}
 	var queue: Array[PuzzleState] = [start]
@@ -62,7 +69,7 @@ static func _solve_generic(start: PuzzleState, goal: PuzzleState, rules: RuleSet
 		head += 1
 		for move: Move in rules.get_legal_moves(state):
 			var next: PuzzleState = rules.apply_move_unchecked(state, move)
-			var next_key: String = next.hash_key()
+			var next_key: String = rules.search_key(next)
 			if parents.has(next_key):
 				continue
 			parents[next_key] = [key, move]
@@ -183,6 +190,81 @@ static func _solve_packed(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		else:
 			backward_frontier = next_frontier
 	return _result(false, [], forward.size() + backward.size(), false)
+
+
+## One-way BFS over packed positions plus the rank of the disk that moved last
+## (code = position * (disk_count + 1) + last rank + 1; 0 means none). Every
+## move goes through RuleBase.is_disk_move_allowed_after(). The first time the
+## goal position is reached, with any last disk, the path is a shortest one.
+static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
+		max_states: int) -> Dictionary:
+	var peg_count: int = start.pegs.size()
+	var sizes: Array[int] = _sorted_disks(start)
+	var disk_count: int = sizes.size()
+	var rank_of: Dictionary[int, int] = {}
+	var powers: PackedInt64Array = PackedInt64Array()
+	var power: int = 1
+	for rank: int in disk_count:
+		rank_of[sizes[rank]] = rank
+		powers.append(power)
+		power *= peg_count
+	var lasts: int = disk_count + 1
+	var rule_list: Array[RuleBase] = rules.active_rules
+	var goal_code: int = _encode(goal, rank_of, powers)
+	var start_last: int = rank_of[start.last_moved_disk] + 1 if rank_of.has(start.last_moved_disk) else 0
+	var start_key: int = _encode(start, rank_of, powers) * lasts + start_last
+	# key -> previous key (start -> -1)
+	var parents: Dictionary[int, int] = {start_key: -1}
+	var frontier: PackedInt64Array = PackedInt64Array([start_key])
+	var tops: PackedInt32Array = PackedInt32Array()
+	tops.resize(peg_count)
+	var head: int = 0
+	while head < frontier.size():
+		var key: int = frontier[head]
+		head += 1
+		var code: int = key / lasts
+		var last_rank: int = key % lasts - 1
+		var last_disk: int = sizes[last_rank] if last_rank >= 0 else 0
+		tops.fill(-1)
+		var rest: int = code
+		for rank: int in disk_count:
+			var peg: int = rest % peg_count
+			rest /= peg_count
+			if tops[peg] == -1:
+				tops[peg] = rank
+		for a: int in peg_count:
+			var rank_a: int = tops[a]
+			if rank_a == -1:
+				continue
+			var disk: int = sizes[rank_a]
+			for b: int in peg_count:
+				if b == a:
+					continue
+				var target_top: int = -1 if tops[b] == -1 else sizes[tops[b]]
+				var allowed: bool = true
+				for rule: RuleBase in rule_list:
+					if not rule.is_disk_move_allowed_after(disk, a, b, target_top, last_disk):
+						allowed = false
+						break
+				if not allowed:
+					continue
+				var next_code: int = code + (b - a) * powers[rank_a]
+				var next_key: int = next_code * lasts + rank_a + 1
+				if parents.has(next_key):
+					continue
+				parents[next_key] = key
+				if next_code == goal_code:
+					var path: Array[Move] = []
+					var walk: int = next_key
+					while parents[walk] != -1:
+						path.append(_packed_move(parents[walk] / lasts, walk / lasts, peg_count, powers))
+						walk = parents[walk]
+					path.reverse()
+					return _result(true, path, parents.size(), false)
+				if parents.size() >= max_states:
+					return _result(false, [], parents.size(), true)
+				frontier.append(next_key)
+	return _result(false, [], parents.size(), false)
 
 
 static func _encode(state: PuzzleState, rank_of: Dictionary[int, int], powers: PackedInt64Array) -> int:

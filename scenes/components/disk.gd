@@ -19,11 +19,16 @@ var selected: bool = false:
 	set(value):
 		selected = value
 		queue_redraw()
-## Pinned by a rule (frozen disk): drawn with an ice rim and cracks, always,
-## so the player sees it before trying to move it.
-var frozen: bool = false:
+## Free to move right now under a rule that looks at the last move (the Nine
+## Rings alternation): drawn with a ring in `ring_color`, so the player sees
+## which disks may go before trying.
+var movable_ring: bool = false:
 	set(value):
-		frozen = value
+		movable_ring = value
+		queue_redraw()
+var ring_color: Color = Color.WHITE:
+	set(value):
+		ring_color = value
 		queue_redraw()
 
 const WOBBLE_SECONDS: float = 0.32
@@ -31,10 +36,10 @@ const WOBBLE_PIXELS: float = 7.0
 
 var _move: Tween
 var _wobble: Tween
-## 0..1 while wobbling: how strongly the ice rim lights up.
-var _ice_flash: float = 0.0:
+## 0..1 while wobbling: how strongly the rim lights up.
+var _flash: float = 0.0:
 	set(value):
-		_ice_flash = value
+		_flash = value
 		queue_redraw()
 
 @onready var _shadow: Polygon2D = $Shadow
@@ -60,15 +65,15 @@ func move_to(target: Vector2, animated: bool) -> void:
 	_move.tween_property(self, "position", target, MOVE_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## "Cannot move" feedback for a frozen disk: a short sideways shake in place
-## with the ice rim lighting up (ice blue, unlike the red illegal-move flash).
+## "Not now" feedback for a disk a rule holds back: a short sideways shake in
+## place with a soft grey rim (no red: nothing is punished).
 func wobble() -> void:
 	if _wobble != null:
 		_wobble.kill()
 	var home: Vector2 = position
 	_wobble = create_tween()
-	_ice_flash = 1.0
-	_wobble.parallel().tween_property(self, "_ice_flash", 0.0, WOBBLE_SECONDS)
+	_flash = 1.0
+	_wobble.parallel().tween_property(self, "_flash", 0.0, WOBBLE_SECONDS)
 	var step: float = WOBBLE_SECONDS / 5.0
 	for offset: float in [WOBBLE_PIXELS, -WOBBLE_PIXELS, WOBBLE_PIXELS * 0.5, -WOBBLE_PIXELS * 0.5]:
 		_wobble.tween_property(self, "position", home + Vector2(offset, 0.0), step).set_trans(Tween.TRANS_SINE)
@@ -84,21 +89,13 @@ func _notification(what: int) -> void:
 		_shadow.color = ThemeManager.color("shadow")
 
 
-## Ice look: a frosted rim plus two small crack strokes at the ends.
-func _draw_ice() -> void:
+func _draw_rim(rim_color: Color, width: float) -> void:
 	var rim: StyleBoxFlat = StyleBoxFlat.new()
 	rim.draw_center = false
 	rim.set_corner_radius_all(int(_corner_radius()))
-	rim.set_border_width_all(int(lerpf(4.0, 6.0, _ice_flash)))
-	rim.border_color = ThemeManager.icon_color("ice_edge").lerp(ThemeManager.icon_color("ice"), _ice_flash)
+	rim.set_border_width_all(int(width))
+	rim.border_color = rim_color
 	draw_style_box(rim, Rect2(Vector2.ZERO, size))
-	var crack: Color = ThemeManager.icon_color("ice")
-	var h: float = size.y
-	for side: float in [1.0, -1.0]:
-		var x: float = size.x * 0.5 + side * size.x * 0.32
-		draw_polyline(PackedVector2Array([Vector2(x, h * 0.2), Vector2(x + side * h * 0.12, h * 0.45),
-				Vector2(x - side * h * 0.05, h * 0.62), Vector2(x + side * h * 0.08, h * 0.82)]), crack, 2.0, true)
-
 
 func _corner_radius() -> float:
 	return minf(size.y, size.x) * 0.45
@@ -127,8 +124,12 @@ func _draw() -> void:
 		box.set_border_width_all(4)
 		box.border_color = ThemeManager.color("text_primary")
 	draw_style_box(box, Rect2(Vector2.ZERO, size))
-	if frozen:
-		_draw_ice()
+	if movable_ring:
+		_draw_rim(ring_color, 4.0)
+	if _flash > 0.0:
+		var soft: Color = ThemeManager.color("text_secondary")
+		soft.a = _flash
+		_draw_rim(soft, 5.0)
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))
 	var text: String = str(disk_size)

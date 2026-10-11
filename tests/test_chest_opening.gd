@@ -31,7 +31,7 @@ func test_build_up_trembles_and_glows_in_the_dress_colour() -> void:
 	assert_eq(_chest.phase(), "idle")
 	_chest.play(1, "jade", Vector2(600, 40))
 	assert_eq(_chest.phase(), "build")
-	assert_eq(_chest.glow_color(), ThemeManager.skin_color("jade", "mark"), "green jade on a frozen-disk level")
+	assert_eq(_chest.glow_color(), ThemeManager.skin_color("jade", "mark"), "green jade on a Nine Rings level")
 	var angles: Array[float] = []
 	for i: int in 8:
 		_chest.advance(0.1)

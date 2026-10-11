@@ -15,7 +15,7 @@ signal layout_changed
 signal selection_changed(peg_index: int)
 ## A move was refused by the rules; `message` is the broken rule's text.
 signal illegal_move(move: Move, message: String)
-## The top disk of `peg_index` may not be picked up (e.g. it is frozen).
+## The top disk of `peg_index` may not be picked up now (a rule holds it back).
 signal pick_up_refused(peg_index: int, message: String)
 
 const PEG_SCENE: PackedScene = preload("res://scenes/components/peg.tscn")
@@ -56,6 +56,8 @@ var tutorial: TutorialDirector
 var _popup: LevelCompletePopup
 ## Short notice in the status line (e.g. not enough coins), cleared by the next action.
 var _message: String = ""
+## The notice is a gentle rule reminder (grey), not a warning (red).
+var _message_soft: bool = false
 var _peg_views: Array[PegView] = []
 ## Disk size -> view.
 var _disk_views: Dictionary[int, DiskView] = {}
@@ -183,7 +185,6 @@ func start_level(level: Level) -> void:
 	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
 	_build_views()
 	_goal_preview.skin = _board_skin.skin
-	_goal_preview.pinned_disks = _pinned_disks()
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
@@ -251,9 +252,11 @@ func get_popup() -> LevelCompletePopup:
 	return _popup
 
 
-## Shows a short notice in the status line until the next action.
-func show_message(text: String) -> void:
+## Shows a short notice in the status line until the next action; `soft` for a
+## rule reminder that should not look like a mistake.
+func show_message(text: String, soft: bool = false) -> void:
 	_message = text
+	_message_soft = soft
 	if session != null:
 		_refresh(false)
 
@@ -308,19 +311,11 @@ func on_peg_pressed(peg_index: int) -> void:
 		GameSession.TapResult.BLOCKED:
 			_disk_views[session.state.get_top_disk(peg_index)].wobble()
 			var message: String = tr(session.rules.get_pick_up_violation_message(session.state, peg_index))
-			show_message(message)
+			# A held-back disk is no mistake to scold (cultural addendum 1: no punishment).
+			show_message(message, true)
 			pick_up_refused.emit(peg_index, message)
 	if session.selected_peg != selected_before:
 		selection_changed.emit(session.selected_peg)
-
-
-## Disks the active rules never let move (drawn as ice on the board and preview).
-func _pinned_disks() -> Array[int]:
-	var pinned: Array[int] = []
-	for disk: int in range(1, session.state.get_disk_count() + 1):
-		if not session.rules.is_disk_movable(disk):
-			pinned.append(disk)
-	return pinned
 
 
 ## The level after this one on its track: {track, position}, or {} after the
@@ -385,6 +380,17 @@ func _release_chest() -> void:
 	_coins_in_flight = 0
 
 
+## Under a rule that looks at the last move (the Nine Rings alternation) the
+## top disks that may go right now wear a ring.
+func _update_rings() -> void:
+	var watch: bool = session.rules.uses_last_move() and not session.is_solved()
+	var last: int = session.state.last_moved_disk
+	for peg_index: int in session.state.get_peg_count():
+		var top: int = session.state.get_top_disk(peg_index)
+		for disk: int in session.state.pegs[peg_index]:
+			_disk_views[disk].movable_ring = watch and disk == top and session.rules.is_disk_movable(disk, last)
+
+
 func _update_buttons() -> void:
 	if session == null or not is_node_ready():
 		return
@@ -436,7 +442,8 @@ func _build_views() -> void:
 			var disk: DiskView = DISK_SCENE.instantiate()
 			disk.disk_size = disk_size
 			disk.color = ThemeManager.disk_color(disk_size, disk_count)
-			disk.frozen = not session.rules.is_disk_movable(disk_size)
+			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
+					else ThemeManager.color("accent")
 			_disk_layer.add_child(disk)
 			_disk_views[disk_size] = disk
 
@@ -449,9 +456,10 @@ func _refresh(animated: bool) -> void:
 		_status_label.theme_type_variation = &"SuccessLabel"
 	else:
 		_status_label.text = _message
-		_status_label.theme_type_variation = &"DangerLabel"
+		_status_label.theme_type_variation = &"SecondaryLabel" if _message_soft else &"DangerLabel"
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
+	_update_rings()
 	_update_buttons()
 	_layout(animated)
 

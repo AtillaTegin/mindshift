@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 24, "four frozen-disk and twenty karakuri levels")
+	assert_eq(mechanic_files, 24, "four Nine Rings and twenty karakuri levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -97,7 +97,7 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 			assert_eq(mechanic, _level_at(MAIN, position).mechanic())
 			assert_true(Difficulty.is_known(_level_at(MAIN, position).difficulty), "a real tier")
 			found.append(mechanic)
-	assert_eq(found.count("frozen_disk"), 4)
+	assert_eq(found.count("alternation"), 4)
 	assert_eq(found.count("covered_pegs"), 20)
 
 

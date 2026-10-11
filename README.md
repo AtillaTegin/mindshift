@@ -109,7 +109,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 24 mexanika səviyyəsi (4 dondurulmuş disk, 20 karakuri): cəmi 224 səviyyə (672 ulduz).
+Üstəgəl 24 mexanika səviyyəsi (4 Doqquz Halqa, 20 karakuri): cəmi 224 səviyyə (672 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -127,19 +127,21 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 
 ### Mexanika səviyyələri
 
-24 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 dondurulmuş disk, 20 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+24 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 20 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
 
-- **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (dondurulmuş disk yalnız 4 qüllə və 6+ diskdə həlli dəyişir).
-- **Dondurulmuş disk:** `"rules": [..., "frozen_disk"]`, `"rule_params": {"frozen_disk": {"disk_size": 2}}`.
-  - Disk heç vaxt tərpənmir, üstünə kiçik disk qoyula bilər.
-  - Solver dəyişməyib.
+- **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
+- **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
+  - 1-ci disk həmişə gedə bilər; 1-ci diskdən sonra istənilən disk; başqa diskdən sonra yalnız 1-ci disk və ya ±1 qonşu. Başlanğıcda yalnız 1-ci disk.
+  - İndi gedə bilən üst disklər lövhədə jadeit halqası ilə işarələnir. Qadağan diskə toxunanda disk titrəyir və qayda yazılır, cəza yoxdur.
+  - Vəziyyət sonuncu tərpənən diski xatırlayır (`PuzzleState.last_moved_disk`, mövqenin hissəsi deyil). Solver bunu ümumi şəkildə dəstəkləyir (`RuleBase.uses_last_move`, `packed_history` axtarışı), qaydanın adını çəkmir.
+  - Sənəddəki hərfi qayda (`1-dən sonra istənilən` olmadan) 3–4 qüllədə yalnız 1–3-cü diskləri tərpənməyə qoyurdu (ölçülüb), ona görə istifadəçi D variantını seçdi.
 - **Örtülü qüllə (karakuri qutusu):** `"covered_pegs": [1, 2]`. Yalnız təqdimatdır, Solver və ulduzlar dəyişmir ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 2).
   - Qüllə bağlı ağac qutu kimi başlayır: bütün disklər, hətta neçə disk olduğu da görünmür.
   - İlk toxunuş qutunu açır (gediş sayılmır) və yalnız üst disk görünür. Üst disk gedəndə altındakı açılır, hər dəfə bir qat.
   - Qutunun üstünə qoyulan disklər görünür qalır. Undo heç nəyi yenidən gizlətmir, "Yenidən" bütün qutuları bağlayır.
   - Hədəf önizləməsindəki duman qutu açılanda qalxır.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
-  - Dondurulmuş disk: jadeit yaşılı, bir-birinə keçən halqalar (Çin Doqquz Halqa).
+  - Doqquz Halqa: jadeit yaşılı, damarlar və çubuqdan asılan doqquz halqa (Çin Doqquz Halqa).
   - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).
   - Lövhənin arxası, qüllələr, hədəf önizləməsi və xəritədəki dayanacağın halqası bu rəngdədir. Klassik səviyyələrin donu yoxdur.
 - **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
@@ -148,7 +150,7 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   godot --headless --path . --script res://tools/mechanic_level_builder.gd
   ```
 - **Validator-un dizayn qaydaları:**
-  - dondurulmuş disk ən alt disk ola bilməz və ən qısa həlli uzatmalıdır;
+  - klassikdən əlavə qayda (Doqquz Halqa) ən qısa həlli uzatmalıdır;
   - örtülü qüllədə ən azı 2 disk olmalıdır;
   - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır.
 ### Yeni qayda əlavə etmək
@@ -156,6 +158,7 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 1. `core/rules/` altında `RuleBase`-dən miras alan klas yazın:
    - qərar yalnız hərəkət edən diskdən, iki qüllədən və hədəf qüllənin üst diskindən asılıdırsa:
      `is_disk_move_allowed()` + `supports_disk_move_check() -> true` (Solver sürətli yolu istifadə edə bilir);
+   - qərar sonuncu tərpənən diskdən də asılıdırsa: `uses_last_move() -> true` + `is_disk_move_allowed_after()` (Solver sonuncu diski axtarışa daxil edir);
    - daha çox vəziyyət məlumatı lazımdırsa: `is_move_allowed()` (Solver ümumi BFS-ə keçir);
    - mövqe məhdudiyyəti varsa: `is_state_valid()`.
 2. Onu `RuleSet.create_rule()` reyestrinə əlavə edin.
@@ -165,11 +168,12 @@ Solver-ə toxunmaq lazım deyil.
 ### Solver
 
 `Solver.solve(start, goal, rules, max_states)` → `{ solvable, min_moves, path: Array[Move], states_visited, limit_reached, strategy }`.
-İki strategiya var, hər ikisi BFS-dir və ən qısa yolu tapır:
+Üç strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 
 - **packed**: qaydalar qüllələri sıralı saxlayırsa (klassik Hanoi), vəziyyət tam ədəd kimi kodlanır
   ("hər disk hansı qüllədədir") və axtarış iki tərəfdən aparılır. 4 qüllə / 8 disk ≈ 60 ms.
-- **generic**: `PuzzleState` + `hash_key()` üzərində standart BFS, istənilən qayda dəsti üçün.
+- **packed_history**: qaydalardan biri sonuncu tərpənən diskə baxırsa (Doqquz Halqa), kod o diski də daşıyır və axtarış bir tərəfli aparılır. 4 qüllə / 7 disk ≈ 0.6 s.
+- **generic**: `PuzzleState` + `RuleSet.search_key()` üzərində standart BFS, istənilən qayda dəsti üçün.
   4 qüllə / 8 disk burada ≈ 15 s çəkir. Səbəb də sürətli yolun yaradılmasıdır.
 
 ## İrəliləyiş
@@ -191,7 +195,7 @@ Solver-ə toxunmaq lazım deyil.
 | UX-6 | Hədəf önizləməsində hər diskin üstündə ölçü rəqəmi; önizləmə hündürlüyü disk sayına uyğunlaşır | ✅ |
 | UX-7 | Kodla çəkilən ikonlar (coin, hint lampası, undo oxu), sabit funksional rənglər, `PolishedButton.icon_kind` | ✅ |
 | UX-8 | Yeni coin balansı, mağaza (stub alış, reklam, 24 s limitsiz Hint), gündəlik pulsuz undo | ✅ |
-| B-1 | Bonus: Dondurulmuş disk (`FrozenDiskRule`), 4 səviyyə ([əlavə sənəd 4](../MindShift_Bonus_Mechanics_Addendum.md)) | ✅ |
+| B-1 | Bonus: Dondurulmuş disk (`FrozenDiskRule`), 4 səviyyə ([əlavə sənəd 4](../MindShift_Bonus_Mechanics_Addendum.md)) | ✅ (Doqquz Halqa ilə əvəz olundu) |
 | B-2 | Bonus: Örtülü qüllə (`PegFog`, yalnız vizual), 4 səviyyə | ✅ |
 | B-3 | Bonus xanaları hər tabın sonunda (hədiyyə ikonu, həmişə açıq) | ✅ (v3 ilə əvəz olundu) |
 | E-2.1 | İqtisadiyyat düsturları: 1/2/3 coin, reklam 4 coin, başlanğıc 20 coin ([əlavə](../MindShift_Economy_Formulas_Addendum.md)) | ✅ (v3 ilə əvəz olundu) |

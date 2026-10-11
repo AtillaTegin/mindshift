@@ -213,7 +213,7 @@ func test_popup_announces_the_island_once() -> void:
 
 func test_mechanic_boards_wear_their_dress_and_classic_ones_do_not() -> void:
 	var board: GameBoard = _board()
-	board.start_level(LevelCatalog.load_mechanic("frozen_01.json"))
+	board.start_level(LevelCatalog.load_mechanic("rings_01.json"))
 	assert_eq(board.get_board_skin().skin, "jade")
 	assert_eq(board.get_node("%GoalPreview").skin, "jade")
 	board.start_level(LevelCatalog.load_mechanic("fog_01.json"))

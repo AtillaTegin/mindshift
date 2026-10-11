@@ -38,7 +38,8 @@ var covered_pegs: Array[int] = []
 var _hidden: Dictionary[int, int] = {}
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
-## hash_key of each position along level.solution_path -> index of the next move.
+## RuleSet.search_key of each position along level.solution_path -> index of the
+## next move (the key includes the last moved disk when a rule depends on it).
 var _path_index: Dictionary[String, int] = {}
 
 
@@ -47,7 +48,7 @@ func _init(p_level: Level) -> void:
 	rules = level.get_rule_set()
 	var position: PuzzleState = level.start
 	for i: int in level.solution_path.size():
-		_path_index[position.hash_key()] = i
+		_path_index[rules.search_key(position)] = i
 		position = rules.apply_move(position, level.solution_path[i])
 		if position == null:
 			break
@@ -183,7 +184,7 @@ func get_hint() -> Dictionary:
 ## The next move of the stored solution if the current position lies on it,
 ## otherwise null. Instant: no search.
 func get_path_hint() -> Move:
-	var key: String = state.hash_key()
+	var key: String = rules.search_key(state)
 	return level.solution_path[_path_index[key]] if _path_index.has(key) else null
 
 

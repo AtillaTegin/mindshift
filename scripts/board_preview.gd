@@ -15,11 +15,6 @@ var skin: String = "":
 	set(value):
 		skin = value
 		queue_redraw()
-## Disks a rule pins (frozen): drawn with an ice rim here too.
-var pinned_disks: Array[int] = []:
-	set(value):
-		pinned_disks = value
-		queue_redraw()
 ## Covered pegs (bonus mechanics addendum 2): the goal shows the same fog,
 ## lifted together with the board's (reveal_peg), so the goal does not give
 ## the hidden disks away.
@@ -109,8 +104,6 @@ func _draw() -> void:
 		var rect: Rect2 = label["rect"]
 		var font_size: int = label["font_size"]
 		draw_rect(rect, ThemeManager.disk_color(label["disk"], disk_count))
-		if pinned_disks.has(label["disk"]):
-			draw_rect(rect, ThemeManager.icon_color("ice_edge"), false, 3.0)
 		var text: String = str(label["disk"])
 		var text_width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var baseline: Vector2 = Vector2(rect.position.x + (rect.size.x - text_width) * 0.5,

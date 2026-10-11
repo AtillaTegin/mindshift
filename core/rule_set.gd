@@ -57,8 +57,8 @@ static func create_rule(id: String) -> RuleBase:
 	match id:
 		ClassicHanoiRule.ID:
 			return ClassicHanoiRule.new()
-		FrozenDiskRule.ID:
-			return FrozenDiskRule.new()
+		AlternationRule.ID:
+			return AlternationRule.new()
 	return null
 
 
@@ -71,26 +71,40 @@ func get_rule_params() -> Dictionary:
 	return params
 
 
-## Whether every active rule lets `disk` move at all.
-func is_disk_movable(disk: int) -> bool:
+## Whether every active rule lets `disk` move now, `last_disk` having moved last.
+func is_disk_movable(disk: int, last_disk: int) -> bool:
 	for rule: RuleBase in active_rules:
-		if not rule.is_disk_movable(disk):
+		if not rule.is_disk_movable(disk, last_disk):
 			return false
 	return true
+
+
+## Whether any active rule looks at the disk that moved last.
+func uses_last_move() -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.uses_last_move():
+			return true
+	return false
+
+
+## What a search must tell apart: the position, plus the last moved disk when a
+## rule depends on it.
+func search_key(state: PuzzleState) -> String:
+	return state.hash_key() + ("#%d" % state.last_moved_disk if uses_last_move() else "")
 
 
 ## Whether the top disk of `peg_index` may be picked up (false for an empty peg).
 func can_pick_up(state: PuzzleState, peg_index: int) -> bool:
 	var disk: int = state.get_top_disk(peg_index)
-	return disk != -1 and is_disk_movable(disk)
+	return disk != -1 and is_disk_movable(disk, state.last_moved_disk)
 
 
 ## Why the top disk of `peg_index` cannot be picked up: the violation_message
-## of the first rule that pins it, or "".
+## of the first rule that holds it back, or "".
 func get_pick_up_violation_message(state: PuzzleState, peg_index: int) -> String:
 	var disk: int = state.get_top_disk(peg_index)
 	for rule: RuleBase in active_rules:
-		if disk != -1 and not rule.is_disk_movable(disk):
+		if disk != -1 and not rule.is_disk_movable(disk, state.last_moved_disk):
 			return rule.violation_message
 	return ""
 
@@ -144,7 +158,9 @@ func apply_move(state: PuzzleState, move: Move) -> PuzzleState:
 ## apply moves returned by get_legal_moves().
 func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 	var next: PuzzleState = state.duplicate_state()
-	next.pegs[move.to_peg].append(next.pegs[move.from_peg].pop_back())
+	var disk: int = next.pegs[move.from_peg].pop_back()
+	next.pegs[move.to_peg].append(disk)
+	next.last_moved_disk = disk
 	return next
 
 

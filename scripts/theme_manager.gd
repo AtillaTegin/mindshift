@@ -83,16 +83,13 @@ const ICON_COLORS: Dictionary = {
 	"chest": Color("a0663a"),
 	"chest_band": Color("f4b400"),
 	"key": Color("f5b72a"),
-	# Frozen disk: frosted rim and cracks.
-	"ice": Color("e6f7ff"),
-	"ice_edge": Color("4fb3e8"),
 }
 
 ## Visual dress of the levels with a special mechanic (level structure addendum
 ## v3, section 3): the board, its pattern, the pegs and the ring on the map
 ## stop. Code-drawn palettes and patterns, no textures; classic levels wear none.
 const SKINS: Dictionary = {
-	# Frozen disk: green jade, after the Chinese Nine Rings puzzle.
+	# Alternation (Nine Rings): green jade, after the Chinese Nine Rings puzzle.
 	"jade": {
 		LIGHT: {"board": Color("e1efe5"), "pattern": Color("a9d1b7"), "peg": Color("3f8f6b"), "mark": Color("2f8a5f")},
 		DARK: {"board": Color("17302a"), "pattern": Color("2b5a47"), "peg": Color("4fae84"), "mark": Color("4fbf8a")},
@@ -104,7 +101,7 @@ const SKINS: Dictionary = {
 	},
 }
 ## Level.mechanic() -> skin.
-const MECHANIC_SKINS: Dictionary = {"frozen_disk": "jade", "covered_pegs": "wood"}
+const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood"}
 
 var mode: String = LIGHT
 var theme: Theme

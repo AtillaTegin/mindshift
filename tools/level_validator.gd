@@ -140,25 +140,17 @@ static func validate_path(levels_dir: String) -> Array[String]:
 				errors.append("%s/%s is not on the path" % [folder, file_name])
 	return errors
 
-## Design rules of the mechanic levels, on top of the normal checks. A frozen
-## disk must sit on another disk (a frozen bottom disk would just be a peg
-## base) and the freeze must make the level longer than plain Hanoi.
+## Design rules of the mechanic levels, on top of the normal checks. A rule
+## beyond classic Hanoi (the Nine Rings alternation) must make the level longer
+## than plain Hanoi, or it changes nothing.
 static func validate_mechanic_design(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
 	if rules == null:
 		return
-	var pinned: Array[int] = []
-	for disk: int in range(1, level.get_disk_count() + 1):
-		if not rules.is_disk_movable(disk):
-			pinned.append(disk)
-	for disk: int in pinned:
-		for peg: Array in level.start.pegs:
-			if not peg.is_empty() and peg[0] == disk:
-				errors.append("frozen disk %d is the bottom disk of its peg" % disk)
-	if not pinned.is_empty():
+	if level.rule_ids.size() > 1:
 		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
 		if plain >= level.min_moves:
-			errors.append("the frozen disk changes nothing (%d moves without it)" % plain)
+			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
 	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).

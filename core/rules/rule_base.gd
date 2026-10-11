@@ -10,6 +10,11 @@ extends RefCounted
 ## supports_disk_move_check(); is_move_allowed() then uses it automatically and
 ## the Solver can take its fast path. Rules that need more of the position
 ## override is_move_allowed() instead.
+##
+## A rule that also depends on which disk moved last (PuzzleState.last_moved_disk)
+## returns true from uses_last_move() and overrides is_disk_move_allowed_after();
+## the Solver then keeps that disk in its search state. No rule is ever named
+## in the Solver.
 
 
 ## Translation key of the text shown when this rule refuses a move (addendum
@@ -35,10 +40,10 @@ func get_params() -> Dictionary:
 	return {}
 
 
-## Whether `disk` may ever be picked up. A rule that pins a disk returns false
-## here (the UI then refuses the tap) and also in is_disk_move_allowed() (so
-## every search sees the same rule).
-func is_disk_movable(_disk: int) -> bool:
+## Whether `disk` may be picked up now, `last_disk` having moved last (0: none).
+## A rule that holds a disk back returns false here (the UI then refuses the
+## tap) and also in its move check (so every search sees the same rule).
+func is_disk_movable(_disk: int, _last_disk: int) -> bool:
 	return true
 
 
@@ -46,8 +51,8 @@ func is_disk_movable(_disk: int) -> bool:
 ## RuleSet only calls this for structurally valid moves: both peg indices are in
 ## range, they differ, and the source peg is not empty.
 func is_move_allowed(state: PuzzleState, move: Move) -> bool:
-	return is_disk_move_allowed(state.get_top_disk(move.from_peg), move.from_peg, move.to_peg,
-			state.get_top_disk(move.to_peg))
+	return is_disk_move_allowed_after(state.get_top_disk(move.from_peg), move.from_peg, move.to_peg,
+			state.get_top_disk(move.to_peg), state.last_moved_disk)
 
 
 ## Whether a whole position satisfies this rule. Used to validate level start
@@ -62,7 +67,18 @@ func is_disk_move_allowed(_disk: int, _from_peg: int, _to_peg: int, _target_top:
 	return true
 
 
-## True if is_disk_move_allowed() fully decides this rule's moves. Rules that
+## is_disk_move_allowed() knowing that `last_disk` moved last (0: none yet).
+## Only rules with uses_last_move() need to override it.
+func is_disk_move_allowed_after(disk: int, from_peg: int, to_peg: int, target_top: int, _last_disk: int) -> bool:
+	return is_disk_move_allowed(disk, from_peg, to_peg, target_top)
+
+
+## True if this rule looks at the disk that moved last.
+func uses_last_move() -> bool:
+	return false
+
+
+## True if is_disk_move_allowed_after() fully decides this rule's moves. Rules that
 ## override is_move_allowed() to look at more of the position must return false.
 func supports_disk_move_check() -> bool:
 	return false
