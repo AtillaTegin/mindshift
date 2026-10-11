@@ -32,15 +32,17 @@ Səviyyə yolu ([səviyyə strukturu v3](../MindShift_Level_Structure_Addendum.m
 Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md) 8.1, [iqtisadiyyat düsturları v3](../MindShift_Economy_Formulas_Addendum.md)). Hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir:
 - Səviyyə coin vermir. Hər yeni ulduz 1 jeton verir (təkrar oyunda yalnız fərq). 15 jeton = 1 açar, 3 açar = 1 sandıq, sandıq özü açılır.
   - Sandığın içi: 60% boş, 30% 1 coin, 10% 3 coin (orta hesabla ~0.6 coin). Rəqəmlər ilkin təxmindir, playtest ilə tənzimlənəcək.
-  - Xəritənin yuxarısında sandıq göstəricisi var ([scripts/chest_meter.gd](scripts/chest_meter.gd)): sandıq, açarlar və "7/15 jeton" zolağı. Açar və sandıq xəbəri tamamlama pəncərəsində yazılır.
+  - Xəritənin yuxarısında sandıq göstəricisi var ([scripts/chest_meter.gd](scripts/chest_meter.gd)): sandıq, açarlar və "7/15 jeton" zolağı. Açar xəbəri tamamlama pəncərəsində yazılır.
+  - Sandıq tamamlama pəncərəsində ulduzlardan sonra açılır ([scripts/chest_opening.gd](scripts/chest_opening.gd)): qapaq titrəyir və səviyyənin don rəngində (klassikdə qızılı) parıldayır, sonra şüa və qığılcımla açılır. Coin varsa sikkə sayğaca uçur, sayğac yalnız sikkə çatanda artır, "ding" çalınır. Boş sandıqda yumşaq toz buludu, iki kiçik sıçrayış və "Bu dəfə boş çıxdı. Davam et!" görünür.
+  - "Ding" kodla sintez olunur ([scripts/sound_fx.gd](scripts/sound_fx.gd), səs faylı yoxdur) və Parametrlərdə səs söndürüləndə çalınmır.
 - Yeni save 20 coin ilə başlayır. Gündəlik giriş bonusu 2 coin.
 - Hint Asan/Orta-da 3, Çətin/Ekspert-də 5 coin. Eyni vəziyyətdə təkrar basmaq pulsuzdur.
 - Gündə 3 pulsuz undo var (bütün səviyyələr üçün ortaq), sonra hər biri 1 coin. Undo gedişi sayğacdan da geri alır.
 
 Mağaza ([scripts/shop_catalog.gd](scripts/shop_catalog.gd)) **stub rejimindədir**: alış məhsulu dərhal verir, real ödəniş yoxdur.
-- Coin paketləri (təxminən 25–36 coin/$1, oxşar oyunlar kimi): 25 / 60 / 150 / 320 / 700 / 1800 coin ($0.99 / $1.99 / $4.99 / $9.99 / $19.99 / $49.99). Qiymət sırada "25 coin → $0.99" kimi görünür. Real satış datası olmadan heç bir paketdə "ən populyar" nişanı yoxdur.
+- Coin paketləri (təxminən 25–36 coin/$1, oxşar oyunlar kimi): Bürünc Kisə 25 ($0.99), Gümüş Kisə 60 ($1.99), Qızıl Disk 150 ($4.99), Jadeit Sandığı 320 ($9.99), Karakuri Xəzinəsi 700 ($19.99), Brahma Məbədinin Xəzinəsi 1800 ($49.99). Qiymət sırada "25 coin → $0.99" kimi görünür. Real satış datası olmadan heç bir paketdə "ən populyar" nişanı yoxdur.
 - Reklam: 4 coin, gündə 5 dəfə (gündə ən çox 20 coin).
-- "24 saat limitsiz Hint": $0.99.
+- "24 saat limitsiz Hint": $2.99 (ayrıca qiymət nöqtəsi, ən ucuz paketdən həmişə baha).
 - "Reklamları sil" reklam sistemi gələnə qədər bağlıdır.
 - Google Play Billing [scripts/store_service.gd](scripts/store_service.gd)-dəki `# TODO: real Billing SDK` yerlərinə qoşulacaq.
 
@@ -189,6 +191,7 @@ Solver-ə toxunmaq lazım deyil.
 | B-3 | Bonus xanaları hər tabın sonunda (hədiyyə ikonu, həmişə açıq) | ✅ (v3 ilə əvəz olundu) |
 | E-2.1 | İqtisadiyyat düsturları: 1/2/3 coin, reklam 4 coin, başlanğıc 20 coin ([əlavə](../MindShift_Economy_Formulas_Addendum.md)) | ✅ (v3 ilə əvəz olundu) |
 | E-3 | Ulduzdan coin yerinə jeton → açar → sandıq, gündəlik bonus 2 coin, 6 coin paketi (25–1800) | ✅ |
+| E-3.1 | Mədəni paket adları, 24 s limitsiz Hint $2.99, 3 mərhələli sandıq animasiyası, kodla sintez olunan "ding" | ✅ |
 | L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
 | 7 | Android build | — |
 

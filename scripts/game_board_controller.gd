@@ -69,6 +69,8 @@ var _fogs: Dictionary[int, PegFog] = {}
 var _fog_layer: Control
 ## Dress of a level with a special mechanic, behind the pegs.
 var _board_skin: BoardSkin
+## Coins of a chest that are still flying to the counter (shown once they land).
+var _coins_in_flight: int = 0
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -85,6 +87,7 @@ var _board_skin: BoardSkin
 @onready var _restart_button: Button = %RestartButton
 @onready var _back_button: Button = %BackButton
 @onready var _coin_label: Label = %CoinLabel
+@onready var _coin_icon: Control = %CoinIcon
 @onready var _hint_button: Button = %HintButton
 @onready var _undo_button: Button = %UndoButton
 
@@ -135,6 +138,7 @@ func _ready() -> void:
 	_popup.next_requested.connect(play_next_level)
 	_popup.replay_requested.connect(restart)
 	_popup.levels_requested.connect(_show_level_select)
+	_popup.chest_coins_landed.connect(_on_chest_coins_landed)
 	add_child(_popup)
 	var pending: Dictionary = app.take_pending_level() if app != null else {}
 	if not pending.is_empty():
@@ -174,6 +178,7 @@ func start_level(level: Level) -> void:
 	session = GameSession.new(level)
 	last_result = {}
 	_message = ""
+	_release_chest()
 	_popup.visible = false
 	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
 	_build_views()
@@ -194,6 +199,7 @@ func restart() -> void:
 	session.restart()
 	last_result = {}
 	_message = ""
+	_release_chest()
 	_popup.visible = false
 	# A new attempt: every covered peg is under fog again.
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
@@ -347,10 +353,15 @@ func _on_solved() -> void:
 			"chests": chest["chests"]}
 	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
 			improved, not _next_level().is_empty(), chest["tokens"])
+	# A chest opens on screen after the stars (formulas v3.1); its coins join the
+	# counter when the flying coin lands there.
+	var chests: Array[int] = chest["chests"]
+	if not chests.is_empty():
+		_coins_in_flight = chests[0]
+		_update_buttons()
+		_popup.show_chest(chests[0], _board_skin.skin, _coin_icon.get_global_rect().get_center(), save_system.sound_enabled)
 	var notes: PackedStringArray = PackedStringArray()
-	for coins_inside: int in chest["chests"]:
-		notes.append(tr("POPUP_CHEST_COINS") % coins_inside if coins_inside > 0 else tr("POPUP_CHEST_EMPTY"))
-	if chest["keys"] > 0 and (chest["chests"] as Array).is_empty():
+	if chest["keys"] > 0 and chests.is_empty():
 		notes.append(tr("POPUP_KEY") % [economy.keys(), EconomySystem.KEYS_PER_CHEST])
 	# The island appears as a surprise (level structure addendum v3): say so once.
 	if not island_was_open and LevelCatalog.is_branch_open(save_system):
@@ -359,12 +370,27 @@ func _on_solved() -> void:
 	level_completed.emit(level, session.move_count, session.elapsed_seconds)
 
 
+func _on_chest_coins_landed(_coins: int) -> void:
+	_coins_in_flight = 0
+	_update_buttons()
+	_coin_icon.pivot_offset = _coin_icon.size * 0.5
+	var pop: Tween = create_tween()
+	pop.tween_property(_coin_icon, "scale", Vector2(1.5, 1.5), 0.09)
+	pop.tween_property(_coin_icon, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## The player moved on before a chest finished: its coins count at once.
+func _release_chest() -> void:
+	_popup.stop_chest()
+	_coins_in_flight = 0
+
+
 func _update_buttons() -> void:
 	if session == null or not is_node_ready():
 		return
 	var locked: bool = restricted_peg >= 0
 	# The coin icon next to it says what the number is.
-	_coin_label.text = str(economy.coins)
+	_coin_label.text = str(economy.coins - _coins_in_flight)
 	_hint_button.disabled = locked or session.is_solved() or hints.is_pending()
 	if economy.has_unlimited_hints():
 		_hint_button.text = tr("BOARD_HINT_UNLIMITED")

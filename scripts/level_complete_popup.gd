@@ -1,11 +1,14 @@
 class_name LevelCompletePopup
 extends Control
 ## Level complete popup (spec 5.4): animated stars, time, moves against the
-## minimum, and next / replay / level list buttons.
+## minimum, and next / replay / level list buttons. A chest that opened with
+## this result plays its opening (ChestOpening) right after the stars.
 
 signal next_requested
 signal replay_requested
 signal levels_requested
+## The coin of the chest reached the board's coin counter.
+signal chest_coins_landed(coins: int)
 
 const FADE_SECONDS: float = 0.2
 const STAR_SECONDS: float = 0.25
@@ -14,6 +17,8 @@ const CONFETTI_AMOUNT: int = 70
 const CONFETTI_COLORS: Array[Color] = [Color("f4b400"), Color("2a9d8f"), Color("e76f51"), Color("8ecae6"), Color("b388eb")]
 
 var _star_count: int = 0
+## The chest to open once the stars are in: {coins, skin, target, sound}.
+var _pending_chest: Dictionary = {}
 var _confetti: CPUParticles2D
 
 @onready var _panel: Control = %Panel
@@ -22,6 +27,7 @@ var _confetti: CPUParticles2D
 @onready var _moves_label: Label = %MovesLabel
 @onready var _record_label: Label = %RecordLabel
 @onready var _note_label: Label = %NoteLabel
+@onready var _chest: ChestOpening = %ChestStage
 @onready var _next_button: Button = %NextButton
 @onready var _replay_button: Button = %ReplayButton
 @onready var _levels_button: Button = %LevelsButton
@@ -32,6 +38,7 @@ func _ready() -> void:
 	_replay_button.pressed.connect(func() -> void: replay_requested.emit())
 	_levels_button.pressed.connect(func() -> void: levels_requested.emit())
 	_panel.resized.connect(func() -> void: _panel.pivot_offset = _panel.size * 0.5)
+	_chest.coins_landed.connect(func(coins: int) -> void: chest_coins_landed.emit(coins))
 	_confetti = _make_confetti()
 	add_child(_confetti)
 
@@ -97,6 +104,7 @@ func show_result(stars: int, moves: int, min_moves: int, seconds: float, improve
 	_record_label.text = "  ·  ".join(notes)
 	_next_button.disabled = not has_next
 	_next_button.text = tr("POPUP_NEXT") if has_next else tr("POPUP_LAST")
+	stop_chest()
 	visible = true
 	modulate.a = 0.0
 	_panel.scale = Vector2(0.85, 0.85)
@@ -113,6 +121,7 @@ func show_result(stars: int, moves: int, min_moves: int, seconds: float, improve
 			star.filled = true
 			star.scale = Vector2(0.3, 0.3))
 		tween.tween_property(star, "scale", Vector2.ONE, STAR_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(begin_chest)
 	_star_count = stars
 
 
@@ -124,6 +133,34 @@ func set_note(text: String) -> void:
 
 func get_note() -> String:
 	return _note_label.text if _note_label.visible else ""
+
+
+## A chest opened with this result: its opening follows the stars. `coin_target`
+## is the board's coin counter in canvas coordinates.
+func show_chest(coins: int, skin: String, coin_target: Vector2, sound_enabled: bool) -> void:
+	_pending_chest = {"coins": coins, "skin": skin, "target": coin_target, "sound": sound_enabled}
+	# The stage takes its place at once, so nothing jumps when it starts.
+	_chest.visible = true
+
+
+## Starts the pending chest opening (called after the stars; tests call it directly).
+func begin_chest() -> void:
+	if _pending_chest.is_empty():
+		return
+	var chest: Dictionary = _pending_chest
+	_pending_chest = {}
+	_chest.sound_enabled = chest["sound"]
+	_chest.play(chest["coins"], chest["skin"], chest["target"])
+
+
+## Drops a pending or running chest opening (coins in the air land silently).
+func stop_chest() -> void:
+	_pending_chest = {}
+	_chest.stop()
+
+
+func get_chest() -> ChestOpening:
+	return _chest
 
 
 ## Stars earned in the shown result (the animation fills them one by one).

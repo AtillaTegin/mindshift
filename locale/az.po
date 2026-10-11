@@ -26,22 +26,22 @@ msgid "SHOP_DEMO_NOTE"
 msgstr "Demo rejimi: alışlar pulsuzdur, real ödəniş hələ qoşulmayıb."
 
 msgid "SHOP_COINS_1"
-msgstr "Mini paket"
+msgstr "Bürünc Kisə"
 
 msgid "SHOP_COINS_2"
-msgstr "Kiçik paket"
+msgstr "Gümüş Kisə"
 
 msgid "SHOP_COINS_3"
-msgstr "Orta paket"
+msgstr "Qızıl Disk"
 
 msgid "SHOP_COINS_4"
-msgstr "Böyük paket"
+msgstr "Jadeit Sandığı"
 
 msgid "SHOP_COINS_5"
-msgstr "Mega paket"
+msgstr "Karakuri Xəzinəsi"
 
 msgid "SHOP_COINS_6"
-msgstr "Xəzinə"
+msgstr "Brahma Məbədinin Xəzinəsi"
 
 msgid "SHOP_COINS_DETAIL"
 msgstr "%d coin → %s"
@@ -214,11 +214,11 @@ msgstr "+%d jeton"
 msgid "POPUP_KEY"
 msgstr "Açar qazandın! (%d/%d)"
 
-msgid "POPUP_CHEST_COINS"
-msgstr "Sandıq açıldı: +%d coin!"
+msgid "CHEST_COINS"
+msgstr "+%d coin!"
 
-msgid "POPUP_CHEST_EMPTY"
-msgstr "Sandıq açıldı, bu dəfə boşdur."
+msgid "CHEST_EMPTY"
+msgstr "Bu dəfə boş çıxdı. Davam et!"
 
 msgid "CHEST_METER"
 msgstr "%d/%d jeton"

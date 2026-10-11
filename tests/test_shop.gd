@@ -54,10 +54,33 @@ func test_catalog_matches_the_addendum_and_the_chosen_amounts() -> void:
 		assert_false(product.has("badge") or product.has("popular"), "no 'most popular' badge without sales data")
 	assert_eq(packs, 6)
 	var hints: Dictionary = ShopCatalog.get_product("unlimited_hints_24h")
-	assert_eq([hints["hours"], hints["price"]], [24, "$0.99"])
+	assert_eq([hints["hours"], hints["price"]], [24, "$2.99"], "formulas v3.1, section 8")
 	assert_true(ShopCatalog.is_available(ShopCatalog.get_product("rewarded_ad")))
 	assert_false(ShopCatalog.is_available(ShopCatalog.get_product("remove_ads")), "needs an ad system first")
 	assert_eq(ShopCatalog.PRODUCTS.size(), 9)
+
+
+func test_pack_names_follow_the_cultural_chapters() -> void:
+	var names: Array[String] = []
+	for product: Dictionary in ShopCatalog.PRODUCTS:
+		if product["kind"] == "coins":
+			names.append(TranslationServer.translate(product["title"]))
+	assert_eq(names, ["Bürünc Kisə", "Gümüş Kisə", "Qızıl Disk", "Jadeit Sandığı", "Karakuri Xəzinəsi",
+			"Brahma Məbədinin Xəzinəsi"] as Array[String])
+
+
+func test_hint_pass_is_never_a_cheap_loophole() -> void:
+	# Formulas v3.1, section 8: its own price point, above the cheapest pack and
+	# between the silver purse ($1.99) and the golden disk ($4.99).
+	var pass_price: float = ShopCatalog.get_product("unlimited_hints_24h")["price"].trim_prefix("$").to_float()
+	var pack_prices: Array[float] = []
+	for product: Dictionary in ShopCatalog.PRODUCTS:
+		if product["kind"] == "coins":
+			pack_prices.append(product["price"].trim_prefix("$").to_float())
+	assert_false(pack_prices.has(pass_price), "a price point of its own")
+	assert_true(pass_price > pack_prices.min(), "never at or below the cheapest pack")
+	assert_true(pass_price > ShopCatalog.get_product("coins_60")["price"].trim_prefix("$").to_float())
+	assert_true(pass_price < ShopCatalog.get_product("coins_150")["price"].trim_prefix("$").to_float())
 
 
 func test_stub_purchases_grant_at_once() -> void:
@@ -88,7 +111,7 @@ func test_shop_screen_buy_buttons() -> void:
 	assert_eq(_shop.get_detail_text("coins_25"), "25 coin → $0.99")
 	assert_eq(_shop.get_detail_text("coins_320"), "320 coin → $9.99")
 	assert_eq(_shop.get_detail_text("coins_1800"), "1800 coin → $49.99")
-	assert_eq(_shop.get_detail_text("unlimited_hints_24h"), "24 saat pulsuz hint → $0.99")
+	assert_eq(_shop.get_detail_text("unlimited_hints_24h"), "24 saat pulsuz hint → $2.99")
 	var small: Button = _shop.get_buy_button("coins_25")
 	assert_eq(small.text, "Al")
 	assert_true(small is PolishedButton)

@@ -320,9 +320,65 @@ func test_popup_tells_about_keys_and_chests() -> void:
 	_play(level.solution_path)
 	var chests: Array[int] = _board.last_result["chests"]
 	assert_eq(chests.size(), 1, "the third key opens the chest")
-	var expected: String = "Sandıq açıldı: +%d coin!" % chests[0] if chests[0] > 0 else "Sandıq açıldı, bu dəfə boşdur."
-	assert_eq(_board.get_popup().get_note(), expected)
+	assert_eq(_board.get_popup().get_note(), "", "the chest tells its own story on the stage")
+	var chest: ChestOpening = _board.get_popup().get_chest()
+	assert_true(chest.visible, "its stage is there at once")
+	assert_eq(chest.phase(), "idle", "it waits for the stars")
+	_board.get_popup().begin_chest()
+	assert_eq(chest.phase(), "build")
+	assert_eq(chest.coins, chests[0])
+	chest.advance(10.0)
+	assert_eq(chest.phase(), "done")
+	assert_eq(chest.get_caption(), "+%d coin!" % chests[0] if chests[0] > 0 else "Bu dəfə boş çıxdı. Davam et!")
 	assert_eq(_save.coins, chests[0])
+	assert_eq(_label("CoinLabel"), str(chests[0]))
+
+
+func test_chest_coins_join_the_counter_when_they_land() -> void:
+	var level: Level = _board.session.level
+	_save.coins = 5
+	_save.chest_tokens = EconomySystem.TOKENS_PER_KEY - 1
+	_save.chest_keys = EconomySystem.KEYS_PER_CHEST - 1
+	# Find a seed whose chest holds coins, so there is something to fly.
+	var seed_value: int = 0
+	while EconomySystem.chest_coins_for_roll(_seeded(seed_value).randf()) == 0:
+		seed_value += 1
+	_board.economy.rng.seed = seed_value
+	_play(level.solution_path)
+	var coins_inside: int = _board.last_result["chests"][0]
+	assert_true(coins_inside > 0)
+	assert_eq(_save.coins, 5 + coins_inside, "paid in the save at once")
+	assert_eq(_label("CoinLabel"), "5", "the counter waits for the flying coin")
+	var chest: ChestOpening = _board.get_popup().get_chest()
+	_board.get_popup().begin_chest()
+	chest.advance(ChestOpening.BUILD_SECONDS + ChestOpening.BURST_SECONDS + ChestOpening.RISE_SECONDS + 0.1)
+	assert_ne(chest.coin_position(), Vector2.INF, "the coin is on its way")
+	assert_eq(_label("CoinLabel"), "5")
+	chest.advance(1.0)
+	assert_eq(_label("CoinLabel"), str(5 + coins_inside), "landed")
+	assert_eq(chest.ding_played, _save.sound_enabled)
+
+
+func test_moving_on_before_the_chest_lands_keeps_the_coins() -> void:
+	var level: Level = _board.session.level
+	_save.coins = 0
+	_save.chest_tokens = EconomySystem.TOKENS_PER_KEY - 1
+	_save.chest_keys = EconomySystem.KEYS_PER_CHEST - 1
+	var seed_value: int = 0
+	while EconomySystem.chest_coins_for_roll(_seeded(seed_value).randf()) == 0:
+		seed_value += 1
+	_board.economy.rng.seed = seed_value
+	_play(level.solution_path)
+	_board.get_popup().begin_chest()
+	_board.restart()
+	assert_eq(_label("CoinLabel"), str(_save.coins), "no coin is ever lost from the counter")
+	assert_false(_board.get_popup().get_chest().visible)
+
+
+static func _seeded(value: int) -> RandomNumberGenerator:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = value
+	return rng
 
 func test_every_generated_easy_level_loads() -> void:
 	for file_name: String in DirAccess.get_files_at("res://data/levels/easy"):

@@ -29,27 +29,27 @@ msgstr ""
 msgid "SHOP_DEMO_NOTE"
 msgstr ""
 
-#. [TODO: RU] az: Mini paket
+#. [TODO: RU] az: Bürünc Kisə
 msgid "SHOP_COINS_1"
 msgstr ""
 
-#. [TODO: RU] az: Kiçik paket
+#. [TODO: RU] az: Gümüş Kisə
 msgid "SHOP_COINS_2"
 msgstr ""
 
-#. [TODO: RU] az: Orta paket
+#. [TODO: RU] az: Qızıl Disk
 msgid "SHOP_COINS_3"
 msgstr ""
 
-#. [TODO: RU] az: Böyük paket
+#. [TODO: RU] az: Jadeit Sandığı
 msgid "SHOP_COINS_4"
 msgstr ""
 
-#. [TODO: RU] az: Mega paket
+#. [TODO: RU] az: Karakuri Xəzinəsi
 msgid "SHOP_COINS_5"
 msgstr ""
 
-#. [TODO: RU] az: Xəzinə
+#. [TODO: RU] az: Brahma Məbədinin Xəzinəsi
 msgid "SHOP_COINS_6"
 msgstr ""
 
@@ -281,12 +281,12 @@ msgstr ""
 msgid "POPUP_KEY"
 msgstr ""
 
-#. [TODO: RU] az: Sandıq açıldı: +%d coin!
-msgid "POPUP_CHEST_COINS"
+#. [TODO: RU] az: +%d coin!
+msgid "CHEST_COINS"
 msgstr ""
 
-#. [TODO: RU] az: Sandıq açıldı, bu dəfə boşdur.
-msgid "POPUP_CHEST_EMPTY"
+#. [TODO: RU] az: Bu dəfə boş çıxdı. Davam et!
+msgid "CHEST_EMPTY"
 msgstr ""
 
 #. [TODO: RU] az: %d/%d jeton

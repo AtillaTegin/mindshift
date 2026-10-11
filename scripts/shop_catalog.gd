@@ -3,8 +3,12 @@ extends RefCounted
 ## What the shop sells (economy/UX addendum 8.2). Coin packs follow the economy
 ## formulas addendum v3, section 6: about 25-36 coins per dollar, in line with
 ## comparable puzzle games, with a slightly better rate for bigger packs. No pack
-## carries a "most popular" badge until real sales data exists. The 24 h hint
-## price was chosen by the user on 2026-10-09; the ad reward is EconomySystem.AD_REWARD.
+## carries a "most popular" badge until real sales data exists. Pack names follow
+## the game's cultural chapters (formulas v3.1): bronze and silver purses, the
+## golden disk of the Hanoi legend, then the jade, karakuri and Brahma treasures.
+## The 24 h hint pass costs $2.99 (v3.1, section 8): a price point of its own,
+## between two packs and never at or below the cheapest one, so it is no
+## loophole around scarce coins. The ad reward is EconomySystem.AD_REWARD.
 ## Prices are display strings for now; with real billing they come from the
 ## store (localised per country).
 ##
@@ -20,7 +24,7 @@ const PRODUCTS: Array[Dictionary] = [
 	{"id": "coins_700", "kind": "coins", "coins": 700, "price": "$19.99", "title": "SHOP_COINS_5", "icon": "coin"},
 	{"id": "coins_1800", "kind": "coins", "coins": 1800, "price": "$49.99", "title": "SHOP_COINS_6", "icon": "coin"},
 	{"id": "rewarded_ad", "kind": "rewarded_ad", "price": "", "title": "SHOP_AD_TITLE", "icon": "coin"},
-	{"id": "unlimited_hints_24h", "kind": "unlimited_hints", "hours": 24, "price": "$0.99", "title": "SHOP_HINTS_TITLE", "icon": "hint"},
+	{"id": "unlimited_hints_24h", "kind": "unlimited_hints", "hours": 24, "price": "$2.99", "title": "SHOP_HINTS_TITLE", "icon": "hint"},
 	{"id": "remove_ads", "kind": "remove_ads", "price": "", "title": "SHOP_REMOVE_ADS_TITLE", "icon": ""},
 ]
 
