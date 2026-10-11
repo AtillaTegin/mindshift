@@ -32,7 +32,10 @@ const RINGS_SPECS: Array[Dictionary] = [
 ## Covered-peg (karakuri box) levels, from easy to hard: the first ones are
 ## small (3 disks, one box), later ones grow to 8 disks and two boxes (user
 ## request 2026-10-12: ~20 of them, starting right after the tutorial and
-## getting harder step by step). `covered`: how many pegs start as boxes.
+## getting harder step by step; then four more for the end of the road, at
+## least as hard as the hardest; three boxes with 30+ moves were not found in
+## 8000 tries, every box has to be used in the first moves). `covered`: how
+## many pegs start as boxes; `attempts` overrides the search budget.
 const FOG_SPECS: Array[Dictionary] = [
 	{"file": "fog_01.json", "pegs": 3, "disks": 3, "min": 5, "max": 7, "covered": 1},
 	{"file": "fog_02.json", "pegs": 3, "disks": 3, "min": 6, "max": 7, "covered": 1},
@@ -54,6 +57,10 @@ const FOG_SPECS: Array[Dictionary] = [
 	{"file": "fog_18.json", "pegs": 4, "disks": 8, "min": 28, "max": 31, "covered": 2},
 	{"file": "fog_19.json", "pegs": 4, "disks": 8, "min": 30, "max": 33, "covered": 2},
 	{"file": "fog_20.json", "pegs": 4, "disks": 8, "min": 29, "max": 33, "covered": 2},
+	{"file": "fog_21.json", "pegs": 4, "disks": 8, "min": 30, "max": 33, "covered": 2, "attempts": 6000},
+	{"file": "fog_22.json", "pegs": 4, "disks": 8, "min": 30, "max": 33, "covered": 2, "attempts": 6000},
+	{"file": "fog_23.json", "pegs": 4, "disks": 8, "min": 30, "max": 33, "covered": 2, "attempts": 6000},
+	{"file": "fog_24.json", "pegs": 4, "disks": 8, "min": 30, "max": 33, "covered": 2, "attempts": 6000},
 ]
 
 
@@ -123,7 +130,7 @@ static func build_fog(spec: Dictionary, id: int, seed_value: int) -> Level:
 	rng.seed = seed_value
 	var best: Dictionary = {}
 	var rule_ids: Array[String] = ["classic_hanoi"]
-	for attempt: int in MAX_ATTEMPTS / 4:
+	for attempt: int in spec.get("attempts", MAX_ATTEMPTS / 4):
 		var start: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
 		var goal: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
 		if rng.randf() < LevelGenerator.TOWER_GOAL_CHANCE:

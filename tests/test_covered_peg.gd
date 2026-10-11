@@ -203,4 +203,4 @@ func test_validator_rules_for_covered_pegs() -> void:
 		var file_errors: Array[String] = []
 		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), file_errors)
 		assert_eq(file_errors, [] as Array[String], file_name)
-	assert_eq(karakuri, 20)
+	assert_eq(karakuri, 24)

@@ -11,9 +11,11 @@ extends SceneTree
 ## hard takes over towards the end. Each step takes the tier that lags its
 ## curve the most, with a little seeded jitter, so the order is neither blocks
 ## nor random. Inside a tier levels always come easiest first.
-## Karakuri (covered-peg) levels come early and often (user request
-## 2026-10-12): the first at KARAKURI_FROM, right after the tutorial, then one
-## every KARAKURI_GAP_MIN..KARAKURI_GAP_MAX levels (seeded), easiest first.
+## Karakuri (covered-peg) levels come early and often (user requests
+## 2026-10-12): the first at KARAKURI_FROM, right after the tutorial, the last
+## KARAKURI_END_GAP levels before the end of the road, and in between one every
+## KARAKURI_GAP_MIN..KARAKURI_GAP_MAX levels (seeded gaps that add up to the
+## whole stretch, so no part of the road goes without them), easiest first.
 ## Other mechanic levels are spread evenly over the main path from
 ## MECHANICS_FROM on, easiest first, taking the next free slot on a clash.
 ## Each mechanic level counts as a level of its own tier.
@@ -27,6 +29,7 @@ const FIRST_EASY: int = 5
 const BRANCH_AFTER: int = 50
 const MECHANICS_FROM: int = 10
 const KARAKURI_FROM: int = 12
+const KARAKURI_END_GAP: int = 10
 const KARAKURI_GAP_MIN: int = 5
 const KARAKURI_GAP_MAX: int = 9
 const BRANCH_HARD: int = 8
@@ -113,8 +116,9 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 
 
 ## Fixed main path slots for the mechanic levels (1-based position -> level):
-## karakuri ones from KARAKURI_FROM with seeded gaps, the others evenly spread
-## from MECHANICS_FROM. Both lists are easiest first.
+## karakuri ones from KARAKURI_FROM to KARAKURI_END_GAP before the end with
+## seeded gaps, the others evenly spread from MECHANICS_FROM. Both lists are
+## easiest first.
 static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors: Array[String]) -> Dictionary:
 	var karakuri: Array[Dictionary] = []
 	var others: Array[Dictionary] = []
@@ -124,15 +128,14 @@ static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors:
 		else:
 			others.append(entry)
 	var pinned: Dictionary = {}
-	var gaps: RandomNumberGenerator = RandomNumberGenerator.new()
-	gaps.seed = SEED + 1
+	var gaps: Array[int] = _karakuri_gaps(karakuri.size(), main_size - KARAKURI_END_GAP - KARAKURI_FROM, errors)
+	if not errors.is_empty():
+		return {}
 	var position: int = KARAKURI_FROM
-	for entry: Dictionary in karakuri:
-		if position > main_size:
-			errors.append("karakuri level %s does not fit on the main path" % entry["file"])
-			return {}
-		pinned[position] = entry
-		position += gaps.randi_range(KARAKURI_GAP_MIN, KARAKURI_GAP_MAX)
+	for i: int in karakuri.size():
+		pinned[position] = karakuri[i]
+		if i < gaps.size():
+			position += gaps[i]
 	var span: float = float(main_size - MECHANICS_FROM) / maxf(others.size(), 1.0)
 	for i: int in others.size():
 		var slot: int = MECHANICS_FROM + roundi((i + 0.5) * span)
@@ -140,6 +143,29 @@ static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors:
 			slot += 1
 		pinned[slot] = others[i]
 	return pinned
+
+
+## `count - 1` gaps between KARAKURI_GAP_MIN and KARAKURI_GAP_MAX that add up to
+## `span`: every gap starts at the minimum and the rest is handed out one level
+## at a time to random gaps (seeded).
+static func _karakuri_gaps(count: int, span: int, errors: Array[String]) -> Array[int]:
+	var gaps: Array[int] = []
+	if count < 2:
+		return gaps
+	for i: int in count - 1:
+		gaps.append(KARAKURI_GAP_MIN)
+	var rest: int = span - KARAKURI_GAP_MIN * (count - 1)
+	if rest < 0 or rest > (KARAKURI_GAP_MAX - KARAKURI_GAP_MIN) * (count - 1):
+		errors.append("%d karakuri levels do not fit %d levels apart in a stretch of %d" % [count, KARAKURI_GAP_MIN, span])
+		return gaps
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = SEED + 1
+	while rest > 0:
+		var i: int = rng.randi_range(0, gaps.size() - 1)
+		if gaps[i] < KARAKURI_GAP_MAX:
+			gaps[i] += 1
+			rest -= 1
+	return gaps
 
 
 ## `count` levels from `pools`, following `curves`. `pinned` maps 1-based track

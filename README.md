@@ -109,7 +109,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 24 mexanika səviyyəsi (4 Doqquz Halqa, 20 karakuri): cəmi 224 səviyyə (672 ulduz).
+Üstəgəl 28 mexanika səviyyəsi (4 Doqquz Halqa, 24 karakuri): cəmi 228 səviyyə (684 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -121,13 +121,13 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 - İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
 - Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
 - Hər çətinliyin içində səviyyələr asandan çətinə gedir.
-- Karakuri səviyyələri tez və tez-tez gəlir: birincisi 12-ci yerdə (tutorialdan qısa sonra), sonrakılar 5–9 səviyyə aralıqla (seed-li təsadüfi), kiçikdən (3 disk, 1 qutu) böyüyə (8 disk, 2 qutu).
+- Karakuri səviyyələri tez və tez-tez gəlir: birincisi 12-ci yerdə (tutorialdan qısa sonra), sonuncusu yolun sonundan 10 əvvəl (178), aralarında 5–9 səviyyə aralıqla (seed-li, cəmi bütün yolu doldurur), kiçikdən (3 disk, 1 qutu) böyüyə (8 disk, 2 qutu, 30–31 gediş).
 - Digər mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-24 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 20 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+28 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 24 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
