@@ -1,7 +1,8 @@
 class_name ShopCatalog
 extends RefCounted
-## What the shop sells (economy/UX addendum 8.2). Amounts for the packs, the
-## ad reward and the 24 h hint price were chosen by the user on 2026-10-09.
+## What the shop sells (economy/UX addendum 8.2). Amounts for the packs and the
+## 24 h hint price were chosen by the user on 2026-10-09; the ad reward
+## (EconomySystem.AD_REWARD) follows the economy formulas addendum v2.1.
 ## Prices are display strings for now; with real billing they come from the
 ## store (localised per country).
 ##

@@ -51,11 +51,12 @@ func test_coins_are_saved_at_once() -> void:
 
 
 func test_level_reward_by_stars_and_only_the_improvement_on_replay() -> void:
-	assert_eq(EconomySystem.level_reward(3, 0), 8)
-	assert_eq(EconomySystem.level_reward(2, 0), 5)
-	assert_eq(EconomySystem.level_reward(1, 0), 3)
-	assert_eq(EconomySystem.level_reward(3, 1), 5, "1 -> 3 stars pays the difference")
-	assert_eq(EconomySystem.level_reward(3, 2), 3)
+	# Economy formulas addendum v2.1: 1/2/3 coins, small on purpose.
+	assert_eq(EconomySystem.level_reward(3, 0), 3)
+	assert_eq(EconomySystem.level_reward(2, 0), 2)
+	assert_eq(EconomySystem.level_reward(1, 0), 1)
+	assert_eq(EconomySystem.level_reward(3, 1), 2, "1 -> 3 stars pays the difference")
+	assert_eq(EconomySystem.level_reward(3, 2), 1)
 	assert_eq(EconomySystem.level_reward(2, 3), 0, "a worse replay pays nothing")
 	assert_eq(EconomySystem.level_reward(3, 3), 0, "replaying for coins pays nothing")
 
@@ -68,6 +69,11 @@ func test_daily_bonus_once_per_day() -> void:
 	var reopened: SaveSystem = _reopened()
 	assert_eq(reopened.last_daily_bonus_date, "2026-10-08")
 	assert_eq(reopened.coins, 20)
+
+
+func test_undo_is_always_cheaper_than_a_hint() -> void:
+	for tier: String in Difficulty.ORDER:
+		assert_true(EconomySystem.UNDO_COST < EconomySystem.hint_cost_for_tier(tier), tier)
 
 
 func test_hint_cost_by_tier() -> void:
@@ -112,12 +118,12 @@ func test_three_free_undos_per_day_then_one_coin() -> void:
 	assert_eq(_economy.free_undos_left(), 3, "a new day refills them")
 
 
-func test_rewarded_ads_pay_five_coins_five_times_a_day() -> void:
+func test_rewarded_ads_pay_four_coins_five_times_a_day() -> void:
 	for i: int in 5:
-		assert_eq(_economy.reward_ad(), 5)
+		assert_eq(_economy.reward_ad(), 4)
 	assert_eq(_economy.ads_left(), 0)
 	assert_eq(_economy.reward_ad(), 0, "daily limit")
-	assert_eq(_economy.coins, 25)
+	assert_eq(_economy.coins, 20)
 	_economy.date_override = "2026-10-10"
 	assert_eq(_economy.ads_left(), 5)
 

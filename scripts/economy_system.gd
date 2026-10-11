@@ -1,10 +1,11 @@
 class_name EconomySystem
 extends Node
-## Coins (spec 4.8, economy/UX addendum 8.1). The balance and the daily
-## counters live in the SaveSystem and every change is saved at once. Coins
-## never block progress (levels open by completion, not by money); they make
-## the comfort tools, hints and extra undos, feel a little valuable. Every
-## number is a constant here so balancing is a one-line change.
+## Coins (spec 4.8, economy/UX addendum 8.1, economy formulas addendum v2.1).
+## The balance and the daily counters live in the SaveSystem and every change
+## is saved at once. Coins never block progress (levels open by completion, not
+## by money); they make the comfort tools, hints and extra undos, feel a little
+## valuable. Levels pay little on purpose: rewarded ads are the main source.
+## Every number is a constant here so balancing is a one-line change.
 
 signal coins_changed(coins: int)
 ## Free undos, watched ads or the unlimited-hint offer changed.
@@ -12,14 +13,18 @@ signal allowances_changed
 
 ## Coins for a level by stars. A replay pays only the difference to the best
 ## result so far, so replaying for coins pays nothing (user decision 2026-10-09).
-const STAR_REWARDS: Dictionary = {1: 3, 2: 5, 3: 8}
+const STAR_REWARDS: Dictionary = {1: 1, 2: 2, 3: 3}
+## Balance of a brand-new save: enough for the first hints of the tutorial.
+const STARTING_COINS: int = 20
 const DAILY_BONUS: int = 10
+## Hints stay expensive: they reveal a step of the proven optimal solution.
 const HINT_COSTS: Dictionary = {"easy": 3, "medium": 3, "hard": 5, "expert": 5}
-## Free undos per calendar day, shared by all levels; later undos cost UNDO_COST.
+## Free undos per calendar day, shared by all levels; later undos cost UNDO_COST,
+## always less than a hint.
 const FREE_UNDOS_PER_DAY: int = 3
 const UNDO_COST: int = 1
 ## Rewarded ads (stubbed until an ad SDK is added).
-const AD_REWARD: int = 5
+const AD_REWARD: int = 4
 const ADS_PER_DAY: int = 5
 const UNLIMITED_HINT_HOURS: int = 24
 

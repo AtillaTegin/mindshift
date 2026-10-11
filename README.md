@@ -29,15 +29,15 @@ Açıq bölmənin içində səviyyələr ardıcıl açılır. Artıq tamamlanmı
 "Oyna" ən çətin açıq bölmənin növbəti bitməmiş səviyyəsini açır.
 Rəqəmlər [core/difficulty.gd](core/difficulty.gd)-də `UNLOCK_AFTER_COMPLETED` sabitindədir.
 
-Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md), 8.1). Hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir:
-- Mükafat: 3★ = 8, 2★ = 5, 1★ = 3 coin. Təkrar oyunda yalnız əvvəlki ən yaxşı nəticədən fərq verilir.
-- Gündəlik giriş bonusu 10 coin.
+Economy ([əlavə sənəd 3](../MindShift_Economy_UX_Addendum.md) 8.1, [iqtisadiyyat düsturları v2.1](../MindShift_Economy_Formulas_Addendum.md)). Hamısı [scripts/economy_system.gd](scripts/economy_system.gd)-də sabitdir:
+- Mükafat: 3★ = 3, 2★ = 2, 1★ = 1 coin (bilərəkdən kiçik: əsas mənbə reklamdır). Təkrar oyunda yalnız əvvəlki ən yaxşı nəticədən fərq verilir.
+- Yeni save 20 coin ilə başlayır. Gündəlik giriş bonusu 10 coin.
 - Hint Asan/Orta-da 3, Çətin/Ekspert-də 5 coin. Eyni vəziyyətdə təkrar basmaq pulsuzdur.
 - Gündə 3 pulsuz undo var (bütün səviyyələr üçün ortaq), sonra hər biri 1 coin. Undo gedişi sayğacdan da geri alır.
 
 Mağaza ([scripts/shop_catalog.gd](scripts/shop_catalog.gd)) **stub rejimindədir**: alış məhsulu dərhal verir, real ödəniş yoxdur.
 - Coin paketləri: 60 / 200 / 500 coin ($0.99 / $2.99 / $6.99). Qiymət sırada "60 coin → $0.99" kimi görünür, düymədə "Al" yazılıb.
-- Reklam: 5 coin, gündə 5 dəfə.
+- Reklam: 4 coin, gündə 5 dəfə (gündə ən çox 20 coin).
 - "24 saat limitsiz Hint": $0.99.
 - "Reklamları sil" reklam sistemi gələnə qədər bağlıdır.
 - Google Play Billing [scripts/store_service.gd](scripts/store_service.gd)-dəki `# TODO: real Billing SDK` yerlərinə qoşulacaq.

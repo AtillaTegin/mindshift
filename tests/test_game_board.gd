@@ -293,14 +293,14 @@ func test_completion_pays_by_stars_and_replays_only_the_improvement() -> void:
 	assert_eq(_board.last_result["reward"], EconomySystem.star_reward(stars), "first completion pays the full table value")
 	_board.restart()
 	_play(level.solution_path)
-	assert_eq(_board.last_result["reward"], 8 - EconomySystem.star_reward(stars), "3 stars pay only the difference")
-	assert_eq(_save.coins, 8)
+	assert_eq(_board.last_result["reward"], EconomySystem.star_reward(3) - EconomySystem.star_reward(stars), "3 stars pay only the difference")
+	assert_eq(_save.coins, EconomySystem.star_reward(3))
 	var popup_text: String = (_board.get_popup().get_node("%RecordLabel") as Label).text
-	assert_true(popup_text.contains("+%d coin" % (8 - EconomySystem.star_reward(stars))), popup_text)
+	assert_true(popup_text.contains("+%d coin" % (EconomySystem.star_reward(3) - EconomySystem.star_reward(stars))), popup_text)
 	_board.restart()
 	_play(level.solution_path)
 	assert_eq(_board.last_result["reward"], 0, "replaying for coins pays nothing")
-	assert_eq(_save.coins, 8)
+	assert_eq(_save.coins, EconomySystem.star_reward(3))
 
 
 func test_every_generated_easy_level_loads() -> void:

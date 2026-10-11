@@ -59,11 +59,11 @@ func test_stub_purchases_grant_at_once() -> void:
 	assert_eq(store.purchase("remove_ads")["ok"], false)
 	assert_eq(store.purchase("nope")["ok"], false)
 	for i: int in EconomySystem.ADS_PER_DAY:
-		assert_eq(store.purchase("rewarded_ad")["amount"], 5)
+		assert_eq(store.purchase("rewarded_ad")["amount"], 4)
 	assert_eq(store.purchase("rewarded_ad"), {"ok": false, "message": "SHOP_AD_LIMIT", "amount": 0})
 	var reopened: SaveSystem = SaveSystem.new(SAVE_PATH)
 	reopened.load_save()
-	assert_eq(reopened.coins, 560 + 25, "kept in the save")
+	assert_eq(reopened.coins, 560 + 20, "kept in the save")
 
 
 func test_billing_hook_is_marked() -> void:
@@ -100,8 +100,8 @@ func test_ad_button_counts_down_and_locks() -> void:
 		assert_false(ad.disabled)
 		ad.pressed.emit()
 	assert_true(ad.disabled, "daily limit reached")
-	assert_eq(_economy.coins, 25)
-	assert_eq(_shop.get_status_text(), "+5 coin (demo reklam)")
+	assert_eq(_economy.coins, 20)
+	assert_eq(_shop.get_status_text(), "+4 coin (demo reklam)")
 
 
 func test_board_hint_is_free_while_unlimited() -> void:

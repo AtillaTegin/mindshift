@@ -26,13 +26,15 @@ func _ready() -> void:
 		if arg.begins_with("--save-path="):
 			save_path = arg.trim_prefix("--save-path=")
 	save = SaveSystem.new(save_path)
-	save.load_save()
+	var existing: bool = save.load_save()
 	# The colour mode is applied by the ThemeManager autoload (loaded after this one).
 	Languages.apply(save.language)
 	economy = EconomySystem.new()
 	economy.name = "Economy"
 	economy.setup(save)
 	add_child(economy)
+	if not existing:
+		economy.earn(EconomySystem.STARTING_COINS, "starting_balance")
 	# Daily login bonus (spec 4.8); its own UI comes in a later phase.
 	economy.claim_daily_bonus(Time.get_date_string_from_system())
 
