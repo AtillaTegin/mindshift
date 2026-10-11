@@ -1,7 +1,8 @@
 extends "res://tests/test_case.gd"
-## Covered pegs (bonus mechanics addendum 2): a purely visual fog over a peg's
-## lower disks, opened by the first move that uses the peg, also in the goal
-## preview. Rules, Solver and generator know nothing about it.
+## Covered pegs as karakuri boxes (cultural integration addendum 2): a closed
+## box hides a peg's whole stack, the first tap shows the top disk, and each
+## disk under it shows when the one above leaves. The goal preview keeps its fog
+## until the box opens. Rules, Solver and generator know nothing about it.
 
 const SAVE_PATH: String = "res://.test_saves/test_covered_peg_save.json"
 const FOG_LEVEL: String = "fog_03.json"
@@ -61,85 +62,110 @@ func test_solver_ignores_the_fog() -> void:
 	assert_eq(result["min_moves"], level.min_moves, "the fog changes nothing for the Solver")
 
 
-func test_session_opens_a_peg_on_its_first_move_until_restart() -> void:
+func test_session_boxes_open_one_layer_at_a_time() -> void:
+	# Cultural integration addendum 2: fog_03 has boxes on peg 1 [6,5,4,3] and peg 2 [7,2].
 	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
 	var session: GameSession = GameSession.new(level)
-	assert_eq(session.covered_pegs, [1, 2] as Array[int])
-	session.tap_peg(1)
-	assert_true(session.is_covered(1), "lifting the top disk is not a move")
-	session.tap_peg(1)
-	var first: Move = level.solution_path[0]  # [1, 0]
-	session.try_move(first)
-	assert_false(session.is_covered(1), "used as the source")
-	assert_true(session.is_covered(2))
-	session.try_move(level.solution_path[1])  # [2, 0]
-	assert_false(session.is_covered(2), "used by the second move")
+	assert_eq(session.covered_pegs, [1, 2] as Array[int], "both boxes start closed")
+	assert_eq(session.hidden_count(1), 4, "a closed box hides its whole stack")
+	assert_eq(session.hidden_count(0), 0, "an ordinary peg hides nothing")
+	assert_eq(session.tap_peg(1), GameSession.TapResult.OPENED, "the first tap only opens the box")
+	assert_eq(session.selected_peg, -1, "nothing picked up yet")
+	assert_eq(session.hidden_count(1), 3, "only the top disk shows")
+	assert_eq(session.move_count, 0, "opening is free")
+	assert_eq(session.tap_peg(1), GameSession.TapResult.SELECTED)
+	assert_eq(session.tap_peg(0), GameSession.TapResult.MOVED)  # disk 3 leaves the box
+	assert_eq(session.hidden_count(1), 2, "the disk under it shows")
+	assert_true(session.is_covered(2), "the other box is still closed")
+	session.try_move(level.solution_path[1])  # [2, 0]: a move by code opens the box first
+	assert_false(session.is_covered(2))
+	assert_eq(session.hidden_count(2), 0, "disk 7 shows once disk 2 is gone")
 	session.undo()
 	session.undo()
-	assert_eq(session.covered_pegs, [] as Array[int], "undo does not bring the fog back")
+	assert_eq(session.hidden_count(1), 2, "undo hides nothing again")
+	assert_eq(session.hidden_count(2), 0)
 	session.restart()
-	assert_eq(session.covered_pegs, [1, 2] as Array[int], "a new attempt is covered again")
+	assert_eq(session.covered_pegs, [1, 2] as Array[int], "a new attempt closes every box")
+	assert_eq(session.hidden_count(1), 4)
 	assert_ne(level.covered_pegs.size(), 0, "the level itself is never changed")
 
 
-func test_fog_hides_all_but_the_top_disk() -> void:
+func test_disks_put_on_a_box_stay_visible() -> void:
+	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
+	var session: GameSession = GameSession.new(level)
+	session.tap_peg(1)
+	assert_true(session.try_move(Move.new(3, 1)), "disk 1 onto the opened box")
+	assert_eq(session.hidden_count(1), 3, "still only the old disks are hidden")
+	assert_true(session.try_move(Move.new(1, 0)), "disk 1 leaves again")
+	assert_eq(session.hidden_count(1), 3, "disk 3 was already showing")
+
+
+func test_closed_box_hides_the_whole_peg_then_shrinks() -> void:
 	_open(FOG_LEVEL)
 	var state: PuzzleState = _board.session.state
+	var first: PegFog = _board.get_peg_fog(1)
+	var second: PegFog = _board.get_peg_fog(2)
 	for peg_index: int in [1, 2]:
 		var fog: PegFog = _board.get_peg_fog(peg_index)
-		assert_not_null(fog)
 		assert_true(fog.is_shown())
 		assert_eq(fog.modulate.a, 1.0, "fully covered from the first frame")
-		assert_eq(fog.color.a, 1.0, "opaque")
-		var area: Rect2 = Rect2(fog.position, fog.size)
-		var stack: Array = state.pegs[peg_index]
-		assert_false(area.intersects(_disk_rect(stack[-1])), "peg %d: the top disk stays visible" % peg_index)
-		for i: int in stack.size() - 1:
-			assert_true(area.encloses(_disk_rect(stack[i])), "peg %d: disk %d hidden" % [peg_index, stack[i]])
-	# The preview fog must hide the goal's lower disks completely, edges included.
+		var area: Rect2 = fog.get_target_area()
+		for disk: int in state.pegs[peg_index]:
+			assert_true(area.encloses(_disk_rect(disk)), "peg %d: disk %d hidden, the top one too" % [peg_index, disk])
+	assert_eq(first.get_target_area().size.y, second.get_target_area().size.y, "4 and 2 disks: the box does not tell")
+	assert_eq(first.skin, "wood", "a karakuri box in the wood dress")
+	assert_null(_board.get_peg_fog(0), "ordinary pegs have no box")
+	assert_null(_board.get_peg_fog(3))
+	assert_true(_preview().is_peg_fogged(1), "the goal is fogged too")
+	_board.on_peg_pressed(1)
+	assert_eq(_board.session.selected_peg, -1, "the tap opened the box")
+	var opened: Rect2 = first.get_target_area()
+	var stack: Array = state.pegs[1]
+	assert_false(opened.intersects(_disk_rect(stack[-1])), "the top disk shows")
+	for i: int in stack.size() - 1:
+		assert_true(opened.encloses(_disk_rect(stack[i])), "disk %d still hidden" % stack[i])
+	assert_false(_preview().covered_pegs.has(1), "goal fog of an opened box lifts (fading)")
+	assert_true(_preview().is_peg_fogged(2))
+	# The preview fog must still hide the goal's lower disks of the closed box completely.
 	var preview: BoardPreview = _preview()
 	preview.size = Vector2(672, preview.custom_minimum_size.y)
+	var column: float = preview.size.x / state.get_peg_count()
 	for label: Dictionary in preview.get_disk_labels():
-		var column: float = preview.size.x / state.get_peg_count()
 		var peg_index: int = int(label["rect"].get_center().x / column)
 		var goal_stack: Array = _board.session.level.goal.pegs[peg_index]
-		if peg_index in [1, 2] and label["disk"] != goal_stack[-1]:
+		if peg_index == 2 and label["disk"] != goal_stack[-1]:
 			var fog_left: float = column * peg_index + column * 0.01
 			assert_true(label["rect"].position.x >= fog_left and label["rect"].end.x <= fog_left + column * 0.98,
 					"goal disk %d fully under the preview fog" % label["disk"])
-	assert_null(_board.get_peg_fog(0), "uncovered pegs have no fog")
-	assert_null(_board.get_peg_fog(3))
-	assert_eq(_preview().covered_pegs, [1, 2] as Array[int], "the goal is fogged too")
-	assert_true(_preview().is_peg_fogged(1))
 
 
-func test_first_move_opens_the_peg_on_board_and_preview() -> void:
+func test_box_layers_open_as_disks_leave_and_restart_closes_it() -> void:
 	_open(FOG_LEVEL)
-	var path: Array[Move] = _board.session.level.solution_path
-	_board.on_peg_pressed(1)
-	assert_true(_board.get_peg_fog(1).is_shown(), "picking up is not yet a move")
-	_board.on_peg_pressed(1)
-	_board.on_peg_pressed(path[0].from_peg)
-	_board.on_peg_pressed(path[0].to_peg)
-	assert_false(_board.get_peg_fog(1).is_shown(), "fading away")
-	assert_true(_board.get_peg_fog(1).visible, "with a fade, not a jump")
-	assert_false(_preview().covered_pegs.has(1), "goal fog lifts together")
-	assert_true(_board.get_peg_fog(2).is_shown(), "the other peg stays covered")
+	var fog: PegFog = _board.get_peg_fog(2)  # [7, 2]
+	_board.on_peg_pressed(2)  # open: disk 2 shows
+	_board.on_peg_pressed(2)
+	_board.on_peg_pressed(0)  # disk 2 leaves: disk 7 shows, nothing hidden is left
+	assert_eq(_board.session.hidden_count(2), 0)
+	assert_false(fog.is_shown(), "the empty box fades away")
+	assert_true(fog.visible, "with a fade, not a jump")
+	assert_true(_board.get_peg_fog(1).is_shown(), "the other box stays")
 	_board.restart()
-	assert_true(_board.get_peg_fog(1).is_shown(), "restart covers it again")
+	assert_true(fog.is_shown(), "restart closes the box again")
+	assert_true(_board.session.is_covered(2))
 	assert_eq(_preview().covered_pegs, [1, 2] as Array[int])
 
 
-func test_hint_and_solve_work_under_fog() -> void:
+func test_hint_and_solve_work_with_boxes() -> void:
 	_open(FOG_LEVEL)
 	_board.request_hint()
 	assert_not_null(_board.hints.hint_move, "the hint sees the full position")
+	for peg_index: int in _board.session.level.covered_pegs:
+		_board.on_peg_pressed(peg_index)
 	for move: Move in _board.session.level.solution_path:
 		_board.on_peg_pressed(move.from_peg)
 		_board.on_peg_pressed(move.to_peg)
 	assert_true(_board.session.is_solved())
-	assert_eq(_board.last_result["stars"], 3, "the optimal path opens every fog early enough")
-
+	assert_eq(_board.last_result["stars"], 3, "opening boxes costs no moves")
 
 func test_validator_rules_for_covered_pegs() -> void:
 	var start: PuzzleState = PuzzleState.new([[3, 2, 1], [], [4]])

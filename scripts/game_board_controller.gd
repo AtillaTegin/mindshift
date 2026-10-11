@@ -63,8 +63,8 @@ var _disk_views: Dictionary[int, DiskView] = {}
 var _disk_targets: Dictionary[int, Rect2] = {}
 ## Peg index -> peg area (rod, base and the space for a lifted disk), board coordinates.
 var _peg_areas: Array[Rect2] = []
-## Covered pegs (bonus mechanics addendum 2): peg index -> its fog, drawn on
-## a layer above the disks.
+## Karakuri boxes (covered pegs): peg index -> its box (PegFog), drawn on a
+## layer above the disks.
 var _fogs: Dictionary[int, PegFog] = {}
 var _fog_layer: Control
 ## Dress of a level with a special mechanic, behind the pegs.
@@ -420,6 +420,7 @@ func _build_views() -> void:
 	_fogs.clear()
 	for peg_index: int in session.level.covered_pegs:
 		var fog: PegFog = PEG_FOG_SCENE.instantiate()
+		fog.skin = _board_skin.skin
 		_fog_layer.add_child(fog)
 		_fogs[peg_index] = fog
 	var disk_count: int = session.state.get_disk_count()
@@ -490,26 +491,29 @@ func _layout(animated: bool) -> void:
 			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
 			view.move_to(target, animated)
-	_sync_fogs(column, disk_height, base_top, base_top + base_height)
+	_sync_fogs(column, disk_height, base_top, base_top + base_height, rod_top, animated)
 	layout_changed.emit()
 
 
-## Keeps each fog over its peg's disks below the top one, and fades it out
-## (on the board and in the goal preview) once a move has used the peg.
-func _sync_fogs(column: float, disk_height: float, base_top: float, bottom: float) -> void:
+## Keeps each karakuri box over the disks the player cannot see: a closed box
+## covers the whole peg (so not even the disk count shows), an opened one only
+## the disks still hidden at its bottom, shrinking a layer at a time. The goal
+## preview's fog of a box lifts when the box is opened; an empty box fades away.
+func _sync_fogs(column: float, disk_height: float, base_top: float, bottom: float, rod_top: float,
+		animated: bool) -> void:
 	for peg_index: int in _fogs:
 		var fog: PegFog = _fogs[peg_index]
-		if not session.is_covered(peg_index):
+		var closed: bool = session.is_covered(peg_index)
+		if not closed and _goal_preview.covered_pegs.has(peg_index):
+			_goal_preview.reveal_peg(peg_index)
+		var hidden: int = session.hidden_count(peg_index)
+		if not closed and hidden == 0:
 			if fog.is_shown():
 				fog.reveal()
-				_goal_preview.reveal_peg(peg_index)
 			continue
-		var stack: int = session.state.pegs[peg_index].size()
-		# From the top of the second disk from the top down to the base; the top
-		# disk (and the space above it) stays visible.
-		var top: float = base_top - disk_height * (stack - 1)
+		var top: float = rod_top - disk_height * 0.4 if closed else base_top - disk_height * hidden
 		var area: Rect2 = Rect2(column * peg_index + column * 0.02, top, column * 0.96, bottom - top)
 		if fog.is_shown():
-			fog.follow(area)
+			fog.follow(area, animated)
 		else:
 			fog.cover(area)

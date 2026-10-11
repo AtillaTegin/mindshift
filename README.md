@@ -132,10 +132,14 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 - **Dondurulmuş disk:** `"rules": [..., "frozen_disk"]`, `"rule_params": {"frozen_disk": {"disk_size": 2}}`.
   - Disk heç vaxt tərpənmir, üstünə kiçik disk qoyula bilər.
   - Solver dəyişməyib.
-- **Örtülü qüllə:** `"covered_pegs": [1, 2]`. Yalnız vizual qatdır: qüllədən ilk istifadədə duman açılır, "Yenidən" ilə qayıdır. Hədəf önizləməsində də eyni duman var.
+- **Örtülü qüllə (karakuri qutusu):** `"covered_pegs": [1, 2]`. Yalnız təqdimatdır, Solver və ulduzlar dəyişmir ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 2).
+  - Qüllə bağlı ağac qutu kimi başlayır: bütün disklər, hətta neçə disk olduğu da görünmür.
+  - İlk toxunuş qutunu açır (gediş sayılmır) və yalnız üst disk görünür. Üst disk gedəndə altındakı açılır, hər dəfə bir qat.
+  - Qutunun üstünə qoyulan disklər görünür qalır. Undo heç nəyi yenidən gizlətmir, "Yenidən" bütün qutuları bağlayır.
+  - Hədəf önizləməsindəki duman qutu açılanda qalxır.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
   - Dondurulmuş disk: jadeit yaşılı, bir-birinə keçən halqalar (Çin Doqquz Halqa).
-  - Örtülü qüllə: ağac damarı və yosegi romb zolağı (Yapon karakuri qutusu).
+  - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).
   - Lövhənin arxası, qüllələr, hədəf önizləməsi və xəritədəki dayanacağın halqası bu rəngdədir. Klassik səviyyələrin donu yoxdur.
 - **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
 

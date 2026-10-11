@@ -55,6 +55,9 @@ func _board() -> GameBoard:
 
 
 func _solve(board: GameBoard) -> void:
+	# Karakuri boxes open with a first tap of their own.
+	for peg_index: int in board.session.level.covered_pegs:
+		board.on_peg_pressed(peg_index)
 	for move: Move in board.session.level.solution_path:
 		board.on_peg_pressed(move.from_peg)
 		board.on_peg_pressed(move.to_peg)

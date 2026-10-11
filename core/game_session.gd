@@ -4,8 +4,9 @@ extends RefCounted
 ## history, undo and hints, elapsed time. Pure logic without nodes, shared by
 ## the board UI and the tests.
 
-## BLOCKED: the top disk of the tapped peg may not be picked up (e.g. frozen).
-enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED }
+## BLOCKED: the top disk of the tapped peg may not be picked up right now.
+## OPENED: the tap opened a closed karakuri box (nothing else happened).
+enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED, OPENED }
 
 ## Search budget for hints off the stored solution path. The packed solver
 ## stays far below it for every shipped level size.
@@ -24,11 +25,17 @@ var undo_count: int = 0
 ## before it is free) and stops when the level is solved.
 var elapsed_seconds: float = 0.0
 var clock_started: bool = false
-## Pegs still under fog in this attempt (bonus mechanics addendum 2). A move
-## from or to a peg clears its fog for the rest of the attempt (undo does not
-## bring it back); restart covers them again. Never saved.
+## Karakuri boxes (cultural integration addendum, section 2): the level's
+## covered pegs start as closed boxes that hide their whole stack, even how many
+## disks it holds. The first tap on a box opens its top layer: only the top disk
+## shows. Whenever a box's top disk leaves, the disk under it shows. Disks put
+## onto a box stay visible. Nothing comes back on undo; restart closes every box
+## again. Presentation only: rules, Solver and stars never see it. Never saved.
+## Closed boxes:
 var covered_pegs: Array[int] = []
 
+## Opened box peg -> how many disks at its bottom are still hidden.
+var _hidden: Dictionary[int, int] = {}
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
 ## hash_key of each position along level.solution_path -> index of the next move.
@@ -57,6 +64,7 @@ func restart() -> void:
 	elapsed_seconds = 0.0
 	clock_started = false
 	covered_pegs = level.covered_pegs.duplicate()
+	_hidden.clear()
 
 
 func is_solved() -> bool:
@@ -74,6 +82,8 @@ func get_selected_disk() -> int:
 func tap_peg(peg_index: int) -> TapResult:
 	if is_solved() or peg_index < 0 or peg_index >= state.get_peg_count():
 		return TapResult.IGNORED
+	if open_box(peg_index):
+		return TapResult.OPENED
 	if selected_peg == -1:
 		if state.pegs[peg_index].is_empty():
 			return TapResult.IGNORED
@@ -96,19 +106,47 @@ func try_move(move: Move) -> bool:
 	var next: PuzzleState = rules.apply_move(state, move)
 	if next == null:
 		return false
+	# A move by code (hint, tests) through a closed box opens it first.
+	open_box(move.from_peg)
+	open_box(move.to_peg)
 	_previous_states.append(state)
 	state = next
 	move_count += 1
 	history.append(move)
 	selected_peg = -1
 	clock_started = true
-	covered_pegs.erase(move.from_peg)
-	covered_pegs.erase(move.to_peg)
+	_reveal_tops()
 	return true
 
 
+## Whether `peg_index` is a closed box.
 func is_covered(peg_index: int) -> bool:
 	return covered_pegs.has(peg_index)
+
+
+## Disks of `peg_index` the player cannot see: its whole stack while the box is
+## closed, then the ones still hidden at its bottom; 0 for an ordinary peg.
+func hidden_count(peg_index: int) -> int:
+	if is_covered(peg_index):
+		return state.pegs[peg_index].size()
+	return _hidden.get(peg_index, 0)
+
+
+## Opens the closed box on `peg_index`: its top disk shows. False if it was no
+## closed box.
+func open_box(peg_index: int) -> bool:
+	if not is_covered(peg_index):
+		return false
+	covered_pegs.erase(peg_index)
+	_hidden[peg_index] = maxi(state.pegs[peg_index].size() - 1, 0)
+	return true
+
+
+## A hidden disk that has become the top of its box shows.
+func _reveal_tops() -> void:
+	for peg_index: int in _hidden:
+		if _hidden[peg_index] > 0 and state.pegs[peg_index].size() <= _hidden[peg_index]:
+			_hidden[peg_index] = maxi(state.pegs[peg_index].size() - 1, 0)
 
 
 func can_undo() -> bool:
@@ -125,6 +163,7 @@ func undo() -> bool:
 	move_count -= 1
 	undo_count += 1
 	selected_peg = -1
+	_reveal_tops()
 	return true
 
 
