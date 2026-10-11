@@ -281,7 +281,8 @@ func test_undo_is_free_three_times_then_costs() -> void:
 	assert_eq(_board.economy.free_undos_left(), 0, "free undos are per day, a restart does not refill them")
 
 
-func test_completion_pays_by_stars_and_replays_only_the_improvement() -> void:
+func test_completion_earns_tokens_for_new_stars_only() -> void:
+	# Economy formulas addendum v3: stars fill the chest meter, they never pay coins.
 	_save.coins = 0
 	var level: Level = _board.session.level
 	var first: Move = level.solution_path[0]
@@ -290,18 +291,38 @@ func test_completion_pays_by_stars_and_replays_only_the_improvement() -> void:
 	_play(detour)
 	var stars: int = _board.last_result["stars"]
 	assert_true(stars < 3)
-	assert_eq(_board.last_result["reward"], EconomySystem.star_reward(stars), "first completion pays the full table value")
+	assert_eq(_board.last_result["tokens"], stars, "one token per star")
+	assert_eq(_save.coins, 0, "no coins for playing")
 	_board.restart()
 	_play(level.solution_path)
-	assert_eq(_board.last_result["reward"], EconomySystem.star_reward(3) - EconomySystem.star_reward(stars), "3 stars pay only the difference")
-	assert_eq(_save.coins, EconomySystem.star_reward(3))
+	assert_eq(_board.last_result["tokens"], 3 - stars, "3 stars earn only the new ones")
+	assert_eq(_save.chest_tokens, 3)
 	var popup_text: String = (_board.get_popup().get_node("%RecordLabel") as Label).text
-	assert_true(popup_text.contains("+%d coin" % (EconomySystem.star_reward(3) - EconomySystem.star_reward(stars))), popup_text)
+	assert_true(popup_text.contains("+%d jeton" % (3 - stars)), popup_text)
 	_board.restart()
 	_play(level.solution_path)
-	assert_eq(_board.last_result["reward"], 0, "replaying for coins pays nothing")
-	assert_eq(_save.coins, EconomySystem.star_reward(3))
+	assert_eq(_board.last_result["tokens"], 0, "replaying earns nothing")
+	assert_eq(_save.chest_tokens, 3)
+	assert_eq(_save.coins, 0)
 
+
+func test_popup_tells_about_keys_and_chests() -> void:
+	var level: Level = _board.session.level
+	_save.chest_tokens = EconomySystem.TOKENS_PER_KEY - 1
+	_play(level.solution_path)
+	assert_eq(_board.last_result["keys"], 1)
+	assert_eq(_board.get_popup().get_note(), "Açar qazandın! (1/3)")
+	_save.completed_levels.clear()
+	_save.chest_tokens = EconomySystem.TOKENS_PER_KEY - 1
+	_save.chest_keys = EconomySystem.KEYS_PER_CHEST - 1
+	_board.economy.rng.seed = 3
+	_board.restart()
+	_play(level.solution_path)
+	var chests: Array[int] = _board.last_result["chests"]
+	assert_eq(chests.size(), 1, "the third key opens the chest")
+	var expected: String = "Sandıq açıldı: +%d coin!" % chests[0] if chests[0] > 0 else "Sandıq açıldı, bu dəfə boşdur."
+	assert_eq(_board.get_popup().get_note(), expected)
+	assert_eq(_save.coins, chests[0])
 
 func test_every_generated_easy_level_loads() -> void:
 	for file_name: String in DirAccess.get_files_at("res://data/levels/easy"):

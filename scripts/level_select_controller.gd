@@ -1,13 +1,15 @@
 extends Control
 ## Level map (level structure addendum v3): one winding road of numbered
-## levels, no difficulty tabs. Completed levels can be replayed to improve
-## their stars. Once the island (the side branch) is open, its marker on the
+## levels, no difficulty tabs, with the chest meter on top (economy formulas
+## v3). Completed levels can be replayed to improve their stars. Once the island (the side branch) is open, its marker on the
 ## road and the button under the title switch between the road and the island.
 
 signal level_chosen(track: String, position: int)
 
 ## Progress to show; taken from the App autoload when left empty.
 var save_system: SaveSystem
+## Chest meter source; the App's, or one over save_system when that was injected.
+var economy: EconomySystem
 var track: String = LevelCatalog.MAIN
 
 ## Stop to scroll to once the scroll container knows the map's height.
@@ -19,12 +21,21 @@ var _scroll_target: int = 0
 @onready var _stars_label: Label = %StarsLabel
 @onready var _track_button: Button = %TrackButton
 @onready var _back_button: Button = %BackButton
+@onready var _chest_meter: ChestMeter = %ChestMeter
 
 
 func _ready() -> void:
 	var app: Node = get_node_or_null("/root/App")
 	if save_system == null:
 		save_system = app.save if app != null else SaveSystem.new()
+	if economy == null:
+		if app != null and app.save == save_system:
+			economy = app.economy
+		else:
+			economy = EconomySystem.new()
+			economy.setup(save_system)
+			add_child(economy)
+	_chest_meter.economy = economy
 	_back_button.pressed.connect(func() -> void:
 		if app != null:
 			app.show_main_menu())

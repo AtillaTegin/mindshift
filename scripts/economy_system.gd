@@ -1,22 +1,32 @@
 class_name EconomySystem
 extends Node
-## Coins (spec 4.8, economy/UX addendum 8.1, economy formulas addendum v2.1).
-## The balance and the daily counters live in the SaveSystem and every change
-## is saved at once. Coins never block progress (levels open by completion, not
-## by money); they make the comfort tools, hints and extra undos, feel a little
-## valuable. Levels pay little on purpose: rewarded ads are the main source.
-## Every number is a constant here so balancing is a one-line change.
+## Coins (spec 4.8, economy/UX addendum 8.1, economy formulas addendum v3).
+## The balance, the daily counters and the chest progress live in the
+## SaveSystem and every change is saved at once. Coins never block progress
+## (levels open by completion, not by money); they make the comfort tools,
+## hints and extra undos, feel valuable. Playing well never pays coins
+## directly: it fills the chest meter, whose chests hold a few coins at most.
+## Rewarded ads and the shop are the real sources. Every number is a constant
+## here so balancing is a one-line change.
 
 signal coins_changed(coins: int)
 ## Free undos, watched ads or the unlimited-hint offer changed.
 signal allowances_changed
+## Tokens, keys or opened chests changed.
+signal chest_progress_changed
 
-## Coins for a level by stars. A replay pays only the difference to the best
-## result so far, so replaying for coins pays nothing (user decision 2026-10-09).
-const STAR_REWARDS: Dictionary = {1: 1, 2: 2, 3: 3}
+## Chest meter (formulas addendum v3, section 2): one token per new star of a
+## level (a replay counts only the improvement, so replaying earns nothing),
+## TOKENS_PER_KEY tokens make a key, KEYS_PER_CHEST keys open a chest by
+## themselves. First guesses, to be tuned by playtesting.
+const TOKENS_PER_KEY: int = 15
+const KEYS_PER_CHEST: int = 3
+## What a chest holds: [coins, chance in percent]; 60% empty, 30% 1 coin, 10% 3.
+const CHEST_TABLE: Array = [[0, 60], [1, 30], [3, 10]]
 ## Balance of a brand-new save: enough for the first hints of the tutorial.
 const STARTING_COINS: int = 20
-const DAILY_BONUS: int = 10
+## A small thank-you for coming back, not an income.
+const DAILY_BONUS: int = 2
 ## Hints stay expensive: they reveal a step of the proven optimal solution.
 const HINT_COSTS: Dictionary = {"easy": 3, "medium": 3, "hard": 5, "expert": 5}
 ## Free undos per calendar day, shared by all levels; later undos cost UNDO_COST,
@@ -29,6 +39,8 @@ const ADS_PER_DAY: int = 5
 const UNLIMITED_HINT_HOURS: int = 24
 
 var save: SaveSystem
+## Draws the chest contents; tests seed it.
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 ## Test hooks: a fixed "YYYY-MM-DD" day and unix time instead of the system clock.
 var date_override: String = ""
 var time_override: int = -1
@@ -36,6 +48,10 @@ var time_override: int = -1
 var coins: int:
 	get:
 		return save.coins if save != null else 0
+
+
+func _init() -> void:
+	rng.randomize()
 
 
 func setup(p_save: SaveSystem) -> void:
@@ -70,14 +86,51 @@ func earn(amount: int, _reason: String) -> void:
 		_set_coins(coins + amount)
 
 
-## Coins a result with `stars` is worth (0 for none).
-static func star_reward(stars: int) -> int:
-	return STAR_REWARDS.get(stars, 0)
+## Tokens for finishing a level with `stars` when the best so far was
+## `previous_stars`: only the new stars count.
+static func level_tokens(stars: int, previous_stars: int) -> int:
+	return maxi(stars - previous_stars, 0)
 
 
-## Coins for finishing a level with `stars` when the best so far was `previous_stars`.
-static func level_reward(stars: int, previous_stars: int) -> int:
-	return maxi(star_reward(stars) - star_reward(previous_stars), 0)
+## The coins in a chest for a uniform `roll` in [0, 1), by CHEST_TABLE.
+static func chest_coins_for_roll(roll: float) -> int:
+	var threshold: float = 0.0
+	for entry: Array in CHEST_TABLE:
+		threshold += entry[1] / 100.0
+		if roll < threshold:
+			return entry[0]
+	return CHEST_TABLE[-1][0]
+
+
+func tokens() -> int:
+	return save.chest_tokens
+
+
+func keys() -> int:
+	return save.chest_keys
+
+
+## Adds `count` tokens; full keys and chests follow at once and every chest
+## opens by itself. Returns {tokens, keys: keys earned, chests: coins of each
+## opened chest}.
+func add_tokens(count: int) -> Dictionary:
+	var result: Dictionary = {"tokens": maxi(count, 0), "keys": 0, "chests": [] as Array[int]}
+	if count <= 0:
+		return result
+	save.chest_tokens += count
+	while save.chest_tokens >= TOKENS_PER_KEY:
+		save.chest_tokens -= TOKENS_PER_KEY
+		save.chest_keys += 1
+		result["keys"] += 1
+		if save.chest_keys >= KEYS_PER_CHEST:
+			save.chest_keys -= KEYS_PER_CHEST
+			save.chests_opened += 1
+			var coins_inside: int = chest_coins_for_roll(rng.randf())
+			(result["chests"] as Array[int]).append(coins_inside)
+			earn(coins_inside, "chest")
+	save.write()
+	chest_progress_changed.emit()
+	return result
 
 
 static func hint_cost_for_tier(tier: String) -> int:

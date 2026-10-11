@@ -29,16 +29,28 @@ msgstr ""
 msgid "SHOP_DEMO_NOTE"
 msgstr ""
 
-#. [TODO: RU] az: Kiçik coin paketi
-msgid "SHOP_COINS_SMALL"
+#. [TODO: RU] az: Mini paket
+msgid "SHOP_COINS_1"
 msgstr ""
 
-#. [TODO: RU] az: Orta coin paketi
-msgid "SHOP_COINS_MEDIUM"
+#. [TODO: RU] az: Kiçik paket
+msgid "SHOP_COINS_2"
 msgstr ""
 
-#. [TODO: RU] az: Böyük coin paketi
-msgid "SHOP_COINS_LARGE"
+#. [TODO: RU] az: Orta paket
+msgid "SHOP_COINS_3"
+msgstr ""
+
+#. [TODO: RU] az: Böyük paket
+msgid "SHOP_COINS_4"
+msgstr ""
+
+#. [TODO: RU] az: Mega paket
+msgid "SHOP_COINS_5"
+msgstr ""
+
+#. [TODO: RU] az: Xəzinə
+msgid "SHOP_COINS_6"
 msgstr ""
 
 #. [TODO: RU] az: %d coin → %s
@@ -261,8 +273,24 @@ msgstr ""
 msgid "POPUP_RECORD"
 msgstr ""
 
-#. [TODO: RU] az: +%d coin
-msgid "POPUP_COINS"
+#. [TODO: RU] az: +%d jeton
+msgid "POPUP_TOKENS"
+msgstr ""
+
+#. [TODO: RU] az: Açar qazandın! (%d/%d)
+msgid "POPUP_KEY"
+msgstr ""
+
+#. [TODO: RU] az: Sandıq açıldı: +%d coin!
+msgid "POPUP_CHEST_COINS"
+msgstr ""
+
+#. [TODO: RU] az: Sandıq açıldı, bu dəfə boşdur.
+msgid "POPUP_CHEST_EMPTY"
+msgstr ""
+
+#. [TODO: RU] az: %d/%d jeton
+msgid "CHEST_METER"
 msgstr ""
 
 #. [TODO: RU] az: Növbəti səviyyə

@@ -79,6 +79,10 @@ const ICON_COLORS: Dictionary = {
 	"hint": Color("9d8cff"),
 	"hint_base": Color("5b4fc4"),
 	"undo": Color("b4c3d6"),
+	# Chest meter: a wooden chest with gold bands, gold keys.
+	"chest": Color("a0663a"),
+	"chest_band": Color("f4b400"),
+	"key": Color("f5b72a"),
 	# Frozen disk: frosted rim and cracks.
 	"ice": Color("e6f7ff"),
 	"ice_edge": Color("4fb3e8"),

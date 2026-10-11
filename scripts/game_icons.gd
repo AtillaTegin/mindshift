@@ -5,8 +5,10 @@ extends RefCounted
 ## - coin: a gold disc with a rim and a small shine stroke
 ## - hint: a light bulb (a circle on a narrowing base)
 ## - undo: a counter-clockwise curved arrow (a polyline with an arrowhead)
+## - chest: a wooden chest with metal bands and a lock plate (chest meter)
+## - key: a ring, a shaft and two teeth (chest meter)
 
-const KINDS: Array[String] = ["coin", "hint", "undo"]
+const KINDS: Array[String] = ["coin", "hint", "undo", "chest", "key"]
 ## Alpha of an icon on a disabled button.
 const DIMMED_ALPHA: float = 0.4
 
@@ -26,6 +28,10 @@ static func draw(canvas: CanvasItem, kind: String, rect: Rect2, dimmed: bool = f
 			_draw_hint(canvas, square, alpha)
 		"undo":
 			_draw_undo(canvas, square, alpha)
+		"chest":
+			_draw_chest(canvas, square, alpha)
+		"key":
+			_draw_key(canvas, square, alpha)
 
 
 static func _square(rect: Rect2) -> Rect2:
@@ -92,3 +98,29 @@ static func _draw_undo(canvas: CanvasItem, square: Rect2, alpha: float) -> void:
 		tip_base + direction * 0.17 * s,
 		tip_base + normal * 0.15 * s,
 		tip_base - normal * 0.15 * s]), color)
+
+
+static func _draw_chest(canvas: CanvasItem, square: Rect2, alpha: float) -> void:
+	var s: float = square.size.x
+	var o: Vector2 = square.position
+	var wood: Color = _color("chest", alpha)
+	var band: Color = _color("chest_band", alpha)
+	var lid: StyleBoxFlat = StyleBoxFlat.new()
+	lid.bg_color = wood.lightened(0.12)
+	lid.corner_radius_top_left = int(0.16 * s)
+	lid.corner_radius_top_right = int(0.16 * s)
+	canvas.draw_style_box(lid, Rect2(o + Vector2(0.08, 0.18) * s, Vector2(0.84, 0.26) * s))
+	canvas.draw_rect(Rect2(o + Vector2(0.08, 0.46) * s, Vector2(0.84, 0.42) * s), wood)
+	for x: float in [0.2, 0.73]:
+		canvas.draw_rect(Rect2(o + Vector2(x, 0.18) * s, Vector2(0.07, 0.7) * s), band)
+	canvas.draw_rect(Rect2(o + Vector2(0.42, 0.38) * s, Vector2(0.16, 0.18) * s), band)
+
+
+static func _draw_key(canvas: CanvasItem, square: Rect2, alpha: float) -> void:
+	var s: float = square.size.x
+	var o: Vector2 = square.position
+	var gold: Color = _color("key", alpha)
+	canvas.draw_arc(o + Vector2(0.28, 0.5) * s, 0.16 * s, 0.0, TAU, 20, gold, 0.08 * s, true)
+	canvas.draw_line(o + Vector2(0.43, 0.5) * s, o + Vector2(0.9, 0.5) * s, gold, 0.09 * s, true)
+	canvas.draw_rect(Rect2(o + Vector2(0.7, 0.5) * s, Vector2(0.07, 0.16) * s), gold)
+	canvas.draw_rect(Rect2(o + Vector2(0.82, 0.5) * s, Vector2(0.07, 0.12) * s), gold)

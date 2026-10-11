@@ -46,7 +46,8 @@ var restricted_peg: int = -1:
 		_update_buttons()
 
 var session: GameSession
-## Result of the last completion: { stars, improved, reward }.
+## Result of the last completion: { stars, improved, tokens, keys, chests }
+## (EconomySystem.add_tokens: keys earned, coins of each chest opened).
 var last_result: Dictionary = {}
 var coaching: CoachingLayer
 var hints: HintController
@@ -332,21 +333,29 @@ func _show_level_select() -> void:
 	app.show_level_select(place.get("track", ""), place.get("position", 0))
 
 
-## Spec 4.6/4.9: stars from the move count, saved right away, coins for the
-## improvement over the best result so far (addendum 8.1), then the popup.
+## Spec 4.6/4.9: stars from the move count, saved right away, chest tokens for
+## the stars gained over the best result so far (formulas addendum v3: no coins
+## for playing well), then the popup with any key, chest or island news.
 func _on_solved() -> void:
 	var level: Level = session.level
 	var stars: int = level.stars_for_moves(session.move_count)
 	var previous_stars: int = save_system.get_stars(level.id)
 	var island_was_open: bool = LevelCatalog.is_branch_open(save_system)
 	var improved: bool = save_system.record_completion(level.id, stars, session.move_count, session.elapsed_seconds)
-	var reward: int = EconomySystem.level_reward(stars, previous_stars)
-	economy.earn(reward, "level_complete")
-	last_result = {"stars": stars, "improved": improved, "reward": reward}
+	var chest: Dictionary = economy.add_tokens(EconomySystem.level_tokens(stars, previous_stars))
+	last_result = {"stars": stars, "improved": improved, "tokens": chest["tokens"], "keys": chest["keys"],
+			"chests": chest["chests"]}
 	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
-			improved, not _next_level().is_empty(), reward)
+			improved, not _next_level().is_empty(), chest["tokens"])
+	var notes: PackedStringArray = PackedStringArray()
+	for coins_inside: int in chest["chests"]:
+		notes.append(tr("POPUP_CHEST_COINS") % coins_inside if coins_inside > 0 else tr("POPUP_CHEST_EMPTY"))
+	if chest["keys"] > 0 and (chest["chests"] as Array).is_empty():
+		notes.append(tr("POPUP_KEY") % [economy.keys(), EconomySystem.KEYS_PER_CHEST])
 	# The island appears as a surprise (level structure addendum v3): say so once.
-	_popup.set_note(tr("POPUP_ISLAND_OPENED") if not island_was_open and LevelCatalog.is_branch_open(save_system) else "")
+	if not island_was_open and LevelCatalog.is_branch_open(save_system):
+		notes.append(tr("POPUP_ISLAND_OPENED"))
+	_popup.set_note("\n".join(notes))
 	level_completed.emit(level, session.move_count, session.elapsed_seconds)
 
 

@@ -34,26 +34,38 @@ func _open_shop() -> void:
 
 
 func test_catalog_matches_the_addendum_and_the_chosen_amounts() -> void:
+	# Economy formulas addendum v3, section 6: six packs at about 25-36 coins per dollar.
 	var expected: Dictionary = {
-		"coins_small": [60, "$0.99"], "coins_medium": [200, "$2.99"], "coins_large": [500, "$6.99"]}
-	for id: String in expected:
-		var product: Dictionary = ShopCatalog.get_product(id)
-		assert_eq(product["kind"], "coins")
+		"coins_25": [25, "$0.99"], "coins_60": [60, "$1.99"], "coins_150": [150, "$4.99"],
+		"coins_320": [320, "$9.99"], "coins_700": [700, "$19.99"], "coins_1800": [1800, "$49.99"]}
+	var packs: int = 0
+	var last_rate: float = 0.0
+	for product: Dictionary in ShopCatalog.PRODUCTS:
+		if product["kind"] != "coins":
+			continue
+		packs += 1
+		var id: String = product["id"]
+		assert_true(expected.has(id), id)
 		assert_eq(product["coins"], expected[id][0], id)
 		assert_eq(product["price"], expected[id][1], id)
+		var rate: float = product["coins"] / product["price"].trim_prefix("$").to_float()
+		assert_true(rate >= 25.0 and rate <= 36.5 and rate >= last_rate - 0.2, "%s: %.1f coins per dollar, never worse than a smaller pack" % [id, rate])
+		last_rate = rate
+		assert_false(product.has("badge") or product.has("popular"), "no 'most popular' badge without sales data")
+	assert_eq(packs, 6)
 	var hints: Dictionary = ShopCatalog.get_product("unlimited_hints_24h")
 	assert_eq([hints["hours"], hints["price"]], [24, "$0.99"])
 	assert_true(ShopCatalog.is_available(ShopCatalog.get_product("rewarded_ad")))
 	assert_false(ShopCatalog.is_available(ShopCatalog.get_product("remove_ads")), "needs an ad system first")
-	assert_eq(ShopCatalog.PRODUCTS.size(), 6)
+	assert_eq(ShopCatalog.PRODUCTS.size(), 9)
 
 
 func test_stub_purchases_grant_at_once() -> void:
 	var store: StoreService = StoreService.new(_economy)
 	assert_true(StoreService.STUB_MODE)
-	assert_eq(store.purchase("coins_small"), {"ok": true, "message": "SHOP_BOUGHT_COINS", "amount": 60})
-	assert_eq(store.purchase("coins_large")["amount"], 500)
-	assert_eq(_economy.coins, 560)
+	assert_eq(store.purchase("coins_25"), {"ok": true, "message": "SHOP_BOUGHT_COINS", "amount": 25})
+	assert_eq(store.purchase("coins_150")["amount"], 150)
+	assert_eq(_economy.coins, 175)
 	assert_true(store.purchase("unlimited_hints_24h")["ok"])
 	assert_true(_economy.has_unlimited_hints())
 	assert_eq(store.purchase("remove_ads")["ok"], false)
@@ -63,7 +75,7 @@ func test_stub_purchases_grant_at_once() -> void:
 	assert_eq(store.purchase("rewarded_ad"), {"ok": false, "message": "SHOP_AD_LIMIT", "amount": 0})
 	var reopened: SaveSystem = SaveSystem.new(SAVE_PATH)
 	reopened.load_save()
-	assert_eq(reopened.coins, 560 + 20, "kept in the save")
+	assert_eq(reopened.coins, 175 + 20, "kept in the save")
 
 
 func test_billing_hook_is_marked() -> void:
@@ -73,17 +85,17 @@ func test_billing_hook_is_marked() -> void:
 
 func test_shop_screen_buy_buttons() -> void:
 	_open_shop()
-	assert_eq(_shop.get_detail_text("coins_small"), "60 coin → $0.99")
-	assert_eq(_shop.get_detail_text("coins_medium"), "200 coin → $2.99")
-	assert_eq(_shop.get_detail_text("coins_large"), "500 coin → $6.99")
+	assert_eq(_shop.get_detail_text("coins_25"), "25 coin → $0.99")
+	assert_eq(_shop.get_detail_text("coins_320"), "320 coin → $9.99")
+	assert_eq(_shop.get_detail_text("coins_1800"), "1800 coin → $49.99")
 	assert_eq(_shop.get_detail_text("unlimited_hints_24h"), "24 saat pulsuz hint → $0.99")
-	var small: Button = _shop.get_buy_button("coins_small")
+	var small: Button = _shop.get_buy_button("coins_25")
 	assert_eq(small.text, "Al")
 	assert_true(small is PolishedButton)
 	small.pressed.emit()
-	assert_eq(_economy.coins, 60)
-	assert_eq((_shop.get_node("%CoinLabel") as Label).text, "60")
-	assert_eq(_shop.get_status_text(), "+60 coin əlavə olundu (demo)")
+	assert_eq(_economy.coins, 25)
+	assert_eq((_shop.get_node("%CoinLabel") as Label).text, "25")
+	assert_eq(_shop.get_status_text(), "+25 coin əlavə olundu (demo)")
 	var hints: Button = _shop.get_buy_button("unlimited_hints_24h")
 	hints.pressed.emit()
 	assert_true(_economy.has_unlimited_hints())

@@ -31,7 +31,7 @@ func _add(node: Node) -> Node:
 
 func test_icon_kinds() -> void:
 	# The drawing itself is checked in a real window (see README, 7).
-	assert_eq(GameIcons.KINDS, ["coin", "hint", "undo"] as Array[String])
+	assert_eq(GameIcons.KINDS, ["coin", "hint", "undo", "chest", "key"] as Array[String])
 	for kind: String in GameIcons.KINDS:
 		assert_true(GameIcons.is_known(kind))
 	assert_false(GameIcons.is_known(""))

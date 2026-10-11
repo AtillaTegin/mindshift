@@ -25,14 +25,23 @@ msgstr "Mağaza"
 msgid "SHOP_DEMO_NOTE"
 msgstr "Demo rejimi: alışlar pulsuzdur, real ödəniş hələ qoşulmayıb."
 
-msgid "SHOP_COINS_SMALL"
-msgstr "Kiçik coin paketi"
+msgid "SHOP_COINS_1"
+msgstr "Mini paket"
 
-msgid "SHOP_COINS_MEDIUM"
-msgstr "Orta coin paketi"
+msgid "SHOP_COINS_2"
+msgstr "Kiçik paket"
 
-msgid "SHOP_COINS_LARGE"
-msgstr "Böyük coin paketi"
+msgid "SHOP_COINS_3"
+msgstr "Orta paket"
+
+msgid "SHOP_COINS_4"
+msgstr "Böyük paket"
+
+msgid "SHOP_COINS_5"
+msgstr "Mega paket"
+
+msgid "SHOP_COINS_6"
+msgstr "Xəzinə"
 
 msgid "SHOP_COINS_DETAIL"
 msgstr "%d coin → %s"
@@ -199,8 +208,20 @@ msgstr "Gediş: %d / min %d"
 msgid "POPUP_RECORD"
 msgstr "Yeni rekord!"
 
-msgid "POPUP_COINS"
-msgstr "+%d coin"
+msgid "POPUP_TOKENS"
+msgstr "+%d jeton"
+
+msgid "POPUP_KEY"
+msgstr "Açar qazandın! (%d/%d)"
+
+msgid "POPUP_CHEST_COINS"
+msgstr "Sandıq açıldı: +%d coin!"
+
+msgid "POPUP_CHEST_EMPTY"
+msgstr "Sandıq açıldı, bu dəfə boşdur."
+
+msgid "CHEST_METER"
+msgstr "%d/%d jeton"
 
 msgid "POPUP_NEXT"
 msgstr "Növbəti səviyyə"

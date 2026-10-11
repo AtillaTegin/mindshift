@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/polished_button.gd" id="pb_polished"]
+[ext_resource type="Script" path="res://scripts/chest_meter.gd" id="chest_meter"]
 [ext_resource type="Script" path="res://scripts/level_select_controller.gd" id="1_select"]
 [ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="themed_rect"]
 [ext_resource type="Script" path="res://scripts/path_map.gd" id="path_map"]
@@ -67,6 +68,17 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SecondaryLabel"
 theme_override_font_sizes/font_size = 26
+
+[node name="ChestRow" type="CenterContainer" parent="Margin/Layout"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ChestMeter" type="Control" parent="Margin/Layout/ChestRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 48)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("chest_meter")
 
 [node name="TrackButton" type="Button" parent="Margin/Layout"]
 script = ExtResource("pb_polished")

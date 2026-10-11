@@ -50,25 +50,85 @@ func test_coins_are_saved_at_once() -> void:
 	assert_eq(_reopened().coins, 5)
 
 
-func test_level_reward_by_stars_and_only_the_improvement_on_replay() -> void:
-	# Economy formulas addendum v2.1: 1/2/3 coins, small on purpose.
-	assert_eq(EconomySystem.level_reward(3, 0), 3)
-	assert_eq(EconomySystem.level_reward(2, 0), 2)
-	assert_eq(EconomySystem.level_reward(1, 0), 1)
-	assert_eq(EconomySystem.level_reward(3, 1), 2, "1 -> 3 stars pays the difference")
-	assert_eq(EconomySystem.level_reward(3, 2), 1)
-	assert_eq(EconomySystem.level_reward(2, 3), 0, "a worse replay pays nothing")
-	assert_eq(EconomySystem.level_reward(3, 3), 0, "replaying for coins pays nothing")
+func test_levels_pay_tokens_not_coins() -> void:
+	# Economy formulas addendum v3: one token per new star, never coins.
+	assert_eq(EconomySystem.level_tokens(3, 0), 3)
+	assert_eq(EconomySystem.level_tokens(1, 0), 1)
+	assert_eq(EconomySystem.level_tokens(3, 1), 2, "a replay counts only the improvement")
+	assert_eq(EconomySystem.level_tokens(2, 3), 0, "a worse replay earns nothing")
+	assert_eq(EconomySystem.level_tokens(3, 3), 0, "replaying earns nothing")
+	var result: Dictionary = _economy.add_tokens(3)
+	assert_eq(_economy.coins, 0, "tokens are not coins")
+	assert_eq(result, {"tokens": 3, "keys": 0, "chests": [] as Array[int]})
+	assert_eq(_economy.tokens(), 3)
 
+
+func test_tokens_make_keys_and_three_keys_open_a_chest() -> void:
+	var changes: Array[int] = []
+	_economy.chest_progress_changed.connect(func() -> void: changes.append(_economy.tokens()))
+	_economy.add_tokens(14)
+	assert_eq([_economy.tokens(), _economy.keys()], [14, 0])
+	var result: Dictionary = _economy.add_tokens(3)
+	assert_eq(result["keys"], 1, "15 tokens make a key")
+	assert_eq([_economy.tokens(), _economy.keys()], [2, 1], "the rest carries over")
+	_economy.add_tokens(13)
+	assert_eq([_economy.tokens(), _economy.keys()], [0, 2])
+	assert_eq(_economy.save.chests_opened, 0)
+	_economy.rng.seed = 7
+	var expected: int = EconomySystem.chest_coins_for_roll(_rng_with_seed(7).randf())
+	result = _economy.add_tokens(15)
+	assert_eq(result["keys"], 1)
+	assert_eq(result["chests"], [expected] as Array[int], "the third key opens a chest by itself")
+	assert_eq([_economy.tokens(), _economy.keys()], [0, 0], "keys are used up")
+	assert_eq(_economy.coins, expected, "its coins are paid at once")
+	assert_eq(changes.size(), 4)
+	var reopened: SaveSystem = _reopened()
+	assert_eq([reopened.chest_tokens, reopened.chest_keys, reopened.chests_opened], [0, 0, 1], "kept in the save")
+
+
+func test_chest_odds() -> void:
+	assert_eq(EconomySystem.chest_coins_for_roll(0.0), 0)
+	assert_eq(EconomySystem.chest_coins_for_roll(0.599), 0)
+	assert_eq(EconomySystem.chest_coins_for_roll(0.6), 1)
+	assert_eq(EconomySystem.chest_coins_for_roll(0.899), 1)
+	assert_eq(EconomySystem.chest_coins_for_roll(0.9), 3)
+	assert_eq(EconomySystem.chest_coins_for_roll(0.9999), 3)
+	var rng: RandomNumberGenerator = _rng_with_seed(20261011)
+	var counts: Dictionary = {0: 0, 1: 0, 3: 0}
+	var total: int = 0
+	for i: int in 10000:
+		var coins_inside: int = EconomySystem.chest_coins_for_roll(rng.randf())
+		counts[coins_inside] += 1
+		total += coins_inside
+	assert_true(absi(counts[0] - 6000) < 250 and absi(counts[1] - 3000) < 250 and absi(counts[3] - 1000) < 200,
+			"60/30/10: %s" % str(counts))
+	assert_true(absf(total / 10000.0 - 0.6) < 0.05, "about 0.6 coins per chest on average")
+
+
+func test_a_whole_run_of_three_star_levels_pays_almost_nothing() -> void:
+	# 15 levels with 3 stars: 45 tokens, 3 keys, one chest, 0-3 coins (was 45 coins).
+	var coins_from_chests: int = 0
+	for i: int in 15:
+		for coins_inside: int in _economy.add_tokens(EconomySystem.level_tokens(3, 0))["chests"]:
+			coins_from_chests += coins_inside
+	assert_eq(_economy.save.chests_opened, 1)
+	assert_true(coins_from_chests <= 3)
+	assert_eq(_economy.coins, coins_from_chests)
+
+
+static func _rng_with_seed(value: int) -> RandomNumberGenerator:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = value
+	return rng
 
 func test_daily_bonus_once_per_day() -> void:
-	assert_eq(EconomySystem.DAILY_BONUS, 10)
-	assert_eq(_economy.claim_daily_bonus("2026-10-07"), 10)
+	assert_eq(EconomySystem.DAILY_BONUS, 2, "formulas addendum v3: a thank-you, not an income")
+	assert_eq(_economy.claim_daily_bonus("2026-10-07"), 2)
 	assert_eq(_economy.claim_daily_bonus("2026-10-07"), 0)
-	assert_eq(_economy.claim_daily_bonus("2026-10-08"), 10)
+	assert_eq(_economy.claim_daily_bonus("2026-10-08"), 2)
 	var reopened: SaveSystem = _reopened()
 	assert_eq(reopened.last_daily_bonus_date, "2026-10-08")
-	assert_eq(reopened.coins, 20)
+	assert_eq(reopened.coins, 4)
 
 
 func test_undo_is_always_cheaper_than_a_hint() -> void:

@@ -220,14 +220,27 @@ func test_mechanic_boards_wear_their_dress_and_classic_ones_do_not() -> void:
 	assert_eq(board.get_node("%GoalPreview").skin, "")
 
 
-func test_mechanic_levels_pay_and_save_like_any_level() -> void:
+func test_mechanic_levels_reward_and_save_like_any_level() -> void:
 	var board: GameBoard = _board()
 	board.start_level(LevelCatalog.load_mechanic("fog_02.json"))
 	assert_eq(board.session.level.difficulty, "medium", "its own tier")
 	_solve(board)
 	assert_eq(board.last_result["stars"], 3)
-	assert_eq(board.last_result["reward"], EconomySystem.star_reward(3))
+	assert_eq(board.last_result["tokens"], 3, "chest tokens like any level")
 	assert_eq(_save.get_stars(board.session.level.id), 3)
 	var place: Dictionary = LevelCatalog.place_of(board.session.level.id)
 	assert_eq(place["track"], MAIN, "on the road, not in a side corner")
 	assert_false((board.get_popup().get_node("%NextButton") as Button).disabled, "and it has a next level")
+
+
+func test_map_shows_the_chest_meter() -> void:
+	_save.chest_tokens = 7
+	_save.chest_keys = 1
+	var screen: Control = _map_screen()
+	var meter: ChestMeter = screen.get_node("%ChestMeter")
+	assert_true(meter.is_visible_in_tree())
+	assert_eq(meter.get_text(), "7/15 jeton")
+	assert_eq(meter.economy.keys(), 1)
+	meter.economy.add_tokens(8)
+	assert_eq(meter.get_text(), "0/15 jeton", "follows the economy")
+	assert_eq(meter.economy.keys(), 2)

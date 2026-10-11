@@ -10,9 +10,10 @@ extends RefCounted
 ##   "last_daily_bonus_date": "2026-10-06" or null,
 ##   "settings": { "sound_enabled": true, "theme": "light", "language": "az" },
 ##   "daily": { "date": "2026-10-09", "free_undos_used": 1, "ads_watched": 0 },
-##   "unlimited_hints_until": 0 }
-## (settings.theme/language, daily and unlimited_hints_until were added later;
-## older saves without them still load.)
+##   "unlimited_hints_until": 0,
+##   "chest": { "tokens": 7, "keys": 1, "opened": 0 } }
+## (settings.theme/language, daily, unlimited_hints_until and chest were added
+## later; older saves without them still load.)
 
 const DEFAULT_PATH: String = "user://save.json"
 const VERSION: int = 1
@@ -35,6 +36,11 @@ var free_undos_used: int = 0
 var ads_watched: int = 0
 ## Unix time (seconds) until which hints are free; 0 = never bought.
 var unlimited_hints_until: int = 0
+## Chest meter (EconomySystem): tokens toward the next key, keys toward the next
+## chest, and chests opened so far.
+var chest_tokens: int = 0
+var chest_keys: int = 0
+var chests_opened: int = 0
 
 
 ## In --script runs (tests, tools) a user:// path is moved into the test
@@ -86,6 +92,7 @@ func to_dict() -> Dictionary:
 		"settings": {"sound_enabled": sound_enabled, "theme": theme, "language": language},
 		"daily": {"date": daily_date, "free_undos_used": free_undos_used, "ads_watched": ads_watched},
 		"unlimited_hints_until": unlimited_hints_until,
+		"chest": {"tokens": chest_tokens, "keys": chest_keys, "opened": chests_opened},
 	}
 
 
@@ -160,6 +167,9 @@ func _reset() -> void:
 	free_undos_used = 0
 	ads_watched = 0
 	unlimited_hints_until = 0
+	chest_tokens = 0
+	chest_keys = 0
+	chests_opened = 0
 
 
 ## Reads what it can; malformed entries are skipped rather than failing the load.
@@ -194,6 +204,11 @@ func _read(data: Dictionary) -> void:
 		free_undos_used = maxi(_as_int(daily.get("free_undos_used"), 0), 0)
 		ads_watched = maxi(_as_int(daily.get("ads_watched"), 0), 0)
 	unlimited_hints_until = maxi(_as_int(data.get("unlimited_hints_until"), 0), 0)
+	var chest: Variant = data.get("chest")
+	if typeof(chest) == TYPE_DICTIONARY:
+		chest_tokens = maxi(_as_int(chest.get("tokens"), 0), 0)
+		chest_keys = maxi(_as_int(chest.get("keys"), 0), 0)
+		chests_opened = maxi(_as_int(chest.get("opened"), 0), 0)
 
 
 static func _as_int(value: Variant, fallback: int) -> int:
