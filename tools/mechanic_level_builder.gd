@@ -66,6 +66,33 @@ const FOG_SPECS: Array[Dictionary] = [
 ]
 
 
+## More Nine Rings levels (user request 2026-10-12: ~20-25 along the whole
+## road, easy to hard like the karakuri). Built after the bosses so the ids of
+## every earlier level stay the same; the path sorts them by length anyway.
+## 4 pegs only (the rule matters reliably there) and at most 7 disks, so an
+## in-game hint search stays near half a second on a desktop; that caps them
+## at about 27 moves (4 pegs / 5 disks stop at 13).
+const RINGS_LATER_SPECS: Array[Dictionary] = [
+	{"file": "rings_05.json", "pegs": 4, "disks": 3, "min": 5, "max": 7, "attempts": 600},
+	{"file": "rings_06.json", "pegs": 4, "disks": 4, "min": 7, "max": 9, "attempts": 600},
+	{"file": "rings_07.json", "pegs": 4, "disks": 4, "min": 8, "max": 10, "attempts": 600},
+	{"file": "rings_08.json", "pegs": 4, "disks": 5, "min": 12, "max": 13, "attempts": 600},
+	{"file": "rings_09.json", "pegs": 4, "disks": 5, "min": 13, "max": 15, "attempts": 600},
+	{"file": "rings_10.json", "pegs": 4, "disks": 6, "min": 14, "max": 16, "attempts": 600},
+	{"file": "rings_11.json", "pegs": 4, "disks": 6, "min": 15, "max": 17, "attempts": 600},
+	{"file": "rings_12.json", "pegs": 4, "disks": 6, "min": 17, "max": 18, "attempts": 600},
+	{"file": "rings_13.json", "pegs": 4, "disks": 6, "min": 18, "max": 19, "attempts": 600},
+	{"file": "rings_14.json", "pegs": 4, "disks": 6, "min": 19, "max": 20, "attempts": 600},
+	{"file": "rings_15.json", "pegs": 4, "disks": 7, "min": 21, "max": 22, "attempts": 300},
+	{"file": "rings_16.json", "pegs": 4, "disks": 7, "min": 22, "max": 23, "attempts": 300},
+	{"file": "rings_17.json", "pegs": 4, "disks": 7, "min": 23, "max": 24, "attempts": 300},
+	{"file": "rings_18.json", "pegs": 4, "disks": 7, "min": 24, "max": 26, "attempts": 300},
+	{"file": "rings_19.json", "pegs": 4, "disks": 7, "min": 25, "max": 27, "attempts": 300},
+	{"file": "rings_20.json", "pegs": 4, "disks": 7, "min": 26, "max": 28, "attempts": 400},
+	{"file": "rings_21.json", "pegs": 4, "disks": 7, "min": 26, "max": 28, "attempts": 600},
+	{"file": "rings_22.json", "pegs": 4, "disks": 7, "min": 26, "max": 28, "attempts": 600},
+]
+
 ## Caravan road levels (caravan road addendum, section 1: a disk only moves to
 ## a neighbouring peg), from easy to hard. Sizes measured 2026-10-12: on 3 pegs
 ## the road gets long fast (5 disks: median 99 moves), so 3 pegs keep 3-4
@@ -149,6 +176,11 @@ func _run() -> bool:
 		var spec: Dictionary = BOSS_SPECS[i]
 		if _selected(only, spec["file"]):
 			ok = _write(build_exchange(spec, next_id), spec) and ok
+		next_id += 1
+	for i: int in RINGS_LATER_SPECS.size():
+		var spec: Dictionary = RINGS_LATER_SPECS[i]
+		if _selected(only, spec["file"]):
+			ok = _write(build_rings(spec, next_id, BASE_SEED + 300 + i), spec) and ok
 		next_id += 1
 	print("mechanics: %s" % ("%d levels" % (next_id - Difficulty.MECHANIC_FIRST_ID) if only.is_empty() else only))
 	return ok

@@ -219,6 +219,21 @@ func test_rings_levels() -> void:
 	assert_null(RuleSet.create_rule("frozen_disk"))
 
 
+func test_every_nine_rings_level() -> void:
+	var count: int = 0
+	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
+		if not file_name.begins_with("rings_") or not file_name.ends_with(".json"):
+			continue
+		count += 1
+		var level: Level = LevelCatalog.load_mechanic(file_name)
+		assert_eq(level.get_peg_count(), 4, file_name)
+		assert_true(level.get_disk_count() <= 7, "%s: hints stay quick" % file_name)
+		var errors: Array[String] = []
+		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), errors)
+		assert_eq(errors, [] as Array[String], file_name)
+	assert_eq(count, 22)
+
+
 func test_validator_rejects_an_alternation_that_changes_nothing() -> void:
 	# 3 pegs, a plain tower move: the classic optimum already alternates around disk 1.
 	var start: PuzzleState = PuzzleState.new([[3, 2, 1], [], []])

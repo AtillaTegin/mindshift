@@ -109,7 +109,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 63 mexanika səviyyəsi (4 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u): cəmi 263 səviyyə (789 ulduz).
+Üstəgəl 81 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u): cəmi 281 səviyyə (843 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -121,14 +121,14 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 - İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
 - Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
 - Hər çətinliyin içində səviyyələr asandan çətinə gedir.
-- Bütün yol boyu gedən fəsillər (`PathBuilder.SPREADS`): karakuri 12-dən, Karvan Yolu 17-dən başlayır; sonuncusu yolun sonuna yaxın, aralarında 5–9 səviyyə aralıq (seed-li, cəmi bütün yolu doldurur), asandan çətinə.
+- Bütün yol boyu gedən fəsillər (`PathBuilder.SPREADS`), hər biri asandan çətinə, sonuncusu yolun sonuna yaxın, aralıqlar seed-li və cəmi bütün yolu doldurur: karakuri 12-dən (5–10 aralıq), Karvan Yolu 17-dən (5–9), Doqquz Halqa 20-dən (10–15). Toqquşmada səviyyə ən yaxın boş yerə keçir, növbəti aralıq onun faktiki yerindən sayılır.
 - Böyük Mübadilə boss-ları 40-cı səviyyədən başlayaraq hər 40 səviyyədən bir gəlir (40, 80, 120, 160, 200), hər biri əvvəlkindən çətin.
 - Digər mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-63 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+81 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).

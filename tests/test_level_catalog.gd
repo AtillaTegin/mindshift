@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 63, "4 Nine Rings, 24 karakuri, 30 caravan road and 5 great exchange levels")
+	assert_eq(mechanic_files, 81, "22 Nine Rings, 24 karakuri, 30 caravan road and 5 great exchange levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -97,7 +97,7 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 			assert_eq(mechanic, _level_at(MAIN, position).mechanic())
 			assert_true(Difficulty.is_known(_level_at(MAIN, position).difficulty), "a real tier")
 			found.append(mechanic)
-	assert_eq(found.count("alternation"), 4)
+	assert_eq(found.count("alternation"), 22)
 	assert_eq(found.count("covered_pegs"), 24)
 	assert_eq(found.count("adjacent_pegs"), 30)
 	assert_eq(found.count(Level.GREAT_EXCHANGE), 5)
@@ -118,13 +118,37 @@ func test_karakuri_levels_come_early_often_and_get_harder() -> void:
 	assert_true(positions[0] >= 10 and positions[0] <= 14, "the first one at %d" % positions[0])
 	for i: int in range(1, positions.size()):
 		var gap: int = positions[i] - positions[i - 1]
-		assert_true(gap >= 5 and gap <= 9, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
+		assert_true(gap >= 5 and gap <= 10, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
 		assert_true(levels[i].min_moves >= levels[i - 1].min_moves, "never easier than the one before (%d)" % positions[i])
 	assert_eq(levels[0].get_disk_count(), 3, "the first one is small")
 	assert_eq(levels[0].covered_pegs.size(), 1, "with a single box")
 	assert_eq(levels[0].difficulty, "easy")
 	assert_eq(levels[-1].get_disk_count(), 8, "the last ones are large")
 	assert_true(levels[-1].covered_pegs.size() >= 2, "with two or three boxes")
+
+
+func test_nine_rings_run_the_whole_road_easy_to_hard() -> void:
+	# User request 2026-10-12: ~20-25 Nine Rings levels, the first one at about
+	# main 15-20, then every ~10-15 levels into the last fifth of the road, from
+	# short to long like the karakuri.
+	var positions: Array[int] = []
+	var tiers: Dictionary = {}
+	var previous: int = 0
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		if LevelCatalog.mechanic_at(MAIN, position) == "alternation":
+			positions.append(position)
+			var level: Level = _level_at(MAIN, position)
+			assert_true(level.min_moves >= previous, "never easier than the one before (%d)" % position)
+			previous = level.min_moves
+			tiers[level.difficulty] = tiers.get(level.difficulty, 0) + 1
+	assert_true(positions.size() >= 20 and positions.size() <= 25, "%d Nine Rings levels" % positions.size())
+	assert_true(positions[0] >= 15 and positions[0] <= 22, "the first one at %d" % positions[0])
+	for i: int in range(1, positions.size()):
+		var gap: int = positions[i] - positions[i - 1]
+		assert_true(gap >= 9 and gap <= 16, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
+	assert_true(positions[-1] >= 0.8 * LevelCatalog.track_length(MAIN), "into the last fifth of the road (%d)" % positions[-1])
+	for tier: String in ["easy", "medium", "hard"]:
+		assert_true(tiers.get(tier, 0) >= 3, "%s ones too: %s" % [tier, str(tiers)])
 
 
 func test_no_shipped_level_has_a_time_limit() -> void:

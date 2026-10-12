@@ -12,11 +12,11 @@ extends SceneTree
 ## curve the most, with a little seeded jitter, so the order is neither blocks
 ## nor random. Inside a tier levels always come easiest first.
 ## Chapters that run along the whole road (SPREADS: karakuri from main 12,
-## the caravan road from main 17; user requests 2026-10-12) put their first
-## level at a fixed early slot, their last a few levels before the end of the
-## road, and one every GAP_MIN..GAP_MAX levels in between (seeded gaps that add
-## up to the whole stretch, so no part of the road goes without them), easiest
-## first. The great exchange bosses come at BOSS_FROM and then every
+## the caravan road from main 17, the Nine Rings from main 20; user requests
+## 2026-10-12) put their first level at a fixed early slot, their last a few
+## levels before the end of the road, and one every so many levels in between
+## (seeded gaps within the chapter's range that add up to the whole stretch, so
+## no part of the road goes without them), easiest first. The great exchange bosses come at BOSS_FROM and then every
 ## BOSS_EVERY levels, easiest first. Other mechanic levels are spread evenly
 ## from MECHANICS_FROM on. On a clash a level takes the next free slot
 ## (karakuri are placed first and never move).
@@ -30,11 +30,14 @@ const SEED: int = 20261011
 const FIRST_EASY: int = 5
 const BRANCH_AFTER: int = 50
 const MECHANICS_FROM: int = 10
-## Mechanic -> [first slot, levels left free at the end of the road]; placed in
-## this order.
-const SPREADS: Dictionary = {"covered_pegs": [12, 10], "adjacent_pegs": [17, 6]}
-const GAP_MIN: int = 5
-const GAP_MAX: int = 9
+## Mechanic -> [first slot, levels left free at the end of the road, smallest
+## gap, largest gap]; placed in this order. Karakuri gaps were 5-9; with the
+## road at ~240 levels 24 of them only reach its end with gaps up to 10.
+const SPREADS: Dictionary = {
+	"covered_pegs": [12, 10, 5, 10],
+	"adjacent_pegs": [17, 6, 5, 9],
+	"alternation": [20, 8, 10, 15],
+}
 const BOSS_FROM: int = 40
 const BOSS_EVERY: int = 40
 const BRANCH_HARD: int = 8
@@ -131,25 +134,32 @@ static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors:
 			groups[mechanic] = [] as Array[Dictionary]
 		(groups[mechanic] as Array).append(entry)
 	var pinned: Dictionary = {}
+	var bosses: Array = groups.get(Level.GREAT_EXCHANGE, [])
+	groups.erase(Level.GREAT_EXCHANGE)
 	var seed_offset: int = 1
 	for mechanic: String in SPREADS:
 		var entries: Array = groups.get(mechanic, [])
 		groups.erase(mechanic)
-		var first: int = SPREADS[mechanic][0]
-		var gaps: Array[int] = _spread_gaps(entries.size(), main_size - SPREADS[mechanic][1] - first, SEED + seed_offset, errors)
+		var spread: Array = SPREADS[mechanic]
+		var first: int = spread[0]
+		var gaps: Array[int] = _spread_gaps(entries.size(), main_size - spread[1] - first, spread[2], spread[3],
+				SEED + seed_offset, errors)
 		seed_offset += 1
 		if not errors.is_empty():
 			errors.append("in the %s chapter" % mechanic)
 			return {}
 		var position: int = first
 		for i: int in entries.size():
-			_pin(pinned, position, entries[i])
+			# The next gap counts from where this level really landed, so a clash
+			# never squeezes two levels of a chapter closer than its smallest gap.
+			position = _pin(pinned, position, entries[i])
 			if i < gaps.size():
 				position += gaps[i]
-	var bosses: Array = groups.get(Level.GREAT_EXCHANGE, [])
-	groups.erase(Level.GREAT_EXCHANGE)
-	for i: int in bosses.size():
-		_pin(pinned, BOSS_FROM + i * BOSS_EVERY, bosses[i])
+		# The bosses come right after the first chapter (whose gaps are the
+		# tightest), so they keep their exact slots and the others make room.
+		if seed_offset == 2:
+			for i: int in bosses.size():
+				_pin(pinned, BOSS_FROM + i * BOSS_EVERY, bosses[i])
 	var others: Array[Dictionary] = []
 	for mechanic: String in groups:
 		others.append_array(groups[mechanic])
@@ -166,31 +176,39 @@ static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors:
 	return pinned
 
 
-## Puts `entry` at `position`, or at the next free slot after it.
-static func _pin(pinned: Dictionary, position: int, entry: Dictionary) -> void:
-	while pinned.has(position):
-		position += 1
-	pinned[position] = entry
+## Puts `entry` at `position`, or at the nearest free slot (after first, then
+## before, one step further each time), so a clash moves it as little as possible.
+## Returns the slot it got.
+static func _pin(pinned: Dictionary, position: int, entry: Dictionary) -> int:
+	var step: int = 0
+	while true:
+		for slot: int in [position + step, position - step]:
+			if slot > FIRST_EASY and not pinned.has(slot):
+				pinned[slot] = entry
+				return slot
+		step += 1
+	return position
 
 
-## `count - 1` gaps between GAP_MIN and GAP_MAX that add up to `span`: every gap
-## starts at the minimum and the rest is handed out one level at a time to
+## `count - 1` gaps between `gap_min` and `gap_max` that add up to `span`: every
+## gap starts at the minimum and the rest is handed out one level at a time to
 ## random gaps (seeded).
-static func _spread_gaps(count: int, span: int, seed_value: int, errors: Array[String]) -> Array[int]:
+static func _spread_gaps(count: int, span: int, gap_min: int, gap_max: int, seed_value: int,
+		errors: Array[String]) -> Array[int]:
 	var gaps: Array[int] = []
 	if count < 2:
 		return gaps
 	for i: int in count - 1:
-		gaps.append(GAP_MIN)
-	var rest: int = span - GAP_MIN * (count - 1)
-	if rest < 0 or rest > (GAP_MAX - GAP_MIN) * (count - 1):
-		errors.append("%d levels do not fit %d-%d levels apart in a stretch of %d" % [count, GAP_MIN, GAP_MAX, span])
+		gaps.append(gap_min)
+	var rest: int = span - gap_min * (count - 1)
+	if rest < 0 or rest > (gap_max - gap_min) * (count - 1):
+		errors.append("%d levels do not fit %d-%d levels apart in a stretch of %d" % [count, gap_min, gap_max, span])
 		return gaps
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed_value
 	while rest > 0:
 		var i: int = rng.randi_range(0, gaps.size() - 1)
-		if gaps[i] < GAP_MAX:
+		if gaps[i] < gap_max:
 			gaps[i] += 1
 			rest -= 1
 	return gaps
