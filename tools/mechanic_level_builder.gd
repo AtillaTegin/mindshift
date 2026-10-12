@@ -1,9 +1,11 @@
 class_name MechanicLevelBuilder
 extends SceneTree
 ## Builds the levels with a special mechanic (Nine Rings alternation, karakuri
-## boxes on covered pegs) into data/levels/mechanics/:
+## boxes on covered pegs, the caravan road, the great exchange bosses) into
+## data/levels/mechanics/:
 ##   godot --headless --path . --script res://tools/mechanic_level_builder.gd
 ##   ... -- --only=fog_20.json   (rebuild one file; ids and seeds stay the same)
+##   ... -- --only=caravan_*     (every file starting with "caravan_")
 ## They are ordinary path levels (level structure addendum v3): each gets the
 ## difficulty its min_moves falls in, and tools/path_builder.gd places them on
 ## the path. Puzzles come from a fixed-seed search; the Solver proves every
@@ -64,6 +66,58 @@ const FOG_SPECS: Array[Dictionary] = [
 ]
 
 
+## Caravan road levels (caravan road addendum, section 1: a disk only moves to
+## a neighbouring peg), from easy to hard. Sizes measured 2026-10-12: on 3 pegs
+## the road gets long fast (5 disks: median 99 moves), so 3 pegs keep 3-4
+## disks; 4-5 pegs take 3-6. All stay within the main road's 33 moves.
+const CARAVAN_SPECS: Array[Dictionary] = [
+	{"file": "caravan_01.json", "pegs": 4, "disks": 3, "min": 5, "max": 7},
+	{"file": "caravan_02.json", "pegs": 4, "disks": 3, "min": 6, "max": 8},
+	{"file": "caravan_03.json", "pegs": 3, "disks": 3, "min": 7, "max": 9},
+	{"file": "caravan_04.json", "pegs": 5, "disks": 3, "min": 7, "max": 10},
+	{"file": "caravan_05.json", "pegs": 4, "disks": 3, "min": 8, "max": 11},
+	{"file": "caravan_06.json", "pegs": 3, "disks": 3, "min": 9, "max": 11},
+	{"file": "caravan_07.json", "pegs": 4, "disks": 4, "min": 12, "max": 14},
+	{"file": "caravan_08.json", "pegs": 3, "disks": 3, "min": 12, "max": 15},
+	{"file": "caravan_09.json", "pegs": 5, "disks": 4, "min": 12, "max": 15},
+	{"file": "caravan_10.json", "pegs": 4, "disks": 4, "min": 14, "max": 17},
+	{"file": "caravan_11.json", "pegs": 3, "disks": 3, "min": 15, "max": 19},
+	{"file": "caravan_12.json", "pegs": 4, "disks": 5, "min": 15, "max": 18},
+	{"file": "caravan_13.json", "pegs": 5, "disks": 4, "min": 16, "max": 19},
+	{"file": "caravan_14.json", "pegs": 4, "disks": 5, "min": 17, "max": 20},
+	{"file": "caravan_15.json", "pegs": 3, "disks": 4, "min": 17, "max": 20},
+	{"file": "caravan_16.json", "pegs": 5, "disks": 5, "min": 18, "max": 20},
+	{"file": "caravan_17.json", "pegs": 4, "disks": 5, "min": 21, "max": 23},
+	{"file": "caravan_18.json", "pegs": 3, "disks": 4, "min": 21, "max": 24},
+	{"file": "caravan_19.json", "pegs": 5, "disks": 5, "min": 21, "max": 24},
+	{"file": "caravan_20.json", "pegs": 4, "disks": 6, "min": 22, "max": 25},
+	{"file": "caravan_21.json", "pegs": 4, "disks": 5, "min": 23, "max": 26},
+	{"file": "caravan_22.json", "pegs": 3, "disks": 4, "min": 24, "max": 27},
+	{"file": "caravan_23.json", "pegs": 5, "disks": 5, "min": 24, "max": 28},
+	{"file": "caravan_24.json", "pegs": 4, "disks": 6, "min": 25, "max": 28},
+	{"file": "caravan_25.json", "pegs": 5, "disks": 6, "min": 26, "max": 29},
+	{"file": "caravan_26.json", "pegs": 4, "disks": 6, "min": 27, "max": 30},
+	{"file": "caravan_27.json", "pegs": 3, "disks": 4, "min": 28, "max": 31},
+	{"file": "caravan_28.json", "pegs": 5, "disks": 6, "min": 28, "max": 31},
+	{"file": "caravan_29.json", "pegs": 4, "disks": 6, "min": 30, "max": 33},
+	{"file": "caravan_30.json", "pegs": 4, "disks": 6, "min": 31, "max": 33},
+]
+
+## "Böyük Mübadilə" bosses (caravan road addendum, section 2): 4 pegs, one
+## stack on each end peg, and the goal is the two stacks swapped. `split`:
+## "halves" (small disks on the left) or "interleaved" (odd sizes on the left).
+## Some keep plain Hanoi rules, some the caravan road's ("the chapter's rule"),
+## so the five rise from 17 to 33 moves (measured 2026-10-12; a caravan swap
+## of 5 disks would already need 37+).
+const BOSS_SPECS: Array[Dictionary] = [
+	{"file": "boss_01.json", "disks": 7, "split": "halves", "caravan": false},
+	{"file": "boss_02.json", "disks": 4, "split": "halves", "caravan": true},
+	{"file": "boss_03.json", "disks": 4, "split": "interleaved", "caravan": true},
+	{"file": "boss_04.json", "disks": 9, "split": "interleaved", "caravan": false},
+	{"file": "boss_05.json", "disks": 10, "split": "halves", "caravan": false},
+]
+
+
 func _initialize() -> void:
 	quit(0 if _run() else 1)
 
@@ -78,13 +132,23 @@ func _run() -> bool:
 	var next_id: int = Difficulty.MECHANIC_FIRST_ID
 	for i: int in RINGS_SPECS.size():
 		var spec: Dictionary = RINGS_SPECS[i]
-		if only.is_empty() or only == spec["file"]:
+		if _selected(only, spec["file"]):
 			ok = _write(build_rings(spec, next_id, BASE_SEED + i), spec) and ok
 		next_id += 1
 	for i: int in FOG_SPECS.size():
 		var spec: Dictionary = FOG_SPECS[i]
-		if only.is_empty() or only == spec["file"]:
+		if _selected(only, spec["file"]):
 			ok = _write(build_fog(spec, next_id, BASE_SEED + 100 + i), spec) and ok
+		next_id += 1
+	for i: int in CARAVAN_SPECS.size():
+		var spec: Dictionary = CARAVAN_SPECS[i]
+		if _selected(only, spec["file"]):
+			ok = _write(build_caravan(spec, next_id, BASE_SEED + 200 + i), spec) and ok
+		next_id += 1
+	for i: int in BOSS_SPECS.size():
+		var spec: Dictionary = BOSS_SPECS[i]
+		if _selected(only, spec["file"]):
+			ok = _write(build_exchange(spec, next_id), spec) and ok
 		next_id += 1
 	print("mechanics: %s" % ("%d levels" % (next_id - Difficulty.MECHANIC_FIRST_ID) if only.is_empty() else only))
 	return ok
@@ -121,6 +185,60 @@ static func build_rings(spec: Dictionary, id: int, seed_value: int) -> Level:
 		push_error("No Nine Rings level found for %s" % spec["file"])
 		return null
 	return Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
+
+## A caravan road level: plain Hanoi plus the adjacent-pegs rule between a
+## random start and a random goal (half of them a full tower); the road must
+## make it longer than plain Hanoi. Longest in range wins (ties: first found).
+static func build_caravan(spec: Dictionary, id: int, seed_value: int) -> Level:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var best: Dictionary = {}
+	var rule_ids: Array[String] = ["classic_hanoi", AdjacentPegsRule.ID]
+	var rules: RuleSet = RuleSet.from_ids(rule_ids)
+	for attempt: int in spec.get("attempts", MAX_ATTEMPTS / 4):
+		var start: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
+		var goal: PuzzleState = LevelGenerator.random_state(rng, spec["pegs"], spec["disks"])
+		if rng.randf() < LevelGenerator.TOWER_GOAL_CHANCE:
+			goal = LevelGenerator.tower_state(spec["pegs"], spec["disks"], rng.randi_range(0, spec["pegs"] - 1))
+		if goal.equals(start) or classic_pairs().has(LevelValidator.pair_key(start, goal)):
+			continue
+		var result: Dictionary = Solver.solve(start, goal, rules, LevelValidator.SOLVER_MAX_STATES)
+		var moves: int = result["min_moves"]
+		if not result["solvable"] or moves < spec["min"] or moves > spec["max"]:
+			continue
+		if best.is_empty() or moves > best["moves"]:
+			if Solver.solve(start, goal, RuleSet.classic())["min_moves"] >= moves:
+				continue  # the road must matter
+			best = {"moves": moves, "start": start, "goal": goal, "path": result["path"]}
+			if moves >= spec["max"]:
+				break  # nothing longer can win
+	if best.is_empty():
+		push_error("No caravan level found for %s" % spec["file"])
+		return null
+	return Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
+
+
+## A great exchange boss: the left and right stacks of a 4-peg board swap
+## places. No search for the puzzle itself, only the Solver for its minimum.
+static func build_exchange(spec: Dictionary, id: int) -> Level:
+	var left: Array = []
+	var right: Array = []
+	for size: int in range(spec["disks"], 0, -1):
+		var to_left: bool = size % 2 == 1 if spec["split"] == "interleaved" else size <= spec["disks"] / 2
+		(left if to_left else right).append(size)
+	var start: PuzzleState = PuzzleState.new([left, [], [], right])
+	var goal: PuzzleState = PuzzleState.new([right, [], [], left])
+	var rule_ids: Array[String] = ["classic_hanoi"]
+	if spec["caravan"]:
+		rule_ids.append(AdjacentPegsRule.ID)
+	var result: Dictionary = Solver.solve(start, goal, RuleSet.from_ids(rule_ids), LevelValidator.SOLVER_MAX_STATES)
+	if not result["solvable"]:
+		push_error("No solution for %s" % spec["file"])
+		return null
+	var level: Level = Level.create(id, Difficulty.tier_for_moves(result["min_moves"]), start, goal, rule_ids, result["path"])
+	level.boss = Level.GREAT_EXCHANGE
+	return level
+
 
 ## A covered-peg level: plain Hanoi, with `spec.covered` pegs under fog. Only
 ## pegs that hold at least two disks and that the stored optimal solution uses
@@ -170,6 +288,14 @@ static func build_fog(spec: Dictionary, id: int, seed_value: int) -> Level:
 	var level: Level = Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
 	level.covered_pegs = best["covered"]
 	return level
+
+
+## Whether `file` is built in this run: all with no --only, else the named
+## file or, with a trailing "*", every file starting like it.
+static func _selected(only: String, file: String) -> bool:
+	if only.is_empty():
+		return true
+	return file.begins_with(only.trim_suffix("*")) if only.ends_with("*") else file == only
 
 
 ## Start/goal pairs of every classic level file (read once).

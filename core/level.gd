@@ -8,12 +8,16 @@ extends RefCounted
 const TWO_STAR_FACTOR: float = 1.25
 ## mechanic() of a level with plain Hanoi rules and nothing covered.
 const CLASSIC: String = "classic"
+## `boss` value of a "Böyük Mübadilə" level (caravan road addendum, section 2):
+## two stacks on the end pegs swap places.
+const GREAT_EXCHANGE: String = "great_exchange"
+const BOSSES: Array[String] = [GREAT_EXCHANGE]
 ## Top-level keys, in the order they are written.
 const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal", "rules",
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "boss"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -25,6 +29,8 @@ var rule_params: Dictionary = {}
 ## Pegs that start under fog ("covered_pegs", bonus mechanics addendum 2):
 ## only their top disk shows until a move uses the peg. Purely visual.
 var covered_pegs: Array[int] = []
+## A rare "boss" level (`boss`, e.g. GREAT_EXCHANGE), "" for an ordinary one.
+var boss: String = ""
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
@@ -78,10 +84,13 @@ func get_rule_set(errors: Array[String] = []) -> RuleSet:
 	return RuleSet.from_ids(rule_ids, rule_params, errors)
 
 
-## What makes the level special: the first rule beyond classic Hanoi (e.g.
-## "frozen_disk"), "covered_pegs" for fog, or CLASSIC. It picks the level's
-## visual dress; it is never shown as a category.
+## What makes the level special: its boss kind, else the first rule beyond
+## classic Hanoi (e.g. "alternation"), "covered_pegs" for karakuri boxes, or
+## CLASSIC. It picks the level's dress and place on the path; it is never shown
+## as a category.
 func mechanic() -> String:
+	if not boss.is_empty():
+		return boss
 	for rule_id: String in rule_ids:
 		if rule_id != ClassicHanoiRule.ID:
 			return rule_id
@@ -112,6 +121,8 @@ func to_dict() -> Dictionary:
 		data["rule_params"] = rule_params.duplicate(true)
 	if not covered_pegs.is_empty():
 		data["covered_pegs"] = covered_pegs.duplicate()
+	if not boss.is_empty():
+		data["boss"] = boss
 	return data
 
 
@@ -189,6 +200,11 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.covered_pegs.assign(_whole_numbers_as_ints(covered))
 	else:
 		errors.append("\"covered_pegs\" must be an array of peg indices")
+	var boss_kind: Variant = data.get("boss", "")
+	if typeof(boss_kind) == TYPE_STRING and (boss_kind == "" or BOSSES.has(boss_kind)):
+		level.boss = boss_kind
+	else:
+		errors.append("\"boss\" must be one of %s" % str(BOSSES))
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:

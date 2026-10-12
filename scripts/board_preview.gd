@@ -10,6 +10,12 @@ const MIN_HEIGHT: float = 130.0
 const MIN_FONT_SIZE: int = 14
 const MAX_FONT_SIZE: int = 20
 
+## Disk size -> {fill, text} overriding the usual one colour per disk (the two
+## caravans of a great exchange); empty for other levels.
+var disk_palette: Dictionary = {}:
+	set(value):
+		disk_palette = value
+		queue_redraw()
 ## Dress of the level (ThemeManager.SKINS): the pegs take its colour, "" for none.
 var skin: String = "":
 	set(value):
@@ -103,12 +109,15 @@ func _draw() -> void:
 	for label: Dictionary in get_disk_labels():
 		var rect: Rect2 = label["rect"]
 		var font_size: int = label["font_size"]
-		draw_rect(rect, ThemeManager.disk_color(label["disk"], disk_count))
+		var colors: Dictionary = disk_palette.get(label["disk"], {})
+		draw_rect(rect, colors.get("fill", ThemeManager.disk_color(label["disk"], disk_count)))
+		if colors.has("outline"):
+			draw_rect(rect, colors["outline"], false, 1.5)
 		var text: String = str(label["disk"])
 		var text_width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var baseline: Vector2 = Vector2(rect.position.x + (rect.size.x - text_width) * 0.5,
 				rect.position.y + (rect.size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
-		draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color)
+		draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, colors.get("text", text_color))
 	_draw_fog(column, disk_height, base_top, font)
 
 

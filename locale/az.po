@@ -193,6 +193,12 @@ msgstr "Bu gediş qaydalara uyğun deyil."
 msgid "RULE_CLASSIC_HANOI"
 msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 
+msgid "RULE_ADJACENT_PEGS"
+msgstr "Karvan yalnız qonşu dayanacağa gedə bilər."
+
+msgid "BOSS_EXCHANGE_INTRO"
+msgstr "Böyük Mübadilə: ağ karvan qaranın yerinə, qara karvan ağın yerinə keçsin."
+
 msgid "RULE_ALTERNATION"
 msgstr "İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər."
 

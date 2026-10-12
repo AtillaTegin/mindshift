@@ -11,13 +11,15 @@ extends SceneTree
 ## hard takes over towards the end. Each step takes the tier that lags its
 ## curve the most, with a little seeded jitter, so the order is neither blocks
 ## nor random. Inside a tier levels always come easiest first.
-## Karakuri (covered-peg) levels come early and often (user requests
-## 2026-10-12): the first at KARAKURI_FROM, right after the tutorial, the last
-## KARAKURI_END_GAP levels before the end of the road, and in between one every
-## KARAKURI_GAP_MIN..KARAKURI_GAP_MAX levels (seeded gaps that add up to the
-## whole stretch, so no part of the road goes without them), easiest first.
-## Other mechanic levels are spread evenly over the main path from
-## MECHANICS_FROM on, easiest first, taking the next free slot on a clash.
+## Chapters that run along the whole road (SPREADS: karakuri from main 12,
+## the caravan road from main 17; user requests 2026-10-12) put their first
+## level at a fixed early slot, their last a few levels before the end of the
+## road, and one every GAP_MIN..GAP_MAX levels in between (seeded gaps that add
+## up to the whole stretch, so no part of the road goes without them), easiest
+## first. The great exchange bosses come at BOSS_FROM and then every
+## BOSS_EVERY levels, easiest first. Other mechanic levels are spread evenly
+## from MECHANICS_FROM on. On a clash a level takes the next free slot
+## (karakuri are placed first and never move).
 ## Each mechanic level counts as a level of its own tier.
 ## Branch ("island", shown once main level BRANCH_AFTER is completed): every
 ## expert level plus the hardest BRANCH_HARD hard and BRANCH_MEDIUM medium
@@ -28,10 +30,13 @@ const SEED: int = 20261011
 const FIRST_EASY: int = 5
 const BRANCH_AFTER: int = 50
 const MECHANICS_FROM: int = 10
-const KARAKURI_FROM: int = 12
-const KARAKURI_END_GAP: int = 10
-const KARAKURI_GAP_MIN: int = 5
-const KARAKURI_GAP_MAX: int = 9
+## Mechanic -> [first slot, levels left free at the end of the road]; placed in
+## this order.
+const SPREADS: Dictionary = {"covered_pegs": [12, 10], "adjacent_pegs": [17, 6]}
+const GAP_MIN: int = 5
+const GAP_MAX: int = 9
+const BOSS_FROM: int = 40
+const BOSS_EVERY: int = 40
 const BRANCH_HARD: int = 8
 const BRANCH_MEDIUM: int = 4
 ## Largest random boost of a tier's lag (as a share of it) when picking the
@@ -116,57 +121,79 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 
 
 ## Fixed main path slots for the mechanic levels (1-based position -> level):
-## karakuri ones from KARAKURI_FROM to KARAKURI_END_GAP before the end with
-## seeded gaps, the others evenly spread from MECHANICS_FROM. Both lists are
-## easiest first.
+## the SPREADS chapters along the whole road, the bosses every BOSS_EVERY
+## levels, the rest evenly from MECHANICS_FROM. Every group is easiest first.
 static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors: Array[String]) -> Dictionary:
-	var karakuri: Array[Dictionary] = []
-	var others: Array[Dictionary] = []
+	var groups: Dictionary = {}
 	for entry: Dictionary in mechanics:
-		if (entry["level"] as Level).mechanic() == "covered_pegs":
-			karakuri.append(entry)
-		else:
-			others.append(entry)
+		var mechanic: String = (entry["level"] as Level).mechanic()
+		if not groups.has(mechanic):
+			groups[mechanic] = [] as Array[Dictionary]
+		(groups[mechanic] as Array).append(entry)
 	var pinned: Dictionary = {}
-	var gaps: Array[int] = _karakuri_gaps(karakuri.size(), main_size - KARAKURI_END_GAP - KARAKURI_FROM, errors)
-	if not errors.is_empty():
-		return {}
-	var position: int = KARAKURI_FROM
-	for i: int in karakuri.size():
-		pinned[position] = karakuri[i]
-		if i < gaps.size():
-			position += gaps[i]
+	var seed_offset: int = 1
+	for mechanic: String in SPREADS:
+		var entries: Array = groups.get(mechanic, [])
+		groups.erase(mechanic)
+		var first: int = SPREADS[mechanic][0]
+		var gaps: Array[int] = _spread_gaps(entries.size(), main_size - SPREADS[mechanic][1] - first, SEED + seed_offset, errors)
+		seed_offset += 1
+		if not errors.is_empty():
+			errors.append("in the %s chapter" % mechanic)
+			return {}
+		var position: int = first
+		for i: int in entries.size():
+			_pin(pinned, position, entries[i])
+			if i < gaps.size():
+				position += gaps[i]
+	var bosses: Array = groups.get(Level.GREAT_EXCHANGE, [])
+	groups.erase(Level.GREAT_EXCHANGE)
+	for i: int in bosses.size():
+		_pin(pinned, BOSS_FROM + i * BOSS_EVERY, bosses[i])
+	var others: Array[Dictionary] = []
+	for mechanic: String in groups:
+		others.append_array(groups[mechanic])
+	others.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var moves_a: int = (a["level"] as Level).min_moves
+		var moves_b: int = (b["level"] as Level).min_moves
+		return moves_a < moves_b if moves_a != moves_b else a["id"] < b["id"])
 	var span: float = float(main_size - MECHANICS_FROM) / maxf(others.size(), 1.0)
 	for i: int in others.size():
-		var slot: int = MECHANICS_FROM + roundi((i + 0.5) * span)
-		while pinned.has(slot):
-			slot += 1
-		pinned[slot] = others[i]
+		_pin(pinned, MECHANICS_FROM + roundi((i + 0.5) * span), others[i])
+	for position: int in pinned:
+		if position > main_size:
+			errors.append("%s does not fit on a main path of %d levels" % [pinned[position]["file"], main_size])
 	return pinned
 
 
-## `count - 1` gaps between KARAKURI_GAP_MIN and KARAKURI_GAP_MAX that add up to
-## `span`: every gap starts at the minimum and the rest is handed out one level
-## at a time to random gaps (seeded).
-static func _karakuri_gaps(count: int, span: int, errors: Array[String]) -> Array[int]:
+## Puts `entry` at `position`, or at the next free slot after it.
+static func _pin(pinned: Dictionary, position: int, entry: Dictionary) -> void:
+	while pinned.has(position):
+		position += 1
+	pinned[position] = entry
+
+
+## `count - 1` gaps between GAP_MIN and GAP_MAX that add up to `span`: every gap
+## starts at the minimum and the rest is handed out one level at a time to
+## random gaps (seeded).
+static func _spread_gaps(count: int, span: int, seed_value: int, errors: Array[String]) -> Array[int]:
 	var gaps: Array[int] = []
 	if count < 2:
 		return gaps
 	for i: int in count - 1:
-		gaps.append(KARAKURI_GAP_MIN)
-	var rest: int = span - KARAKURI_GAP_MIN * (count - 1)
-	if rest < 0 or rest > (KARAKURI_GAP_MAX - KARAKURI_GAP_MIN) * (count - 1):
-		errors.append("%d karakuri levels do not fit %d levels apart in a stretch of %d" % [count, KARAKURI_GAP_MIN, span])
+		gaps.append(GAP_MIN)
+	var rest: int = span - GAP_MIN * (count - 1)
+	if rest < 0 or rest > (GAP_MAX - GAP_MIN) * (count - 1):
+		errors.append("%d levels do not fit %d-%d levels apart in a stretch of %d" % [count, GAP_MIN, GAP_MAX, span])
 		return gaps
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = SEED + 1
+	rng.seed = seed_value
 	while rest > 0:
 		var i: int = rng.randi_range(0, gaps.size() - 1)
-		if gaps[i] < KARAKURI_GAP_MAX:
+		if gaps[i] < GAP_MAX:
 			gaps[i] += 1
 			rest -= 1
 	return gaps
-
 
 ## `count` levels from `pools`, following `curves`. `pinned` maps 1-based track
 ## positions (counted from the start of the whole track; `offset` positions

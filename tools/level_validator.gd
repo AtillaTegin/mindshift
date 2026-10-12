@@ -141,8 +141,9 @@ static func validate_path(levels_dir: String) -> Array[String]:
 	return errors
 
 ## Design rules of the mechanic levels, on top of the normal checks. A rule
-## beyond classic Hanoi (the Nine Rings alternation) must make the level longer
-## than plain Hanoi, or it changes nothing.
+## beyond classic Hanoi (Nine Rings alternation, caravan road) must make the
+## level longer than plain Hanoi, or it changes nothing; a great exchange boss
+## must have its swap shape.
 static func validate_mechanic_design(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
 	if rules == null:
@@ -151,6 +152,8 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
 		if plain >= level.min_moves:
 			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
+	if level.boss == Level.GREAT_EXCHANGE and not is_great_exchange(level.start, level.goal):
+		errors.append("a great exchange needs 4 pegs, a stack on each end peg, the middle empty, and the stacks swapped as the goal")
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
 	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).
@@ -165,6 +168,17 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 			used = used or move.from_peg == peg_index or move.to_peg == peg_index
 		if not used:
 			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
+
+
+## Caravan road addendum 2: 4 pegs, a stack on each end peg, nothing in the
+## middle, and the goal is the same position with the two stacks swapped.
+static func is_great_exchange(start: PuzzleState, goal: PuzzleState) -> bool:
+	if start.get_peg_count() != 4 or goal.get_peg_count() != 4:
+		return false
+	var s: Array[Array] = start.pegs
+	var g: Array[Array] = goal.pegs
+	return not s[0].is_empty() and not s[3].is_empty() and s[1].is_empty() and s[2].is_empty() \
+			and g[0] == s[3] and g[3] == s[0] and g[1].is_empty() and g[2].is_empty()
 
 
 ## Loads one level file and checks it on its own: a tier folder holds classic

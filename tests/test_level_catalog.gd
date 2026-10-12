@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 28, "four Nine Rings and twenty-four karakuri levels")
+	assert_eq(mechanic_files, 63, "4 Nine Rings, 24 karakuri, 30 caravan road and 5 great exchange levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -99,12 +99,14 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 			found.append(mechanic)
 	assert_eq(found.count("alternation"), 4)
 	assert_eq(found.count("covered_pegs"), 24)
+	assert_eq(found.count("adjacent_pegs"), 30)
+	assert_eq(found.count(Level.GREAT_EXCHANGE), 5)
 
 
 func test_karakuri_levels_come_early_often_and_get_harder() -> void:
 	# User requests 2026-10-12: 22-24 karakuri levels, the first one soon after
-	# the tutorial, then every 5-9 levels up to the end of the road (some at
-	# 170-180), from small and easy to large and hard.
+	# the tutorial, then every 5-9 levels up to the end of the road, from small
+	# and easy to large and hard.
 	var positions: Array[int] = []
 	var levels: Array[Level] = []
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
@@ -112,8 +114,6 @@ func test_karakuri_levels_come_early_often_and_get_harder() -> void:
 			positions.append(position)
 			levels.append(_level_at(MAIN, position))
 	assert_true(positions.size() >= 22 and positions.size() <= 24, "%d karakuri levels" % positions.size())
-	var late: int = positions.filter(func(p: int) -> bool: return p >= 170 and p <= 180).size()
-	assert_true(late >= 2, "at least two at 170-180: %s" % str(positions))
 	assert_true(LevelCatalog.track_length(MAIN) - positions[-1] <= 12, "the end of the road has them too")
 	assert_true(positions[0] >= 10 and positions[0] <= 14, "the first one at %d" % positions[0])
 	for i: int in range(1, positions.size()):

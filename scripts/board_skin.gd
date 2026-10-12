@@ -8,11 +8,22 @@ extends Control
 ##         Chinese Nine Rings puzzle
 ##   wood: wavy wood grain under a band of yosegi marquetry diamonds, after
 ##         Japanese karakuri puzzle boxes
+##   caravan: sand dunes, and under every peg a small caravanserai on a dashed
+##         road that links each stop only to its neighbours (the caravan
+##         road's rule); the board keeps bottom_room() free for them
 
 ## How far the panel reaches past the board on every side.
 const BLEED: float = 12.0
 const RADIUS: int = 24
 
+## Height kept free under the pegs for the caravanserais.
+const CARAVAN_ROOM: float = 44.0
+
+## Pegs on the board (the caravan road draws a stop under each).
+var peg_count: int = 3:
+	set(value):
+		peg_count = value
+		queue_redraw()
 ## ThemeManager.SKINS key, "" for none.
 var skin: String = "":
 	set(value):
@@ -28,6 +39,11 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
+
+
+## Height the board leaves free under its pegs for this dress.
+func bottom_room() -> float:
+	return CARAVAN_ROOM if skin == "caravan" else 0.0
 
 
 ## The area the panel covers, in local coordinates.
@@ -49,6 +65,8 @@ func _draw() -> void:
 			_draw_jade(inner)
 		"wood":
 			_draw_wood(inner)
+		"caravan":
+			_draw_caravan(inner)
 
 
 func _draw_jade(area: Rect2) -> void:
@@ -97,3 +115,44 @@ func _draw_wood(area: Rect2) -> void:
 				Vector2(top.x, top.y + band), Vector2(left, top.y + band * 0.5)]), mark if index % 2 == 0 else grain)
 		left += width
 		index += 1
+
+func _draw_caravan(area: Rect2) -> void:
+	var dune: Color = ThemeManager.skin_color(skin, "pattern")
+	var mark: Color = ThemeManager.skin_color(skin, "mark")
+	# Soft dunes: long, shallow waves.
+	var y: float = area.position.y + 40.0
+	var row: int = 0
+	while y < area.end.y - CARAVAN_ROOM - 10.0:
+		var points: PackedVector2Array = PackedVector2Array()
+		var x: float = area.position.x
+		while x <= area.end.x:
+			points.append(Vector2(x, y + sin(x * 0.01 + row * 1.7) * 9.0))
+			x += 16.0
+		draw_polyline(points, dune, 3.0, true)
+		y += 46.0
+		row += 1
+	# The road: a stop under every peg, each linked only to its neighbours.
+	var column: float = size.x / maxi(peg_count, 1)
+	var road_y: float = size.y - CARAVAN_ROOM * 0.32
+	for i: int in peg_count - 1:
+		var from: Vector2 = Vector2(column * (i + 0.5) + 22.0, road_y)
+		var to: Vector2 = Vector2(column * (i + 1.5) - 22.0, road_y)
+		var travelled: float = 0.0
+		var length: float = from.distance_to(to)
+		while travelled < length:
+			draw_line(from + Vector2(travelled, 0.0), from + Vector2(minf(travelled + 10.0, length), 0.0), mark, 4.0, true)
+			travelled += 18.0
+	for i: int in peg_count:
+		_draw_caravanserai(Vector2(column * (i + 0.5), size.y - 4.0), mark, dune)
+
+
+## A small caravanserai seen from the front: a flat-roofed wall with an arched
+## gate. `bottom` is the middle of its base.
+func _draw_caravanserai(bottom: Vector2, wall: Color, gate: Color) -> void:
+	var width: float = 40.0
+	var height: float = 26.0
+	draw_rect(Rect2(bottom + Vector2(-width * 0.5, -height), Vector2(width, height)), wall)
+	draw_rect(Rect2(bottom + Vector2(-width * 0.5 - 3.0, -height - 4.0), Vector2(width + 6.0, 5.0)), wall.darkened(0.2))
+	var door: Vector2 = bottom + Vector2(0.0, -9.0)
+	draw_rect(Rect2(door + Vector2(-7.0, 0.0), Vector2(14.0, 9.0)), gate)
+	draw_circle(door, 7.0, gate, true, -1.0, true)

@@ -15,6 +15,17 @@ var color: Color = Color.WHITE:
 	set(value):
 		color = value
 		queue_redraw()
+## Colour of the size number; the theme's `text_on_disk` when not set (a dark
+## caravan disk of a great exchange needs a light number).
+var number_color: Variant = null:
+	set(value):
+		number_color = value
+		queue_redraw()
+## A thin outline (the light caravan of a great exchange on sand), or null.
+var outline_color: Variant = null:
+	set(value):
+		outline_color = value
+		queue_redraw()
 var selected: bool = false:
 	set(value):
 		selected = value
@@ -124,6 +135,8 @@ func _draw() -> void:
 		box.set_border_width_all(4)
 		box.border_color = ThemeManager.color("text_primary")
 	draw_style_box(box, Rect2(Vector2.ZERO, size))
+	if outline_color != null:
+		_draw_rim(outline_color, 2.0)
 	if movable_ring:
 		_draw_rim(ring_color, 4.0)
 	if _flash > 0.0:
@@ -135,4 +148,5 @@ func _draw() -> void:
 	var text: String = str(disk_size)
 	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var baseline: Vector2 = Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
-	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ThemeManager.color("text_on_disk"))
+	var ink: Color = number_color if number_color != null else ThemeManager.color("text_on_disk")
+	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)

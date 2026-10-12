@@ -109,7 +109,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 28 mexanika səviyyəsi (4 Doqquz Halqa, 24 karakuri): cəmi 228 səviyyə (684 ulduz).
+Üstəgəl 63 mexanika səviyyəsi (4 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u): cəmi 263 səviyyə (789 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -121,13 +121,14 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 - İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
 - Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
 - Hər çətinliyin içində səviyyələr asandan çətinə gedir.
-- Karakuri səviyyələri tez və tez-tez gəlir: birincisi 12-ci yerdə (tutorialdan qısa sonra), sonuncusu yolun sonundan 10 əvvəl (178), aralarında 5–9 səviyyə aralıqla (seed-li, cəmi bütün yolu doldurur), kiçikdən (3 disk, 1 qutu) böyüyə (8 disk, 2 qutu, 30–31 gediş).
+- Bütün yol boyu gedən fəsillər (`PathBuilder.SPREADS`): karakuri 12-dən, Karvan Yolu 17-dən başlayır; sonuncusu yolun sonuna yaxın, aralarında 5–9 səviyyə aralıq (seed-li, cəmi bütün yolu doldurur), asandan çətinə.
+- Böyük Mübadilə boss-ları 40-cı səviyyədən başlayaraq hər 40 səviyyədən bir gəlir (40, 80, 120, 160, 200), hər biri əvvəlkindən çətin.
 - Digər mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-28 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 24 örtülü qüllə / karakuri). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+63 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (4 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
@@ -140,9 +141,12 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - İlk toxunuş qutunu açır (gediş sayılmır) və yalnız üst disk görünür. Üst disk gedəndə altındakı açılır, hər dəfə bir qat.
   - Qutunun üstünə qoyulan disklər görünür qalır. Undo heç nəyi yenidən gizlətmir, "Yenidən" bütün qutuları bağlayır.
   - Hədəf önizləməsindəki duman qutu açılanda qalxır.
+- **Karvan Yolu (variant C, xətti qonşuluq):** `"rules": ["classic_hanoi", "adjacent_pegs"]` ([Karvan Yolu əlavəsi](../MindShift_Karvan_Yolu_ve_BossLevel_Addendum.md), bölmə 1). Disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz. Bu, Bağlı Qüllələrin sabit xətti halıdır; Bağlı Qüllələr hələ qurulmadığı üçün ayrıca sadə qayda kimi yazılıb (`AdjacentPegsRule`), Solver-in sürətli yolu ilə işləyir. 3 qüllədə 3–4, 4–5 qüllədə 3–6 disk (3 qüllə / 5 diskdə həll artıq ~100 gedişdir).
+- **Böyük Mübadilə (variant E, boss):** `"boss": "great_exchange"`. 4 qüllə, hər ucda bir yığın (ağ və qara karvan), hədəf yığınların yer dəyişməsidir. Yeni qələbə yoxlaması lazım olmadı: səviyyələr onsuz da istənilən hədəf mövqeyi dəstəkləyir. Disklərin ölçüləri fərqlidir (mühərrik bərabər ölçülü disk tanımır), rəng isə karvanı göstərir. Bəziləri adi, bəziləri Karvan Yolu qaydası ilə: 17 → 20 → 22 → 29 → 33 gediş. Başlanğıcda boz izah mətni, xəritədə böyük, qızılı ikiqat halqalı dayanacaq.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
   - Doqquz Halqa: jadeit yaşılı, damarlar və çubuqdan asılan doqquz halqa (Çin Doqquz Halqa).
   - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).
+  - Karvan Yolu və Böyük Mübadilə: qum rəngi, təpələr, hər qüllənin altında karvansaray və onları birləşdirən qırıq cığır (İpək Yolu). Lövhə bunlar üçün qüllələrin altında zolaq saxlayır.
   - Lövhənin arxası, qüllələr, hədəf önizləməsi və xəritədəki dayanacağın halqası bu rəngdədir. Klassik səviyyələrin donu yoxdur.
 - **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
 
@@ -150,7 +154,8 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   godot --headless --path . --script res://tools/mechanic_level_builder.gd
   ```
 - **Validator-un dizayn qaydaları:**
-  - klassikdən əlavə qayda (Doqquz Halqa) ən qısa həlli uzatmalıdır;
+  - klassikdən əlavə qayda (Doqquz Halqa, Karvan Yolu) ən qısa həlli uzatmalıdır;
+  - Böyük Mübadilə: 4 qüllə, hər ucda bir yığın, orta boş, hədəf yığınların yer dəyişməsi;
   - örtülü qüllədə ən azı 2 disk olmalıdır;
   - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır.
 ### Yeni qayda əlavə etmək
@@ -201,6 +206,9 @@ Solver-ə toxunmaq lazım deyil.
 | E-2.1 | İqtisadiyyat düsturları: 1/2/3 coin, reklam 4 coin, başlanğıc 20 coin ([əlavə](../MindShift_Economy_Formulas_Addendum.md)) | ✅ (v3 ilə əvəz olundu) |
 | E-3 | Ulduzdan coin yerinə jeton → açar → sandıq, gündəlik bonus 2 coin, 6 coin paketi (25–1800) | ✅ |
 | E-3.1 | Mədəni paket adları, 24 s limitsiz Hint $2.99, 3 mərhələli sandıq animasiyası, kodla sintez olunan "ding" | ✅ |
+| M-1 | Karakuri qutuları (lay-lay açılma), 24 səviyyə bütün yol boyu | ✅ |
+| M-2 | Doqquz Halqa (alternasiya, D variantı) dondurulmuş diskin yerinə | ✅ |
+| M-3 | Karvan Yolu (30 səviyyə) və Böyük Mübadilə boss-ları (5) | ✅ |
 | L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
 | 7 | Android build | — |
 

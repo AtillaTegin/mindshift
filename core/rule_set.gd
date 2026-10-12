@@ -59,6 +59,8 @@ static func create_rule(id: String) -> RuleBase:
 			return ClassicHanoiRule.new()
 		AlternationRule.ID:
 			return AlternationRule.new()
+		AdjacentPegsRule.ID:
+			return AdjacentPegsRule.new()
 	return null
 
 

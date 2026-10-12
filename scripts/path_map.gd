@@ -13,6 +13,8 @@ signal island_pressed
 ## Vertical distance between two stops.
 const STEP: float = 150.0
 const STOP_SIZE: float = 112.0
+## A boss stop (the great exchange) is larger, so it reads as an event.
+const BOSS_SIZE: float = 140.0
 ## Sideways swing of the road, as a share of the width, and its turn per stop (radians).
 const SWING: float = 0.3
 const TURN: float = 0.85
@@ -55,12 +57,15 @@ func setup(p_track: String, save: SaveSystem) -> void:
 	custom_minimum_size.y = END_SPACE * 2.0 + STOP_SIZE + maxf(shown - 1, 0) * STEP
 	for position: int in range(1, shown + 1):
 		var cell: LevelCell = LevelCell.new()
-		cell.size = Vector2(STOP_SIZE, STOP_SIZE)
+		var mechanic: String = LevelCatalog.mechanic_at(track, position)
+		var side: float = BOSS_SIZE if mechanic == Level.GREAT_EXCHANGE else STOP_SIZE
+		cell.size = Vector2(side, side)
+		cell.boss = mechanic == Level.GREAT_EXCHANGE
 		cell.add_theme_font_size_override("font_size", 36)
 		var level_id: int = LevelCatalog.level_id_at(track, position)
 		cell.setup(position, save.get_stars(level_id), not LevelCatalog.is_unlocked(track, position, save))
 		cell.current = position == _current
-		cell.skin = ThemeManager.skin_for(LevelCatalog.mechanic_at(track, position))
+		cell.skin = ThemeManager.skin_for(mechanic)
 		cell.pressed.connect(func() -> void: level_pressed.emit(track, position))
 		add_child(cell)
 		_cells.append(cell)
@@ -111,7 +116,7 @@ func _notification(what: int) -> void:
 
 func _place_children() -> void:
 	for i: int in _cells.size():
-		_cells[i].position = stop_center(i + 1) - Vector2(STOP_SIZE, STOP_SIZE) * 0.5
+		_cells[i].position = stop_center(i + 1) - _cells[i].size * 0.5
 	if _island != null:
 		_island.position = _island_center() - ISLAND_SIZE * 0.5
 

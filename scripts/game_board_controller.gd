@@ -183,12 +183,18 @@ func start_level(level: Level) -> void:
 	_release_chest()
 	_popup.visible = false
 	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
+	_board_skin.peg_count = level.get_peg_count()
 	_build_views()
 	_goal_preview.skin = _board_skin.skin
+	_goal_preview.disk_palette = _disk_palette()
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
+	# A great exchange says what to do before the first move (caravan road
+	# addendum 2): the goal is a swap, not one tower.
+	if level.boss == Level.GREAT_EXCHANGE:
+		show_message(tr("BOSS_EXCHANGE_INTRO"), true)
 	_refresh(false)
 	level_started.emit()
 	position_changed.emit()
@@ -380,6 +386,20 @@ func _release_chest() -> void:
 	_coins_in_flight = 0
 
 
+## Disk size -> {fill, text} for a great exchange: the stack that starts on the
+## left is the white caravan, the other the black one. Empty for other levels
+## (their disks keep one colour each).
+func _disk_palette() -> Dictionary:
+	var palette: Dictionary = {}
+	if session.level.boss != Level.GREAT_EXCHANGE:
+		return palette
+	for peg_index: int in session.level.start.get_peg_count():
+		var caravan: String = "white" if peg_index == 0 else "black"
+		for disk: int in session.level.start.pegs[peg_index]:
+			palette[disk] = ThemeManager.EXCHANGE_DISKS[caravan]
+	return palette
+
+
 ## Under a rule that looks at the last move (the Nine Rings alternation) the
 ## top disks that may go right now wear a ring.
 func _update_rings() -> void:
@@ -430,6 +450,7 @@ func _build_views() -> void:
 		_fog_layer.add_child(fog)
 		_fogs[peg_index] = fog
 	var disk_count: int = session.state.get_disk_count()
+	var palette: Dictionary = _disk_palette()
 	for peg_index: int in session.state.get_peg_count():
 		var peg: PegView = PEG_SCENE.instantiate()
 		peg.peg_index = peg_index
@@ -442,6 +463,10 @@ func _build_views() -> void:
 			var disk: DiskView = DISK_SCENE.instantiate()
 			disk.disk_size = disk_size
 			disk.color = ThemeManager.disk_color(disk_size, disk_count)
+			if palette.has(disk_size):
+				disk.color = palette[disk_size]["fill"]
+				disk.number_color = palette[disk_size]["text"]
+				disk.outline_color = palette[disk_size].get("outline")
 			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
 					else ThemeManager.color("accent")
 			_disk_layer.add_child(disk)
@@ -471,10 +496,13 @@ func _layout(animated: bool) -> void:
 	var peg_count: int = session.state.get_peg_count()
 	var disk_count: int = maxi(session.state.get_disk_count(), 1)
 	var column: float = _board.size.x / peg_count
+	# The dress may keep a strip under the pegs free (the caravan road's stops).
+	var floor_room: float = _board_skin.bottom_room()
+	var height: float = _board.size.y - floor_room
 	# Room for every disk on one peg plus the lifted disk above the rod.
-	var disk_height: float = minf(_board.size.y / (disk_count + 3.5), MAX_DISK_HEIGHT)
+	var disk_height: float = minf(height / (disk_count + 3.5), MAX_DISK_HEIGHT)
 	var base_height: float = maxf(disk_height * 0.4, 10.0)
-	var base_top: float = _board.size.y - base_height
+	var base_top: float = height - base_height
 	var rod_top: float = base_top - disk_height * (disk_count + 0.6)
 	var lifted_y: float = rod_top - disk_height * 1.5
 	_peg_areas.clear()

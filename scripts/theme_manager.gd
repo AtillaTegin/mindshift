@@ -99,9 +99,23 @@ const SKINS: Dictionary = {
 		LIGHT: {"board": Color("f0e2cb"), "pattern": Color("d4b48c"), "peg": Color("8a5a33"), "mark": Color("a0663a")},
 		DARK: {"board": Color("2e2319"), "pattern": Color("4b3828"), "peg": Color("b07a4a"), "mark": Color("c58a52")},
 	},
+	# Caravan road and its great exchange: sand and dust, after the Silk Road
+	# caravanserais.
+	"caravan": {
+		LIGHT: {"board": Color("f5e6c4"), "pattern": Color("e0c58e"), "peg": Color("8c5b2e"), "mark": Color("c27a2e")},
+		DARK: {"board": Color("30271a"), "pattern": Color("4f3f25"), "peg": Color("c49255"), "mark": Color("db923f")},
+	},
+}
+## The two caravans of a great exchange: disk fill, number colour and (for the
+## light one, so it shows on sand) an outline; the same in both modes (they are
+## game pieces).
+const EXCHANGE_DISKS: Dictionary = {
+	"white": {"fill": Color("faf6ee"), "text": Color("3b3a52"), "outline": Color("3b3a52")},
+	"black": {"fill": Color("3b3a52"), "text": Color("f3ead6")},
 }
 ## Level.mechanic() -> skin.
-const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood"}
+const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
+		"great_exchange": "caravan"}
 
 var mode: String = LIGHT
 var theme: Theme
