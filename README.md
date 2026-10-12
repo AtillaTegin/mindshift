@@ -55,6 +55,26 @@ Hint-ə yönləndirmə ([core/hint_nudge_watcher.gd](core/hint_nudge_watcher.gd)
 Səhv halında səviyyə başına bir dəfə toast da çıxır. İstənilən toxunuş, gediş, undo və ya hint onu dərhal söndürür.
 Tutorial zamanı, hint ekranda olanda, səviyyə həll olunanda və coin hint-ə çatmayanda göstərilmir.
 
+## Prototip: Rəng ardıcıllığı
+
+Üç mexanikanı sınamaq üçün ayrıca, oynanıla bilən bir səviyyə ([tapşırıq](../MindShift_Mechanics_Prototype.md)): hədəf rəng ardıcıllığı, eyni ölçülü rəngli disklər və gediş limiti.
+Hamısı `prototype/sort_pattern/`-dadır. Əsas oyuna, səviyyələrə, Solver-ə, yola və qənaətə toxunmur.
+
+```powershell
+& "C:\Users\User\Tools\godot-4.7.2\Godot_v4.7.2-stable_win64.exe" --path . --resolution 540x960 res://prototype/sort_pattern/sort_menu.tscn
+```
+
+Və ya redaktorda `prototype/sort_pattern/sort_menu.tscn` açıb F6 basın.
+
+- **Qaydalar**: yalnız üst disk götürülür. Disk boş qülləyə, eyni ölçülü və ya daha böyük diskin üstünə qoyulur. Hədəf rəngə görə oxunur, diskin kimliyinə görə yox: bütün disklər sağ qüllədə hədəfdəki rəng ardıcıllığı ilə (aşağıdan yuxarı) durmalıdır.
+- **Gediş limiti**: yalnız uğurlu köçürmə sayılır (seçmək, geri qoymaq, qanunsuz cəhd pulsuzdur). Hədəf limit daxilində yığılan kimi qələbədir, son gedişdə də. Hədəf olmadan qalan gediş 0 olanda uduzulur. Bu, oyunun "uduzma yoxdur" qaydasına ziddir: prototip üçün qəbul edilib, istehsala keçərsə ayrıca qərar lazımdır.
+- **Səviyyə** (`sort_level.json`): 3 qüllə, 6 disk (1 böyük, 4 eyni ölçülü orta, 1 kiçik). Ən qısa həll S = 13, limit M = S + 2 = 15.
+  - Limiti sınaq zamanı menyuda −/+ ilə dəyişmək olar (S ilə S + 20 arası, oyun bağlanana qədər).
+  - Daimi dəyişiklik üçün: `godot --headless --path . --script res://prototype/sort_pattern/sort_builder.gd -- --slack=3` (və ya `--limit=18`). Alət həlli və S-i yenidən hesablayıb faylı yoxlayır.
+- **Solver**: əsas Solver diski ölçüsü ilə tanıyır və hədəfi dəqiq mövqe sayır, ona görə prototipin öz kiçik BFS-i və validatoru var (`sort_solver.gd`).
+- Lövhə oyunun `PegView`, `DiskView`, `Move`, `BoardLayout` hissələrini, düymələrini və mövzusunu təkrar istifadə edir. Hər rəngin öz forması var (qırmızı dairə, göy kvadrat, sarı üçbucaq, yaşıl romb).
+- Mətnlər yalnız Azərbaycanca, `sort_texts.gd`-dədir (`locale/`-a düşmür). Disk rəngləri `sort_palette.gd`-dədir. Testlər: `tests/test_sort_prototype.gd`.
+
 ## Testlər
 
 Godot-un console versiyası lazımdır (`Godot_v4.7.2-stable_win64_console.exe`).
@@ -83,6 +103,7 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 | `tools/` | Headless skriptlər: səviyyə generatoru və validatoru |
 | `data/levels/` | Səviyyə JSON-ları (`easy/`, `medium/`, `hard/`, `expert/`, `mechanics/`) və yol (`path.json`) |
 | `scenes/`, `scripts/` | UI səhnələri və controller-lər |
+| `prototype/` | Oyuna qoşulmayan sınaq prototipləri (hazırda: `sort_pattern/`, rəng ardıcıllığı) |
 | `tests/` | Headless testlər (`test_runner.gd`, `test_case.gd` bazası) |
 | `assets/` | Sprite və şriftlər (hələlik placeholder) |
 
@@ -210,6 +231,7 @@ Solver-ə toxunmaq lazım deyil.
 | M-2 | Doqquz Halqa (alternasiya, D variantı) dondurulmuş diskin yerinə | ✅ |
 | M-3 | Karvan Yolu (30 səviyyə) və Böyük Mübadilə boss-ları (5) | ✅ |
 | L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
+| P-1 | Prototip: rəng ardıcıllığı, eyni ölçülü rəngli disklər, gediş limiti (ayrıca səhnə, oyuna qoşulmayıb) | ✅ sınaqda |
 | 7 | Android build | — |
 
 ### Rənglər və dillər

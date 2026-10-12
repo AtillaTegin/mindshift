@@ -1,0 +1,116 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://prototype/sort_pattern/sort_menu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/polished_button.gd" id="2_button"]
+[ext_resource type="Script" path="res://scripts/themed_color_rect.gd" id="3_rect"]
+
+[node name="SortMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_rect")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 64
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 56
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="NoteLabel" type="Label" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SecondaryLabel"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="RulesCard" type="PanelContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_type_variation = &"RowPanel"
+
+[node name="RulesLabel" type="Label" parent="Margin/Layout/RulesCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+autowrap_mode = 3
+
+[node name="LimitRow" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="MinusButton" type="Button" parent="Margin/Layout/LimitRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+script = ExtResource("2_button")
+
+[node name="LimitLabel" type="Label" parent="Margin/Layout/LimitRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+
+[node name="PlusButton" type="Button" parent="Margin/Layout/LimitRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+script = ExtResource("2_button")
+
+[node name="ShortestLabel" type="Label" parent="Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SecondaryLabel"
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PlayButton" type="Button" parent="Margin/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+theme_type_variation = &"AccentButton"
+theme_override_font_sizes/font_size = 34
+script = ExtResource("2_button")
+
+[node name="BackButton" type="Button" parent="Margin/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+script = ExtResource("2_button")
