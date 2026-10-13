@@ -241,7 +241,7 @@ Solver-ə toxunmaq lazım deyil.
 | L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
 | P-1 | Prototip: rəng ardıcıllığı, eyni ölçülü rəngli disklər, gediş limiti (ayrıca səhnə, oyuna qoşulmayıb) | ✅ sınaqda |
 | L-4 | Səviyyə strukturu v4: asan yalnız öyrənmə üçün, 51–200 arası 1:1 qarışıq; Birləşmə Tapmacası (30 səviyyə) ([əlavə](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)) | ✅ |
-| L-4.2 | Hər mexanikanın ilk səviyyəsində animasiyalı bələdçi | — |
+| L-4.2 | Hər mexanikanın ilk səviyyəsində animasiyalı bələdçi (Dəyirman hələ yoxdur) | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
@@ -267,5 +267,11 @@ Solver-ə toxunmaq lazım deyil.
 - Coaching primitivləri `scenes/components/coaching/`-dadır (Scrim, FocusRing, GhostPointer, CoachToast).
   Onları ayrıca görmək üçün redaktorda `coaching_demo.tscn` açıb F6 basın.
 - Tutorial `easy_001`-də addım-addım, `easy_002`-də sərbəst rejimdə işləyir və yalnız səviyyə ilk dəfə tamamlanana qədər görünür.
+- Hər mexanikanın əsas yoldakı ilk səviyyəsində ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 2; karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə 30, Böyük Mübadilə 40) eyni üsul işləyir.
+  - Əvvəlcə ekranın yuxarısında mexanikanın öz izahı çıxır (5 saniyə).
+  - Sonra ilk 3 gediş xəyali barmaqla göstərilir, yalnız göstərilən qüllə reaksiya verir.
+  - Sonra "Əla! İndi özün sına!" və sərbəst oyun gəlir: yanlış gediş pozulan qaydanın mətnini göstərir.
+  - Karakuri qutusu üçün əlavə addım lazım deyil: ilk gedişlər qutudan keçir, göstərilən qutuya toxunmaq onu açır.
+  - Dəyirman / Bağlı Qüllələr hələ qurulmayıb, onun bələdçisi də yoxdur.
 - Effekt parametrləri bir yerdədir: düymə `scripts/polished_button.gd`, keçid `scripts/screen_transition.gd`,
   disk bounce/kölgə `scenes/components/disk.gd`, konfeti `scripts/level_complete_popup.gd`, həlqə `focus_ring.gd`.

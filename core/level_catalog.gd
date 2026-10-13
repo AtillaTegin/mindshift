@@ -126,6 +126,15 @@ static func mechanic_at(track: String, position: int) -> String:
 	return _mechanics[file]
 
 
+## Main path position of the first level with `mechanic` (Level.mechanic()),
+## or 0 if none has it.
+static func first_main_position(mechanic: String) -> int:
+	for position: int in range(1, track_length(MAIN) + 1):
+		if mechanic_at(MAIN, position) == mechanic:
+			return position
+	return 0
+
+
 ## Where level `level_id` sits: {track, position}, or {} if it is not on the path.
 static func place_of(level_id: int) -> Dictionary:
 	path_data()

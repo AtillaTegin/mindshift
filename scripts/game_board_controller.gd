@@ -527,7 +527,9 @@ func _layout(animated: bool) -> void:
 	var column: float = _board.size.x / peg_count
 	# The dress may keep a strip under the pegs free (the caravan road's stops).
 	var floor_room: float = _board_skin.bottom_room()
-	var height: float = _board.size.y - floor_room
+	# Never below zero: before the first layout pass the board has no size yet,
+	# and a coach pointing at a peg then must not get a negative area.
+	var height: float = maxf(_board.size.y - floor_room, 0.0)
 	# Room for every disk on one peg plus the lifted disk above the rod; with a
 	# capacity, room for a full peg, and the rod just as tall.
 	var stack: int = _capacity if _capacity > 0 else disk_count

@@ -208,6 +208,21 @@ msgstr "Bu qüllə doludur."
 msgid "COMBINATION_SORT_INTRO"
 msgstr "Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində."
 
+msgid "INTRO_COVERED_PEGS"
+msgstr "Karakuri qutusu: içində disklər gizlənib. Qutuya toxun, açılsın; hər dəfə yalnız üst disk görünür."
+
+msgid "INTRO_ALTERNATION"
+msgstr "Doqquz Halqa: 1-ci disk həmişə gedə bilər, başqa disk yalnız sonuncu tərpənənin qonşusu (±1) olanda. Halqalı disklər indi gedə bilər."
+
+msgid "INTRO_ADJACENT_PEGS"
+msgstr "Karvan Yolu: disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz."
+
+msgid "INTRO_GREAT_EXCHANGE"
+msgstr "Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Ortadakı qüllələr yalnız dayanacaqdır."
+
+msgid "INTRO_COMBINATION"
+msgstr "Birləşmə: disklər eyni ölçüdədir, istənilən disk istənilənin üstünə qoyula bilər. Amma hər qüllənin yeri məhduddur."
+
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"
 

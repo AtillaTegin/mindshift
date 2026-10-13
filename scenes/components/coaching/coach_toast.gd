@@ -9,6 +9,9 @@ const FADE_SECONDS: float = 0.2
 
 ## Distance from the bottom of the screen; the default keeps it below the board.
 var bottom_margin: float = 36.0
+## Distance from the top of the screen for a message shown at the top (a long
+## one that must not cover the board while a move is being shown).
+var top_margin: float = 28.0
 
 var _label: Label
 var _tween: Tween
@@ -32,8 +35,9 @@ func _ready() -> void:
 	visible = false
 
 
-## Shows `text` for `seconds` (plus the fades). A new message replaces the old.
-func show_message(text: String, seconds: float = DEFAULT_SECONDS) -> void:
+## Shows `text` for `seconds` (plus the fades), near the bottom or, with
+## `at_top`, near the top of the screen. A new message replaces the old.
+func show_message(text: String, seconds: float = DEFAULT_SECONDS, at_top: bool = false) -> void:
 	if _tween != null:
 		_tween.kill()
 	var viewport_size: Vector2 = get_viewport_rect().size
@@ -42,8 +46,9 @@ func show_message(text: String, seconds: float = DEFAULT_SECONDS) -> void:
 	_label.text = _wrap(text, viewport_size.x - 140.0)
 	size = Vector2.ZERO
 	reset_size()
-	var resting: Vector2 = Vector2((viewport_size.x - size.x) * 0.5, viewport_size.y - bottom_margin - size.y)
-	position = resting + Vector2(0, SLIDE)
+	var resting: Vector2 = Vector2((viewport_size.x - size.x) * 0.5,
+			top_margin if at_top else viewport_size.y - bottom_margin - size.y)
+	position = resting + Vector2(0, -SLIDE if at_top else SLIDE)
 	modulate.a = 0.0
 	visible = true
 	_tween = create_tween()

@@ -273,6 +273,26 @@ msgstr ""
 msgid "COMBINATION_SORT_INTRO"
 msgstr ""
 
+#. [TODO: RU] az: Karakuri qutusu: içində disklər gizlənib. Qutuya toxun, açılsın; hər dəfə yalnız üst disk görünür.
+msgid "INTRO_COVERED_PEGS"
+msgstr ""
+
+#. [TODO: RU] az: Doqquz Halqa: 1-ci disk həmişə gedə bilər, başqa disk yalnız sonuncu tərpənənin qonşusu (±1) olanda. Halqalı disklər indi gedə bilər.
+msgid "INTRO_ALTERNATION"
+msgstr ""
+
+#. [TODO: RU] az: Karvan Yolu: disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz.
+msgid "INTRO_ADJACENT_PEGS"
+msgstr ""
+
+#. [TODO: RU] az: Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Ortadakı qüllələr yalnız dayanacaqdır.
+msgid "INTRO_GREAT_EXCHANGE"
+msgstr ""
+
+#. [TODO: RU] az: Birləşmə: disklər eyni ölçüdədir, istənilən disk istənilənin üstünə qoyula bilər. Amma hər qüllənin yeri məhduddur.
+msgid "INTRO_COMBINATION"
+msgstr ""
+
 #. [TODO: RU] az: Səviyyə tamamlandı!
 msgid "POPUP_TITLE"
 msgstr ""
