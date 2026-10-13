@@ -1,8 +1,10 @@
 extends "res://tests/test_case.gd"
-## "Birləşmə Tapmacası" (combination puzzle, level structure v4, section 4;
-## user decisions 2026-10-13): equal-sized disks in four colours, pegs with a
-## capacity, a colour goal ("Sadə Yığım" sort or "Konkret Kombinasiya"
-## pattern), its own solver, its own move scale and ~30 levels on the road.
+## "Birləşmə Tapmacası" (combination puzzle): level structure v4 section 4 as
+## corrected by v2 (2026-10-13). Equal-sized disks in up to seven colours, pegs
+## with a capacity, Water Sort's shape (N disks of each of C colours, E empty
+## pegs) growing by stage along the road, a goal that names every disk ("Sadə
+## Yığım" sort, or a full colour sequence for every peg), its own solvers, and
+## stars against a stored example solution (user decisions 2026-10-13).
 
 const SAVE_PATH: String = "res://.test_saves/test_combination_save.json"
 const MAIN: String = LevelCatalog.MAIN
@@ -19,21 +21,20 @@ func after_each() -> void:
 		DirAccess.remove_absolute(SAVE_PATH)
 
 
-## Disks 1-4 coloured red, blue, red, blue on 3 pegs of capacity 2.
-func _small_level(goal: ColorGoal, start: Array, end: Array, path: Array[Move]) -> Level:
-	var params: Dictionary = {CombinationRule.ID: {"capacity": 2}}
-	var level: Level = Level.create(9999, "easy", PuzzleState.new(start), PuzzleState.new(end),
-			[CombinationRule.ID] as Array[String], path, params)
-	level.disk_colors = ["red", "blue", "red", "blue"] as Array[String]
-	level.color_goal = goal
-	return level
-
-
 func _combo_levels() -> Array[Level]:
 	var levels: Array[Level] = []
 	for i: int in range(1, 31):
 		levels.append(LevelCatalog.load_mechanic("combo_%02d.json" % i))
 	return levels
+
+
+## The combination levels with their main path positions, in road order.
+func _on_road() -> Array[Dictionary]:
+	var found: Array[Dictionary] = []
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		if LevelCatalog.mechanic_at(MAIN, position) == CombinationRule.ID:
+			found.append({"position": position, "level": LevelCatalog.load_at(MAIN, position)})
+	return found
 
 
 func _start_board(level: Level) -> void:
@@ -47,33 +48,117 @@ func _start_board(level: Level) -> void:
 	(_board.get_node("%Board") as Control).size = Vector2(672.0, 700.0)
 
 
-func test_colour_goals() -> void:
+func test_colour_goals_name_every_disk() -> void:
 	var colours: Array[String] = ["red", "blue", "red", "blue"]
 	var sort: ColorGoal = ColorGoal.sort()
 	assert_true(sort.is_met(PuzzleState.new([[1, 3], [2, 4], []]), colours))
 	assert_true(sort.is_met(PuzzleState.new([[], [4, 2], [3, 1]]), colours), "any peg, any order of equal disks")
 	assert_false(sort.is_met(PuzzleState.new([[1], [2, 4], [3]]), colours), "all of a colour together")
-	assert_false(sort.is_met(PuzzleState.new([[1, 2], [3, 4], []]), colours), "one colour per peg")
-	var pattern: ColorGoal = ColorGoal.pattern(2, ["red", "blue"] as Array[String])
-	assert_true(pattern.is_met(PuzzleState.new([[3], [4], [1, 2]]), colours))
-	assert_true(pattern.is_met(PuzzleState.new([[1], [2], [3, 4]]), colours), "read by colour, not identity")
-	assert_false(pattern.is_met(PuzzleState.new([[1], [4], [2, 3]]), colours), "bottom to top")
-	assert_false(pattern.is_met(PuzzleState.new([[], [4], [1, 2, 3]]), colours), "exactly the pattern")
-	assert_eq(pattern.progress(PuzzleState.new([[4], [2], [1, 3]]), colours), 1)
-	assert_eq(sort.progress(PuzzleState.new([[1, 3], [2], [4]]), colours), 1, "one finished peg")
-	assert_eq(sort.progress_total(colours), 2)
-	assert_eq(pattern.progress_total(colours), 2)
+	var pattern: ColorGoal = ColorGoal.pattern([["red", "blue"], ["blue", "red"], []])
+	assert_true(pattern.is_met(PuzzleState.new([[1, 2], [4, 3], []]), colours))
+	assert_true(pattern.is_met(PuzzleState.new([[3, 4], [2, 1], []]), colours), "read by colour, not identity")
+	assert_false(pattern.is_met(PuzzleState.new([[1, 2], [3, 4], []]), colours), "every peg must show its own target")
+	assert_eq(pattern.progress(PuzzleState.new([[1, 4], [2], [3]]), colours), 3, "peg 0 right (2), peg 1 started (1)")
+	assert_eq(pattern.progress_total(colours), 4)
+	assert_eq(pattern.goal_colours(colours), ["blue", "red"] as Array[String])
+	assert_eq(sort.goal_colours(colours), ["blue", "red"] as Array[String], "a sort goal names every colour")
 	var errors: Array[String] = []
-	assert_null(ColorGoal.from_dict({"kind": "pattern", "peg": 1}, errors))
-	assert_null(ColorGoal.from_dict({"kind": "spiral"}, errors))
+	ColorGoal.pattern([["red", "red"], [], []]).check(3, 2, colours, errors)
+	assert_true(" ".join(errors).contains("the goal names"), "correction v2: no colour without a goal (%s)" % str(errors))
+	errors.clear()
+	ColorGoal.pattern([["red", "blue"], ["blue"], []]).check(3, 2, colours, errors)
+	assert_true(" ".join(errors).contains("every disk"), str(errors))
+	errors.clear()
+	ColorGoal.pattern([["red", "blue"], ["blue", "red"]]).check(3, 2, colours, errors)
+	assert_true(" ".join(errors).contains("each of the 3 pegs"), str(errors))
+	errors.clear()
+	pattern.check(3, 2, colours, errors)
+	assert_eq(errors, [] as Array[String])
+	assert_null(ColorGoal.from_dict({"kind": "pattern", "peg": 1, "colors": ["red"]}, errors), "the old one-peg form is gone")
 	assert_eq(ColorGoal.from_dict(pattern.to_dict(), errors).to_dict(), pattern.to_dict(), "round trip")
 
 
-func test_same_puzzle_in_other_colours_has_the_same_shape() -> void:
-	var goal: ColorGoal = ColorGoal.pattern(0, ["red", "blue"] as Array[String])
-	var other: ColorGoal = ColorGoal.pattern(0, ["green", "yellow"] as Array[String])
-	assert_eq(goal.shape_key(PackedStringArray(["br", "rb", ""])), other.shape_key(PackedStringArray(["yg", "gy", ""])))
-	assert_ne(goal.shape_key(PackedStringArray(["br", "rb", ""])), other.shape_key(PackedStringArray(["gy", "yg", ""])))
+func test_every_level_has_a_goal_for_every_disk() -> void:
+	# Correction v2, error 1: set(disk colours) == set(goal colours), and a
+	# pattern places every disk; audited for every shipped level.
+	for level: Level in _combo_levels():
+		var board: Array[String] = []
+		for color_name: String in level.disk_colors:
+			if not board.has(color_name):
+				board.append(color_name)
+		board.sort()
+		assert_eq(level.color_goal.goal_colours(level.disk_colors), board, "level %d" % level.id)
+		if level.color_goal.kind == ColorGoal.PATTERN:
+			var named: int = 0
+			for target: Array in level.color_goal.targets:
+				named += target.size()
+			assert_eq(named, level.get_disk_count(), "level %d: the pattern places every disk" % level.id)
+			assert_eq(level.color_goal.targets.size(), level.get_peg_count(), "a target for every peg")
+
+
+func test_levels_follow_the_stage_table() -> void:
+	# Correction v2, error 2: N / C / E / T by the level's stretch of the road.
+	var road: Array[Dictionary] = _on_road()
+	assert_eq(road.size(), 30)
+	var stages_seen: Dictionary = {}
+	for entry: Dictionary in road:
+		var level: Level = entry["level"]
+		var position: int = entry["position"]
+		assert_eq(LevelValidator.combination_stage_errors(level, position), [] as Array[String], "main %d" % position)
+		var errors: Array[String] = []
+		LevelValidator.validate_combination_shape(level, errors)
+		assert_eq(errors, [] as Array[String], "main %d: Water Sort's shape" % position)
+		var stage: String = Difficulty.combination_stage(position)["name"]
+		if not stages_seen.has(stage):
+			stages_seen[stage] = []
+		(stages_seen[stage] as Array).append(level)
+	assert_eq(road[0]["position"], 30, "first at main 30")
+	var first: Level = road[0]["level"]
+	assert_eq([first.get_disk_count(), first.get_peg_count(), CombinationSolver.capacity_of(first)], [8, 3, 4], "intro: N4 C2 E1")
+	var last: Level = road[-1]["level"]
+	assert_true(last.get_disk_count() >= 40 and last.get_peg_count() >= 7, "main %d is a hard_2 board" % road[-1]["position"])
+	# Boards grow stage by stage (inside a stage sizes vary on purpose).
+	var previous_largest: int = 0
+	for stage: String in ["intro", "middle_1", "middle_2", "hard_1", "hard_2"]:
+		assert_true(stages_seen.has(stage), "%s is on the road" % stage)
+		var largest: int = 0
+		for level: Level in stages_seen[stage]:
+			largest = maxi(largest, level.get_disk_count())
+		assert_true(largest > previous_largest, "%s boards are larger than the stage before" % stage)
+		previous_largest = largest
+	for level: Level in stages_seen["intro"] + stages_seen["middle_1"]:
+		assert_eq(level.color_goal.kind, ColorGoal.SORT, "sorting first (v4 gradient)")
+	var middle: Array[String] = []
+	for level: Level in stages_seen["middle_2"]:
+		middle.append(level.color_goal.kind)
+	assert_true(middle.has(ColorGoal.SORT) and middle.has(ColorGoal.PATTERN), "both goals in the middle")
+	for level: Level in stages_seen["hard_1"] + stages_seen["hard_2"]:
+		assert_eq(level.color_goal.kind, ColorGoal.PATTERN, "patterns late")
+	var sizes: Dictionary = {}
+	for level: Level in stages_seen["hard_2"]:
+		sizes["%d/%d" % [level.get_peg_count(), level.get_disk_count()]] = true
+	assert_true(sizes.size() >= 2, "variety inside a stage: %s" % str(sizes.keys()))
+
+
+func test_stage_table_matches_the_correction() -> void:
+	var expected: Array = [
+		["intro", 30, [4, 4], [2, 2], [1, 1], [3, 3]],
+		["middle_1", 80, [5, 5], [3, 3], [1, 1], [4, 4]],
+		["middle_2", 130, [6, 6], [3, 4], [1, 2], [5, 6]],
+		["hard_1", 200, [7, 8], [4, 5], [2, 2], [6, 7]],
+		["hard_2", 280, [8, 9], [5, 6], [2, 3], [7, 9]],
+		["expert", 100000, [9, 12], [6, 7], [3, 4], [9, 11]],
+	]
+	for i: int in expected.size():
+		var stage: Dictionary = Difficulty.COMBINATION_STAGES[i]
+		assert_eq([stage["name"], stage["to"], stage["capacity"], stage["colours"], stage["empty"], stage["pegs"]], expected[i])
+	assert_eq(Difficulty.combination_stage(30)["name"], "intro")
+	assert_eq(Difficulty.combination_stage(31)["name"], "middle_1")
+	assert_eq(Difficulty.combination_stage(265)["name"], "hard_2")
+	assert_true(ColorGoal.LETTERS.size() >= 7, "enough colours for the expert stage")
+	for color_name: String in ColorGoal.LETTERS:
+		assert_true(ThemeManager.COMBINATION_DISKS.has(color_name), "%s has a look" % color_name)
+	assert_eq(Difficulty.COMBINATION, CombinationRule.ID)
 
 
 func test_capacity_rule() -> void:
@@ -83,44 +168,58 @@ func test_capacity_rule() -> void:
 	var rules: RuleSet = RuleSet.from_ids([CombinationRule.ID], {CombinationRule.ID: {"capacity": 2}})
 	var state: PuzzleState = PuzzleState.new([[4, 1], [2], [3]])
 	assert_true(rules.is_move_legal(state, Move.new(0, 1)), "any disk onto any disk: sizes do not count")
-	assert_true(rules.is_move_legal(state, Move.new(1, 0)) == false, "but not onto a full peg")
+	assert_false(rules.is_move_legal(state, Move.new(1, 0)), "but not onto a full peg")
 	assert_eq(rules.get_violation_message(state, Move.new(1, 0)), "RULE_PEG_FULL")
 	assert_false(rules.is_state_valid(PuzzleState.new([[1, 2, 3], [], []])), "over capacity")
-	assert_eq(rules.get_rule_params(), {CombinationRule.ID: {"capacity": 2}})
-	assert_eq(Difficulty.COMBINATION, CombinationRule.ID)
 
 
-func test_solver_finds_the_shortest_way_by_colour() -> void:
-	var level: Level = _small_level(ColorGoal.sort(), [[1, 2], [3, 4], []], [[1, 3], [], [4, 2]], [])
-	var result: Dictionary = CombinationSolver.solve(level, level.start)
-	assert_true(result["solvable"])
-	assert_eq(result["min_moves"], 3, "blue to the empty peg, red across, the other blue over")
-	var state: PuzzleState = level.start
-	for move: Move in result["path"]:
-		state = level.get_rule_set().apply_move(state, move)
-		assert_not_null(state, "every move is legal")
-	assert_true(level.is_goal_met(state, level.get_rule_set()))
-	# The distance map gives the same answer from the goal side.
-	var goals: Array[PackedStringArray] = CombinationSolver.goal_positions(level.color_goal, "rbrb", 3, 2)
-	assert_eq(goals.size(), 6, "two colours on two of three pegs")
-	var map: Dictionary = CombinationSolver.distance_map(goals, 2)
-	assert_eq(map["rb|rb|"][0], 3)
-	assert_eq(CombinationSolver.path_from(map, "rb|rb|").size(), 3)
-	var pattern_goals: Array[PackedStringArray] = CombinationSolver.goal_positions(
-			ColorGoal.pattern(2, ["blue", "red"] as Array[String]), "rbrb", 3, 2)
-	for pegs: PackedStringArray in pattern_goals:
-		assert_eq(pegs[2], "br")
-		assert_eq("".join(pegs).length(), 4)
+func test_solvers() -> void:
+	var sort: ColorGoal = ColorGoal.sort()
+	var exact: Dictionary = CombinationSolver.search(PackedStringArray(["rb", "rb", ""]), 2, sort)
+	assert_eq(exact["min_moves"], 3, "blue aside, red across, blue on blue")
+	var pattern: ColorGoal = ColorGoal.pattern([["red", "blue", "red"], ["blue", "red", "blue"], [], []])
+	var start: PackedStringArray = PackedStringArray(["bbr", "", "rrb", ""])
+	var guided: Dictionary = CombinationSolver.guided_search(start, 3, pattern, 20000)
+	assert_true(guided["solvable"])
+	var pegs: PackedStringArray = start
+	for move: Move in guided["path"]:
+		assert_true(pegs[move.from_peg].length() > 0 and pegs[move.to_peg].length() < 3, "legal")
+		pegs = _move(pegs, move)
+	assert_true(pattern.matches(pegs), "the guided path reaches the goal")
+	assert_eq(CombinationSolver.heuristic(pattern.target_letters(), pattern), 0.0)
+	assert_true(CombinationSolver.heuristic(start, pattern) > 0.0)
+	# shorten(): a disk moved twice goes straight there; one moved back stays.
+	var detour: Array[Move] = [Move.new(0, 1), Move.new(1, 3), Move.new(2, 1), Move.new(1, 2)]
+	var short: Array[Move] = CombinationSolver.shorten(start, detour)
+	assert_eq(short.size(), 1)
+	assert_true(short[0].equals(Move.new(0, 3)))
+	# scramble(): walked back, every position on the walk is solved.
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = 3
+	var walk: Dictionary = CombinationSolver.scramble(pattern.target_letters(), 3, 60, rng)
+	var keys: PackedStringArray = walk["keys"]
+	pegs = keys[-1].split("|")
+	for move: Move in CombinationSolver.walk_back(walk, keys.size() - 1):
+		pegs = _move(pegs, move)
+	assert_true(pattern.matches(pegs))
+
+
+func _move(pegs: PackedStringArray, move: Move) -> PackedStringArray:
+	var next: PackedStringArray = pegs.duplicate()
+	next[move.to_peg] += pegs[move.from_peg].right(1)
+	next[move.from_peg] = pegs[move.from_peg].left(-1)
+	return next
 
 
 func test_level_format_and_checks() -> void:
-	var level: Level = LevelCatalog.load_mechanic("combo_21.json")
+	var level: Level = LevelCatalog.load_mechanic("combo_20.json")
 	var errors: Array[String] = []
 	var copy: Level = Level.from_dict(level.to_dict(), errors)
 	assert_eq(errors, [] as Array[String])
 	assert_eq(copy.disk_colors, level.disk_colors)
 	assert_eq(copy.color_goal.to_dict(), level.color_goal.to_dict())
 	assert_eq(level.mechanic(), CombinationRule.ID)
+	assert_true(level.example_solution(), "min_moves is an example solution")
 	copy.check(errors)
 	assert_eq(errors, [] as Array[String])
 	copy.rule_ids = ["classic_hanoi", CombinationRule.ID] as Array[String]
@@ -128,100 +227,39 @@ func test_level_format_and_checks() -> void:
 	assert_true(" ".join(errors).contains("alone"), str(errors))
 	errors.clear()
 	copy = Level.from_dict(level.to_dict(), errors)
-	copy.disk_colors.pop_back()
-	copy.check(errors)
-	assert_true(" ".join(errors).contains("disk_colors"), str(errors))
-	errors.clear()
-	copy = Level.from_dict(level.to_dict(), errors)
 	copy.goal = copy.start.duplicate_state()
 	copy.solution_path.clear()
 	copy.check(errors)
 	assert_true(" ".join(errors).contains("does not meet the colour goal"), str(errors))
-
-
-func test_own_move_scale() -> void:
-	# User decision 2026-10-13: these puzzles are short, so 5-7 / 8-10 / 11+.
-	assert_eq(Difficulty.tier_for_moves(7, Difficulty.COMBINATION), "easy")
-	assert_eq(Difficulty.tier_for_moves(8, Difficulty.COMBINATION), "medium")
-	assert_eq(Difficulty.tier_for_moves(10, Difficulty.COMBINATION), "medium")
-	assert_eq(Difficulty.tier_for_moves(11, Difficulty.COMBINATION), "hard")
-	assert_eq(Difficulty.tier_for_moves(16, Difficulty.COMBINATION), "hard")
-	assert_eq(Difficulty.tier_for_moves(11), "easy", "other levels keep the usual ranges")
-	assert_eq(Difficulty.describe_moves("medium", Difficulty.COMBINATION), "8-10")
-
-
-func test_thirty_levels_from_sorting_with_room_to_full_patterns() -> void:
-	var levels: Array[Level] = _combo_levels()
-	var shapes: Dictionary = {}
-	var previous: int = 0
-	for i: int in levels.size():
-		var level: Level = levels[i]
-		assert_not_null(level, "combo_%02d" % (i + 1))
-		var errors: Array[String] = []
-		LevelValidator.validate_level(level, errors)
-		assert_eq(errors, [] as Array[String], "combo_%02d" % (i + 1))
-		assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves, Difficulty.COMBINATION))
-		assert_true(level.min_moves >= previous, "never shorter than the one before (combo_%02d)" % (i + 1))
-		previous = level.min_moves
-		var key: String = LevelValidator.puzzle_key(level)
-		assert_false(shapes.has(key), "combo_%02d repeats an earlier one in other colours" % (i + 1))
-		shapes[key] = true
-		var empty_peg: bool = false
-		for peg: Array in level.start.pegs:
-			empty_peg = empty_peg or peg.is_empty()
-		if i < 4:
-			assert_eq(level.get_disk_count(), 6, "early: 6 disks")
-			assert_true(empty_peg, "with room to manoeuvre")
-			assert_eq(level.color_goal.kind, ColorGoal.SORT, "and the plain sort goal")
-		elif i >= 14:
-			assert_true(level.get_disk_count() >= 8, "hard: 8-9 disks (combo_%02d)" % (i + 1))
-			assert_false(empty_peg, "no empty peg (combo_%02d)" % (i + 1))
-			assert_eq(level.color_goal.kind, ColorGoal.PATTERN, "a combination to read off the picture")
-		if level.color_goal.kind == ColorGoal.PATTERN:
-			var distinct: Array[String] = []
-			for color_name: String in level.color_goal.colors:
-				if not distinct.has(color_name):
-					distinct.append(color_name)
-			assert_true(distinct.size() >= 2, "a combination of colours")
-	assert_eq(levels[0].difficulty, "easy", "the first one is a gentle start")
-	var kinds: Array[String] = []
-	for i: int in range(4, 14):
-		kinds.append(levels[i].color_goal.kind)
-	assert_true(kinds.has(ColorGoal.SORT) and kinds.has(ColorGoal.PATTERN), "the middle mixes both goals")
+	# The stored solution proves it solvable; small boards also prove it shortest.
+	var small: Level = LevelCatalog.load_mechanic("combo_01.json")
+	errors.clear()
+	LevelValidator.validate_level(small, errors)
+	assert_eq(errors, [] as Array[String])
+	small.min_moves += 1
+	small.solution_path.append(Move.new(0, 0))
+	errors.clear()
+	LevelValidator.validate_level(small, errors)
+	assert_false(errors.is_empty(), "a longer stored solution on a small board is caught")
 
 
 func test_chapter_on_the_road() -> void:
-	var positions: Array[int] = []
-	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == CombinationRule.ID:
-			positions.append(position)
-			var level: Level = LevelCatalog.load_at(MAIN, position)
-			if level.difficulty == "easy":
-				assert_true(position <= PathBuilder.EASY_UNTIL, "easy ones only while learning (%d)" % position)
-	assert_eq(positions.size(), 30)
-	assert_eq(positions[0], 30, "first at main 30")
-	assert_true(positions[-1] > PathBuilder.MIX_UNTIL, "to the end of the road (%d)" % positions[-1])
+	var road: Array[Dictionary] = _on_road()
+	for entry: Dictionary in road:
+		if (entry["level"] as Level).difficulty == "easy":
+			assert_true(entry["position"] <= PathBuilder.EASY_UNTIL, "easy only while learning (%d)" % entry["position"])
+	assert_true(road[-1]["position"] > PathBuilder.MIX_UNTIL, "to the end of the road (%d)" % road[-1]["position"])
 
 
-func test_session_wins_by_colour_with_hints_and_undo() -> void:
-	var level: Level = LevelCatalog.load_mechanic("combo_06.json")
+func test_session_wins_by_colour() -> void:
+	var level: Level = LevelCatalog.load_mechanic("combo_01.json")
 	var session: GameSession = GameSession.new(level)
 	assert_true(session.get_path_hint().equals(level.solution_path[0]), "on the stored path the hint is instant")
-	var off_path: Move = null
-	for move: Move in session.rules.get_legal_moves(session.state):
-		if not move.equals(level.solution_path[0]):
-			off_path = move
-			break
-	session.try_move(off_path)
-	var hint: Move = GameSession.solve_hint(level, session.state.duplicate_state(), session.rules)
-	assert_not_null(hint, "off the path the combination solver answers")
-	var rest: Array[Move] = CombinationSolver.solve(level, session.state)["path"]
-	assert_true(hint.equals(rest[0]))
-	assert_true(session.undo())
 	for move: Move in level.solution_path:
 		assert_false(session.is_solved())
 		assert_true(session.try_move(move))
 	assert_true(session.is_solved())
+	assert_eq(level.stars_for_moves(level.min_moves), 3)
 	# Equal disks of one colour are interchangeable: the goal holds by colour.
 	var swapped: PuzzleState = session.state.duplicate_state()
 	var twins: Array[int] = []
@@ -238,67 +276,77 @@ func test_session_wins_by_colour_with_hints_and_undo() -> void:
 	assert_true(level.is_goal_met(swapped, session.rules))
 
 
-func test_board_shows_colours_capacity_and_the_goal() -> void:
+func test_hint_off_the_path_finds_a_way_or_leads_back() -> void:
+	var level: Level = LevelCatalog.load_mechanic("combo_30.json")
+	var session: GameSession = GameSession.new(level)
+	assert_null(session.return_to_path_move(), "on the path there is nothing to take back")
+	var off_path: Move = null
+	for move: Move in session.rules.get_legal_moves(session.state):
+		if not move.equals(level.solution_path[0]):
+			off_path = move
+			break
+	session.try_move(off_path)
+	var back: Move = session.return_to_path_move()
+	assert_true(back.equals(Move.new(off_path.to_peg, off_path.from_peg)), "the last move taken back")
+	var hint: Move = GameSession.solve_hint(level, session.state.duplicate_state(), session.rules)
+	if hint != null:
+		assert_true(session.rules.is_move_legal(session.state, hint), "a found hint is legal")
+	_start_board(level)
+	_board.on_peg_pressed(off_path.from_peg)
+	_board.on_peg_pressed(off_path.to_peg)
+	_board.economy.earn(50, "test")
+	_board.request_hint()
+	assert_not_null(_board.hints.hint_move, "a large board always gets a hint")
+
+
+func test_board_shows_colours_and_example_solution() -> void:
 	var level: Level = LevelCatalog.load_mechanic("combo_01.json")
 	_start_board(level)
 	assert_eq(_board.get_board_skin().skin, "glass", "a modern dress")
+	assert_eq((_board.get_node("%MinLabel") as Label).text, tr("BOARD_EXAMPLE") % level.min_moves, "no false claim of a minimum")
 	var widths: Array[float] = []
 	for view: DiskView in _board.get_node("%DiskLayer").get_children():
 		var color_name: String = level.disk_colors[view.disk_size - 1]
 		assert_eq(view.symbol, color_name, "a shape, not a number")
 		assert_eq(view.color, ThemeManager.COMBINATION_DISKS[color_name]["fill"])
-		if not widths.has(view.size.x):
-			widths.append(view.size.x)
-	assert_eq(widths.size(), 1, "every disk the same size")
-	var rod: Rect2 = _board.get_peg_rect(0)
-	var disk_height: float = _board.get_disk_rect(1).size.y + 4.0
+		if not widths.has(snappedf(view.size.x, 0.1)):
+			widths.append(snappedf(view.size.x, 0.1))
+	assert_eq(widths.size(), 1, "every disk the same size %s" % str(widths))
 	var peg: PegView = _board.get_node("%PegLayer").get_child(0)
+	var disk_height: float = _board.get_disk_rect(1).size.y + 4.0
 	assert_true(absf((peg.base_top - peg.rod_top) - disk_height * (CombinationSolver.capacity_of(level) + 0.3)) < 1.0,
-			"the rod is as tall as the peg holds (%.1f, disk %.1f)" % [peg.base_top - peg.rod_top, disk_height])
-	assert_true(rod.size.y > 0.0)
+			"the rod is as tall as the peg holds")
 	var preview: BoardPreview = _board.get_node("%GoalPreview")
-	assert_not_null(preview.color_goal)
-	assert_eq(preview.sort_colours().size(), 3, "one stack per colour")
+	assert_eq(preview.sort_colours().size(), 2, "an icon for every colour on the board")
 	var status: Label = _board.get_node("%StatusLabel")
 	assert_eq(status.text, tr("COMBINATION_SORT_INTRO"), "a sort goal is told in words")
-	assert_eq(status.theme_type_variation, &"SecondaryLabel")
-	_board.on_peg_pressed(level.solution_path[0].from_peg)
-	_board.on_peg_pressed(level.solution_path[0].to_peg)
 	_board.restart()
 	assert_eq(status.text, tr("COMBINATION_SORT_INTRO"), "on every attempt")
 	for move: Move in level.solution_path:
 		_board.on_peg_pressed(move.from_peg)
 		_board.on_peg_pressed(move.to_peg)
 	assert_true(_board.session.is_solved())
-	assert_eq(_board.last_result["stars"], 3)
-	assert_eq(preview.finished_colours().size(), 3, "every colour checked off")
+	assert_eq(_board.last_result["stars"], 3, "matching the example solution earns three stars")
+	assert_eq(preview.finished_colours().size(), 2, "every colour checked off")
+	assert_eq(status.text, tr("BOARD_SOLVED_EXAMPLE") % [level.min_moves, level.min_moves])
 
 
-func test_board_refuses_a_full_peg_and_shows_pattern_progress() -> void:
-	var level: Level = LevelCatalog.load_mechanic("combo_21.json")
+func test_large_board_stands_in_two_rows_and_shows_every_target() -> void:
+	var level: Level = LevelCatalog.load_mechanic("combo_30.json")
 	_start_board(level)
+	var rows: Dictionary = {}
+	var board: Control = _board.get_node("%Board")
+	for peg: PegView in _board.get_node("%PegLayer").get_children():
+		rows[peg.position.y] = true
+		assert_true(peg.position.x >= 0.0 and peg.position.x + peg.size.x <= board.size.x + 0.5, "inside the board")
+	assert_eq(rows.size(), 2, "%d pegs in two rows" % level.get_peg_count())
 	var status: Label = _board.get_node("%StatusLabel")
 	assert_eq(status.text, "", "a pattern goal is only shown")
-	var capacity: int = CombinationSolver.capacity_of(level)
-	var full: int = -1
-	var other: int = -1
-	for peg_index: int in level.get_peg_count():
-		if level.start.pegs[peg_index].size() == capacity:
-			full = peg_index
-		elif not level.start.pegs[peg_index].is_empty():
-			other = peg_index
-	assert_true(full >= 0 and other >= 0)
-	var refused: Array[String] = []
-	_board.illegal_move.connect(func(_move: Move, message: String) -> void: refused.append(message))
-	_board.on_peg_pressed(other)
-	_board.on_peg_pressed(full)
-	assert_eq(refused, [tr("RULE_PEG_FULL")] as Array[String], "the full peg says why")
-	assert_true((_board.get_node("%PegLayer").get_child(full) as PegView).flash_amount > 0.0, "and flashes")
-	assert_eq(_board.session.move_count, 0)
-	_board.on_peg_pressed(other)
 	var preview: BoardPreview = _board.get_node("%GoalPreview")
+	assert_eq(preview.color_goal.targets.size(), level.get_peg_count(), "a target for every peg")
 	for move: Move in level.solution_path:
 		_board.on_peg_pressed(move.from_peg)
 		_board.on_peg_pressed(move.to_peg)
-	assert_eq(preview.pattern_done(), level.color_goal.colors.size())
 	assert_true(_board.session.is_solved())
+	for peg_index: int in level.get_peg_count():
+		assert_eq(preview.placed_on(peg_index), level.color_goal.targets[peg_index].size(), "peg %d in place" % peg_index)

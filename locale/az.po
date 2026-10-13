@@ -208,6 +208,18 @@ msgstr "Bu qüllə doludur."
 msgid "COMBINATION_SORT_INTRO"
 msgstr "Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində."
 
+msgid "COMBINATION_SORT_GOAL"
+msgstr "Hər rəng öz qülləsinə yığılmalıdır"
+
+msgid "BOARD_EXAMPLE"
+msgstr "Nümunə həll: %d"
+
+msgid "BOARD_SOLVED_EXAMPLE"
+msgstr "Həll olundu! %d gedişdə (nümunə həll %d)"
+
+msgid "POPUP_MOVES_EXAMPLE"
+msgstr "Gediş: %d / nümunə %d"
+
 msgid "INTRO_COVERED_PEGS"
 msgstr "Karakuri qutusu: içində disklər gizlənib. Qutuya toxun, açılsın; hər dəfə yalnız üst disk görünür."
 

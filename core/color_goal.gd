@@ -1,62 +1,67 @@
 class_name ColorGoal
 extends RefCounted
-## The goal of a "Birləşmə Tapmacası" (combination puzzle, level structure v4,
-## section 4) level, read by colour: its disks are all of one size and only
-## their colour counts, so two disks of one colour are interchangeable.
+## The goal of a "Birləşmə Tapmacası" (combination puzzle) level, read by
+## colour: its disks are all of one size and only their colour counts, so two
+## disks of one colour are interchangeable. The goal always covers every disk
+## on the board (correction v2, error 1: the colours of the goal are exactly
+## the colours of the disks, see check()).
 ## - SORT ("Sadə Yığım"): every colour gathered on a peg of its own (any peg);
 ##   each peg that holds disks holds one colour, and all of it.
-## - PATTERN ("Konkret Kombinasiya"): peg `peg` shows exactly `colors`, bottom
-##   -> top; the other disks may be anywhere.
+## - PATTERN ("Konkret Kombinasiya"): every peg shows exactly its own colour
+##   sequence (`targets[peg]`, bottom -> top; an empty list for a peg that ends
+##   empty), user decision 2026-10-13: a full sequence for every peg.
 ## Positions are compared as one string of colour letters per peg (LETTERS), the
 ## same form CombinationSolver searches in.
 
 const SORT: String = "sort"
 const PATTERN: String = "pattern"
 const KINDS: Array[String] = [SORT, PATTERN]
-## Disk colours of the combination puzzle and their one-letter codes.
-const LETTERS: Dictionary = {"red": "r", "blue": "b", "yellow": "y", "green": "g"}
+## Disk colours of the combination puzzle and their one-letter codes (each
+## colour also has its own shape, DiskSymbols).
+const LETTERS: Dictionary = {"red": "r", "blue": "b", "yellow": "y", "green": "g", "purple": "p", "orange": "o",
+		"pink": "k"}
 
 var kind: String = SORT
-## PATTERN: the peg that must show the pattern.
-var peg: int = -1
-## PATTERN: colours bottom -> top.
-var colors: Array[String] = []
+## PATTERN: the colours each peg must show, bottom -> top.
+var targets: Array[Array] = []
 
 
 static func sort() -> ColorGoal:
 	return ColorGoal.new()
 
 
-static func pattern(p_peg: int, p_colors: Array[String]) -> ColorGoal:
+static func pattern(p_targets: Array) -> ColorGoal:
 	var goal: ColorGoal = ColorGoal.new()
 	goal.kind = PATTERN
-	goal.peg = p_peg
-	goal.colors = p_colors.duplicate()
+	for target: Array in p_targets:
+		goal.targets.append(target.duplicate())
 	return goal
 
 
-## Reads `{"kind": "sort"}` or `{"kind": "pattern", "peg": 2, "colors": [...]}`;
+## Reads `{"kind": "sort"}` or `{"kind": "pattern", "pegs": [[...], [...], []]}`;
 ## null and a reason in `errors` if it does not fit.
 static func from_dict(data: Variant, errors: Array[String]) -> ColorGoal:
 	if typeof(data) != TYPE_DICTIONARY or not KINDS.has(data.get("kind")):
-		errors.append("\"color_goal\" must be {\"kind\": \"sort\"} or {\"kind\": \"pattern\", \"peg\": int, \"colors\": [...]}")
+		errors.append("\"color_goal\" must be {\"kind\": \"sort\"} or {\"kind\": \"pattern\", \"pegs\": [[colours], ...]}")
 		return null
 	if data["kind"] == SORT:
 		return sort() if data.size() == 1 else _fail("a sort goal takes no other keys", errors)
-	var peg_value: Variant = data.get("peg")
-	var color_list: Variant = data.get("colors")
-	if typeof(peg_value) not in [TYPE_INT, TYPE_FLOAT] or peg_value != floorf(peg_value) or typeof(color_list) != TYPE_ARRAY \
-			or not color_list.all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING) or data.size() != 3:
-		return _fail("a pattern goal needs an integer \"peg\" and a \"colors\" list", errors)
-	var p_colors: Array[String] = []
-	p_colors.assign(color_list)
-	return pattern(int(peg_value), p_colors)
+	var pegs: Variant = data.get("pegs")
+	if typeof(pegs) != TYPE_ARRAY or data.size() != 2:
+		return _fail("a pattern goal needs \"pegs\": one colour list per peg", errors)
+	for target: Variant in pegs:
+		if typeof(target) != TYPE_ARRAY or not target.all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING):
+			return _fail("each pattern peg must be a list of colour names", errors)
+	return pattern(pegs)
 
 
 func to_dict() -> Dictionary:
 	if kind == SORT:
 		return {"kind": SORT}
-	return {"kind": PATTERN, "peg": peg, "colors": colors.duplicate()}
+	var pegs: Array = []
+	for target: Array in targets:
+		pegs.append(target.duplicate())
+	return {"kind": PATTERN, "pegs": pegs}
 
 
 ## Each peg of `state` as a string of colour letters, bottom -> top.
@@ -70,6 +75,14 @@ static func letters_of(state: PuzzleState, disk_colors: Array[String]) -> Packed
 	return pegs
 
 
+static func letter_of(color_name: String) -> String:
+	return LETTERS[color_name]
+
+
+static func colour_of(letter: String) -> String:
+	return LETTERS.find_key(letter)
+
+
 func is_met(state: PuzzleState, disk_colors: Array[String]) -> bool:
 	return matches(letters_of(state, disk_colors))
 
@@ -77,7 +90,7 @@ func is_met(state: PuzzleState, disk_colors: Array[String]) -> bool:
 ## Whether pegs given as colour letters (letters_of) meet the goal.
 func matches(pegs: PackedStringArray) -> bool:
 	if kind == PATTERN:
-		return pegs[peg] == pattern_letters()
+		return pegs == target_letters()
 	var seen: String = ""
 	for text: String in pegs:
 		if text.is_empty():
@@ -87,6 +100,66 @@ func matches(pegs: PackedStringArray) -> bool:
 			return false
 		seen += letter
 	return true
+
+
+## PATTERN: each peg's target as a string of colour letters.
+func target_letters() -> PackedStringArray:
+	var pegs: PackedStringArray = PackedStringArray()
+	for target: Array in targets:
+		var text: String = ""
+		for color_name: String in target:
+			text += LETTERS[color_name]
+		pegs.append(text)
+	return pegs
+
+
+## The colours the goal names: every colour of a sort goal's level (it names
+## them all), the colours of a pattern's targets.
+func goal_colours(disk_colors: Array[String]) -> Array[String]:
+	var colours: Array[String] = []
+	var source: Array = disk_colors.duplicate() if kind == SORT else []
+	for target: Array in targets:
+		source.append_array(target)
+	for color_name: String in source:
+		if not colours.has(color_name):
+			colours.append(color_name)
+	colours.sort()
+	return colours
+
+
+## Disks already in place, peg by peg: PATTERN, how many at the bottom of each
+## peg match its target; SORT, a finished peg (one colour, all of it) counts
+## all its disks. At progress_total() the goal is met.
+func progress(state: PuzzleState, disk_colors: Array[String]) -> int:
+	var pegs: PackedStringArray = letters_of(state, disk_colors)
+	var done: int = 0
+	for peg_index: int in pegs.size():
+		done += placed_on(pegs, peg_index)
+	return done
+
+
+## Disks in place on peg `peg_index` (see progress()).
+func placed_on(pegs: PackedStringArray, peg_index: int) -> int:
+	var text: String = pegs[peg_index]
+	if kind == SORT:
+		return text.length() if is_peg_finished(pegs, peg_index) else 0
+	var target: String = target_letters()[peg_index]
+	var count: int = 0
+	while count < text.length() and count < target.length() and text[count] == target[count]:
+		count += 1
+	return count
+
+
+func progress_total(disk_colors: Array[String]) -> int:
+	return disk_colors.size()
+
+
+## SORT: peg `peg_index` holds every disk of one colour and nothing else.
+static func is_peg_finished(pegs: PackedStringArray, peg_index: int) -> bool:
+	var text: String = pegs[peg_index]
+	if text.is_empty() or text.count(text[0]) != text.length():
+		return false
+	return "".join(pegs).count(text[0]) == text.length()
 
 
 ## The puzzle up to the names of its colours: two levels with the same key
@@ -102,87 +175,51 @@ func shape_key(pegs: PackedStringArray) -> String:
 				rename[letter] = String.chr(97 + rename.size())
 			start += rename[letter]
 		start += "|"
-	var target: String = kind
-	if kind == PATTERN:
-		target += ":%d:" % peg
-		for letter: String in pattern_letters():
-			target += rename.get(letter, "?")
-	return start + " => " + target
+	var goal: String = kind
+	for text: String in (target_letters() if kind == PATTERN else PackedStringArray()):
+		goal += ":"
+		for letter: String in text:
+			goal += rename.get(letter, "?")
+	return start + " => " + goal
 
 
-func pattern_letters() -> String:
-	var text: String = ""
-	for color_name: String in colors:
-		text += LETTERS[color_name]
-	return text
-
-
-## Progress shown to the player. PATTERN: how many disks at the bottom of the
-## pattern peg already match. SORT: how many pegs are finished (one colour,
-## all of it).
-func progress(state: PuzzleState, disk_colors: Array[String]) -> int:
-	var pegs: PackedStringArray = letters_of(state, disk_colors)
-	if kind == PATTERN:
-		var target: String = pattern_letters()
-		var count: int = 0
-		while count < pegs[peg].length() and count < target.length() and pegs[peg][count] == target[count]:
-			count += 1
-		return count
-	var finished: int = 0
-	for peg_index: int in pegs.size():
-		if is_peg_finished(pegs, peg_index):
-			finished += 1
-	return finished
-
-
-## SORT: peg `peg_index` holds every disk of one colour and nothing else.
-static func is_peg_finished(pegs: PackedStringArray, peg_index: int) -> bool:
-	var text: String = pegs[peg_index]
-	if text.is_empty() or text.count(text[0]) != text.length():
-		return false
-	return "".join(pegs).count(text[0]) == text.length()
-
-
-## What progress() counts to when the goal is met.
-func progress_total(disk_colors: Array[String]) -> int:
-	if kind == PATTERN:
-		return colors.size()
-	var distinct: Array[String] = []
-	for color_name: String in disk_colors:
-		if not distinct.has(color_name):
-			distinct.append(color_name)
-	return distinct.size()
-
-
-## Problems with this goal for a level of `peg_count` pegs holding pegs of
-## `capacity` disks with these disk colours; appended to `errors`.
+## Problems with this goal for a level of `peg_count` pegs of `capacity`
+## disks with these disk colours; appended to `errors`. Correction v2 (error
+## 1): the goal's colours are exactly the board's colours, and a pattern names
+## every disk.
 func check(peg_count: int, capacity: int, disk_colors: Array[String], errors: Array[String]) -> void:
 	for color_name: String in disk_colors:
 		if not LETTERS.has(color_name):
 			errors.append("disk colour \"%s\" is not one of %s" % [color_name, str(LETTERS.keys())])
 			return
-	var counts: Dictionary = {}
-	for color_name: String in disk_colors:
-		counts[color_name] = counts.get(color_name, 0) + 1
-	if kind == SORT:
-		if counts.size() > peg_count:
-			errors.append("a sort goal needs a peg for each of its %d colours" % counts.size())
-		for color_name: String in counts:
-			if counts[color_name] > capacity:
-				errors.append("%d %s disks do not fit on one peg of %d" % [counts[color_name], color_name, capacity])
+	var board: Array[String] = disk_colors.duplicate()
+	board.sort()
+	var distinct: Array[String] = []
+	for color_name: String in board:
+		if not distinct.has(color_name):
+			distinct.append(color_name)
+	if goal_colours(disk_colors) != distinct:
+		errors.append("the goal names %s but the board has %s" % [str(goal_colours(disk_colors)), str(distinct)])
 		return
-	if peg < 0 or peg >= peg_count:
-		errors.append("pattern peg %d is not a peg" % peg)
-	if colors.size() < 2 or colors.size() > capacity:
-		errors.append("a pattern needs 2 to %d colours (the peg's capacity)" % capacity)
-	for color_name: String in colors:
-		if not counts.has(color_name):
-			errors.append("the pattern uses %s, which no disk has" % color_name)
-			return
-		counts[color_name] -= 1
-		if counts[color_name] < 0:
-			errors.append("the pattern needs more %s disks than the level has" % color_name)
-			return
+	if kind == SORT:
+		if distinct.size() > peg_count:
+			errors.append("a sort goal needs a peg for each of its %d colours" % distinct.size())
+		for color_name: String in distinct:
+			if disk_colors.count(color_name) > capacity:
+				errors.append("%d %s disks do not fit on one peg of %d" % [disk_colors.count(color_name), color_name, capacity])
+		return
+	if targets.size() != peg_count:
+		errors.append("a pattern needs a target for each of the %d pegs" % peg_count)
+		return
+	var named: Array[String] = []
+	for target: Array in targets:
+		if target.size() > capacity:
+			errors.append("a pattern peg holds at most %d disks" % capacity)
+		for color_name: String in target:
+			named.append(color_name)
+	named.sort()
+	if named != board:
+		errors.append("the pattern must place every disk exactly once")
 
 
 static func _fail(reason: String, errors: Array[String]) -> ColorGoal:

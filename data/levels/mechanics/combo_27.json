@@ -1,16 +1,16 @@
 {
   "id": 9108,
   "difficulty": "hard",
-  "pegs": 3,
-  "disks": 8,
-  "start": [[1],[2,3,4],[5,6,7,8]],
-  "goal": [[2,1,8,5],[3,4,7,6],[]],
+  "pegs": 7,
+  "disks": 45,
+  "start": [[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18],[],[19,20,21,22,23,24,25,26,27],[28,29,30,31,32,33,34,35,36],[],[37,38,39,40,41,42,43,44,45]],
+  "goal": [[40,41,6,26,24,1,31,21,39],[15,42,10,12,11,34,32,3,28],[9,45,36,35,17,27,18,44,2],[],[30,33,29,23,22,19,37,38,25],[8,43,16,7,5,14,13,4,20],[]],
   "rules": ["combination"],
-  "min_moves": 14,
-  "solution_path": [[2,0],[1,0],[1,0],[1,2],[0,1],[0,1],[0,1],[0,1],[2,0],[1,0],[1,0],[2,1],[2,1],[2,0]],
-  "star_thresholds": {"three":14,"two":18},
+  "min_moves": 63,
+  "solution_path": [[0,2],[0,5],[6,2],[4,2],[4,2],[1,0],[1,2],[3,2],[0,2],[6,2],[6,5],[1,5],[0,5],[1,2],[0,3],[0,5],[1,5],[1,5],[0,5],[1,0],[1,5],[1,0],[2,1],[6,1],[0,1],[0,1],[5,1],[4,1],[4,5],[4,1],[0,1],[0,2],[0,1],[6,4],[6,0],[4,0],[3,0],[3,0],[3,4],[3,0],[1,0],[4,3],[4,0],[4,0],[4,3],[4,1],[0,4],[5,4],[3,4],[3,0],[3,4],[3,4],[0,4],[3,0],[3,5],[6,0],[4,6],[3,4],[6,3],[6,3],[6,4],[3,4],[3,4]],
+  "star_thresholds": {"three":63,"two":79},
   "time_limit_seconds": null,
-  "rule_params": {"combination":{"capacity":4}},
-  "disk_colors": ["blue","green","yellow","blue","red","yellow","blue","red"],
-  "color_goal": {"colors":["green","blue","red","red"],"kind":"pattern","peg":0}
+  "rule_params": {"combination":{"capacity":9}},
+  "disk_colors": ["yellow","yellow","blue","yellow","purple","blue","green","pink","yellow","purple","green","purple","pink","pink","yellow","blue","pink","green","green","green","blue","green","purple","green","pink","blue","purple","green","pink","blue","blue","green","purple","blue","yellow","yellow","purple","yellow","yellow","pink","purple","pink","pink","purple","blue"],
+  "color_goal": {"kind":"pattern","pegs":[["pink","purple","blue","blue","green","yellow","blue","blue","yellow"],["yellow","pink","purple","purple","green","blue","green","blue","green"],["yellow","blue","yellow","yellow","pink","purple","green","purple","yellow"],[],["blue","purple","pink","purple","green","green","purple","yellow","pink"],["pink","pink","blue","green","purple","pink","pink","yellow","green"],[]]}
 }

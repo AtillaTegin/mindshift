@@ -108,8 +108,11 @@ func _exit_tree() -> void:
 		_thread = null
 
 
-## Shows a found hint and charges for it; a missing hint costs nothing.
+## Shows a found hint and charges for it; a missing hint costs nothing. A large
+## combination board whose search ran out leads back to the stored solution.
 func _apply(move: Move, key: String) -> void:
+	if move == null and _board.session.level.color_goal != null:
+		move = _board.session.return_to_path_move()
 	if move == null:
 		message_changed.emit(tr("HINT_NOT_FOUND"))
 		return

@@ -11,6 +11,9 @@ enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED, OPENED 
 ## Search budget for hints off the stored solution path. The packed solver
 ## stays far below it for every shipped level size.
 const HINT_MAX_STATES: int = 2000000
+## Positions the guided search of a combination hint may expand (a second or
+## so on a phone); past that the hint leads back to the stored solution.
+const COMBINATION_HINT_BUDGET: int = 6000
 
 var level: Level
 var rules: RuleSet
@@ -188,6 +191,17 @@ func get_path_hint() -> Move:
 	return level.solution_path[_path_index[key]] if _path_index.has(key) else null
 
 
+## A hint that always exists for a level with a stored solution: off its path,
+## take the last move back (every move can be taken back), which leads to a
+## position on the path in the end (the start is on it). Null on the path or
+## with nothing moved.
+func return_to_path_move() -> Move:
+	if history.is_empty() or _path_index.has(_path_key(state)):
+		return null
+	var last: Move = history[-1]
+	return Move.new(last.to_peg, last.from_peg)
+
+
 ## What makes two positions the same for the stored solution: the search key,
 ## or for a combination level only the colours (equal disks of one colour are
 ## interchangeable).
@@ -198,11 +212,12 @@ func _path_key(position: PuzzleState) -> String:
 
 
 ## First move of a shortest solution of `level` from `from_state`, or null. A
-## combination level (colour goal) is searched by CombinationSolver, every
-## other one by the Solver. Only reads its arguments, so it can run on a worker
-## thread.
+## combination level (colour goal) is searched by CombinationSolver within
+## COMBINATION_HINT_BUDGET (a short solution on a large board, may find none:
+## then return_to_path_move() helps); every other one by the Solver. Only reads
+## its arguments, so it can run on a worker thread.
 static func solve_hint(level: Level, from_state: PuzzleState, rule_set: RuleSet) -> Move:
-	var result: Dictionary = CombinationSolver.solve(level, from_state, HINT_MAX_STATES) if level.color_goal != null \
+	var result: Dictionary = CombinationSolver.solve(level, from_state, COMBINATION_HINT_BUDGET) if level.color_goal != null \
 			else Solver.solve(from_state, level.goal, rule_set, HINT_MAX_STATES)
 	return result["path"][0] if result["solvable"] and not result["path"].is_empty() else null
 

@@ -273,6 +273,22 @@ msgstr ""
 msgid "COMBINATION_SORT_INTRO"
 msgstr ""
 
+#. [TODO: TR] az: Hər rəng öz qülləsinə yığılmalıdır
+msgid "COMBINATION_SORT_GOAL"
+msgstr ""
+
+#. [TODO: TR] az: Nümunə həll: %d
+msgid "BOARD_EXAMPLE"
+msgstr ""
+
+#. [TODO: TR] az: Həll olundu! %d gedişdə (nümunə həll %d)
+msgid "BOARD_SOLVED_EXAMPLE"
+msgstr ""
+
+#. [TODO: TR] az: Gediş: %d / nümunə %d
+msgid "POPUP_MOVES_EXAMPLE"
+msgstr ""
+
 #. [TODO: TR] az: Karakuri qutusu: içində disklər gizlənib. Qutuya toxun, açılsın; hər dəfə yalnız üst disk görünür.
 msgid "INTRO_COVERED_PEGS"
 msgstr ""

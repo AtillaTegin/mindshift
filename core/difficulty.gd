@@ -44,16 +44,32 @@ const MECHANIC_MIN_PEGS: int = 3
 const MECHANIC_MAX_PEGS: int = 5
 const MECHANIC_MIN_DISKS: int = 3
 const MECHANIC_MAX_DISKS: int = 10
-## "Birləşmə Tapmacası" levels (CombinationRule, mechanic "combination") are
-## short by nature: what makes them hard is the lack of room, not the length
-## (measured 2026-10-13: 6-10 disks never need more than ~16 moves). They have
-## their own move ranges per tier (user decision 2026-10-13); no expert.
+## "Birləşmə Tapmacası" levels (CombinationRule, mechanic "combination") grow
+## with their place on the road (correction v2, error 2): each stage gives the
+## peg capacity N, the colours C (N disks of each), the empty pegs E and the
+## pegs T = C + E, and the tier (hint price; easy only while learning). Their
+## min_moves is the length of a known solution, not a proven minimum (user
+## decision 2026-10-13), so the tier comes from the stage, not the moves. The
+## main road ends before the expert stage; it is kept for a longer road.
 const COMBINATION: String = "combination"
-const COMBINATION_MOVES: Dictionary = {
-	"easy": {"min_moves": 5, "max_moves": 7},
-	"medium": {"min_moves": 8, "max_moves": 10},
-	"hard": {"min_moves": 11, "max_moves": -1},
-}
+const COMBINATION_MAX_PEGS: int = 11
+const COMBINATION_MAX_DISKS: int = 84
+const COMBINATION_STAGES: Array[Dictionary] = [
+	{"name": "intro", "to": 30, "tier": "easy", "capacity": [4, 4], "colours": [2, 2], "empty": [1, 1], "pegs": [3, 3]},
+	{"name": "middle_1", "to": 80, "tier": "medium", "capacity": [5, 5], "colours": [3, 3], "empty": [1, 1], "pegs": [4, 4]},
+	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4], "empty": [1, 2], "pegs": [5, 6]},
+	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 8], "colours": [4, 5], "empty": [2, 2], "pegs": [6, 7]},
+	{"name": "hard_2", "to": 280, "tier": "hard", "capacity": [8, 9], "colours": [5, 6], "empty": [2, 3], "pegs": [7, 9]},
+	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [9, 12], "colours": [6, 7], "empty": [3, 4], "pegs": [9, 11]},
+]
+
+
+## The combination stage of main path position `position`.
+static func combination_stage(position: int) -> Dictionary:
+	for stage: Dictionary in COMBINATION_STAGES:
+		if position <= stage["to"]:
+			return stage
+	return COMBINATION_STAGES[-1]
 
 
 static func is_known(tier: String) -> bool:
@@ -75,19 +91,22 @@ static func draw_count(tier: String) -> int:
 	return int(get_tier(tier).get("draw", default_count(tier)))
 
 
-## Whether `moves` fall in `tier`'s range; a combination level (`mechanic`
-## COMBINATION) uses COMBINATION_MOVES.
+## Whether `moves` fall in `tier`'s range. A combination level (`mechanic`
+## COMBINATION) takes its tier from its stage on the road, whatever its length
+## (LevelValidator.validate_path checks the stage).
 static func accepts_moves(tier: String, moves: int, mechanic: String = "") -> bool:
-	var settings: Dictionary = COMBINATION_MOVES.get(tier, {}) if mechanic == COMBINATION else get_tier(tier)
+	if mechanic == COMBINATION:
+		return is_known(tier) and moves >= 1
+	var settings: Dictionary = get_tier(tier)
 	if settings.is_empty() or moves < settings["min_moves"]:
 		return false
 	return settings["max_moves"] == -1 or moves <= settings["max_moves"]
 
 
 ## The tier whose move range holds `moves`, or "" below the easiest tier.
-static func tier_for_moves(moves: int, mechanic: String = "") -> String:
+static func tier_for_moves(moves: int) -> String:
 	for tier: String in ORDER:
-		if accepts_moves(tier, moves, mechanic):
+		if accepts_moves(tier, moves):
 			return tier
 	return ""
 
@@ -109,9 +128,11 @@ static func is_mechanic_id(id: int) -> bool:
 	return id >= MECHANIC_FIRST_ID and id < MECHANIC_FIRST_ID + MECHANIC_MAX_LEVELS
 
 
-static func accepts_mechanic_size(peg_count: int, disk_count: int) -> bool:
-	return peg_count >= MECHANIC_MIN_PEGS and peg_count <= MECHANIC_MAX_PEGS \
-			and disk_count >= MECHANIC_MIN_DISKS and disk_count <= MECHANIC_MAX_DISKS
+static func accepts_mechanic_size(peg_count: int, disk_count: int, mechanic: String = "") -> bool:
+	var max_pegs: int = COMBINATION_MAX_PEGS if mechanic == COMBINATION else MECHANIC_MAX_PEGS
+	var max_disks: int = COMBINATION_MAX_DISKS if mechanic == COMBINATION else MECHANIC_MAX_DISKS
+	return peg_count >= MECHANIC_MIN_PEGS and peg_count <= max_pegs \
+			and disk_count >= MECHANIC_MIN_DISKS and disk_count <= max_disks
 
 
 ## Tier of a classic level id, or "" if the id belongs to no tier (mechanic ids included).
@@ -142,8 +163,8 @@ static func level_path(tier: String, index: int, levels_dir: String = LEVELS_DIR
 
 
 ## Human-readable move range, e.g. "5-11" or "34+".
-static func describe_moves(tier: String, mechanic: String = "") -> String:
-	var settings: Dictionary = COMBINATION_MOVES.get(tier, {}) if mechanic == COMBINATION else get_tier(tier)
+static func describe_moves(tier: String) -> String:
+	var settings: Dictionary = get_tier(tier)
 	if settings["max_moves"] == -1:
 		return "%d+" % settings["min_moves"]
 	return "%d-%d" % [settings["min_moves"], settings["max_moves"]]

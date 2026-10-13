@@ -1,16 +1,16 @@
 {
   "id": 9111,
   "difficulty": "hard",
-  "pegs": 3,
-  "disks": 8,
-  "start": [[1],[2,3,4,5],[6,7,8]],
-  "goal": [[2,4,6,1],[3,7,8],[5]],
+  "pegs": 8,
+  "disks": 54,
+  "start": [[1,2,3,4,5,6,7,8,9],[],[10,11,12,13,14,15,16,17,18],[19,20,21,22,23,24,25,26,27],[],[28,29,30,31,32,33,34,35,36],[37,38,39,40,41,42,43,44,45],[46,47,48,49,50,51,52,53,54]],
+  "goal": [[39,13,12,10,22,2,19,11,7],[18,45,26,43,8,23,54,35,15],[],[14,51,49,20,41,47,21,38,6],[9,17,44,27,25,34,33,31,29],[53,28,42,30,32,16,36,52,24],[46,40,4,37,1,3,5,48,50],[]],
   "rules": ["combination"],
-  "min_moves": 16,
-  "solution_path": [[2,0],[2,0],[2,0],[1,2],[0,2],[1,2],[1,0],[1,2],[0,1],[0,1],[0,1],[0,1],[2,0],[2,0],[2,0],[1,0]],
-  "star_thresholds": {"three":16,"two":20},
+  "min_moves": 80,
+  "solution_path": [[0,4],[2,1],[2,4],[6,1],[6,4],[3,4],[3,1],[3,4],[6,1],[0,1],[3,0],[3,1],[7,1],[5,0],[5,1],[5,4],[5,4],[6,1],[5,2],[5,4],[5,2],[5,4],[5,3],[7,5],[3,5],[1,5],[2,5],[2,5],[2,5],[0,5],[2,1],[7,5],[3,5],[3,0],[3,6],[3,6],[2,3],[7,3],[7,2],[7,3],[6,2],[6,3],[6,3],[7,2],[7,3],[0,3],[6,0],[6,2],[6,3],[6,2],[7,6],[0,6],[0,7],[0,7],[0,3],[0,7],[0,6],[2,6],[0,2],[0,7],[0,6],[2,6],[2,0],[7,0],[7,6],[2,6],[2,7],[2,6],[0,7],[2,0],[2,0],[2,7],[2,0],[5,0],[7,2],[7,0],[7,0],[2,0],[7,0],[7,5]],
+  "star_thresholds": {"three":80,"two":100},
   "time_limit_seconds": null,
-  "rule_params": {"combination":{"capacity":4}},
-  "disk_colors": ["red","green","blue","red","blue","green","red","yellow"],
-  "color_goal": {"colors":["green","red","green","red"],"kind":"pattern","peg":0}
+  "rule_params": {"combination":{"capacity":9}},
+  "disk_colors": ["blue","yellow","red","blue","red","pink","red","purple","red","purple","green","yellow","green","green","pink","purple","blue","blue","yellow","blue","yellow","red","blue","red","yellow","blue","green","blue","pink","red","pink","green","yellow","yellow","green","red","purple","pink","green","green","red","pink","pink","yellow","purple","yellow","blue","purple","purple","pink","purple","purple","pink","green"],
+  "color_goal": {"kind":"pattern","pegs":[["green","green","yellow","purple","red","yellow","yellow","green","red"],["blue","purple","blue","pink","purple","blue","green","green","pink"],[],["green","purple","purple","blue","red","blue","yellow","pink","pink"],["red","blue","yellow","green","yellow","yellow","yellow","pink","pink"],["pink","blue","pink","red","green","purple","red","purple","red"],["yellow","green","blue","purple","blue","red","red","purple","pink"],[]]}
 }

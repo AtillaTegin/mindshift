@@ -94,10 +94,18 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 	# Classic levels per tier and the mechanic levels, each list easiest first.
 	var pools: Dictionary = {}
 	for tier: String in Difficulty.ORDER:
-		pools[tier] = _read_folder(levels_dir, tier, errors)
-	var mechanics: Array[Dictionary] = _read_folder(levels_dir, Difficulty.MECHANICS, errors)
+		pools[tier] = read_folder(levels_dir, tier, errors)
+	var mechanics: Array[Dictionary] = read_folder(levels_dir, Difficulty.MECHANICS, errors)
 	if not errors.is_empty():
 		return {}
+	return build_from(pools, mechanics, errors)
+
+
+## The path for these classic pools (tier -> entries, easiest first) and
+## mechanic entries ({file, id, level}); `pools` is used up. The mechanic level
+## builder calls it with stand-in combination levels to learn where they will
+## land (their stage depends on it).
+static func build_from(pools: Dictionary, mechanics: Array[Dictionary], errors: Array[String]) -> Dictionary:
 	# The small easy levels open the road (the first ones are the tutorial).
 	var first: Array[Dictionary] = []
 	var small_disks: int = Difficulty.get_tier("easy").get("small_disks", 0)
@@ -150,6 +158,17 @@ static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: 
 			errors.append("%s: the %s chapter has no slot in CHAPTER_STARTS" % [entry["file"], mechanic])
 	if not errors.is_empty():
 		return {}
+	# Every chapter and the bosses easiest first, whatever order they came in.
+	# Combination levels grow by stage, not by length (their min_moves is an
+	# example solution): they are built in road order, so ids give the order.
+	var by_length: Callable = func(a: Dictionary, b: Dictionary) -> bool:
+		var moves_a: int = (a["level"] as Level).min_moves
+		var moves_b: int = (b["level"] as Level).min_moves
+		return moves_a < moves_b if moves_a != moves_b else a["id"] < b["id"]
+	bosses.sort_custom(by_length)
+	for mechanic: String in chapters:
+		(chapters[mechanic] as Array).sort_custom(by_length if mechanic != Difficulty.COMBINATION \
+				else func(a: Dictionary, b: Dictionary) -> bool: return a["id"] < b["id"])
 	var pinned: Dictionary = {}
 	for i: int in bosses.size():
 		pinned[BOSS_FROM + i * BOSS_EVERY] = bosses[i]
@@ -212,7 +231,11 @@ static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: 
 				best_lag = lag
 				best = mechanic
 		if best.is_empty():
-			errors.append("no chapter level fits main %d" % slot)
+			var left: Dictionary = {}
+			for mechanic: String in chapters:
+				var entries: Array = chapters[mechanic]
+				left[mechanic] = "%d, next %s" % [entries.size(), (entries[0]["level"] as Level).difficulty if not entries.is_empty() else "-"]
+			errors.append("no chapter level fits main %d (left: %s)" % [slot, str(left)])
 			return {}
 		pinned[slot] = (chapters[best] as Array).pop_front()
 		placed[best] = placed.get(best, 0) + 1
@@ -331,7 +354,7 @@ static func _weight(curve: Array, progress: float) -> float:
 
 
 ## Every level in `levels_dir/folder`, easiest first: [{file, id, level}].
-static func _read_folder(levels_dir: String, folder: String, errors: Array[String]) -> Array[Dictionary]:
+static func read_folder(levels_dir: String, folder: String, errors: Array[String]) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	var dir_path: String = "%s/%s" % [levels_dir, folder]
 	if not DirAccess.dir_exists_absolute(dir_path):

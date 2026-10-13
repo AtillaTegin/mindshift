@@ -112,13 +112,16 @@ const SKINS: Dictionary = {
 		DARK: {"board": Color("1b2430"), "pattern": Color("2b3b4e"), "peg": Color("7f97b3"), "mark": Color("9d8cff")},
 	},
 }
-## Disks of a "Birləşmə Tapmacası" level: one size, four colours, each with its
-## shape (DiskSymbols) in `text`; the same in both modes (game pieces).
+## Disks of a "Birləşmə Tapmacası" level: one size, up to seven colours, each
+## with its shape (DiskSymbols) in `text`; the same in both modes (game pieces).
 const COMBINATION_DISKS: Dictionary = {
 	"red": {"fill": Color("e5484d"), "text": Color("fff4f0"), "outline": Color("b8343a")},
 	"blue": {"fill": Color("3b7fd6"), "text": Color("f2f7ff"), "outline": Color("2b62a8")},
 	"yellow": {"fill": Color("f2c230"), "text": Color("4a3a05"), "outline": Color("c49a1c")},
 	"green": {"fill": Color("34a065"), "text": Color("effcf3"), "outline": Color("26804f")},
+	"purple": {"fill": Color("8d5fd3"), "text": Color("f6f0ff"), "outline": Color("6a43a8")},
+	"orange": {"fill": Color("f08a2c"), "text": Color("3d2205"), "outline": Color("c26a17")},
+	"pink": {"fill": Color("e76fae"), "text": Color("3b0f25"), "outline": Color("bd4f88")},
 }
 ## The two caravans of a great exchange: disk fill, number colour and (for the
 ## light one, so it shows on sand) an outline; the same in both modes (they are

@@ -3,17 +3,22 @@ extends Control
 ## Small read-only drawing of a position (the level goal). Every disk carries
 ## its size number on top of its colour (economy/UX addendum 6), so Hard and
 ## Expert goals stay readable when neighbouring colours look alike.
-## A "Birləşmə Tapmacası" goal is a colour arrangement instead (set_color_goal):
-## a pattern shows its colours on its peg, the other pegs faded (anything may
-## stand there); a sort goal shows one stack per colour. Disks carry their
-## colour's shape, and what is already done on the board (current_state) gets
-## a check mark.
+## A "Birləşmə Tapmacası" goal is a colour arrangement instead (set_color_goal,
+## correction v2: every colour on the board is shown): a sort goal is a row of
+## colour icons, a pattern the full target of every peg. Disks carry their
+## colour's shape, and what is already done on the board (current_state) is
+## marked.
 
 const DISK_HEIGHT: float = 24.0
 const BASE_HEIGHT: float = 6.0
 const MIN_HEIGHT: float = 130.0
 const MIN_FONT_SIZE: int = 14
 const MAX_FONT_SIZE: int = 20
+## Colour goals: the size of a sort goal's colour icon, the height of a slot of
+## a pattern's peg.
+const SORT_ICON: float = 52.0
+const SORT_CAPTION: float = 26.0
+const PATTERN_SLOT: float = 16.0
 
 ## Disk size -> {fill, text} overriding the usual one colour per disk (the two
 ## caravans of a great exchange); empty for other levels.
@@ -46,7 +51,7 @@ var position_state: PuzzleState:
 		position_state = value
 		if value != null:
 			# Tall enough for full-height disks, so the numbers stay legible.
-			custom_minimum_size.y = preferred_height(value.get_disk_count() if color_goal == null else _colour_stack())
+			custom_minimum_size.y = preferred_height(value.get_disk_count()) if color_goal == null else _colour_goal_height()
 		queue_redraw()
 ## The colour goal, the level's disk colours and its peg capacity; null / empty
 ## / 0 for a level with an exact goal position.
@@ -67,14 +72,15 @@ func set_color_goal(goal: ColorGoal, colours: Array[String], peg_capacity: int) 
 	current_state = null
 
 
-## How many slots of the pattern are done (PATTERN), or which colours sit
-## finished on a peg of their own (SORT), on the board right now.
-func pattern_done() -> int:
+## PATTERN: how many disks at the bottom of peg `peg_index` already match its
+## target on the board right now.
+func placed_on(peg_index: int) -> int:
 	if color_goal == null or current_state == null or color_goal.kind != ColorGoal.PATTERN:
 		return 0
-	return color_goal.progress(current_state, disk_colors)
+	return color_goal.placed_on(ColorGoal.letters_of(current_state, disk_colors), peg_index)
 
 
+## SORT: the colours that sit finished on a peg of their own right now.
 func finished_colours() -> Array[String]:
 	var done: Array[String] = []
 	if color_goal == null or current_state == null or color_goal.kind != ColorGoal.SORT:
@@ -86,7 +92,7 @@ func finished_colours() -> Array[String]:
 	return done
 
 
-## The colours of a sort goal, in the order their stacks are drawn.
+## The colours of a sort goal, in the order their icons are drawn.
 func sort_colours() -> Array[String]:
 	var colours: Array[String] = []
 	for color_name: String in disk_colors:
@@ -95,14 +101,23 @@ func sort_colours() -> Array[String]:
 	return colours
 
 
-## Tallest stack a colour goal shows.
-func _colour_stack() -> int:
-	if color_goal.kind == ColorGoal.PATTERN:
-		return maxi(capacity, color_goal.colors.size())
-	var tallest: int = 1
-	for color_name: String in sort_colours():
-		tallest = maxi(tallest, disk_colors.count(color_name))
-	return tallest
+## A sort goal is one row of colour icons with a caption; a pattern a small
+## tower per peg, in the board's rows.
+func _colour_goal_height() -> float:
+	if color_goal.kind == ColorGoal.SORT:
+		return SORT_ICON + SORT_CAPTION + 16.0
+	return _pattern_rows() * _pattern_row_height()
+
+
+## Rows of the pattern towers: the same as the board's (BoardLayout.ONE_ROW_PEGS),
+## so each target stands where its peg stands.
+func _pattern_rows() -> int:
+	return 2 if position_state != null and position_state.get_peg_count() > BoardLayout.ONE_ROW_PEGS else 1
+
+
+func _pattern_row_height() -> float:
+	var slot: float = PATTERN_SLOT if _pattern_rows() == 1 else PATTERN_SLOT * 0.75
+	return BASE_HEIGHT + 6.0 + slot * (maxi(capacity, 1) + 0.4)
 
 
 ## Fades the goal fog of `peg_index` away (same timing as the board's PegFog).
@@ -184,50 +199,72 @@ func _draw() -> void:
 	_draw_fog(column, disk_height, base_top, font)
 
 
-## A colour goal: PATTERN on its peg among faded pegs, SORT as one stack per
-## colour; done parts carry a check mark.
+## A colour goal. SORT: one icon per colour of the board (all of them, never
+## cut off) over a caption, a check mark on each colour that sits finished on
+## its own peg. PATTERN: a small tower per peg with its full target (an empty
+## peg stays empty), standing in the board's rows and columns, the disks
+## already in place on the board ringed in the success colour.
 func _draw_colour_goal() -> void:
-	var stack: int = _colour_stack()
-	var disk_height: float = _disk_height(stack)
-	var base_top: float = size.y - BASE_HEIGHT
+	if color_goal.kind == ColorGoal.SORT:
+		_draw_sort_icons()
+		return
+	var peg_count: int = position_state.get_peg_count()
+	var rows: int = _pattern_rows()
+	var per_row: int = ceili(float(peg_count) / rows)
+	var column: float = size.x / maxi(per_row, 1)
+	var row_height: float = size.y / rows
+	var slot: float = (row_height - BASE_HEIGHT - 6.0) / (maxi(capacity, 1) + 0.4)
 	var peg_color: Color = ThemeManager.skin_color(skin, "peg")
-	var faded: Color = peg_color
-	faded.a *= 0.3
-	var columns: int = position_state.get_peg_count() if color_goal.kind == ColorGoal.PATTERN else sort_colours().size()
-	var column: float = size.x / maxi(columns, 1)
 	var width: float = column * BoardLayout.EQUAL_DISK_SHARE
-	for index: int in columns:
-		var center_x: float = column * (index + 0.5)
-		var rod: Color = faded if color_goal.kind == ColorGoal.PATTERN and index != color_goal.peg else peg_color
-		draw_rect(Rect2(center_x - 3.0, base_top - disk_height * (stack + 0.3), 6.0, disk_height * (stack + 0.3)), rod)
-		draw_rect(Rect2(center_x - column * 0.45, base_top, column * 0.9, BASE_HEIGHT), rod)
-		var colours: Array[String] = []
-		var done: int = 0
-		if color_goal.kind == ColorGoal.PATTERN:
-			if index != color_goal.peg:
-				continue
-			colours = color_goal.colors
-			done = pattern_done()
-		else:
-			var color_name: String = sort_colours()[index]
-			for i: int in disk_colors.count(color_name):
-				colours.append(color_name)
-			done = colours.size() if finished_colours().has(color_name) else 0
-		for level_index: int in colours.size():
-			var rect: Rect2 = Rect2(center_x - width * 0.5, base_top - disk_height * (level_index + 1), width, disk_height - 2.0)
-			var colors: Dictionary = ThemeManager.COMBINATION_DISKS[colours[level_index]]
+	for peg_index: int in peg_count:
+		var row: int = peg_index / per_row
+		var in_row: int = per_row if row < rows - 1 else peg_count - per_row * (rows - 1)
+		var center_x: float = column * (peg_index % per_row + (per_row - in_row) * 0.5 + 0.5)
+		var base_top: float = row_height * (row + 1) - BASE_HEIGHT
+		draw_rect(Rect2(center_x - 2.0, base_top - slot * (capacity + 0.3), 4.0, slot * (capacity + 0.3)), peg_color)
+		draw_rect(Rect2(center_x - column * 0.45, base_top, column * 0.9, BASE_HEIGHT), peg_color)
+		var target: Array = color_goal.targets[peg_index]
+		var done: int = placed_on(peg_index)
+		for level_index: int in target.size():
+			var rect: Rect2 = Rect2(center_x - width * 0.5, base_top - slot * (level_index + 1) + 1.0, width, slot - 2.0)
+			var colors: Dictionary = ThemeManager.COMBINATION_DISKS[target[level_index]]
 			var box: StyleBoxFlat = StyleBoxFlat.new()
 			box.bg_color = colors["fill"]
 			box.set_corner_radius_all(int(rect.size.y * 0.45))
-			box.set_border_width_all(2)
+			box.set_border_width_all(2 if level_index < done else 1)
 			box.border_color = ThemeManager.color("success") if level_index < done else colors["outline"]
 			draw_style_box(box, rect)
-			DiskSymbols.draw(self, colours[level_index], rect.get_center(), rect.size.y * 0.24, colors["text"])
-			if level_index < done:
-				var side: float = rect.size.y * 0.7
-				DiskSymbols.draw_check(self, Vector2(rect.end.x - side - rect.size.y * 0.25, rect.get_center().y - side * 0.5),
-						side, colors["text"])
+			DiskSymbols.draw(self, target[level_index], rect.get_center(), rect.size.y * 0.3, colors["text"])
 
+
+func _draw_sort_icons() -> void:
+	var colours: Array[String] = sort_colours()
+	var finished: Array[String] = finished_colours()
+	var icon: float = minf(SORT_ICON, size.x / maxi(colours.size(), 1) - 10.0)
+	var gap: float = minf(icon * 0.35, 16.0)
+	var left: float = (size.x - colours.size() * icon - (colours.size() - 1) * gap) * 0.5
+	var top: float = (size.y - icon - SORT_CAPTION) * 0.5
+	for i: int in colours.size():
+		var rect: Rect2 = Rect2(left + i * (icon + gap), top, icon, icon)
+		var colors: Dictionary = ThemeManager.COMBINATION_DISKS[colours[i]]
+		var box: StyleBoxFlat = StyleBoxFlat.new()
+		box.bg_color = colors["fill"]
+		box.set_corner_radius_all(int(icon * 0.3))
+		var done: bool = finished.has(colours[i])
+		box.set_border_width_all(3 if done else 2)
+		box.border_color = ThemeManager.color("success") if done else colors["outline"]
+		draw_style_box(box, rect)
+		DiskSymbols.draw(self, colours[i], rect.get_center(), icon * 0.22, colors["text"])
+		if done:
+			var side: float = icon * 0.42
+			DiskSymbols.draw_check(self, rect.end - Vector2(side, side) - Vector2(2.0, 2.0), side, colors["text"])
+	# Correction v2: the icons come with the words "each into its own peg".
+	var font: Font = get_theme_default_font()
+	var font_size: int = 20
+	var caption: String = tr("COMBINATION_SORT_GOAL")
+	var caption_width: float = font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	draw_string(font, Vector2((size.x - caption_width) * 0.5, top + icon + SORT_CAPTION - 4.0), caption,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ThemeManager.color("text_secondary"))
 
 ## The goal's fog: covers a covered peg's goal disks below its top one.
 func _draw_fog(column: float, disk_height: float, base_top: float, font: Font) -> void:

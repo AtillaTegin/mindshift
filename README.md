@@ -165,13 +165,35 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - Hədəf önizləməsindəki duman qutu açılanda qalxır.
 - **Karvan Yolu (variant C, xətti qonşuluq):** `"rules": ["classic_hanoi", "adjacent_pegs"]` ([Karvan Yolu əlavəsi](../MindShift_Karvan_Yolu_ve_BossLevel_Addendum.md), bölmə 1). Disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz. Bu, Bağlı Qüllələrin sabit xətti halıdır; Bağlı Qüllələr hələ qurulmadığı üçün ayrıca sadə qayda kimi yazılıb (`AdjacentPegsRule`), Solver-in sürətli yolu ilə işləyir. 3 qüllədə 3–4, 4–5 qüllədə 3–6 disk (3 qüllə / 5 diskdə həll artıq ~100 gedişdir).
 - **Böyük Mübadilə (variant E, boss):** `"boss": "great_exchange"`. 4 qüllə, hər ucda bir yığın (ağ və qara karvan), hədəf yığınların yer dəyişməsidir. Yeni qələbə yoxlaması lazım olmadı: səviyyələr onsuz da istənilən hədəf mövqeyi dəstəkləyir. Disklərin ölçüləri fərqlidir (mühərrik bərabər ölçülü disk tanımır), rəng isə karvanı göstərir. Bəziləri adi, bəziləri Karvan Yolu qaydası ilə: 17 → 20 → 22 → 29 → 33 gediş. Başlanğıcda boz izah mətni, xəritədə böyük, qızılı ikiqat halqalı dayanacaq.
-- **Birləşmə Tapmacası** ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 4): bütün disklər eyni ölçüdədir, yalnız rəngləri fərqlidir (qırmızı dairə, göy kvadrat, sarı üçbucaq, yaşıl romb). İstənilən disk istənilən diskin üstünə qoyula bilər, yeganə hədd qüllənin tutumudur (Water Sort kimi, istifadəçi qərarı 2026-10-13).
+- **Birləşmə Tapmacası** ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 4, [düzəliş v2](../MindShift_Birlesme_Tapmacasi_Duzelis_v2.md)): bütün disklər eyni ölçüdədir, yalnız rəngləri fərqlidir. 7 rəngə qədər, hər birinin öz forması var: qırmızı dairə, göy kvadrat, sarı üçbucaq, yaşıl romb, bənövşəyi ulduz, narıncı altıbucaq, çəhrayı xaç. İstənilən disk istənilən diskin üstünə qoyula bilər, yeganə hədd qüllənin tutumudur (Water Sort kimi).
   - Format: `"rules": ["combination"]`, `"rule_params": {"combination": {"capacity": 4}}`, `"disk_colors": [...]` (disk id-sinin rəngi), `"color_goal"`. `goal` sahəsi saxlanmış həllin bitdiyi mövqedir.
-  - İki hədəf: **Sadə Yığım** (`{"kind": "sort"}`: hər rəng öz qülləsində, hansı qüllə olursa olsun; lövhədə sözlə deyilir) və **Konkret Kombinasiya** (`{"kind": "pattern", "peg": 0, "colors": [...]}`: bir qüllədə aşağıdan yuxarı bu rəng sırası; yalnız şəkillə göstərilir, digər qüllələr önizləmədə solğundur).
-  - Öz həlledicisi var ([core/combination_solver.gd](core/combination_solver.gd)): mövqe hər qüllə üçün rəng hərflərindən ibarət sətirdir, eyni rəngli disklər bir sayılır. Ölçüyə əsaslanan Solver-ə toxunulmayıb. Hint və validator bu səviyyələrdə onu çağırır.
-  - Belə tapmacalar qısadır (6–10 diskdə ən çox ~16 gediş), ona görə fəslin öz gediş şkalası var: 5–7 asan, 8–10 orta, 11+ çətin (`Difficulty.COMBINATION_MOVES`). Hint qiyməti və "50-dən sonra asan yoxdur" qaydası bu şkala ilə işləyir.
-  - 30 səviyyə: əvvəl 6 disk, boş qüllə var, Sadə Yığım; ortada 7 disk, hər iki hədəf; sonda 8–9 disk, boş qüllə yoxdur, Konkret Kombinasiya. Builder bütün mövqeləri hədəfə qədər məsafəyə görə xəritələyir, ona görə hər `min_moves` sübutludur. Eyni tapmacanın başqa rənglərdə təkrarı qadağandır.
-  - Don: "şüşə" (soyuq rəng, nöqtə şəbəkəsi). Bu fəsil şüurlu olaraq müasir, janrlar-arası fəsildir, mədəni kökü yoxdur.
+  - Hədəf həmişə bütün diskləri əhatə edir. Hədəfdə olmayan rəng validatordan keçmir (düzəliş v2, xəta 1).
+    - **Sadə Yığım** (`{"kind": "sort"}`): hər rəng öz qülləsinə yığılır, hansı qüllə olursa olsun. Önizləmədə taxtadakı bütün rənglər ikon sətri kimi görünür, altında "Hər rəng öz qülləsinə yığılmalıdır" yazılır.
+    - **Konkret Kombinasiya** (`{"kind": "pattern", "pegs": [[...], [...], []]}`): hər qüllənin tam rəng sırası verilir, boş qüllə boş qalır. Yalnız şəkillə göstərilir. Önizləmə lövhə ilə eyni cərgə və sütunlarda çəkilir. Yerinə düşən disklər yaşıl haşiyə alır.
+  - **Ölçülər yoldakı yerə görə mərhələ cədvəlindən gəlir** (`Difficulty.COMBINATION_STAGES`, düzəliş v2, xəta 2). Cədvəldə: N qüllənin tutumu, C rəng sayı (hər rəngdən N disk), E boş qüllə sayı, T = C + E.
+
+    | Mərhələ | Yer | N | C | E | T | Disk |
+    |---|---|---|---|---|---|---|
+    | Giriş | ≤ 30 | 4 | 2 | 1 | 3 | 8 |
+    | Orta-1 | 31–80 | 5 | 3 | 1 | 4 | 15 |
+    | Orta-2 | 81–130 | 6 | 3–4 | 1–2 | 5–6 | 18–24 |
+    | Çətin-1 | 131–200 | 7–8 | 4–5 | 2 | 6–7 | 28–40 |
+    | Çətin-2 | 201–280 | 8–9 | 5–6 | 2–3 | 7–9 | 40–54 |
+    | Ekspert | 280+ | 9–12 | 6–7 | 3–4 | 9–11 | 54–84 |
+
+    - Mərhələ daxilində ölçü irəlilədikcə böyüyür, seed ilə müxtəliflik verilir. Ekspert mərhələsi əsas yolun sonundan (265) kənardadır.
+    - Başlanğıc Water Sort-dakı kimidir: C dolu, E boş qüllə.
+    - Pillə mərhələdən gəlir: Giriş asandır, Orta mərhələlər ortadır, Çətin mərhələlər çətindir.
+    - Hədəf növləri: əvvəlki iki mərhələdə Sadə Yığım, Orta-2-də hər ikisi, sonra Konkret Kombinasiya.
+  - **Həll və ulduzlar** (istifadəçi qərarı 2026-10-13): dəqiq minimum yalnız ≤10 diskdə hesablana bilir.
+    - Builder hər səviyyəni yolun simulyasiyası ilə öz yerinə görə qurur ([tools/mechanic_level_builder.gd](tools/mechanic_level_builder.gd)).
+    - Təsadüfi başlanğıc yalnız axtarış onun həllini tapanda saxlanır. ≤10 diskdə BFS işlədilir, ondan böyük lövhələrdə ağırlıqlı A*.
+    - Həll faylda saxlanır və həll olunmanın sübutudur, validator onu yenidən oynayır.
+    - `min_moves` bu nümunə həllin uzunluğudur. Lövhədə "Nümunə həll: N" yazılır. Ulduzlar ona görə verilir, oyunçu nümunədən də qısa həll tapa bilər.
+  - Öz həlledicisi var ([core/combination_solver.gd](core/combination_solver.gd)), ölçüyə əsaslanan Solver-ə toxunulmayıb.
+    - Hint qısa büdcəli A* ilə axtarılır. Tapılmasa, oyunçunu son gedişini geri alaraq nümunə həllin yoluna qaytarır.
+  - 5-dən çox qüllə iki cərgədə dayanır, Water Sort-dakı kimi.
+  - Eyni tapmacanın başqa rənglərdə təkrarı qadağandır.  - Don: "şüşə" (soyuq rəng, nöqtə şəbəkəsi). Bu fəsil şüurlu olaraq müasir, janrlar-arası fəsildir, mədəni kökü yoxdur.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
   - Doqquz Halqa: jadeit yaşılı, damarlar və çubuqdan asılan doqquz halqa (Çin Doqquz Halqa).
   - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).

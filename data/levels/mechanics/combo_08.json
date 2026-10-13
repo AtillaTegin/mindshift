@@ -1,16 +1,16 @@
 {
   "id": 9089,
   "difficulty": "medium",
-  "pegs": 3,
-  "disks": 7,
-  "start": [[1,2],[3,4,5,6],[7]],
-  "goal": [[],[4,7,3,1],[6,5,2]],
+  "pegs": 5,
+  "disks": 18,
+  "start": [[1,2,3,4,5,6],[],[7,8,9,10,11,12],[],[13,14,15,16,17,18]],
+  "goal": [[],[6,5,3,2,1,18],[14,13,8,11,16,9],[4,17,15,12,10,7],[]],
   "rules": ["combination"],
-  "min_moves": 10,
-  "solution_path": [[2,0],[1,2],[1,2],[1,0],[1,2],[0,1],[0,1],[2,1],[0,2],[0,1]],
-  "star_thresholds": {"three":10,"two":13},
+  "min_moves": 23,
+  "solution_path": [[0,1],[0,1],[0,3],[0,1],[0,1],[0,1],[4,1],[4,3],[4,0],[4,3],[2,3],[2,0],[2,3],[2,0],[2,0],[2,3],[4,2],[4,2],[0,2],[0,4],[0,2],[0,2],[4,2]],
+  "star_thresholds": {"three":23,"two":29},
   "time_limit_seconds": null,
-  "rule_params": {"combination":{"capacity":4}},
-  "disk_colors": ["blue","green","red","green","green","red","blue"],
-  "color_goal": {"colors":["green","blue","red","blue"],"kind":"pattern","peg":1}
+  "rule_params": {"combination":{"capacity":6}},
+  "disk_colors": ["purple","blue","purple","yellow","yellow","blue","purple","yellow","blue","yellow","purple","purple","blue","blue","yellow","blue","yellow","purple"],
+  "color_goal": {"kind":"pattern","pegs":[[],["blue","yellow","purple","blue","purple","purple"],["blue","blue","yellow","purple","blue","blue"],["yellow","yellow","yellow","purple","yellow","purple"],[]]}
 }

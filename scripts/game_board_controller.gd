@@ -195,7 +195,7 @@ func start_level(level: Level) -> void:
 	_goal_preview.set_color_goal(level.color_goal, level.disk_colors, _capacity)
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
-	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
+	_min_label.text = tr("BOARD_EXAMPLE" if level.example_solution() else "BOARD_MINIMUM") % level.min_moves
 	_show_goal_words()
 	_refresh(false)
 	level_started.emit()
@@ -371,7 +371,7 @@ func _on_solved() -> void:
 	last_result = {"stars": stars, "improved": improved, "tokens": chest["tokens"], "keys": chest["keys"],
 			"chests": chest["chests"]}
 	_popup.show_result(stars, session.move_count, level.min_moves, session.elapsed_seconds,
-			improved, not _next_level().is_empty(), chest["tokens"])
+			improved, not _next_level().is_empty(), chest["tokens"], level.example_solution())
 	# A chest opens on screen after the stars (formulas v3.1); its coins join the
 	# counter when the flying coin lands there.
 	var chests: Array[int] = chest["chests"]
@@ -504,7 +504,8 @@ func _refresh(animated: bool) -> void:
 	_moves_label.text = tr("BOARD_MOVES") % session.move_count
 	_update_clock()
 	if session.is_solved():
-		_status_label.text = tr("BOARD_SOLVED") % [session.move_count, session.level.min_moves]
+		_status_label.text = tr("BOARD_SOLVED_EXAMPLE" if session.level.example_solution() else "BOARD_SOLVED") \
+				% [session.move_count, session.level.min_moves]
 		_status_label.theme_type_variation = &"SuccessLabel"
 	else:
 		_status_label.text = _message
@@ -524,26 +525,35 @@ func _layout(animated: bool) -> void:
 		return
 	var peg_count: int = session.state.get_peg_count()
 	var disk_count: int = maxi(session.state.get_disk_count(), 1)
-	var column: float = _board.size.x / peg_count
+	# Many pegs (a large combination board) stand in two rows, like Water Sort;
+	# a shorter second row is centred.
+	var rows: int = 2 if peg_count > BoardLayout.ONE_ROW_PEGS else 1
+	var per_row: int = ceili(float(peg_count) / rows)
+	var column: float = _board.size.x / per_row
 	# The dress may keep a strip under the pegs free (the caravan road's stops).
 	var floor_room: float = _board_skin.bottom_room()
 	# Never below zero: before the first layout pass the board has no size yet,
 	# and a coach pointing at a peg then must not get a negative area.
-	var height: float = maxf(_board.size.y - floor_room, 0.0)
+	var height: float = maxf((_board.size.y - floor_room) / rows, 0.0)
 	# Room for every disk on one peg plus the lifted disk above the rod; with a
 	# capacity, room for a full peg, and the rod just as tall.
 	var stack: int = _capacity if _capacity > 0 else disk_count
-	var disk_height: float = minf(height / (stack + 3.5), MAX_DISK_HEIGHT)
+	var disk_height: float = minf(height / (stack + (3.5 if rows == 1 else 2.6)), MAX_DISK_HEIGHT)
 	var base_height: float = maxf(disk_height * 0.4, 10.0)
 	var base_top: float = height - base_height
 	var rod_top: float = base_top - disk_height * (stack + (0.3 if _capacity > 0 else 0.6))
 	var lifted_y: float = rod_top - disk_height * 1.5
 	_peg_areas.clear()
+	var corners: Array[Vector2] = []
 	for peg: PegView in _peg_views:
-		peg.position = Vector2(column * peg.peg_index, 0.0)
-		peg.size = Vector2(column, _board.size.y)
+		var row: int = peg.peg_index / per_row
+		var in_row: int = per_row if row < rows - 1 else peg_count - per_row * (rows - 1)
+		var corner: Vector2 = Vector2(column * (peg.peg_index % per_row + (per_row - in_row) * 0.5), height * row)
+		corners.append(corner)
+		peg.position = corner
+		peg.size = Vector2(column, height + (floor_room if row == rows - 1 else 0.0))
 		peg.configure(base_top, base_height, rod_top, maxf(column * 0.05, 6.0), column * 0.96)
-		_peg_areas.append(Rect2(column * peg.peg_index + column * 0.02, lifted_y,
+		_peg_areas.append(Rect2(corner.x + column * 0.02, corner.y + lifted_y,
 				column * 0.96, base_top + base_height - lifted_y))
 	var selected_disk: int = session.get_selected_disk()
 	for peg_index: int in peg_count:
@@ -558,7 +568,7 @@ func _layout(animated: bool) -> void:
 				y = lifted_y
 			view.selected = disk_size == selected_disk
 			view.size = Vector2(width, disk_height - 4.0)
-			var target: Vector2 = Vector2(column * (peg_index + 0.5) - width * 0.5, y + 2.0)
+			var target: Vector2 = corners[peg_index] + Vector2(column * 0.5 - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
 			view.move_to(target, animated)
 	_sync_fogs(column, disk_height, base_top, base_top + base_height, rod_top, animated)

@@ -92,10 +92,11 @@ static func format_time(seconds: float) -> String:
 
 ## Fills in the result and plays the appear animation.
 ## `tokens_earned`: chest tokens for the stars gained (economy formulas v3).
+## `example`: min_moves is an example solution's length, not a proven minimum.
 func show_result(stars: int, moves: int, min_moves: int, seconds: float, improved: bool, has_next: bool,
-		tokens_earned: int = 0) -> void:
+		tokens_earned: int = 0, example: bool = false) -> void:
 	_time_label.text = tr("POPUP_TIME") % format_time(seconds)
-	_moves_label.text = tr("POPUP_MOVES") % [moves, min_moves]
+	_moves_label.text = tr("POPUP_MOVES_EXAMPLE" if example else "POPUP_MOVES") % [moves, min_moves]
 	var notes: PackedStringArray = PackedStringArray()
 	if improved:
 		notes.append(tr("POPUP_RECORD"))

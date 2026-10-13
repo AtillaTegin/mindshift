@@ -38,6 +38,10 @@ var disk_colors: Array[String] = []
 ## goal is the exact position `goal`. A combination level's `goal` is the
 ## position its stored solution ends in, one of those that meet color_goal.
 var color_goal: ColorGoal
+## Length of a shortest solution, proven by the Solver. A combination level is
+## too large for that: its min_moves is the length of its stored example
+## solution (user decision 2026-10-13), and the stars measure against it all
+## the same (see example_solution()).
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
@@ -89,6 +93,12 @@ func get_disk_count() -> int:
 ## Null if a rule id is unknown or its rule_params do not fit (reason in errors).
 func get_rule_set(errors: Array[String] = []) -> RuleSet:
 	return RuleSet.from_ids(rule_ids, rule_params, errors)
+
+
+## Whether min_moves is only the length of an example solution (a combination
+## level) rather than a proven minimum; the board then says so.
+func example_solution() -> bool:
+	return color_goal != null
 
 
 ## Whether `state` solves the level: its colour goal when it has one, else the
@@ -270,7 +280,7 @@ func check(errors: Array[String]) -> void:
 		errors.append("unknown difficulty \"%s\"" % difficulty)
 		return
 	if not Difficulty.accepts_moves(difficulty, min_moves, mechanic()):
-		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty, mechanic())])
+		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
 	if mechanic() == CLASSIC:
 		if not Difficulty.accepts_id(difficulty, id):
 			errors.append("id %d is outside the %s range" % [id, difficulty])
@@ -281,7 +291,7 @@ func check(errors: Array[String]) -> void:
 		# only matter on 4 pegs); it has its own id range.
 		if not Difficulty.is_mechanic_id(id):
 			errors.append("id %d is outside the mechanic range" % id)
-		if not Difficulty.accepts_mechanic_size(get_peg_count(), get_disk_count()):
+		if not Difficulty.accepts_mechanic_size(get_peg_count(), get_disk_count(), mechanic()):
 			errors.append("%d pegs / %d disks is not a mechanic level size" % [get_peg_count(), get_disk_count()])
 	if two_star_moves != two_star_threshold(min_moves):
 		errors.append("star_thresholds.two is %d, expected round(%d * 1.25) = %d" % [
