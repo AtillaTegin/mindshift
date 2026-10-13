@@ -63,12 +63,13 @@ const COMBINATION_STAGES: Array[Dictionary] = [
 	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4]},
 	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 7], "colours": [4, 6]},
 	{"name": "hard_2", "to": 280, "tier": "hard", "capacity": [7, 7], "colours": [6, 8]},
-	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [7, 7], "colours": [8, 10]},
+	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [7, 7], "colours": [8, 9]},
 ]
 ## E_min by "CxN" (colours x capacity), measured 2026-10-13 with
 ## tools/combination_e_min.gd: the first E at which at least 6 of 8 random
 ## starts were solved (exhaustive search up to 12 disks, guided search with a
-## budget of 40000 positions beyond).
+## budget of 40000 positions beyond). 10x7 is not practical: even with 3 empty
+## pegs only 4 of 8 were solved, so no stage uses 10 colours.
 const COMBINATION_E_MIN: Dictionary = {
 	"2x4": 1, "3x4": 1, "3x5": 1, "3x6": 1, "4x6": 1, "4x7": 1, "5x7": 1, "6x7": 2, "7x7": 2, "8x7": 2, "9x7": 3,
 }

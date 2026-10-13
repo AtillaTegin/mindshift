@@ -183,7 +183,9 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
     | Orta-2 | 81–130 | 6 | 3–4 | 18–24 | 4–5 |
     | Çətin-1 | 131–200 | 7 | 4–6 | 28–42 | 5–8 |
     | Çətin-2 | 201–280 | 7 | 6–8 | 42–56 | 8–10 |
-    | Ekspert | 280+ | 7 | 8–10 | 56–70 | yolun sonundan kənardadır |
+    | Ekspert | 280+ | 7 | 8–9 | 56–63 | yolun sonundan kənardadır |
+
+    10 rəng × 7 praktik deyil: 3 boş qüllə ilə belə 8 başlanğıcdan yalnız 4-ü həll olundu, ona görə işlədilmir.
 
     - Başlanğıc Water Sort-dakı kimidir: C dolu, E boş qüllə.
     - Pillə mərhələdən gəlir.
