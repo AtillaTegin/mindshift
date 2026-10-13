@@ -274,18 +274,27 @@ static func validate_combination_shape(level: Level, errors: Array[String]) -> v
 		errors.append("a combination level needs at least one empty peg")
 
 
-## Correction v2, error 2: a combination level at main path `position` has the
-## size of its stage (Difficulty.COMBINATION_STAGES) and the stage's tier.
+## Corrections v2 and v3: a combination level at main path `position` has the
+## capacity and colours of its stage (Difficulty.COMBINATION_STAGES, capacity
+## never above Difficulty.COMBINATION_MAX_CAPACITY), the measured E_min empty
+## pegs, a pattern goal only on a small board, and the stage's tier.
 static func combination_stage_errors(level: Level, position: int) -> Array[String]:
 	var errors: Array[String] = []
 	var stage: Dictionary = Difficulty.combination_stage(position)
 	var capacity: int = CombinationSolver.capacity_of(level)
 	var colours: int = level.color_goal.goal_colours(level.disk_colors).size()
 	var empty: int = level.get_peg_count() - colours
-	var checks: Dictionary = {"capacity": capacity, "colours": colours, "empty": empty, "pegs": level.get_peg_count()}
+	var checks: Dictionary = {"capacity": capacity, "colours": colours}
 	for key: String in checks:
 		if checks[key] < stage[key][0] or checks[key] > stage[key][1]:
 			errors.append("main %d (%s): %s %d is outside %s" % [position, stage["name"], key, checks[key], str(stage[key])])
+	if capacity > Difficulty.COMBINATION_MAX_CAPACITY:
+		errors.append("main %d: capacity %d is above %d" % [position, capacity, Difficulty.COMBINATION_MAX_CAPACITY])
+	if empty != Difficulty.combination_empty(colours, capacity):
+		errors.append("main %d: %d empty pegs, E_min of %dx%d is %d" % [position, empty, colours, capacity,
+				Difficulty.combination_empty(colours, capacity)])
+	if level.color_goal.kind == ColorGoal.PATTERN and not Difficulty.allows_pattern(colours, level.get_peg_count()):
+		errors.append("main %d: a pattern goal on a board of %d colours / %d pegs" % [position, colours, level.get_peg_count()])
 	if level.difficulty != stage["tier"]:
 		errors.append("main %d (%s): difficulty %s, the stage is %s" % [position, stage["name"], level.difficulty, stage["tier"]])
 	return errors

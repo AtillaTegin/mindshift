@@ -1,44 +1,60 @@
 class_name DiskSymbols
 extends RefCounted
-## The shape that goes with each disk colour of a "Birləşmə Tapmacası" level
-## (red circle, blue square, yellow triangle, green diamond, purple star,
-## orange hexagon, pink cross), drawn on the disk instead of a size number:
-## those disks all have one size, and the shapes keep the colours apart for
+## The pips that go with each disk colour of a "Birləşmə Tapmacası" level
+## (correction v3, section 5): domino-style dots, drawn on the disk instead of
+## a size number (those disks all have one size). Colour number k (its place in
+## ColorGoal.LETTERS) shows k pips in the dice layout for k <= 6; past six it
+## shows two groups like a domino tile, six pips | k - 6 pips with a line
+## between, so no two colours share a pattern. They keep the colours apart for
 ## colour-blind players and on small screens.
 
 
-## Draws the shape of `color_name` centred on `center`; `radius` is the
-## distance from the centre to its edge.
+## The pip count of `color_name` (1 for the first colour of ColorGoal.LETTERS).
+static func pips_of(color_name: String) -> int:
+	return ColorGoal.LETTERS.keys().find(color_name) + 1
+
+
+## Draws the pips of `color_name` centred on `center`; `radius` is half the
+## height they may take.
 static func draw(canvas: CanvasItem, color_name: String, center: Vector2, radius: float, tint: Color) -> void:
-	match color_name:
-		"red":
-			canvas.draw_circle(center, radius, tint, true, -1.0, true)
-		"blue":
-			var side: float = radius * 1.7
-			canvas.draw_rect(Rect2(center - Vector2(side, side) * 0.5, Vector2(side, side)), tint)
-		"yellow":
-			canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0.0, -radius * 1.1),
-					center + Vector2(radius * 1.05, radius * 0.8), center + Vector2(-radius * 1.05, radius * 0.8)]), tint)
-		"green":
-			canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0.0, -radius * 1.15),
-					center + Vector2(radius, 0.0), center + Vector2(0.0, radius * 1.15), center + Vector2(-radius, 0.0)]), tint)
-		"purple":
-			canvas.draw_colored_polygon(_star(center, radius * 1.2, radius * 0.5, 5), tint)
-		"orange":
-			canvas.draw_colored_polygon(_star(center, radius * 1.05, radius * 1.05, 3), tint)
-		"pink":
-			var arm: float = radius * 0.38
-			canvas.draw_rect(Rect2(center - Vector2(radius, arm), Vector2(radius * 2.0, arm * 2.0)), tint)
-			canvas.draw_rect(Rect2(center - Vector2(arm, radius), Vector2(arm * 2.0, radius * 2.0)), tint)
+	var pips: int = pips_of(color_name)
+	var side: float = radius * 2.0
+	if pips <= 6:
+		_draw_face(canvas, pips, center, side, tint)
+		return
+	var gap: float = side * 0.35
+	var left: Vector2 = center - Vector2((side + gap) * 0.5, 0.0)
+	var right: Vector2 = center + Vector2((side + gap) * 0.5, 0.0)
+	_draw_face(canvas, 6, left, side, tint)
+	_draw_face(canvas, pips - 6, right, side, tint)
+	canvas.draw_line(center - Vector2(0.0, side * 0.5), center + Vector2(0.0, side * 0.5), tint, maxf(side * 0.07, 1.0), true)
 
 
-## A star of `points` points (with inner == outer radius: a 2*points-gon).
-static func _star(center: Vector2, outer: float, inner: float, points: int) -> PackedVector2Array:
-	var polygon: PackedVector2Array = PackedVector2Array()
-	for i: int in points * 2:
-		var angle: float = -PI / 2.0 + i * PI / points
-		polygon.append(center + Vector2(cos(angle), sin(angle)) * (outer if i % 2 == 0 else inner))
-	return polygon
+## Width the pips of `color_name` take for a given `radius` (two faces past six).
+static func width_of(color_name: String, radius: float) -> float:
+	return radius * 2.0 if pips_of(color_name) <= 6 else radius * 4.7
+
+
+## One dice face of `count` (1-6) pips in a `side`-sized square at `center`.
+static func _draw_face(canvas: CanvasItem, count: int, center: Vector2, side: float, tint: Color) -> void:
+	var d: float = side * 0.32
+	var spots: Array[Vector2] = []
+	match count:
+		1:
+			spots = [Vector2.ZERO]
+		2:
+			spots = [Vector2(-d, -d), Vector2(d, d)]
+		3:
+			spots = [Vector2(-d, -d), Vector2.ZERO, Vector2(d, d)]
+		4:
+			spots = [Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)]
+		5:
+			spots = [Vector2(-d, -d), Vector2(d, -d), Vector2.ZERO, Vector2(-d, d), Vector2(d, d)]
+		_:
+			spots = [Vector2(-d, -d), Vector2(-d, 0.0), Vector2(-d, d), Vector2(d, -d), Vector2(d, 0.0), Vector2(d, d)]
+	var pip: float = maxf(side * 0.13, 1.5)
+	for spot: Vector2 in spots:
+		canvas.draw_circle(center + spot, pip, tint, true, -1.0, true)
 
 
 ## A check mark inside a `side`-sized square at `origin` (a finished part of a

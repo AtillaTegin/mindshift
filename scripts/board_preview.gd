@@ -16,9 +16,9 @@ const MIN_FONT_SIZE: int = 14
 const MAX_FONT_SIZE: int = 20
 ## Colour goals: the size of a sort goal's colour icon, the height of a slot of
 ## a pattern's peg.
-const SORT_ICON: float = 52.0
+const SORT_ICON: float = 44.0
 const SORT_CAPTION: float = 26.0
-const PATTERN_SLOT: float = 16.0
+const PATTERN_SLOT: float = 22.0
 
 ## Disk size -> {fill, text} overriding the usual one colour per disk (the two
 ## caravans of a great exchange); empty for other levels.
@@ -230,34 +230,36 @@ func _draw_colour_goal() -> void:
 			var colors: Dictionary = ThemeManager.COMBINATION_DISKS[target[level_index]]
 			var box: StyleBoxFlat = StyleBoxFlat.new()
 			box.bg_color = colors["fill"]
-			box.set_corner_radius_all(int(rect.size.y * 0.45))
-			box.set_border_width_all(2 if level_index < done else 1)
+			box.set_corner_radius_all(int(minf(BoardLayout.BLOCK_RADIUS * 0.6, rect.size.y * 0.3)))
+			box.set_border_width_all(3 if level_index < done else 1)
 			box.border_color = ThemeManager.color("success") if level_index < done else colors["outline"]
 			draw_style_box(box, rect)
-			DiskSymbols.draw(self, target[level_index], rect.get_center(), rect.size.y * 0.3, colors["text"])
+			DiskSymbols.draw(self, target[level_index], rect.get_center(), rect.size.y * 0.34, colors["text"])
 
 
 func _draw_sort_icons() -> void:
 	var colours: Array[String] = sort_colours()
 	var finished: Array[String] = finished_colours()
-	var icon: float = minf(SORT_ICON, size.x / maxi(colours.size(), 1) - 10.0)
-	var gap: float = minf(icon * 0.35, 16.0)
-	var left: float = (size.x - colours.size() * icon - (colours.size() - 1) * gap) * 0.5
+	# Each icon is a small block like the disks, wide enough for two pip groups.
+	var gap: float = 10.0
+	var icon: float = minf(SORT_ICON, (size.x - (colours.size() - 1) * gap) / (maxi(colours.size(), 1) * 1.6))
+	var block: Vector2 = Vector2(icon * 1.6, icon)
+	var left: float = (size.x - colours.size() * block.x - (colours.size() - 1) * gap) * 0.5
 	var top: float = (size.y - icon - SORT_CAPTION) * 0.5
 	for i: int in colours.size():
-		var rect: Rect2 = Rect2(left + i * (icon + gap), top, icon, icon)
+		var rect: Rect2 = Rect2(Vector2(left + i * (block.x + gap), top), block)
 		var colors: Dictionary = ThemeManager.COMBINATION_DISKS[colours[i]]
 		var box: StyleBoxFlat = StyleBoxFlat.new()
 		box.bg_color = colors["fill"]
-		box.set_corner_radius_all(int(icon * 0.3))
+		box.set_corner_radius_all(int(BoardLayout.BLOCK_RADIUS))
 		var done: bool = finished.has(colours[i])
 		box.set_border_width_all(3 if done else 2)
 		box.border_color = ThemeManager.color("success") if done else colors["outline"]
 		draw_style_box(box, rect)
-		DiskSymbols.draw(self, colours[i], rect.get_center(), icon * 0.22, colors["text"])
+		DiskSymbols.draw(self, colours[i], rect.get_center(), icon * 0.3, colors["text"])
 		if done:
-			var side: float = icon * 0.42
-			DiskSymbols.draw_check(self, rect.end - Vector2(side, side) - Vector2(2.0, 2.0), side, colors["text"])
+			var side: float = icon * 0.4
+			DiskSymbols.draw_check(self, rect.end - Vector2(side, side) - Vector2(3.0, 3.0), side, ThemeManager.color("success"))
 	# Correction v2: the icons come with the words "each into its own peg".
 	var font: Font = get_theme_default_font()
 	var font_size: int = 20

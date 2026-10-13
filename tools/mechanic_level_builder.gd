@@ -144,14 +144,15 @@ const BOSS_SPECS: Array[Dictionary] = [
 	{"file": "boss_05.json", "disks": 10, "split": "halves", "caravan": false},
 ]
 
-## "Birləşmə Tapmacası" levels (level structure v4 section 4, correction v2,
-## user decisions 2026-10-13). Each level's size comes from its stage on the
-## road (Difficulty.COMBINATION_STAGES: peg capacity N, C colours of N disks
-## each, E empty pegs), so the builder first works out where the levels will
-## land (combination_positions). Inside a stage sizes grow along it, with
-## seeded variety. Goals follow the v4 gradient: "Sadə Yığım" (sort) in the
-## first two stages, both kinds in the third, "Konkret Kombinasiya" (a full
-## colour sequence for every peg) after that.
+## "Birləşmə Tapmacası" levels (level structure v4 section 4, corrections v2
+## and v3, user decisions 2026-10-13). Each level's size comes from its stage
+## on the road (Difficulty.COMBINATION_STAGES: peg capacity N up to 7, C
+## colours of N disks each; E is the measured Difficulty.COMBINATION_E_MIN),
+## so the builder first works out where the levels will land
+## (combination_positions). Inside a stage sizes grow along it, with seeded
+## variety. "Konkret Kombinasiya" (a full colour sequence for every peg) only
+## on small boards (Difficulty.allows_pattern), drawn at random there; every
+## other level is "Sadə Yığım" (sort).
 const COMBO_COUNT: int = 30
 ## Starts tried per level before giving up.
 const COMBO_ATTEMPTS: int = 40
@@ -397,15 +398,13 @@ static func combination_spec(index: int, position: int, seed_value: int) -> Dict
 	rng.seed = seed_value
 	var capacity: int = _grow(stage["capacity"], progress, rng)
 	var colours: int = _grow(stage["colours"], progress, rng)
-	var empty: int = _grow(stage["empty"], progress, rng)
-	# T = C + E stays inside the stage's peg range.
-	empty = clampi(empty, maxi(stage["empty"][0], stage["pegs"][0] - colours), mini(stage["empty"][1], stage["pegs"][1] - colours))
-	var kind: String = ColorGoal.PATTERN
-	match stage["name"]:
-		"intro", "middle_1":
-			kind = ColorGoal.SORT
-		"middle_2":
-			kind = ColorGoal.SORT if index % 2 == 0 else ColorGoal.PATTERN
+	# Correction v3: E is measured (Difficulty.COMBINATION_E_MIN), not chosen.
+	var empty: int = Difficulty.combination_empty(colours, capacity)
+	# A pattern goal only on small boards, drawn at random there (correction
+	# v3, section 1); the very first level sorts, as its guide explains.
+	var kind: String = ColorGoal.SORT
+	if index > 0 and Difficulty.allows_pattern(colours, colours + empty) and rng.randf() < 0.5:
+		kind = ColorGoal.PATTERN
 	return {"stage": stage["name"], "tier": stage["tier"], "position": position, "capacity": capacity,
 			"colours": colours, "empty": empty, "kind": kind}
 
@@ -426,13 +425,19 @@ static func _grow(bounds: Array, progress: float, rng: RandomNumberGenerator) ->
 ## Starts that are partly done already, or an earlier level in other colours
 ## (`used`: ColorGoal.shape_key), are skipped.
 static func build_combination(spec: Dictionary, id: int, seed_value: int, used: Dictionary = {}) -> Level:
+	if spec["empty"] < 1:
+		push_error("%s: E_min of %d colours x %d is not measured (tools/combination_e_min.gd)" % [spec["file"], spec["colours"], spec["capacity"]])
+		return null
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var capacity: int = spec["capacity"]
 	var peg_count: int = spec["colours"] + spec["empty"]
 	for attempt: int in spec.get("attempts", COMBO_ATTEMPTS):
+		# Colours come from the first six (dice faces 1-6, correction v3 section
+		# 5) while six are enough; only larger boards reach "6 | k" pips.
 		var disks: Array = []
-		for color_name: String in _shuffled(ColorGoal.LETTERS.keys(), rng).slice(0, spec["colours"]):
+		var palette: Array = ColorGoal.LETTERS.keys().slice(0, maxi(spec["colours"], 6))
+		for color_name: String in _shuffled(palette, rng).slice(0, spec["colours"]):
 			for k: int in capacity:
 				disks.append(ColorGoal.letter_of(color_name))
 		var goal: ColorGoal = ColorGoal.sort()

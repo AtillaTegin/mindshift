@@ -4,8 +4,12 @@ extends RefCounted
 
 const MIN_DISK_SHARE: float = 0.3
 const MAX_DISK_SHARE: float = 0.94
-## The one disk width of a "Birləşmə Tapmacası" level (all disks equal).
-const EQUAL_DISK_SHARE: float = 0.72
+## A "Birləşmə Tapmacası" disk (all disks equal, correction v3 section 4): a
+## block, not a pill. Its width as a share of the column, its height (when the
+## board has room) and its corner radius.
+const EQUAL_DISK_SHARE: float = 0.84
+const BLOCK_HEIGHT: float = 34.0
+const BLOCK_RADIUS: float = 9.0
 ## More pegs than this stand in two rows, on the board and in the goal preview
 ## (only large combination boards), like Water Sort.
 const ONE_ROW_PEGS: int = 5

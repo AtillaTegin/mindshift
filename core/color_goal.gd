@@ -19,7 +19,7 @@ const KINDS: Array[String] = [SORT, PATTERN]
 ## Disk colours of the combination puzzle and their one-letter codes (each
 ## colour also has its own shape, DiskSymbols).
 const LETTERS: Dictionary = {"red": "r", "blue": "b", "yellow": "y", "green": "g", "purple": "p", "orange": "o",
-		"pink": "k"}
+		"pink": "k", "cyan": "c", "lime": "l", "brown": "n"}
 
 var kind: String = SORT
 ## PATTERN: the colours each peg must show, bottom -> top.

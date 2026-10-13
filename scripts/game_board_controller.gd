@@ -494,6 +494,8 @@ func _build_views() -> void:
 				disk.number_color = palette[disk_size]["text"]
 				disk.outline_color = palette[disk_size].get("outline")
 				disk.symbol = palette[disk_size].get("symbol", "")
+				if palette[disk_size].has("symbol"):
+					disk.corner = BoardLayout.BLOCK_RADIUS
 			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
 					else ThemeManager.color("accent")
 			_disk_layer.add_child(disk)
@@ -538,7 +540,9 @@ func _layout(animated: bool) -> void:
 	# Room for every disk on one peg plus the lifted disk above the rod; with a
 	# capacity, room for a full peg, and the rod just as tall.
 	var stack: int = _capacity if _capacity > 0 else disk_count
-	var disk_height: float = minf(height / (stack + (3.5 if rows == 1 else 2.6)), MAX_DISK_HEIGHT)
+	# Combination disks are blocks of BLOCK_HEIGHT whenever the board has room.
+	var disk_height: float = minf(height / (stack + (3.5 if rows == 1 else 2.6)),
+			BoardLayout.BLOCK_HEIGHT + 4.0 if _capacity > 0 else MAX_DISK_HEIGHT)
 	var base_height: float = maxf(disk_height * 0.4, 10.0)
 	var base_top: float = height - base_height
 	var rod_top: float = base_top - disk_height * (stack + (0.3 if _capacity > 0 else 0.6))

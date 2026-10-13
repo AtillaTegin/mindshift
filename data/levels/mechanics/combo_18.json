@@ -1,16 +1,16 @@
 {
   "id": 9099,
   "difficulty": "hard",
-  "pegs": 7,
+  "pegs": 6,
   "disks": 35,
-  "start": [[1,2,3,4,5,6,7],[],[8,9,10,11,12,13,14],[15,16,17,18,19,20,21],[22,23,24,25,26,27,28],[29,30,31,32,33,34,35],[]],
-  "goal": [[],[21,14,35,33,32,12,30],[31,13,10,4,26,25,23],[2,3,15,27,16,18,1],[34,8,22,9,17,24,5],[11,28,20,29,7,6,19],[]],
+  "start": [[],[1,2,3,4,5,6,7],[8,9,10,11,12,13,14],[15,16,17,18,19,20,21],[22,23,24,25,26,27,28],[29,30,31,32,33,34,35]],
+  "goal": [[35,20,19,26,25,24,6],[1,7,23,33,31,30,8],[],[15,3,18,21,12,11,9],[22,14,13,27,5,4,17],[29,34,2,32,28,16,10]],
   "rules": ["combination"],
-  "min_moves": 54,
-  "solution_path": [[3,1],[2,1],[5,1],[5,3],[5,1],[5,1],[2,6],[2,1],[5,6],[5,1],[5,6],[2,5],[4,5],[3,2],[3,5],[6,5],[0,5],[0,5],[3,5],[2,0],[2,0],[2,3],[2,3],[6,2],[6,2],[0,2],[0,3],[0,6],[0,2],[4,0],[4,2],[4,2],[4,0],[4,2],[4,0],[3,4],[3,4],[0,4],[3,4],[3,6],[3,4],[0,4],[0,4],[3,6],[3,6],[0,6],[0,3],[6,3],[6,3],[4,3],[6,3],[6,3],[0,3],[6,4]],
-  "star_thresholds": {"three":54,"two":68},
+  "min_moves": 44,
+  "solution_path": [[5,0],[3,5],[3,0],[3,0],[4,3],[4,3],[4,0],[4,0],[4,0],[4,0],[2,4],[2,4],[3,4],[0,2],[1,2],[1,0],[1,4],[1,4],[1,3],[1,3],[2,1],[2,1],[5,2],[5,2],[5,1],[5,4],[5,1],[5,1],[2,5],[3,5],[4,5],[3,1],[3,5],[3,2],[3,4],[3,5],[1,3],[2,3],[2,3],[2,3],[2,3],[2,5],[2,3],[2,1]],
+  "star_thresholds": {"three":44,"two":55},
   "time_limit_seconds": null,
   "rule_params": {"combination":{"capacity":7}},
-  "disk_colors": ["orange","orange","yellow","blue","yellow","blue","orange","purple","orange","purple","yellow","yellow","pink","pink","blue","blue","purple","pink","pink","pink","purple","yellow","purple","pink","purple","pink","yellow","blue","blue","orange","blue","orange","purple","orange","yellow"],
-  "color_goal": {"kind":"pattern","pegs":[[],["purple","pink","yellow","purple","orange","yellow","orange"],["blue","pink","purple","blue","pink","purple","purple"],["orange","yellow","blue","yellow","blue","pink","orange"],["orange","purple","yellow","orange","purple","pink","yellow"],["yellow","blue","pink","blue","orange","blue","pink"],[]]}
+  "disk_colors": ["yellow","blue","purple","green","green","orange","yellow","yellow","purple","blue","purple","purple","green","green","purple","blue","green","purple","orange","orange","purple","green","yellow","orange","orange","orange","green","blue","blue","yellow","yellow","blue","yellow","blue","orange"],
+  "color_goal": {"kind":"sort"}
 }

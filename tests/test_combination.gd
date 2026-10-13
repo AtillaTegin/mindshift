@@ -115,50 +115,72 @@ func test_levels_follow_the_stage_table() -> void:
 	assert_eq(road[0]["position"], 30, "first at main 30")
 	var first: Level = road[0]["level"]
 	assert_eq([first.get_disk_count(), first.get_peg_count(), CombinationSolver.capacity_of(first)], [8, 3, 4], "intro: N4 C2 E1")
+	assert_eq(first.color_goal.kind, ColorGoal.SORT, "the first one sorts, as its guide explains")
 	var last: Level = road[-1]["level"]
-	assert_true(last.get_disk_count() >= 40 and last.get_peg_count() >= 7, "main %d is a hard_2 board" % road[-1]["position"])
-	# Boards grow stage by stage (inside a stage sizes vary on purpose).
-	var previous_largest: int = 0
+	assert_true(last.get_disk_count() >= 40 and last.get_peg_count() >= 7, "main %d is a large board" % road[-1]["position"])
+	# Correction v3: boards grow by colours (and so pegs), never above 7 a peg.
+	var previous_colours: int = 0
+	var patterns: int = 0
 	for stage: String in ["intro", "middle_1", "middle_2", "hard_1", "hard_2"]:
 		assert_true(stages_seen.has(stage), "%s is on the road" % stage)
-		var largest: int = 0
+		var most: int = 0
 		for level: Level in stages_seen[stage]:
-			largest = maxi(largest, level.get_disk_count())
-		assert_true(largest > previous_largest, "%s boards are larger than the stage before" % stage)
-		previous_largest = largest
-	for level: Level in stages_seen["intro"] + stages_seen["middle_1"]:
-		assert_eq(level.color_goal.kind, ColorGoal.SORT, "sorting first (v4 gradient)")
-	var middle: Array[String] = []
-	for level: Level in stages_seen["middle_2"]:
-		middle.append(level.color_goal.kind)
-	assert_true(middle.has(ColorGoal.SORT) and middle.has(ColorGoal.PATTERN), "both goals in the middle")
-	for level: Level in stages_seen["hard_1"] + stages_seen["hard_2"]:
-		assert_eq(level.color_goal.kind, ColorGoal.PATTERN, "patterns late")
+			var colours: int = level.color_goal.goal_colours(level.disk_colors).size()
+			most = maxi(most, colours)
+			assert_true(CombinationSolver.capacity_of(level) <= Difficulty.COMBINATION_MAX_CAPACITY, "a peg holds at most 7")
+			if level.color_goal.kind == ColorGoal.PATTERN:
+				patterns += 1
+				assert_true(colours <= 3 and level.get_peg_count() <= 5, "a pattern only on a small board")
+		assert_true(most > previous_colours or stage == "middle_1", "%s brings more colours" % stage)
+		previous_colours = maxi(previous_colours, most)
+	assert_true(patterns >= 2, "small boards still get combinations (%d)" % patterns)
 	var sizes: Dictionary = {}
 	for level: Level in stages_seen["hard_2"]:
 		sizes["%d/%d" % [level.get_peg_count(), level.get_disk_count()]] = true
 	assert_true(sizes.size() >= 2, "variety inside a stage: %s" % str(sizes.keys()))
 
 
-func test_stage_table_matches_the_correction() -> void:
-	var expected: Array = [
-		["intro", 30, [4, 4], [2, 2], [1, 1], [3, 3]],
-		["middle_1", 80, [5, 5], [3, 3], [1, 1], [4, 4]],
-		["middle_2", 130, [6, 6], [3, 4], [1, 2], [5, 6]],
-		["hard_1", 200, [7, 8], [4, 5], [2, 2], [6, 7]],
-		["hard_2", 280, [8, 9], [5, 6], [2, 3], [7, 9]],
-		["expert", 100000, [9, 12], [6, 7], [3, 4], [9, 11]],
-	]
-	for i: int in expected.size():
-		var stage: Dictionary = Difficulty.COMBINATION_STAGES[i]
-		assert_eq([stage["name"], stage["to"], stage["capacity"], stage["colours"], stage["empty"], stage["pegs"]], expected[i])
+func test_stage_table_follows_the_correction() -> void:
+	# Correction v3: N at most 7 everywhere, more colours stage by stage, and an
+	# E_min measured for every colours x capacity a stage on the road can draw.
+	var previous_colours: int = 0
+	for stage: Dictionary in Difficulty.COMBINATION_STAGES:
+		assert_true(stage["capacity"][1] <= Difficulty.COMBINATION_MAX_CAPACITY, "%s: N <= 7" % stage["name"])
+		assert_true(stage["colours"][1] >= previous_colours, "%s: colours grow" % stage["name"])
+		previous_colours = stage["colours"][1]
+		if stage["to"] > 280:
+			continue  # past the end of the road
+		for colours: int in range(stage["colours"][0], stage["colours"][1] + 1):
+			for capacity: int in range(stage["capacity"][0], stage["capacity"][1] + 1):
+				assert_true(Difficulty.combination_empty(colours, capacity) >= 1, "E_min of %dx%d is measured" % [colours, capacity])
 	assert_eq(Difficulty.combination_stage(30)["name"], "intro")
 	assert_eq(Difficulty.combination_stage(31)["name"], "middle_1")
 	assert_eq(Difficulty.combination_stage(265)["name"], "hard_2")
-	assert_true(ColorGoal.LETTERS.size() >= 7, "enough colours for the expert stage")
+	assert_true(Difficulty.allows_pattern(3, 5))
+	assert_false(Difficulty.allows_pattern(4, 5), "more than 3 colours: sort only")
+	assert_false(Difficulty.allows_pattern(3, 6), "more than 5 pegs: sort only")
+	assert_true(ColorGoal.LETTERS.size() >= 8, "enough colours for the largest boards")
 	for color_name: String in ColorGoal.LETTERS:
 		assert_true(ThemeManager.COMBINATION_DISKS.has(color_name), "%s has a look" % color_name)
 	assert_eq(Difficulty.COMBINATION, CombinationRule.ID)
+
+
+func test_every_colour_has_its_own_pips() -> void:
+	# Correction v3, section 5: dice faces 1-6, then two groups "6 | k - 6".
+	var seen: Array[int] = []
+	for color_name: String in ColorGoal.LETTERS:
+		var pips: int = DiskSymbols.pips_of(color_name)
+		assert_false(seen.has(pips), "%s has a pip count of its own" % color_name)
+		seen.append(pips)
+		assert_true(DiskSymbols.width_of(color_name, 10.0) > (20.0 if pips > 6 else 19.0), "two groups past six")
+	assert_eq(DiskSymbols.pips_of("red"), 1)
+	# A board of up to six colours shows plain dice faces only.
+	for level: Level in _combo_levels():
+		var colours: Array[String] = level.color_goal.goal_colours(level.disk_colors)
+		var largest: int = 0
+		for color_name: String in colours:
+			largest = maxi(largest, DiskSymbols.pips_of(color_name))
+		assert_true(largest <= maxi(colours.size(), 6), "level %d: %s" % [level.id, str(colours)])
 
 
 func test_capacity_rule() -> void:
@@ -307,8 +329,10 @@ func test_board_shows_colours_and_example_solution() -> void:
 	var widths: Array[float] = []
 	for view: DiskView in _board.get_node("%DiskLayer").get_children():
 		var color_name: String = level.disk_colors[view.disk_size - 1]
-		assert_eq(view.symbol, color_name, "a shape, not a number")
+		assert_eq(view.symbol, color_name, "pips, not a number")
 		assert_eq(view.color, ThemeManager.COMBINATION_DISKS[color_name]["fill"])
+		assert_eq(view.corner, BoardLayout.BLOCK_RADIUS, "a block, not a pill")
+		assert_true(absf(view.size.y - BoardLayout.BLOCK_HEIGHT) < 0.5, "34 high when the board has room")
 		if not widths.has(snappedf(view.size.x, 0.1)):
 			widths.append(snappedf(view.size.x, 0.1))
 	assert_eq(widths.size(), 1, "every disk the same size %s" % str(widths))
@@ -331,8 +355,9 @@ func test_board_shows_colours_and_example_solution() -> void:
 	assert_eq(status.text, tr("BOARD_SOLVED_EXAMPLE") % [level.min_moves, level.min_moves])
 
 
-func test_large_board_stands_in_two_rows_and_shows_every_target() -> void:
+func test_large_board_stands_in_two_rows_and_shows_every_colour() -> void:
 	var level: Level = LevelCatalog.load_mechanic("combo_30.json")
+	assert_eq(level.color_goal.kind, ColorGoal.SORT, "a large board only sorts (correction v3)")
 	_start_board(level)
 	var rows: Dictionary = {}
 	var board: Control = _board.get_node("%Board")
@@ -340,6 +365,24 @@ func test_large_board_stands_in_two_rows_and_shows_every_target() -> void:
 		rows[peg.position.y] = true
 		assert_true(peg.position.x >= 0.0 and peg.position.x + peg.size.x <= board.size.x + 0.5, "inside the board")
 	assert_eq(rows.size(), 2, "%d pegs in two rows" % level.get_peg_count())
+	var preview: BoardPreview = _board.get_node("%GoalPreview")
+	var colours: int = level.color_goal.goal_colours(level.disk_colors).size()
+	assert_eq(preview.sort_colours().size(), colours, "an icon for every colour on the board")
+	for move: Move in level.solution_path:
+		_board.on_peg_pressed(move.from_peg)
+		_board.on_peg_pressed(move.to_peg)
+	assert_true(_board.session.is_solved())
+	assert_eq(preview.finished_colours().size(), colours)
+
+
+func test_small_pattern_board_shows_every_target() -> void:
+	var level: Level = null
+	for candidate: Level in _combo_levels():
+		if candidate.color_goal.kind == ColorGoal.PATTERN:
+			level = candidate
+			break
+	assert_not_null(level, "a small board with a pattern goal")
+	_start_board(level)
 	var status: Label = _board.get_node("%StatusLabel")
 	assert_eq(status.text, "", "a pattern goal is only shown")
 	var preview: BoardPreview = _board.get_node("%GoalPreview")

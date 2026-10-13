@@ -4,13 +4,13 @@
   "pegs": 4,
   "disks": 15,
   "start": [[1,2,3,4,5],[6,7,8,9,10],[11,12,13,14,15],[]],
-  "goal": [[1,2,15,13,11],[6,9,4,3,14],[],[5,10,8,7,12]],
+  "goal": [[3,4,8,9,10],[5,15,14,2,1],[7,13,6,11,12],[]],
   "rules": ["combination"],
-  "min_moves": 13,
-  "solution_path": [[0,3],[1,3],[1,0],[1,3],[1,3],[0,1],[0,1],[0,1],[2,0],[2,1],[2,0],[2,3],[2,0]],
-  "star_thresholds": {"three":13,"two":16},
+  "min_moves": 27,
+  "solution_path": [[1,3],[1,3],[1,3],[1,3],[1,3],[0,1],[2,1],[2,1],[0,2],[0,2],[0,1],[0,1],[2,0],[2,0],[3,0],[2,0],[3,0],[2,3],[2,3],[0,2],[0,2],[0,2],[3,2],[3,2],[3,0],[3,0],[3,0]],
+  "star_thresholds": {"three":27,"two":34},
   "time_limit_seconds": null,
   "rule_params": {"combination":{"capacity":5}},
-  "disk_colors": ["green","green","red","red","yellow","red","yellow","yellow","red","yellow","green","yellow","green","red","green"],
-  "color_goal": {"kind":"sort"}
+  "disk_colors": ["blue","purple","green","green","green","purple","purple","purple","green","blue","blue","blue","green","blue","purple"],
+  "color_goal": {"kind":"pattern","pegs":[["green","green","purple","green","blue"],["green","purple","blue","purple","blue"],["purple","green","purple","blue","blue"],[]]}
 }

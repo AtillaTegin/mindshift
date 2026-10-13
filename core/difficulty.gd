@@ -45,23 +45,46 @@ const MECHANIC_MAX_PEGS: int = 5
 const MECHANIC_MIN_DISKS: int = 3
 const MECHANIC_MAX_DISKS: int = 10
 ## "Birləşmə Tapmacası" levels (CombinationRule, mechanic "combination") grow
-## with their place on the road (correction v2, error 2): each stage gives the
-## peg capacity N, the colours C (N disks of each), the empty pegs E and the
-## pegs T = C + E, and the tier (hint price; easy only while learning). Their
-## min_moves is the length of a known solution, not a proven minimum (user
-## decision 2026-10-13), so the tier comes from the stage, not the moves. The
-## main road ends before the expert stage; it is kept for a longer road.
+## with their place on the road (correction v3, replacing v2's table): a peg
+## holds at most COMBINATION_MAX_CAPACITY disks, and boards grow by colours
+## C (N disks of each) and so by pegs T = C + E. The empty pegs E are not
+## chosen but measured: E = COMBINATION_E_MIN, the fewest with which random
+## starts are solvable (tools/combination_e_min.gd). Each stage gives the
+## capacity and colour ranges and the tier (hint price; easy only while
+## learning). Their min_moves is the length of a known solution, not a proven
+## minimum (user decision 2026-10-13), so the tier comes from the stage.
 const COMBINATION: String = "combination"
-const COMBINATION_MAX_PEGS: int = 11
-const COMBINATION_MAX_DISKS: int = 84
+const COMBINATION_MAX_CAPACITY: int = 7
+const COMBINATION_MAX_PEGS: int = 12
+const COMBINATION_MAX_DISKS: int = 70
 const COMBINATION_STAGES: Array[Dictionary] = [
-	{"name": "intro", "to": 30, "tier": "easy", "capacity": [4, 4], "colours": [2, 2], "empty": [1, 1], "pegs": [3, 3]},
-	{"name": "middle_1", "to": 80, "tier": "medium", "capacity": [5, 5], "colours": [3, 3], "empty": [1, 1], "pegs": [4, 4]},
-	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4], "empty": [1, 2], "pegs": [5, 6]},
-	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 8], "colours": [4, 5], "empty": [2, 2], "pegs": [6, 7]},
-	{"name": "hard_2", "to": 280, "tier": "hard", "capacity": [8, 9], "colours": [5, 6], "empty": [2, 3], "pegs": [7, 9]},
-	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [9, 12], "colours": [6, 7], "empty": [3, 4], "pegs": [9, 11]},
+	{"name": "intro", "to": 30, "tier": "easy", "capacity": [4, 4], "colours": [2, 2]},
+	{"name": "middle_1", "to": 80, "tier": "medium", "capacity": [5, 5], "colours": [3, 3]},
+	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4]},
+	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 7], "colours": [4, 6]},
+	{"name": "hard_2", "to": 280, "tier": "hard", "capacity": [7, 7], "colours": [6, 8]},
+	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [7, 7], "colours": [8, 10]},
 ]
+## E_min by "CxN" (colours x capacity), measured 2026-10-13 with
+## tools/combination_e_min.gd: the first E at which at least 6 of 8 random
+## starts were solved (exhaustive search up to 12 disks, guided search with a
+## budget of 40000 positions beyond).
+const COMBINATION_E_MIN: Dictionary = {
+	"2x4": 1, "3x4": 1, "3x5": 1, "3x6": 1, "4x6": 1, "4x7": 1, "5x7": 1, "6x7": 2, "7x7": 2, "8x7": 2, "9x7": 3,
+}
+## "Konkret Kombinasiya" only on small boards (correction v3, section 1).
+const PATTERN_MAX_COLOURS: int = 3
+const PATTERN_MAX_PEGS: int = 5
+
+
+## The measured E_min for `colours` x `capacity`, or 0 if it was not measured.
+static func combination_empty(colours: int, capacity: int) -> int:
+	return COMBINATION_E_MIN.get("%dx%d" % [colours, capacity], 0)
+
+
+## Whether a board of `colours` and `pegs` may have a pattern goal.
+static func allows_pattern(colours: int, pegs: int) -> bool:
+	return colours <= PATTERN_MAX_COLOURS and pegs <= PATTERN_MAX_PEGS
 
 
 ## The combination stage of main path position `position`.

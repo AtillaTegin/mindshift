@@ -42,11 +42,19 @@ var ring_color: Color = Color.WHITE:
 	set(value):
 		ring_color = value
 		queue_redraw()
-## Colour name whose DiskSymbols shape replaces the size number, "" for none.
+## Colour name whose DiskSymbols pips replace the size number, "" for none.
 var symbol: String = "":
 	set(value):
 		symbol = value
 		queue_redraw()
+## Corner radius of a block-shaped disk (a combination disk); below zero for
+## the usual pill.
+var corner: float = -1.0:
+	set(value):
+		corner = value
+		queue_redraw()
+		if is_node_ready():
+			_update_shadow()
 
 const WOBBLE_SECONDS: float = 0.32
 const WOBBLE_PIXELS: float = 7.0
@@ -115,7 +123,7 @@ func _draw_rim(rim_color: Color, width: float) -> void:
 	draw_style_box(rim, Rect2(Vector2.ZERO, size))
 
 func _corner_radius() -> float:
-	return minf(size.y, size.x) * 0.45
+	return minf(corner, minf(size.y, size.x) * 0.45) if corner >= 0.0 else minf(size.y, size.x) * 0.45
 
 
 ## The shadow is the disk's own rounded outline, drawn behind and a little lower.
@@ -151,7 +159,7 @@ func _draw() -> void:
 		_draw_rim(soft, 5.0)
 	var ink: Color = number_color if number_color != null else ThemeManager.color("text_on_disk")
 	if not symbol.is_empty():
-		DiskSymbols.draw(self, symbol, size * 0.5, size.y * 0.24, ink)
+		DiskSymbols.draw(self, symbol, size * 0.5, size.y * 0.33, ink)
 		return
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))
