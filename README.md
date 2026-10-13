@@ -117,7 +117,7 @@ godot --headless --path . --script res://tools/level_generator.gd -- --difficult
 godot --headless --path . --script res://tools/mechanic_level_builder.gd
 godot --headless --path . --script res://tools/path_builder.gd
 # yoxlama (hər faylı Solver ilə yenidən həll edir, yolu da yoxlayır; --require=N hər çətinlikdə ən azı N klassik səviyyə tələb edir)
-godot --headless --path . --script res://tools/level_validator.gd -- --require=22
+godot --headless --path . --script res://tools/level_validator.gd -- --require=16
 ```
 
 Fayllar `data/levels/<çətinlik>/<çətinlik>_NNN.json` adlanır (asandan çətinə sıralanıb).
@@ -125,31 +125,32 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 
 | Çətinlik | Gediş | Qüllə | Disk | Say |
 |---|---|---|---|---|
-| Easy | 5–11 | 3 | 3–4 | 22 |
+| Easy | 5–11 | 3 | 3–4 | 16 |
 | Medium | 12–20 | 3–4 | 5–6 | 76 |
 | Hard | 21–33 | 4 | 7–8 | 74 |
 | Expert | 34+ | 4 | 9–10 | 28 |
 
-Üstəgəl 81 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u): cəmi 281 səviyyə (843 ulduz).
+Asan: generator əvvəlki kimi 22 səviyyə çəkir, 3 disklilərdən yalnız ilk 4-ü qalır (səviyyə strukturu v4: 3 diskli asan yalnız yolun ilk 4 səviyyəsidir). Tutorial səviyyələri və 4 disklilər dəyişmir.
+
+Üstəgəl 111 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u, 30 Birləşmə Tapmacası): cəmi 305 səviyyə (915 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
 
 ### Yol necə qurulur
 
-[tools/path_builder.gd](tools/path_builder.gd) səviyyələri yola düzür (sabit seed, nəticə təkrarlanır):
+[tools/path_builder.gd](tools/path_builder.gd) səviyyələri yola düzür (sabit seed, nəticə təkrarlanır), [səviyyə strukturu v4](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)-ə görə:
 
-- İlk 5 səviyyə klassik Asan-dır, tutorial (1001, 1002) birinci gəlir.
-- Sonra çətinliklər çəki əyriləri ilə qarışdırılır: Asan tez seyrəlir və sonra yalnız arabir "nəfəs" kimi gəlir, əvvəldə Orta, sona doğru Çətin üstünlük təşkil edir. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə), ona görə nə blok-blok, nə də tam təsadüfi olur.
-- Hər çətinliyin içində səviyyələr asandan çətinə gedir.
-- Bütün yol boyu gedən fəsillər (`PathBuilder.SPREADS`), hər biri asandan çətinə, sonuncusu yolun sonuna yaxın, aralıqlar seed-li və cəmi bütün yolu doldurur: karakuri 12-dən (5–10 aralıq), Karvan Yolu 17-dən (5–9), Doqquz Halqa 20-dən (10–15). Toqquşmada səviyyə ən yaxın boş yerə keçir, növbəti aralıq onun faktiki yerindən sayılır.
-- Böyük Mübadilə boss-ları 40-cı səviyyədən başlayaraq hər 40 səviyyədən bir gəlir (40, 80, 120, 160, 200), hər biri əvvəlkindən çətin.
-- Digər mexanika səviyyələri 10-cu səviyyədən sonra yol boyu bərabər paylanır.
+- İlk 4 səviyyə 3 diskli klassik Asan-dır (öyrənmə), tutorial (1001, 1002) birinci gəlir. Sonra 4 diskli asanlar Orta-ya keçid olur. 50-ci səviyyədən sonra heç bir asan səviyyə yoxdur (nə klassik, nə mexanika).
+- Fəsillər sabit yerdə başlayır (`PathBuilder.CHAPTER_STARTS`): karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə Tapmacası 30. Böyük Mübadilə boss-ları 40, 80, 120, 160, 200-də, hər biri əvvəlkindən çətin.
+- 50-yə qədər yalnız fəsillərin asan giriş səviyyələri gəlir. 51–200 arasında klassik və mexanika təxminən 1:1 növbələşir: təxminən hər iki yerdən birində mexanika olur, yeri seed ilə seçilir (nə sərt ritm, nə uzun blok). 200-dən sonra qalan mexanikalar seyrəlir, amma hər fəsil yolun sonuna qədər çatır.
+- Hər mexanika yeri öz bərabər paylanmasından ən çox geri qalan fəslə verilir. Fəslin içində səviyyələr asandan çətinə gedir.
+- Klassik yerlərdə çətinliklər çəki əyriləri ilə qarışdırılır: Asan yalnız əvvəldə, sonra Orta üstünlük təşkil edir, sonra Orta və Çətin qarışır, sona doğru Çətin artır. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə).
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-81 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və coin verir.
+111 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə, 30 Birləşmə Tapmacası). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və jeton verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
@@ -164,6 +165,13 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - Hədəf önizləməsindəki duman qutu açılanda qalxır.
 - **Karvan Yolu (variant C, xətti qonşuluq):** `"rules": ["classic_hanoi", "adjacent_pegs"]` ([Karvan Yolu əlavəsi](../MindShift_Karvan_Yolu_ve_BossLevel_Addendum.md), bölmə 1). Disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz. Bu, Bağlı Qüllələrin sabit xətti halıdır; Bağlı Qüllələr hələ qurulmadığı üçün ayrıca sadə qayda kimi yazılıb (`AdjacentPegsRule`), Solver-in sürətli yolu ilə işləyir. 3 qüllədə 3–4, 4–5 qüllədə 3–6 disk (3 qüllə / 5 diskdə həll artıq ~100 gedişdir).
 - **Böyük Mübadilə (variant E, boss):** `"boss": "great_exchange"`. 4 qüllə, hər ucda bir yığın (ağ və qara karvan), hədəf yığınların yer dəyişməsidir. Yeni qələbə yoxlaması lazım olmadı: səviyyələr onsuz da istənilən hədəf mövqeyi dəstəkləyir. Disklərin ölçüləri fərqlidir (mühərrik bərabər ölçülü disk tanımır), rəng isə karvanı göstərir. Bəziləri adi, bəziləri Karvan Yolu qaydası ilə: 17 → 20 → 22 → 29 → 33 gediş. Başlanğıcda boz izah mətni, xəritədə böyük, qızılı ikiqat halqalı dayanacaq.
+- **Birləşmə Tapmacası** ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 4): bütün disklər eyni ölçüdədir, yalnız rəngləri fərqlidir (qırmızı dairə, göy kvadrat, sarı üçbucaq, yaşıl romb). İstənilən disk istənilən diskin üstünə qoyula bilər, yeganə hədd qüllənin tutumudur (Water Sort kimi, istifadəçi qərarı 2026-10-13).
+  - Format: `"rules": ["combination"]`, `"rule_params": {"combination": {"capacity": 4}}`, `"disk_colors": [...]` (disk id-sinin rəngi), `"color_goal"`. `goal` sahəsi saxlanmış həllin bitdiyi mövqedir.
+  - İki hədəf: **Sadə Yığım** (`{"kind": "sort"}`: hər rəng öz qülləsində, hansı qüllə olursa olsun; lövhədə sözlə deyilir) və **Konkret Kombinasiya** (`{"kind": "pattern", "peg": 0, "colors": [...]}`: bir qüllədə aşağıdan yuxarı bu rəng sırası; yalnız şəkillə göstərilir, digər qüllələr önizləmədə solğundur).
+  - Öz həlledicisi var ([core/combination_solver.gd](core/combination_solver.gd)): mövqe hər qüllə üçün rəng hərflərindən ibarət sətirdir, eyni rəngli disklər bir sayılır. Ölçüyə əsaslanan Solver-ə toxunulmayıb. Hint və validator bu səviyyələrdə onu çağırır.
+  - Belə tapmacalar qısadır (6–10 diskdə ən çox ~16 gediş), ona görə fəslin öz gediş şkalası var: 5–7 asan, 8–10 orta, 11+ çətin (`Difficulty.COMBINATION_MOVES`). Hint qiyməti və "50-dən sonra asan yoxdur" qaydası bu şkala ilə işləyir.
+  - 30 səviyyə: əvvəl 6 disk, boş qüllə var, Sadə Yığım; ortada 7 disk, hər iki hədəf; sonda 8–9 disk, boş qüllə yoxdur, Konkret Kombinasiya. Builder bütün mövqeləri hədəfə qədər məsafəyə görə xəritələyir, ona görə hər `min_moves` sübutludur. Eyni tapmacanın başqa rənglərdə təkrarı qadağandır.
+  - Don: "şüşə" (soyuq rəng, nöqtə şəbəkəsi). Bu fəsil şüurlu olaraq müasir, janrlar-arası fəsildir, mədəni kökü yoxdur.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
   - Doqquz Halqa: jadeit yaşılı, damarlar və çubuqdan asılan doqquz halqa (Çin Doqquz Halqa).
   - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).
@@ -232,6 +240,8 @@ Solver-ə toxunmaq lazım deyil.
 | M-3 | Karvan Yolu (30 səviyyə) və Böyük Mübadilə boss-ları (5) | ✅ |
 | L-3 | Səviyyə yolu və xəritə, gizli ada, bonus kateqoriyasının ləğvi, 208 səviyyə yenidən, mədəni donlar ([əlavə](../MindShift_Level_Structure_Addendum.md)) | ✅ |
 | P-1 | Prototip: rəng ardıcıllığı, eyni ölçülü rəngli disklər, gediş limiti (ayrıca səhnə, oyuna qoşulmayıb) | ✅ sınaqda |
+| L-4 | Səviyyə strukturu v4: asan yalnız öyrənmə üçün, 51–200 arası 1:1 qarışıq; Birləşmə Tapmacası (30 səviyyə) ([əlavə](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)) | ✅ |
+| L-4.2 | Hər mexanikanın ilk səviyyəsində animasiyalı bələdçi | — |
 | 7 | Android build | — |
 
 ### Rənglər və dillər

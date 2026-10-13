@@ -79,7 +79,7 @@ func test_hint_after_detour_and_return_reads_the_path_again() -> void:
 
 
 func test_undo_restores_position_and_count() -> void:
-	var level: Level = LevelCatalog.load_level("easy", 20)
+	var level: Level = LevelCatalog.load_level("easy", LevelCatalog.level_count("easy"))
 	var session: GameSession = GameSession.new(level)
 	assert_false(session.can_undo())
 	assert_false(session.undo())

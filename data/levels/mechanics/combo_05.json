@@ -1,0 +1,16 @@
+{
+  "id": 9086,
+  "difficulty": "medium",
+  "pegs": 3,
+  "disks": 7,
+  "start": [[1],[2,3,4],[5,6,7]],
+  "goal": [[1,6,3],[2,4],[5,7]],
+  "rules": ["combination"],
+  "min_moves": 8,
+  "solution_path": [[1,0],[2,0],[2,1],[0,2],[0,2],[1,0],[1,0],[2,1]],
+  "star_thresholds": {"three":8,"two":10},
+  "time_limit_seconds": null,
+  "rule_params": {"combination":{"capacity":3}},
+  "disk_colors": ["red","yellow","red","yellow","green","red","green"],
+  "color_goal": {"kind":"sort"}
+}

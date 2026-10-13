@@ -4,8 +4,9 @@ extends SceneTree
 ##   godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=76
 ##   godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all
 ## Options: --difficulty=easy|medium|hard|expert|all (default all), --count=N
-## (default: the tier's Difficulty.default_count), --seed=N (default: a fixed
-## seed per difficulty, so reruns give the same files).
+## (levels to draw; default: the tier's Difficulty.draw_count, of which
+## keep_small() may drop some), --seed=N (default: a fixed seed per difficulty,
+## so reruns give the same files).
 ## Afterwards run tools/path_builder.gd: it places the levels on the level path.
 ## A run replaces the difficulty's previous <difficulty>_NNN.json files. Every
 ## file is re-read and checked by LevelValidator right after it is written.
@@ -50,12 +51,14 @@ func _run() -> bool:
 		var started_ms: int = Time.get_ticks_msec()
 		var seed_value: int = seed_override if seed_override >= 0 else default_seed(tier)
 		var stats: Dictionary = {}
-		var tier_count: int = count if count != -1 else Difficulty.default_count(tier)
+		var tier_count: int = count if count != -1 else Difficulty.draw_count(tier)
 		var levels: Array[Level] = generate(tier, tier_count, seed_value, stats)
-		print("%s: %d/%d levels, %d puzzles tried, min_moves %s, seed %d (%d ms)" % [
-				tier, levels.size(), tier_count, stats["attempts"], _range_text(levels), seed_value,
+		var drawn: int = levels.size()
+		levels = keep_small(tier, levels)
+		print("%s: %d/%d levels (%d kept), %d puzzles tried, min_moves %s, seed %d (%d ms)" % [
+				tier, drawn, tier_count, levels.size(), stats["attempts"], _range_text(levels), seed_value,
 				Time.get_ticks_msec() - started_ms])
-		if levels.size() < tier_count:
+		if drawn < tier_count:
 			printerr("%s: gave up after %d attempts" % [tier, stats["attempts"]])
 			ok = false
 			continue
@@ -118,6 +121,26 @@ static func generate(tier: String, count: int, seed_value: int, stats: Dictionar
 		var path: Array[Move] = entry["path"]
 		levels.append(Level.create(settings["first_id"] + i, tier, entry["start"], entry["goal"], RULE_IDS, path))
 	return levels
+
+
+## Level structure v4, section 1: of the levels with the tier's `small_disks`
+## disks only the first `small_keep` stay (easy: four 3-disk levels open the
+## road, the tutorial ones among them); the rest go and the ids close up in the
+## same order. Tiers without the setting keep every level.
+static func keep_small(tier: String, levels: Array[Level]) -> Array[Level]:
+	var settings: Dictionary = Difficulty.get_tier(tier)
+	if not settings.has("small_keep"):
+		return levels
+	var kept: Array[Level] = []
+	var small: int = 0
+	for level: Level in levels:
+		if level.get_disk_count() == settings["small_disks"]:
+			small += 1
+			if small > settings["small_keep"]:
+				continue
+		level.id = settings["first_id"] + kept.size()
+		kept.append(level)
+	return kept
 
 
 ## Every disk on a random peg; each peg is sorted, so the position is legal.

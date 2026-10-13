@@ -11,6 +11,8 @@ extends Control
 ##   caravan: sand dunes, and under every peg a small caravanserai on a dashed
 ##         road that links each stop only to its neighbours (the caravan
 ##         road's rule); the board keeps bottom_room() free for them
+##   glass: cool glass with a dot grid and two soft light streaks, for the
+##         "Birləşmə Tapmacası" (a modern chapter, no cultural root)
 
 ## How far the panel reaches past the board on every side.
 const BLEED: float = 12.0
@@ -67,6 +69,27 @@ func _draw() -> void:
 			_draw_wood(inner)
 		"caravan":
 			_draw_caravan(inner)
+		"glass":
+			_draw_glass(inner)
+
+
+func _draw_glass(area: Rect2) -> void:
+	var dot: Color = ThemeManager.skin_color(skin, "pattern")
+	var spacing: float = 28.0
+	var y: float = area.position.y + spacing * 0.5
+	while y < area.end.y:
+		var x: float = area.position.x + spacing * 0.5
+		while x < area.end.x:
+			draw_circle(Vector2(x, y), 2.5, dot, true, -1.0, true)
+			x += spacing
+		y += spacing
+	# Two soft streaks of light across the glass, top left to bottom right.
+	var streak: Color = ThemeManager.skin_color(skin, "pattern")
+	streak.a *= 0.6
+	for offset: float in [0.18, 0.3]:
+		var start_x: float = area.position.x + area.size.x * offset
+		draw_colored_polygon(PackedVector2Array([Vector2(start_x, area.position.y), Vector2(start_x + 34.0, area.position.y),
+				Vector2(start_x + 34.0 + area.size.y * 0.35, area.end.y), Vector2(start_x + area.size.y * 0.35, area.end.y)]), streak)
 
 
 func _draw_jade(area: Rect2) -> void:

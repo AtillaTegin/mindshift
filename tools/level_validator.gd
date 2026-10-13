@@ -85,7 +85,7 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 					errors.append("duplicate id %d (also in %s)" % [level.id, id_owner[level.id]])
 				else:
 					id_owner[level.id] = path
-				var pair: String = pair_key(level.start, level.goal)
+				var pair: String = puzzle_key(level)
 				if pair_owner.has(pair):
 					errors.append("same start and goal as %s" % pair_owner[pair])
 				else:
@@ -103,8 +103,9 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 
 ## The level path lists every level file under `levels_dir` exactly once, with
 ## the file's own id. The two tutorial levels open it, then classic easy levels
-## up to PathBuilder.FIRST_EASY; expert levels only appear on the branch, and
-## the branch opens after a level that exists.
+## up to PathBuilder.FIRST_EASY (the only small easy ones); no easy level after
+## PathBuilder.EASY_UNTIL; expert levels only appear on the branch, and the
+## branch opens after a level that exists.
 static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
 	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
@@ -128,6 +129,12 @@ static func validate_path(levels_dir: String) -> Array[String]:
 			if track == LevelCatalog.MAIN and i < PathBuilder.FIRST_EASY \
 					and (level.difficulty != "easy" or level.mechanic() != Level.CLASSIC):
 				errors.append("main %d: %s is not a classic easy level" % [i + 1, file])
+			# Level structure v4, section 1: easy levels are for learning only.
+			if track == LevelCatalog.MAIN and i >= PathBuilder.EASY_UNTIL and level.difficulty == "easy":
+				errors.append("main %d: easy level %s after main %d" % [i + 1, file, PathBuilder.EASY_UNTIL])
+			if i >= PathBuilder.FIRST_EASY and level.mechanic() == Level.CLASSIC and level.difficulty == "easy" \
+					and level.get_disk_count() == Difficulty.get_tier("easy").get("small_disks", 0):
+				errors.append("%s %d: a %d-disk easy level only opens the road" % [track, i + 1, level.get_disk_count()])
 	var main: Array = path[LevelCatalog.MAIN]
 	for i: int in TUTORIAL_LEVEL_IDS.size():
 		if main.size() <= i or main[i]["id"] != TUTORIAL_LEVEL_IDS[i]:
@@ -217,7 +224,9 @@ static func validate_level(level: Level, errors: Array[String]) -> void:
 	level.check(errors)
 	if errors.size() > error_count:
 		return
-	var result: Dictionary = Solver.solve(level.start, level.goal, level.get_rule_set(), SOLVER_MAX_STATES)
+	# A combination level's goal is a colour arrangement, searched by its own solver.
+	var result: Dictionary = CombinationSolver.solve(level, level.start, SOLVER_MAX_STATES) if level.color_goal != null \
+			else Solver.solve(level.start, level.goal, level.get_rule_set(), SOLVER_MAX_STATES)
 	if not result["solvable"]:
 		errors.append("the solver found no solution (limit reached: %s)" % str(result["limit_reached"]))
 	elif result["min_moves"] != level.min_moves:
@@ -227,3 +236,12 @@ static func validate_level(level: Level, errors: Array[String]) -> void:
 ## Identity of a puzzle for duplicate detection (spec 4.4 step 6).
 static func pair_key(start: PuzzleState, goal: PuzzleState) -> String:
 	return "%s => %s" % [start.hash_key(), goal.hash_key()]
+
+
+## pair_key(), except that a combination level is told by its colours, up to
+## their names (ColorGoal.shape_key): its disk ids mean nothing, and the same
+## puzzle in other colours is still the same puzzle.
+static func puzzle_key(level: Level) -> String:
+	if level.color_goal == null:
+		return pair_key(level.start, level.goal)
+	return level.color_goal.shape_key(ColorGoal.letters_of(level.start, level.disk_colors))

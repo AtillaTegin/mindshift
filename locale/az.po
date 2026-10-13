@@ -202,6 +202,12 @@ msgstr "Böyük Mübadilə: ağ karvan qaranın yerinə, qara karvan ağın yeri
 msgid "RULE_ALTERNATION"
 msgstr "İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər."
 
+msgid "RULE_PEG_FULL"
+msgstr "Bu qüllə doludur."
+
+msgid "COMBINATION_SORT_INTRO"
+msgstr "Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində."
+
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"
 

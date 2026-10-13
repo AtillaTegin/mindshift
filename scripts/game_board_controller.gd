@@ -73,6 +73,9 @@ var _fog_layer: Control
 var _board_skin: BoardSkin
 ## Coins of a chest that are still flying to the counter (shown once they land).
 var _coins_in_flight: int = 0
+## Disks a peg holds on a "Birləşmə Tapmacası" level (CombinationRule); 0 for
+## other levels. The rods are drawn that tall, so a full peg looks full.
+var _capacity: int = 0
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -184,17 +187,16 @@ func start_level(level: Level) -> void:
 	_popup.visible = false
 	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
 	_board_skin.peg_count = level.get_peg_count()
+	_capacity = CombinationSolver.capacity_of(level) if level.color_goal != null else 0
 	_build_views()
 	_goal_preview.skin = _board_skin.skin
 	_goal_preview.disk_palette = _disk_palette()
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
+	_goal_preview.set_color_goal(level.color_goal, level.disk_colors, _capacity)
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
-	# A great exchange says what to do before the first move (caravan road
-	# addendum 2): the goal is a swap, not one tower.
-	if level.boss == Level.GREAT_EXCHANGE:
-		show_message(tr("BOSS_EXCHANGE_INTRO"), true)
+	_show_goal_words()
 	_refresh(false)
 	level_started.emit()
 	position_changed.emit()
@@ -210,9 +212,25 @@ func restart() -> void:
 	_popup.visible = false
 	# A new attempt: every covered peg is under fog again.
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
+	_show_goal_words()
 	_refresh(true)
 	level_started.emit()
 	position_changed.emit()
+
+
+## A goal the preview alone does not tell is said in words before the first
+## move, on every attempt: a great exchange is a swap, not one tower (caravan
+## road addendum 2), and a "Sadə Yığım" goal is given in words (level
+## structure v4, section 4; a pattern goal is only shown). The caller refreshes.
+func _show_goal_words() -> void:
+	var level: Level = session.level
+	if level.boss == Level.GREAT_EXCHANGE:
+		_message = tr("BOSS_EXCHANGE_INTRO")
+	elif level.color_goal != null and level.color_goal.kind == ColorGoal.SORT:
+		_message = tr("COMBINATION_SORT_INTRO")
+	else:
+		return
+	_message_soft = true
 
 
 ## Spec 4.7 hint, shown by the HintController on the coaching overlay.
@@ -387,10 +405,18 @@ func _release_chest() -> void:
 
 
 ## Disk size -> {fill, text} for a great exchange: the stack that starts on the
-## left is the white caravan, the other the black one. Empty for other levels
-## (their disks keep one colour each).
+## left is the white caravan, the other the black one. A "Birləşmə Tapmacası"
+## disk (id) -> {fill, text, outline, symbol} from its colour. Empty for other
+## levels (their disks keep one colour each).
 func _disk_palette() -> Dictionary:
 	var palette: Dictionary = {}
+	if session.level.color_goal != null:
+		for disk: int in range(1, session.level.disk_colors.size() + 1):
+			var color_name: String = session.level.disk_colors[disk - 1]
+			var colors: Dictionary = ThemeManager.COMBINATION_DISKS[color_name].duplicate()
+			colors["symbol"] = color_name
+			palette[disk] = colors
+		return palette
 	if session.level.boss != Level.GREAT_EXCHANGE:
 		return palette
 	for peg_index: int in session.level.start.get_peg_count():
@@ -467,6 +493,7 @@ func _build_views() -> void:
 				disk.color = palette[disk_size]["fill"]
 				disk.number_color = palette[disk_size]["text"]
 				disk.outline_color = palette[disk_size].get("outline")
+				disk.symbol = palette[disk_size].get("symbol", "")
 			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
 					else ThemeManager.color("accent")
 			_disk_layer.add_child(disk)
@@ -484,6 +511,8 @@ func _refresh(animated: bool) -> void:
 		_status_label.theme_type_variation = &"SecondaryLabel" if _message_soft else &"DangerLabel"
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
+	if session.level.color_goal != null:
+		_goal_preview.current_state = session.state
 	_update_rings()
 	_update_buttons()
 	_layout(animated)
@@ -499,11 +528,13 @@ func _layout(animated: bool) -> void:
 	# The dress may keep a strip under the pegs free (the caravan road's stops).
 	var floor_room: float = _board_skin.bottom_room()
 	var height: float = _board.size.y - floor_room
-	# Room for every disk on one peg plus the lifted disk above the rod.
-	var disk_height: float = minf(height / (disk_count + 3.5), MAX_DISK_HEIGHT)
+	# Room for every disk on one peg plus the lifted disk above the rod; with a
+	# capacity, room for a full peg, and the rod just as tall.
+	var stack: int = _capacity if _capacity > 0 else disk_count
+	var disk_height: float = minf(height / (stack + 3.5), MAX_DISK_HEIGHT)
 	var base_height: float = maxf(disk_height * 0.4, 10.0)
 	var base_top: float = height - base_height
-	var rod_top: float = base_top - disk_height * (disk_count + 0.6)
+	var rod_top: float = base_top - disk_height * (stack + (0.3 if _capacity > 0 else 0.6))
 	var lifted_y: float = rod_top - disk_height * 1.5
 	_peg_areas.clear()
 	for peg: PegView in _peg_views:
@@ -518,7 +549,8 @@ func _layout(animated: bool) -> void:
 		for level_index: int in peg.size():
 			var disk_size: int = peg[level_index]
 			var view: DiskView = _disk_views[disk_size]
-			var width: float = BoardLayout.disk_width(disk_size, disk_count, column)
+			var width: float = column * BoardLayout.EQUAL_DISK_SHARE if _capacity > 0 \
+					else BoardLayout.disk_width(disk_size, disk_count, column)
 			var y: float = base_top - disk_height * (level_index + 1)
 			if disk_size == selected_disk:
 				y = lifted_y

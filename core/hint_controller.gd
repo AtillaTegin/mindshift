@@ -67,14 +67,14 @@ func request() -> void:
 		_apply(on_path, key)
 		return
 	var from_state: PuzzleState = session.state.duplicate_state()
-	var goal: PuzzleState = session.level.goal
+	var level: Level = session.level
 	var rules: RuleSet = session.rules
 	if not background:
-		_apply(GameSession.solve_hint(from_state, goal, rules), key)
+		_apply(GameSession.solve_hint(level, from_state, rules), key)
 		return
 	_pending_key = key
 	_thread = Thread.new()
-	_thread.start(func() -> Move: return GameSession.solve_hint(from_state, goal, rules))
+	_thread.start(func() -> Move: return GameSession.solve_hint(level, from_state, rules))
 	message_changed.emit(tr("HINT_SEARCHING"))
 
 

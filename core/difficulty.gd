@@ -17,9 +17,14 @@ const LEVELS_DIR: String = "res://data/levels"
 ## from first_id to first_id + MAX_LEVELS_PER_TIER - 1. `count`: classic levels
 ## the generator makes by default (addendum v3, section 1: few easy levels,
 ## medium and hard as the body, expert as a side branch).
+## Easy (level structure v4, section 1): 3-disk levels only open the road, so
+## the generator draws `draw` easy levels as it always did and keeps only the
+## first `small_keep` of those with `small_disks` disks; the tutorial levels and
+## every 4-disk level stay the same.
 const TIERS: Dictionary = {
 	"easy": {"min_moves": 5, "max_moves": 11, "min_pegs": 3, "max_pegs": 3,
-			"min_disks": 3, "max_disks": 4, "first_id": 1001, "count": 22},
+			"min_disks": 3, "max_disks": 4, "first_id": 1001, "count": 16,
+			"draw": 22, "small_disks": 3, "small_keep": 4},
 	"medium": {"min_moves": 12, "max_moves": 20, "min_pegs": 3, "max_pegs": 4,
 			"min_disks": 5, "max_disks": 6, "first_id": 2001, "count": 76},
 	"hard": {"min_moves": 21, "max_moves": 33, "min_pegs": 4, "max_pegs": 4,
@@ -28,10 +33,10 @@ const TIERS: Dictionary = {
 			"min_disks": 9, "max_disks": 10, "first_id": 4001, "count": 28},
 }
 
-## Levels with a special mechanic (frozen disk, covered pegs, ...) are ordinary
+## Levels with a special mechanic (Nine Rings, covered pegs, ...) are ordinary
 ## path levels: their difficulty is the tier their min_moves falls in, but
-## their size may differ from the classic tier sizes (a frozen disk only
-## matters with 4 pegs and 6+ disks). They live in data/levels/mechanics/.
+## their size may differ from the classic tier sizes (the Nine Rings only
+## matter on 4 pegs). They live in data/levels/mechanics/.
 const MECHANICS: String = "mechanics"
 const MECHANIC_FIRST_ID: int = 9001
 const MECHANIC_MAX_LEVELS: int = 999
@@ -39,6 +44,16 @@ const MECHANIC_MIN_PEGS: int = 3
 const MECHANIC_MAX_PEGS: int = 5
 const MECHANIC_MIN_DISKS: int = 3
 const MECHANIC_MAX_DISKS: int = 10
+## "Birləşmə Tapmacası" levels (CombinationRule, mechanic "combination") are
+## short by nature: what makes them hard is the lack of room, not the length
+## (measured 2026-10-13: 6-10 disks never need more than ~16 moves). They have
+## their own move ranges per tier (user decision 2026-10-13); no expert.
+const COMBINATION: String = "combination"
+const COMBINATION_MOVES: Dictionary = {
+	"easy": {"min_moves": 5, "max_moves": 7},
+	"medium": {"min_moves": 8, "max_moves": 10},
+	"hard": {"min_moves": 11, "max_moves": -1},
+}
 
 
 static func is_known(tier: String) -> bool:
@@ -55,17 +70,24 @@ static func default_count(tier: String) -> int:
 	return int(get_tier(tier).get("count", 0))
 
 
-static func accepts_moves(tier: String, moves: int) -> bool:
-	var settings: Dictionary = get_tier(tier)
+## Levels the generator draws for `tier` before LevelGenerator.keep_small().
+static func draw_count(tier: String) -> int:
+	return int(get_tier(tier).get("draw", default_count(tier)))
+
+
+## Whether `moves` fall in `tier`'s range; a combination level (`mechanic`
+## COMBINATION) uses COMBINATION_MOVES.
+static func accepts_moves(tier: String, moves: int, mechanic: String = "") -> bool:
+	var settings: Dictionary = COMBINATION_MOVES.get(tier, {}) if mechanic == COMBINATION else get_tier(tier)
 	if settings.is_empty() or moves < settings["min_moves"]:
 		return false
 	return settings["max_moves"] == -1 or moves <= settings["max_moves"]
 
 
 ## The tier whose move range holds `moves`, or "" below the easiest tier.
-static func tier_for_moves(moves: int) -> String:
+static func tier_for_moves(moves: int, mechanic: String = "") -> String:
 	for tier: String in ORDER:
-		if accepts_moves(tier, moves):
+		if accepts_moves(tier, moves, mechanic):
 			return tier
 	return ""
 
@@ -120,8 +142,8 @@ static func level_path(tier: String, index: int, levels_dir: String = LEVELS_DIR
 
 
 ## Human-readable move range, e.g. "5-11" or "34+".
-static func describe_moves(tier: String) -> String:
-	var settings: Dictionary = get_tier(tier)
+static func describe_moves(tier: String, mechanic: String = "") -> String:
+	var settings: Dictionary = COMBINATION_MOVES.get(tier, {}) if mechanic == COMBINATION else get_tier(tier)
 	if settings["max_moves"] == -1:
 		return "%d+" % settings["min_moves"]
 	return "%d-%d" % [settings["min_moves"], settings["max_moves"]]

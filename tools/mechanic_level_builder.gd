@@ -1,8 +1,8 @@
 class_name MechanicLevelBuilder
 extends SceneTree
 ## Builds the levels with a special mechanic (Nine Rings alternation, karakuri
-## boxes on covered pegs, the caravan road, the great exchange bosses) into
-## data/levels/mechanics/:
+## boxes on covered pegs, the caravan road, the great exchange bosses, the
+## "Birləşmə Tapmacası" combination puzzles) into data/levels/mechanics/:
 ##   godot --headless --path . --script res://tools/mechanic_level_builder.gd
 ##   ... -- --only=fog_20.json   (rebuild one file; ids and seeds stay the same)
 ##   ... -- --only=caravan_*     (every file starting with "caravan_")
@@ -144,6 +144,51 @@ const BOSS_SPECS: Array[Dictionary] = [
 	{"file": "boss_05.json", "disks": 10, "split": "halves", "caravan": false},
 ]
 
+## "Birləşmə Tapmacası" levels (level structure v4, section 4; user decisions
+## 2026-10-13: pegs have a capacity, ~30 levels, the chapter's own move scale
+## Difficulty.COMBINATION_MOVES). Equal-sized disks in up to four colours.
+## `counts`: disks per colour (colours are drawn per level); `kind`: "sort"
+## ("Sadə Yığım", every colour on a peg of its own) or "pattern" ("Konkret
+## Kombinasiya", `pattern` colours bottom -> top on one peg); `start`: "empty"
+## (at least one empty peg), "full" (none) or "any". The gradient follows the
+## addendum: 6 disks with room and sorting first, then 7 disks with less room
+## and both goals, then 8-9 disks with no empty peg and patterns. Such puzzles
+## stay short (measured: at most ~16 moves), so 3 pegs of 3-5 disks are used.
+const COMBO_SPECS: Array[Dictionary] = [
+	{"file": "combo_01.json", "pegs": 4, "capacity": 3, "counts": [2, 2, 2], "kind": "sort", "start": "empty", "min": 5, "max": 6},
+	{"file": "combo_02.json", "pegs": 3, "capacity": 4, "counts": [2, 2, 2], "kind": "sort", "start": "empty", "min": 6, "max": 7},
+	{"file": "combo_03.json", "pegs": 3, "capacity": 3, "counts": [2, 2, 2], "kind": "sort", "start": "empty", "min": 7, "max": 8},
+	{"file": "combo_04.json", "pegs": 3, "capacity": 3, "counts": [2, 2, 2], "kind": "sort", "start": "empty", "min": 8, "max": 8},
+	{"file": "combo_05.json", "pegs": 3, "capacity": 3, "counts": [3, 2, 2], "kind": "sort", "start": "any", "min": 8, "max": 8},
+	{"file": "combo_06.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "pattern", "pattern": 4, "start": "any", "min": 8, "max": 9},
+	{"file": "combo_07.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "sort", "start": "empty", "min": 8, "max": 9},
+	{"file": "combo_08.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 9, "max": 10},
+	{"file": "combo_09.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "sort", "start": "full", "min": 9, "max": 10},
+	{"file": "combo_10.json", "pegs": 3, "capacity": 5, "counts": [3, 2, 2], "kind": "pattern", "pattern": 5, "start": "any", "min": 9, "max": 10},
+	{"file": "combo_11.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "pattern", "pattern": 4, "start": "any", "min": 10, "max": 11},
+	{"file": "combo_12.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "sort", "start": "full", "min": 10, "max": 11},
+	{"file": "combo_13.json", "pegs": 3, "capacity": 5, "counts": [3, 2, 2], "kind": "pattern", "pattern": 5, "start": "full", "min": 10, "max": 11},
+	{"file": "combo_14.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 12},
+	{"file": "combo_15.json", "pegs": 3, "capacity": 4, "counts": [3, 3, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 12},
+	{"file": "combo_16.json", "pegs": 3, "capacity": 4, "counts": [2, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 12},
+	{"file": "combo_17.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 1], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 12},
+	{"file": "combo_18.json", "pegs": 3, "capacity": 5, "counts": [4, 3, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 12},
+	{"file": "combo_19.json", "pegs": 3, "capacity": 4, "counts": [3, 3, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 12, "max": 13},
+	{"file": "combo_20.json", "pegs": 3, "capacity": 4, "counts": [2, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 12, "max": 13},
+	{"file": "combo_21.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 11, "max": 13, "attempts": 60},
+	{"file": "combo_22.json", "pegs": 3, "capacity": 5, "counts": [4, 3, 2], "kind": "pattern", "pattern": 5, "start": "full", "min": 12, "max": 13},
+	{"file": "combo_23.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 1], "kind": "pattern", "pattern": 4, "start": "full", "min": 12, "max": 13},
+	{"file": "combo_24.json", "pegs": 3, "capacity": 4, "counts": [2, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 13, "max": 14},
+	{"file": "combo_25.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 12, "max": 14, "attempts": 60},
+	{"file": "combo_26.json", "pegs": 3, "capacity": 5, "counts": [4, 3, 2], "kind": "pattern", "pattern": 5, "start": "full", "min": 13, "max": 14},
+	{"file": "combo_27.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 1], "kind": "pattern", "pattern": 4, "start": "full", "min": 13, "max": 14},
+	{"file": "combo_28.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 1], "kind": "pattern", "pattern": 4, "start": "full", "min": 14, "max": 15},
+	{"file": "combo_29.json", "pegs": 3, "capacity": 4, "counts": [2, 2, 2, 2], "kind": "pattern", "pattern": 4, "start": "full", "min": 14, "max": 15},
+	{"file": "combo_30.json", "pegs": 3, "capacity": 4, "counts": [3, 2, 2, 1], "kind": "pattern", "pattern": 4, "start": "full", "min": 15, "max": 16},
+]
+## Colour draws per combination spec; each one maps the whole position space.
+const COMBO_ATTEMPTS: int = 24
+
 
 func _initialize() -> void:
 	quit(0 if _run() else 1)
@@ -181,6 +226,11 @@ func _run() -> bool:
 		var spec: Dictionary = RINGS_LATER_SPECS[i]
 		if _selected(only, spec["file"]):
 			ok = _write(build_rings(spec, next_id, BASE_SEED + 300 + i), spec) and ok
+		next_id += 1
+	for i: int in COMBO_SPECS.size():
+		var spec: Dictionary = COMBO_SPECS[i]
+		if _selected(only, spec["file"]):
+			ok = _write(build_combination(spec, next_id, BASE_SEED + 400 + i, _earlier_shapes(i)), spec) and ok
 		next_id += 1
 	print("mechanics: %s" % ("%d levels" % (next_id - Difficulty.MECHANIC_FIRST_ID) if only.is_empty() else only))
 	return ok
@@ -320,6 +370,127 @@ static func build_fog(spec: Dictionary, id: int, seed_value: int) -> Level:
 	var level: Level = Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
 	level.covered_pegs = best["covered"]
 	return level
+
+
+## A "Birləşmə Tapmacası" level: colours (and for a pattern goal the pattern and
+## its peg) are drawn at random; then every position is mapped by its distance
+## to the goal (CombinationSolver.distance_map, so every min_moves is proven)
+## and the start is drawn among the farthest positions within the spec's range
+## that fit its start rule, are not half done already (no finished peg for a
+## sort goal, a pattern peg that does not start right) and are no earlier
+## level in other colours (`used`: ColorGoal.shape_key). Longest over the
+## attempts wins; ties go to the first one found.
+static func build_combination(spec: Dictionary, id: int, seed_value: int, used: Dictionary = {}) -> Level:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var capacity: int = spec["capacity"]
+	var best: Dictionary = {}
+	for attempt: int in spec.get("attempts", COMBO_ATTEMPTS):
+		var names: Array = _shuffled(ColorGoal.LETTERS.keys(), rng)
+		var letters: String = ""
+		for i: int in spec["counts"].size():
+			letters += ColorGoal.LETTERS[names[i]].repeat(spec["counts"][i])
+		var goal: ColorGoal = ColorGoal.sort()
+		if spec["kind"] == ColorGoal.PATTERN:
+			var disks: Array = []
+			for letter: String in letters:
+				disks.append(letter)
+			var drawn: Array = _shuffled(disks, rng).slice(0, spec["pattern"])
+			if drawn.count(drawn[0]) == drawn.size():
+				continue  # one colour is no combination
+			var pattern: Array[String] = []
+			for letter: String in drawn:
+				pattern.append(_colour_of(letter))
+			goal = ColorGoal.pattern(rng.randi_range(0, spec["pegs"] - 1), pattern)
+		var map: Dictionary = CombinationSolver.distance_map(
+				CombinationSolver.goal_positions(goal, letters, spec["pegs"], capacity), capacity)
+		var picks: PackedStringArray = PackedStringArray()
+		var pick_moves: int = -1
+		for key: String in map:
+			var moves: int = map[key][0]
+			if moves < spec["min"] or moves > spec["max"] or moves < pick_moves:
+				continue
+			var pegs: PackedStringArray = key.split("|")
+			var empty: bool = pegs.has("")
+			if (spec["start"] == "empty" and not empty) or (spec["start"] == "full" and empty) \
+					or _half_done(goal, pegs, capacity) or used.has(goal.shape_key(pegs)):
+				continue
+			if moves > pick_moves:
+				picks.clear()
+				pick_moves = moves
+			picks.append(key)
+		if picks.is_empty() or (not best.is_empty() and pick_moves <= best["moves"]):
+			continue
+		var pick: String = picks[rng.randi_range(0, picks.size() - 1)]
+		best = {"moves": pick_moves, "key": pick, "goal": goal, "path": CombinationSolver.path_from(map, pick)}
+		if pick_moves >= spec["max"]:
+			break  # nothing longer can win
+	if best.is_empty():
+		push_error("No combination level found for %s" % spec["file"])
+		return null
+	# Disk ids 1..N in the order they stand, peg by peg, bottom to top.
+	var layout: Array = []
+	var colours: Array[String] = []
+	for text: String in (best["key"] as String).split("|"):
+		var peg: Array = []
+		for letter: String in text:
+			colours.append(_colour_of(letter))
+			peg.append(colours.size())
+		layout.append(peg)
+	var start: PuzzleState = PuzzleState.new(layout)
+	var rule_ids: Array[String] = [CombinationRule.ID]
+	var params: Dictionary = {CombinationRule.ID: {"capacity": capacity}}
+	var rules: RuleSet = RuleSet.from_ids(rule_ids, params)
+	var position: PuzzleState = start
+	for move: Move in best["path"]:
+		position = rules.apply_move(position, move)
+	var level: Level = Level.create(id, Difficulty.tier_for_moves(best["moves"], Difficulty.COMBINATION), start, position,
+			rule_ids, best["path"], params)
+	level.disk_colors = colours
+	level.color_goal = best["goal"]
+	return level
+
+
+## ColorGoal.shape_key of the combination levels built before COMBO_SPECS[index]
+## (read from their files), so a later one never repeats one in other colours.
+static func _earlier_shapes(index: int) -> Dictionary:
+	var shapes: Dictionary = {}
+	for i: int in index:
+		var errors: Array[String] = []
+		var level: Level = Level.load_file("%s/%s" % [MECHANICS_DIR, COMBO_SPECS[i]["file"]], errors)
+		if level != null and level.color_goal != null:
+			shapes[LevelValidator.puzzle_key(level)] = true
+	return shapes
+
+
+## A start that is partly solved already: a finished peg (sort) or a pattern
+## peg whose bottom disk is right. When the board has fewer free places than a
+## peg holds, a full peg can never be emptied and its bottom disk never changes
+## (every position of the level shares it), so then only two right disks count.
+static func _half_done(goal: ColorGoal, pegs: PackedStringArray, capacity: int) -> bool:
+	if goal.kind == ColorGoal.PATTERN:
+		var free: int = pegs.size() * capacity - "".join(pegs).length()
+		var target: String = goal.pattern_letters()
+		return pegs[goal.peg].begins_with(target.left(1 if free >= capacity else 2))
+	for peg_index: int in pegs.size():
+		if ColorGoal.is_peg_finished(pegs, peg_index):
+			return true
+	return false
+
+
+static func _colour_of(letter: String) -> String:
+	return ColorGoal.LETTERS.find_key(letter)
+
+
+## A seeded shuffle (Array.shuffle() uses the global generator).
+static func _shuffled(items: Array, rng: RandomNumberGenerator) -> Array:
+	var copy: Array = items.duplicate()
+	for i: int in range(copy.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var swap: Variant = copy[i]
+		copy[i] = copy[j]
+		copy[j] = swap
+	return copy
 
 
 ## Whether `file` is built in this run: all with no --only, else the named

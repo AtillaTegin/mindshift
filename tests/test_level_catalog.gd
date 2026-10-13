@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 81, "22 Nine Rings, 24 karakuri, 30 caravan road and 5 great exchange levels")
+	assert_eq(mechanic_files, 111, "22 Nine Rings, 24 karakuri, 30 caravan road, 5 great exchange and 30 combination levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -50,31 +50,37 @@ func test_path_starts_with_the_tutorial_and_easy_levels() -> void:
 	assert_eq(LevelCatalog.level_id_at(MAIN, 1), TutorialDirector.GUIDED_LEVEL_ID)
 	assert_eq(LevelCatalog.level_id_at(MAIN, 2), TutorialDirector.FREE_LEVEL_ID)
 	assert_eq(LevelValidator.TUTORIAL_LEVEL_IDS, [TutorialDirector.GUIDED_LEVEL_ID, TutorialDirector.FREE_LEVEL_ID] as Array[int])
+	assert_eq(PathBuilder.FIRST_EASY, 4, "level structure v4: the first 3-4 levels")
 	for position: int in range(1, PathBuilder.FIRST_EASY + 1):
 		var level: Level = _level_at(MAIN, position)
 		assert_eq(level.difficulty, "easy", "main %d" % position)
 		assert_eq(level.mechanic(), Level.CLASSIC, "main %d" % position)
+		assert_eq(level.get_disk_count(), 3, "main %d: 3 disks on 3 pegs" % position)
+		assert_eq(level.get_peg_count(), 3)
 
 
 func test_difficulty_mix_follows_the_addendum() -> void:
-	# Few easy levels (breathers), medium and hard as the body, expert only on the island.
+	# Level structure v4: easy only for learning at the start (3-disk levels
+	# first, then 4-disk ones) and none after main 50; medium and hard as the
+	# body; expert only on the island.
 	var counts: Dictionary = {}
 	var main_length: int = LevelCatalog.track_length(MAIN)
-	var late_easy: int = 0
+	var last_easy: int = 0
 	var first_hard: int = 0
 	var moves_by_third: Array[int] = [0, 0, 0]
 	for position: int in range(1, main_length + 1):
 		var level: Level = _level_at(MAIN, position)
 		counts[level.difficulty] = counts.get(level.difficulty, 0) + 1
-		if level.difficulty == "easy" and position > 40:
-			late_easy += 1
+		if level.difficulty == "easy":
+			last_easy = position
+			if position > PathBuilder.FIRST_EASY and level.mechanic() == Level.CLASSIC:
+				assert_eq(level.get_disk_count(), 4, "main %d: past the first levels easy means 4 disks" % position)
 		if level.difficulty == "hard" and first_hard == 0:
 			first_hard = position
 		moves_by_third[mini(3 * (position - 1) / main_length, 2)] += level.min_moves
 	assert_false(counts.has("expert"), "expert levels live on the island")
-	assert_true(counts["easy"] <= 0.16 * main_length, "easy is rare: %s" % str(counts))
-	assert_true(counts["medium"] + counts["hard"] >= 0.75 * main_length, "medium and hard dominate: %s" % str(counts))
-	assert_true(late_easy >= 3, "easy breathers keep coming later on (%d)" % late_easy)
+	assert_true(last_easy <= 50, "no easy level after main 50 (last at %d)" % last_easy)
+	assert_true(counts["medium"] + counts["hard"] >= 0.85 * main_length, "medium and hard dominate: %s" % str(counts))
 	assert_true(first_hard > PathBuilder.FIRST_EASY + 5, "hard levels wait a little (first at %d)" % first_hard)
 	assert_true(moves_by_third[0] < moves_by_third[1] and moves_by_third[1] < moves_by_third[2],
 			"it gets harder along the road: %s" % str(moves_by_third))
@@ -93,7 +99,7 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
 		var mechanic: String = LevelCatalog.mechanic_at(MAIN, position)
 		if mechanic != Level.CLASSIC:
-			assert_true(position > PathBuilder.MECHANICS_FROM, "not before main %d" % PathBuilder.MECHANICS_FROM)
+			assert_true(position >= PathBuilder.CHAPTER_STARTS.values().min(), "not before the first chapter")
 			assert_eq(mechanic, _level_at(MAIN, position).mechanic())
 			assert_true(Difficulty.is_known(_level_at(MAIN, position).difficulty), "a real tier")
 			found.append(mechanic)
@@ -101,12 +107,49 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 	assert_eq(found.count("covered_pegs"), 24)
 	assert_eq(found.count("adjacent_pegs"), 30)
 	assert_eq(found.count(Level.GREAT_EXCHANGE), 5)
+	assert_eq(found.count(CombinationRule.ID), 30)
 
 
-func test_karakuri_levels_come_early_often_and_get_harder() -> void:
+func test_classic_and_mechanic_levels_take_turns_after_50() -> void:
+	# Level structure v4, section 3 (user decisions 2026-10-13): about 1:1 from
+	# main 51 to 200, weighted at random (no long runs, no strict rhythm); after
+	# that the rest thin out, and every chapter still reaches the end of the road.
+	var mechanic_count: int = 0
+	var run: int = 0
+	var longest: int = 0
+	var was_mechanic: bool = false
+	var strict: bool = true
+	for position: int in range(PathBuilder.MIX_FROM, PathBuilder.MIX_UNTIL + 1):
+		var is_mechanic: bool = LevelCatalog.mechanic_at(MAIN, position) != Level.CLASSIC
+		mechanic_count += 1 if is_mechanic else 0
+		run = run + 1 if is_mechanic == was_mechanic and position > PathBuilder.MIX_FROM else 1
+		longest = maxi(longest, run)
+		strict = strict and (run == 1 or position == PathBuilder.MIX_FROM)
+		was_mechanic = is_mechanic
+	var mixed: int = PathBuilder.MIX_UNTIL - PathBuilder.MIX_FROM + 1
+	assert_true(absf(float(mechanic_count) / mixed - 0.5) <= 0.03, "about 1:1 (%d of %d)" % [mechanic_count, mixed])
+	assert_true(longest <= 3, "no long runs of one kind (%d)" % longest)
+	assert_false(strict, "not a strict rhythm either")
+	var main_length: int = LevelCatalog.track_length(MAIN)
+	var tail: int = 0
+	var last: Dictionary = {}
+	for position: int in range(1, main_length + 1):
+		var mechanic: String = LevelCatalog.mechanic_at(MAIN, position)
+		if mechanic == Level.CLASSIC:
+			continue
+		last[mechanic] = position
+		tail += 1 if position > PathBuilder.MIX_UNTIL else 0
+	var share: float = float(tail) / (main_length - PathBuilder.MIX_UNTIL)
+	assert_true(share > 0.15 and share < 0.45, "the end of the road has fewer but some (%.2f)" % share)
+	for mechanic: String in PathBuilder.CHAPTER_STARTS:
+		assert_eq(LevelCatalog.mechanic_at(MAIN, PathBuilder.CHAPTER_STARTS[mechanic]), mechanic, "%s starts on time" % mechanic)
+		assert_true(last[mechanic] > PathBuilder.MIX_UNTIL, "%s runs to the end of the road (%d)" % [mechanic, last[mechanic]])
+
+
+func test_karakuri_levels_come_early_and_get_harder() -> void:
 	# User requests 2026-10-12: 22-24 karakuri levels, the first one soon after
-	# the tutorial, then every 5-9 levels up to the end of the road, from small
-	# and easy to large and hard.
+	# the tutorial, up to the end of the road, from small and easy to large and
+	# hard (spacing: level structure v4's 1:1 mix).
 	var positions: Array[int] = []
 	var levels: Array[Level] = []
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
@@ -114,11 +157,9 @@ func test_karakuri_levels_come_early_often_and_get_harder() -> void:
 			positions.append(position)
 			levels.append(_level_at(MAIN, position))
 	assert_true(positions.size() >= 22 and positions.size() <= 24, "%d karakuri levels" % positions.size())
-	assert_true(LevelCatalog.track_length(MAIN) - positions[-1] <= 12, "the end of the road has them too")
-	assert_true(positions[0] >= 10 and positions[0] <= 14, "the first one at %d" % positions[0])
+	assert_true(positions[-1] > PathBuilder.MIX_UNTIL, "the end of the road has them too")
+	assert_eq(positions[0], 12, "the first one at %d" % positions[0])
 	for i: int in range(1, positions.size()):
-		var gap: int = positions[i] - positions[i - 1]
-		assert_true(gap >= 5 and gap <= 10, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
 		assert_true(levels[i].min_moves >= levels[i - 1].min_moves, "never easier than the one before (%d)" % positions[i])
 	assert_eq(levels[0].get_disk_count(), 3, "the first one is small")
 	assert_eq(levels[0].covered_pegs.size(), 1, "with a single box")
@@ -142,10 +183,7 @@ func test_nine_rings_run_the_whole_road_easy_to_hard() -> void:
 			previous = level.min_moves
 			tiers[level.difficulty] = tiers.get(level.difficulty, 0) + 1
 	assert_true(positions.size() >= 20 and positions.size() <= 25, "%d Nine Rings levels" % positions.size())
-	assert_true(positions[0] >= 15 and positions[0] <= 22, "the first one at %d" % positions[0])
-	for i: int in range(1, positions.size()):
-		var gap: int = positions[i] - positions[i - 1]
-		assert_true(gap >= 9 and gap <= 16, "gap %d between %d and %d" % [gap, positions[i - 1], positions[i]])
+	assert_eq(positions[0], 20, "the first one at %d" % positions[0])
 	assert_true(positions[-1] >= 0.8 * LevelCatalog.track_length(MAIN), "into the last fifth of the road (%d)" % positions[-1])
 	for tier: String in ["easy", "medium", "hard"]:
 		assert_true(tiers.get(tier, 0) >= 3, "%s ones too: %s" % [tier, str(tiers)])

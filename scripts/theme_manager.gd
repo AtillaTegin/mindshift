@@ -105,6 +105,20 @@ const SKINS: Dictionary = {
 		LIGHT: {"board": Color("f5e6c4"), "pattern": Color("e0c58e"), "peg": Color("8c5b2e"), "mark": Color("c27a2e")},
 		DARK: {"board": Color("30271a"), "pattern": Color("4f3f25"), "peg": Color("c49255"), "mark": Color("db923f")},
 	},
+	# "Birləşmə Tapmacası": a modern, cross-genre chapter with no cultural root
+	# (user note 2026-10-13): cool glass with a dot grid.
+	"glass": {
+		LIGHT: {"board": Color("e4edf4"), "pattern": Color("c9d9e6"), "peg": Color("5b7088"), "mark": Color("7b6cd9")},
+		DARK: {"board": Color("1b2430"), "pattern": Color("2b3b4e"), "peg": Color("7f97b3"), "mark": Color("9d8cff")},
+	},
+}
+## Disks of a "Birləşmə Tapmacası" level: one size, four colours, each with its
+## shape (DiskSymbols) in `text`; the same in both modes (game pieces).
+const COMBINATION_DISKS: Dictionary = {
+	"red": {"fill": Color("e5484d"), "text": Color("fff4f0"), "outline": Color("b8343a")},
+	"blue": {"fill": Color("3b7fd6"), "text": Color("f2f7ff"), "outline": Color("2b62a8")},
+	"yellow": {"fill": Color("f2c230"), "text": Color("4a3a05"), "outline": Color("c49a1c")},
+	"green": {"fill": Color("34a065"), "text": Color("effcf3"), "outline": Color("26804f")},
 }
 ## The two caravans of a great exchange: disk fill, number colour and (for the
 ## light one, so it shows on sand) an outline; the same in both modes (they are
@@ -115,7 +129,7 @@ const EXCHANGE_DISKS: Dictionary = {
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
-		"great_exchange": "caravan"}
+		"great_exchange": "caravan", "combination": "glass"}
 
 var mode: String = LIGHT
 var theme: Theme

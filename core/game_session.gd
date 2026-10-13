@@ -38,8 +38,8 @@ var covered_pegs: Array[int] = []
 var _hidden: Dictionary[int, int] = {}
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
-## RuleSet.search_key of each position along level.solution_path -> index of the
-## next move (the key includes the last moved disk when a rule depends on it).
+## _path_key of each position along level.solution_path -> index of the next
+## move (the key includes the last moved disk when a rule depends on it).
 var _path_index: Dictionary[String, int] = {}
 
 
@@ -48,7 +48,7 @@ func _init(p_level: Level) -> void:
 	rules = level.get_rule_set()
 	var position: PuzzleState = level.start
 	for i: int in level.solution_path.size():
-		_path_index[rules.search_key(position)] = i
+		_path_index[_path_key(position)] = i
 		position = rules.apply_move(position, level.solution_path[i])
 		if position == null:
 			break
@@ -69,7 +69,7 @@ func restart() -> void:
 
 
 func is_solved() -> bool:
-	return rules.is_goal_state(state, level.goal)
+	return level.is_goal_met(state, rules)
 
 
 ## Top disk of the selected peg, or -1 when nothing is selected.
@@ -178,20 +178,32 @@ func get_hint() -> Dictionary:
 	var on_path: Move = get_path_hint()
 	if on_path != null:
 		return {"move": on_path, "from_path": true}
-	return {"move": solve_hint(state.duplicate_state(), level.goal, rules), "from_path": false}
+	return {"move": solve_hint(level, state.duplicate_state(), rules), "from_path": false}
 
 
 ## The next move of the stored solution if the current position lies on it,
 ## otherwise null. Instant: no search.
 func get_path_hint() -> Move:
-	var key: String = rules.search_key(state)
+	var key: String = _path_key(state)
 	return level.solution_path[_path_index[key]] if _path_index.has(key) else null
 
 
-## First move of a shortest solution from `from_state`, or null. Touches only
-## its arguments, so it can run on a worker thread.
-static func solve_hint(from_state: PuzzleState, goal: PuzzleState, rule_set: RuleSet) -> Move:
-	var result: Dictionary = Solver.solve(from_state, goal, rule_set, HINT_MAX_STATES)
+## What makes two positions the same for the stored solution: the search key,
+## or for a combination level only the colours (equal disks of one colour are
+## interchangeable).
+func _path_key(position: PuzzleState) -> String:
+	if level.color_goal != null:
+		return "|".join(ColorGoal.letters_of(position, level.disk_colors))
+	return rules.search_key(position)
+
+
+## First move of a shortest solution of `level` from `from_state`, or null. A
+## combination level (colour goal) is searched by CombinationSolver, every
+## other one by the Solver. Only reads its arguments, so it can run on a worker
+## thread.
+static func solve_hint(level: Level, from_state: PuzzleState, rule_set: RuleSet) -> Move:
+	var result: Dictionary = CombinationSolver.solve(level, from_state, HINT_MAX_STATES) if level.color_goal != null \
+			else Solver.solve(from_state, level.goal, rule_set, HINT_MAX_STATES)
 	return result["path"][0] if result["solvable"] and not result["path"].is_empty() else null
 
 

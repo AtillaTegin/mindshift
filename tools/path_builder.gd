@@ -1,25 +1,29 @@
 class_name PathBuilder
 extends SceneTree
-## Lays every level out on the level path (level structure addendum v3) and
-## writes data/levels/path.json (format: LevelCatalog):
+## Lays every level out on the level path (level structure addenda v3 and v4)
+## and writes data/levels/path.json (format: LevelCatalog):
 ##   godot --headless --path . --script res://tools/path_builder.gd
 ## Run it after the level generator or the mechanic level builder.
 ##
-## Main path: the first FIRST_EASY levels are classic easy ones (the two
-## tutorial levels first). After that the tiers are mixed by weight curves over
-## the progress: easy levels turn into rare "breathers", medium leads early and
-## hard takes over towards the end. Each step takes the tier that lags its
-## curve the most, with a little seeded jitter, so the order is neither blocks
-## nor random. Inside a tier levels always come easiest first.
-## Chapters that run along the whole road (SPREADS: karakuri from main 12,
-## the caravan road from main 17, the Nine Rings from main 20; user requests
-## 2026-10-12) put their first level at a fixed early slot, their last a few
-## levels before the end of the road, and one every so many levels in between
-## (seeded gaps within the chapter's range that add up to the whole stretch, so
-## no part of the road goes without them), easiest first. The great exchange bosses come at BOSS_FROM and then every
-## BOSS_EVERY levels, easiest first. Other mechanic levels are spread evenly
-## from MECHANICS_FROM on. On a clash a level takes the next free slot
-## (karakuri are placed first and never move).
+## Main path (v4, user decisions 2026-10-13):
+## - The first FIRST_EASY levels are the 3-disk easy ones (the two tutorial
+##   levels first). Easy levels are for learning only: the 4-disk ones lead
+##   into medium early on, and after EASY_UNTIL no easy level comes at all
+##   (classic or mechanic).
+## - Which slots hold a mechanic level: none before the first chapter; up to
+##   EASY_UNTIL just enough for every easy mechanic level (the chapters' first,
+##   learning levels) and the first boss; from MIX_FROM to MIX_UNTIL classic and
+##   mechanic levels take turns about 1:1 (one mechanic slot drawn in every
+##   stratum of about two slots, so neither strictly alternating nor blocks);
+##   after that the rest thin out evenly to the end of the road.
+## - Chapters (CHAPTER_STARTS) put their first level at a fixed slot; each
+##   mechanic slot after that takes the chapter that lags its own even spread
+##   the most, so every chapter runs, easiest first, to the end of the road.
+##   The great exchange bosses keep BOSS_FROM and every BOSS_EVERY after it.
+## - Classic slots mix the tiers by weight curves over the progress: easy only
+##   at the start, medium leads, then medium and hard mixed with hard growing.
+##   Each step takes the tier that lags its curve the most, with a little seeded
+##   jitter. Inside a tier levels always come easiest first.
 ## Each mechanic level counts as a level of its own tier.
 ## Branch ("island", shown once main level BRANCH_AFTER is completed): every
 ## expert level plus the hardest BRANCH_HARD hard and BRANCH_MEDIUM medium
@@ -27,17 +31,16 @@ extends SceneTree
 ## Exits with code 0 only when the path was written and validates.
 
 const SEED: int = 20261011
-const FIRST_EASY: int = 5
+const FIRST_EASY: int = 4
 const BRANCH_AFTER: int = 50
-const MECHANICS_FROM: int = 10
-## Mechanic -> [first slot, levels left free at the end of the road, smallest
-## gap, largest gap]; placed in this order. Karakuri gaps were 5-9; with the
-## road at ~240 levels 24 of them only reach its end with gaps up to 10.
-const SPREADS: Dictionary = {
-	"covered_pegs": [12, 10, 5, 10],
-	"adjacent_pegs": [17, 6, 5, 9],
-	"alternation": [20, 8, 10, 15],
-}
+## No easy level after this main path position (v4 section 1).
+const EASY_UNTIL: int = 50
+## First slot of each chapter (user requests 2026-10-12 and 2026-10-13).
+const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "combination": 30}
+## The about 1:1 mix of classic and mechanic levels (v4 section 3).
+const MIX_FROM: int = 51
+const MIX_UNTIL: int = 200
+const MIX_SHARE: float = 0.5
 const BOSS_FROM: int = 40
 const BOSS_EVERY: int = 40
 const BRANCH_HARD: int = 8
@@ -46,12 +49,12 @@ const BRANCH_MEDIUM: int = 4
 ## next level; a tier that is not behind its curve gets none.
 const JITTER: float = 0.6
 
-## Weight of each tier along the main path after the first easy levels:
+## Weight of each tier over the classic slots after the first easy levels:
 ## [progress, weight] points, linear in between.
 const MAIN_CURVES: Dictionary = {
-	"easy": [[0.0, 0.45], [0.35, 0.12], [1.0, 0.1]],
-	"medium": [[0.0, 0.55], [0.35, 0.55], [0.9, 0.3], [1.0, 0.15]],
-	"hard": [[0.0, 0.0], [0.1, 0.0], [0.35, 0.33], [0.9, 0.6], [1.0, 0.75]],
+	"easy": [[0.0, 0.7], [0.1, 0.35], [0.16, 0.0], [1.0, 0.0]],
+	"medium": [[0.0, 0.3], [0.15, 0.6], [0.45, 0.5], [0.8, 0.3], [1.0, 0.2]],
+	"hard": [[0.0, 0.0], [0.12, 0.0], [0.3, 0.25], [0.6, 0.5], [1.0, 0.8]],
 }
 const BRANCH_CURVES: Dictionary = {
 	"medium": [[0.0, 0.1], [1.0, 0.1]],
@@ -95,9 +98,13 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 	var mechanics: Array[Dictionary] = _read_folder(levels_dir, Difficulty.MECHANICS, errors)
 	if not errors.is_empty():
 		return {}
+	# The small easy levels open the road (the first ones are the tutorial).
 	var first: Array[Dictionary] = []
-	for i: int in mini(FIRST_EASY, pools["easy"].size()):
-		first.append(pools["easy"].pop_front())
+	var small_disks: int = Difficulty.get_tier("easy").get("small_disks", 0)
+	for entry: Dictionary in (pools["easy"] as Array).duplicate():
+		if first.size() < FIRST_EASY and (entry["level"] as Level).get_disk_count() == small_disks:
+			first.append(entry)
+			(pools["easy"] as Array).erase(entry)
 	# The branch takes the hardest medium and hard levels; the main path keeps the rest.
 	var branch_pools: Dictionary = {
 		"medium": _take_last(pools["medium"], BRANCH_MEDIUM),
@@ -111,7 +118,7 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 		return {}
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = SEED
-	var pinned: Dictionary = _pin_mechanics(mechanics, main_size, errors)
+	var pinned: Dictionary = _place_mechanics(mechanics, main_size, rng, errors)
 	if not errors.is_empty():
 		return {}
 	var main: Array[Dictionary] = first.duplicate()
@@ -123,95 +130,135 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 	return {"branch_after": BRANCH_AFTER, LevelCatalog.MAIN: _entries(main), LevelCatalog.BRANCH: _entries(branch)}
 
 
-## Fixed main path slots for the mechanic levels (1-based position -> level):
-## the SPREADS chapters along the whole road, the bosses every BOSS_EVERY
-## levels, the rest evenly from MECHANICS_FROM. Every group is easiest first.
-static func _pin_mechanics(mechanics: Array[Dictionary], main_size: int, errors: Array[String]) -> Dictionary:
-	var groups: Dictionary = {}
+## Main path slots of the mechanic levels (1-based position -> level), see the
+## class comment: fixed slots for the bosses and each chapter's first level,
+## then the other mechanic slots part by part, then the chapters onto them.
+static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: RandomNumberGenerator,
+		errors: Array[String]) -> Dictionary:
+	# Each chapter and the bosses, easiest first (the folder is read that way).
+	var chapters: Dictionary = {}
+	var bosses: Array[Dictionary] = []
 	for entry: Dictionary in mechanics:
 		var mechanic: String = (entry["level"] as Level).mechanic()
-		if not groups.has(mechanic):
-			groups[mechanic] = [] as Array[Dictionary]
-		(groups[mechanic] as Array).append(entry)
+		if mechanic == Level.GREAT_EXCHANGE:
+			bosses.append(entry)
+		elif CHAPTER_STARTS.has(mechanic):
+			if not chapters.has(mechanic):
+				chapters[mechanic] = [] as Array[Dictionary]
+			(chapters[mechanic] as Array).append(entry)
+		else:
+			errors.append("%s: the %s chapter has no slot in CHAPTER_STARTS" % [entry["file"], mechanic])
+	if not errors.is_empty():
+		return {}
 	var pinned: Dictionary = {}
-	var bosses: Array = groups.get(Level.GREAT_EXCHANGE, [])
-	groups.erase(Level.GREAT_EXCHANGE)
-	var seed_offset: int = 1
-	for mechanic: String in SPREADS:
-		var entries: Array = groups.get(mechanic, [])
-		groups.erase(mechanic)
-		var spread: Array = SPREADS[mechanic]
-		var first: int = spread[0]
-		var gaps: Array[int] = _spread_gaps(entries.size(), main_size - spread[1] - first, spread[2], spread[3],
-				SEED + seed_offset, errors)
-		seed_offset += 1
-		if not errors.is_empty():
-			errors.append("in the %s chapter" % mechanic)
+	for i: int in bosses.size():
+		pinned[BOSS_FROM + i * BOSS_EVERY] = bosses[i]
+	var starts: Dictionary = {}
+	for mechanic: String in chapters:
+		var start: int = CHAPTER_STARTS[mechanic]
+		if pinned.has(start):
+			errors.append("the %s chapter starts on a boss slot (%d)" % [mechanic, start])
 			return {}
-		var position: int = first
-		for i: int in entries.size():
-			# The next gap counts from where this level really landed, so a clash
-			# never squeezes two levels of a chapter closer than its smallest gap.
-			position = _pin(pinned, position, entries[i])
-			if i < gaps.size():
-				position += gaps[i]
-		# The bosses come right after the first chapter (whose gaps are the
-		# tightest), so they keep their exact slots and the others make room.
-		if seed_offset == 2:
-			for i: int in bosses.size():
-				_pin(pinned, BOSS_FROM + i * BOSS_EVERY, bosses[i])
-	var others: Array[Dictionary] = []
-	for mechanic: String in groups:
-		others.append_array(groups[mechanic])
-	others.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var moves_a: int = (a["level"] as Level).min_moves
-		var moves_b: int = (b["level"] as Level).min_moves
-		return moves_a < moves_b if moves_a != moves_b else a["id"] < b["id"])
-	var span: float = float(main_size - MECHANICS_FROM) / maxf(others.size(), 1.0)
-	for i: int in others.size():
-		_pin(pinned, MECHANICS_FROM + roundi((i + 0.5) * span), others[i])
+		pinned[start] = (chapters[mechanic] as Array).pop_front()
+		starts[mechanic] = start
+	var easy_left: int = 0
+	for mechanic: String in chapters:
+		for entry: Dictionary in chapters[mechanic]:
+			easy_left += 1 if (entry["level"] as Level).difficulty == "easy" else 0
+	# Mechanic slots of each part of the road, counting the fixed ones in it.
+	var first_chapter: int = main_size
+	for mechanic: String in starts:
+		first_chapter = mini(first_chapter, starts[mechanic])
+	var early: int = _fixed_in(pinned, first_chapter, EASY_UNTIL) + easy_left
+	var mixed: int = roundi(MIX_SHARE * (MIX_UNTIL - MIX_FROM + 1))
+	var parts: Array[Array] = [[first_chapter, EASY_UNTIL, early], [MIX_FROM, MIX_UNTIL, mixed],
+			[MIX_UNTIL + 1, main_size, mechanics.size() - early - mixed]]
+	var slots: Array[int] = []
+	for part: Array in parts:
+		var picked: Array[int] = _draw_slots(pinned, part[0], part[1], part[2], rng)
+		if picked.size() + _fixed_in(pinned, part[0], part[1]) != part[2]:
+			errors.append("main %d-%d cannot hold %d mechanic levels" % part)
+			return {}
+		slots.append_array(picked)
+	slots.sort()
+	# Up to EASY_UNTIL only the chapters' easy (learning) levels; later every
+	# chapter spreads its other levels evenly over the remaining slots.
+	var placed: Dictionary = {}
+	var late_slots: int = 0
+	for slot: int in slots:
+		late_slots += 1 if slot > EASY_UNTIL else 0
+	var remaining: Dictionary = {}
+	var late_index: int = 0
+	for slot: int in slots:
+		var best: String = ""
+		var best_lag: float = -INF
+		for mechanic: String in chapters:
+			var entries: Array = chapters[mechanic]
+			if entries.is_empty() or starts[mechanic] > slot:
+				continue
+			var lag: float
+			if slot <= EASY_UNTIL:
+				if (entries[0]["level"] as Level).difficulty != "easy":
+					continue
+				var easy_total: int = placed.get(mechanic, 0) + _easy_count(entries)
+				lag = easy_total * float(slot - starts[mechanic] + 1) / float(EASY_UNTIL - starts[mechanic] + 1) \
+						- placed.get(mechanic, 0)
+			else:
+				if not remaining.has(mechanic):
+					remaining[mechanic] = entries.size()
+				lag = remaining[mechanic] * float(late_index + 1) / float(late_slots) \
+						- (remaining[mechanic] - entries.size())
+			if lag > best_lag:
+				best_lag = lag
+				best = mechanic
+		if best.is_empty():
+			errors.append("no chapter level fits main %d" % slot)
+			return {}
+		pinned[slot] = (chapters[best] as Array).pop_front()
+		placed[best] = placed.get(best, 0) + 1
+		late_index += 1 if slot > EASY_UNTIL else 0
+	for mechanic: String in chapters:
+		if not (chapters[mechanic] as Array).is_empty():
+			errors.append("%d %s levels found no slot" % [(chapters[mechanic] as Array).size(), mechanic])
 	for position: int in pinned:
 		if position > main_size:
 			errors.append("%s does not fit on a main path of %d levels" % [pinned[position]["file"], main_size])
+		elif position > EASY_UNTIL and (pinned[position]["level"] as Level).difficulty == "easy":
+			errors.append("easy level %s landed at main %d" % [pinned[position]["file"], position])
 	return pinned
 
 
-## Puts `entry` at `position`, or at the nearest free slot (after first, then
-## before, one step further each time), so a clash moves it as little as possible.
-## Returns the slot it got.
-static func _pin(pinned: Dictionary, position: int, entry: Dictionary) -> int:
-	var step: int = 0
-	while true:
-		for slot: int in [position + step, position - step]:
-			if slot > FIRST_EASY and not pinned.has(slot):
-				pinned[slot] = entry
-				return slot
-		step += 1
-	return position
+## `count` mechanic slots in main `from`-`to` beyond the fixed ones there: the
+## free positions are cut into that many equal strata and one slot is drawn in
+## each (seeded), so they spread evenly without a strict rhythm.
+static func _draw_slots(pinned: Dictionary, from: int, to: int, count: int, rng: RandomNumberGenerator) -> Array[int]:
+	var free: Array[int] = []
+	for position: int in range(from, to + 1):
+		if not pinned.has(position):
+			free.append(position)
+	var wanted: int = count - _fixed_in(pinned, from, to)
+	var picked: Array[int] = []
+	if wanted <= 0 or wanted > free.size():
+		return picked
+	for i: int in wanted:
+		var low: int = i * free.size() / wanted
+		var high: int = (i + 1) * free.size() / wanted - 1
+		picked.append(free[rng.randi_range(low, high)])
+	return picked
 
 
-## `count - 1` gaps between `gap_min` and `gap_max` that add up to `span`: every
-## gap starts at the minimum and the rest is handed out one level at a time to
-## random gaps (seeded).
-static func _spread_gaps(count: int, span: int, gap_min: int, gap_max: int, seed_value: int,
-		errors: Array[String]) -> Array[int]:
-	var gaps: Array[int] = []
-	if count < 2:
-		return gaps
-	for i: int in count - 1:
-		gaps.append(gap_min)
-	var rest: int = span - gap_min * (count - 1)
-	if rest < 0 or rest > (gap_max - gap_min) * (count - 1):
-		errors.append("%d levels do not fit %d-%d levels apart in a stretch of %d" % [count, gap_min, gap_max, span])
-		return gaps
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = seed_value
-	while rest > 0:
-		var i: int = rng.randi_range(0, gaps.size() - 1)
-		if gaps[i] < gap_max:
-			gaps[i] += 1
-			rest -= 1
-	return gaps
+static func _fixed_in(pinned: Dictionary, from: int, to: int) -> int:
+	var count: int = 0
+	for position: int in pinned:
+		count += 1 if position >= from and position <= to else 0
+	return count
+
+
+static func _easy_count(entries: Array) -> int:
+	var count: int = 0
+	for entry: Dictionary in entries:
+		count += 1 if (entry["level"] as Level).difficulty == "easy" else 0
+	return count
 
 ## `count` levels from `pools`, following `curves`. `pinned` maps 1-based track
 ## positions (counted from the start of the whole track; `offset` positions

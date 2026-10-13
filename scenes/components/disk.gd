@@ -2,7 +2,8 @@ class_name DiskView
 extends Control
 ## One disk: a rounded bar with its size number and a soft shadow underneath.
 ## Moves glide with a light bounce on landing. Position and size are set by
-## the game board; input goes to the peg underneath.
+## the game board; input goes to the peg underneath. A disk of a "Birləşmə
+## Tapmacası" level shows its colour's shape (`symbol`) instead of a number.
 
 const MOVE_SECONDS: float = 0.22
 const SHADOW_OFFSET: Vector2 = Vector2(3.0, 5.0)
@@ -40,6 +41,11 @@ var movable_ring: bool = false:
 var ring_color: Color = Color.WHITE:
 	set(value):
 		ring_color = value
+		queue_redraw()
+## Colour name whose DiskSymbols shape replaces the size number, "" for none.
+var symbol: String = "":
+	set(value):
+		symbol = value
 		queue_redraw()
 
 const WOBBLE_SECONDS: float = 0.32
@@ -143,10 +149,13 @@ func _draw() -> void:
 		var soft: Color = ThemeManager.color("text_secondary")
 		soft.a = _flash
 		_draw_rim(soft, 5.0)
+	var ink: Color = number_color if number_color != null else ThemeManager.color("text_on_disk")
+	if not symbol.is_empty():
+		DiskSymbols.draw(self, symbol, size * 0.5, size.y * 0.24, ink)
+		return
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))
 	var text: String = str(disk_size)
 	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var baseline: Vector2 = Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
-	var ink: Color = number_color if number_color != null else ThemeManager.color("text_on_disk")
 	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)

@@ -61,6 +61,8 @@ static func create_rule(id: String) -> RuleBase:
 			return AlternationRule.new()
 		AdjacentPegsRule.ID:
 			return AdjacentPegsRule.new()
+		CombinationRule.ID:
+			return CombinationRule.new()
 	return null
 
 

@@ -265,6 +265,14 @@ msgstr ""
 msgid "RULE_ALTERNATION"
 msgstr ""
 
+#. [TODO: EN] az: Bu qüllə doludur.
+msgid "RULE_PEG_FULL"
+msgstr ""
+
+#. [TODO: EN] az: Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində.
+msgid "COMBINATION_SORT_INTRO"
+msgstr ""
+
 #. [TODO: EN] az: Səviyyə tamamlandı!
 msgid "POPUP_TITLE"
 msgstr ""

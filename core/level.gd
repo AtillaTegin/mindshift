@@ -17,7 +17,7 @@ const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "boss"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "boss", "disk_colors", "color_goal"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -31,6 +31,13 @@ var rule_params: Dictionary = {}
 var covered_pegs: Array[int] = []
 ## A rare "boss" level (`boss`, e.g. GREAT_EXCHANGE), "" for an ordinary one.
 var boss: String = ""
+## "Birləşmə Tapmacası" levels (CombinationRule): the colour of disk id i is
+## disk_colors[i - 1] ("disk_colors"); empty for every other level.
+var disk_colors: Array[String] = []
+## Their goal, read by colour ("color_goal"); null for every other level, whose
+## goal is the exact position `goal`. A combination level's `goal` is the
+## position its stored solution ends in, one of those that meet color_goal.
+var color_goal: ColorGoal
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
@@ -84,6 +91,14 @@ func get_rule_set(errors: Array[String] = []) -> RuleSet:
 	return RuleSet.from_ids(rule_ids, rule_params, errors)
 
 
+## Whether `state` solves the level: its colour goal when it has one, else the
+## exact goal position.
+func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
+	if color_goal != null:
+		return state != null and color_goal.is_met(state, disk_colors)
+	return rules.is_goal_state(state, goal)
+
+
 ## What makes the level special: its boss kind, else the first rule beyond
 ## classic Hanoi (e.g. "alternation"), "covered_pegs" for karakuri boxes, or
 ## CLASSIC. It picks the level's dress and place on the path; it is never shown
@@ -123,6 +138,10 @@ func to_dict() -> Dictionary:
 		data["covered_pegs"] = covered_pegs.duplicate()
 	if not boss.is_empty():
 		data["boss"] = boss
+	if not disk_colors.is_empty():
+		data["disk_colors"] = disk_colors.duplicate()
+	if color_goal != null:
+		data["color_goal"] = color_goal.to_dict()
 	return data
 
 
@@ -205,6 +224,13 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.boss = boss_kind
 	else:
 		errors.append("\"boss\" must be one of %s" % str(BOSSES))
+	var colours: Variant = data.get("disk_colors", [])
+	if typeof(colours) == TYPE_ARRAY and colours.all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING):
+		level.disk_colors.assign(colours)
+	else:
+		errors.append("\"disk_colors\" must be a list of colour names")
+	if data.has("color_goal"):
+		level.color_goal = ColorGoal.from_dict(_whole_numbers_as_ints(data["color_goal"]), errors)
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:
@@ -243,16 +269,16 @@ func check(errors: Array[String]) -> void:
 	if not Difficulty.is_known(difficulty):
 		errors.append("unknown difficulty \"%s\"" % difficulty)
 		return
-	if not Difficulty.accepts_moves(difficulty, min_moves):
-		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
+	if not Difficulty.accepts_moves(difficulty, min_moves, mechanic()):
+		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty, mechanic())])
 	if mechanic() == CLASSIC:
 		if not Difficulty.accepts_id(difficulty, id):
 			errors.append("id %d is outside the %s range" % [id, difficulty])
 		if not Difficulty.accepts_size(difficulty, get_peg_count(), get_disk_count()):
 			errors.append("%d pegs / %d disks is not a %s size" % [get_peg_count(), get_disk_count(), difficulty])
 	else:
-		# A mechanic may need another size than the classic tier (a frozen disk
-		# only matters with 4 pegs and 6+ disks); it has its own id range.
+		# A mechanic may need another size than the classic tier (the Nine Rings
+		# only matter on 4 pegs); it has its own id range.
 		if not Difficulty.is_mechanic_id(id):
 			errors.append("id %d is outside the mechanic range" % id)
 		if not Difficulty.accepts_mechanic_size(get_peg_count(), get_disk_count()):
@@ -285,6 +311,8 @@ func check(errors: Array[String]) -> void:
 		errors.append("goal is not a valid position")
 	if start.equals(goal):
 		errors.append("start equals goal")
+	if rule_ids.has(CombinationRule.ID) or color_goal != null or not disk_colors.is_empty():
+		_check_colours(rules, errors)
 	if solution_path.size() != min_moves:
 		errors.append("solution_path has %d moves, min_moves is %d" % [solution_path.size(), min_moves])
 	var state: PuzzleState = start
@@ -295,6 +323,25 @@ func check(errors: Array[String]) -> void:
 			return
 	if not state.equals(goal):
 		errors.append("solution_path does not end at the goal")
+
+
+## A combination level: the combination rule alone, a colour for every disk, a
+## colour goal that fits the board, a start that does not meet it yet and a goal
+## position (the stored solution's end) that does.
+func _check_colours(rules: RuleSet, errors: Array[String]) -> void:
+	if rule_ids.size() != 1 or rule_ids[0] != CombinationRule.ID or color_goal == null or disk_colors.size() != get_disk_count():
+		errors.append("a combination level needs rules [\"%s\"] alone, disk_colors for each of its %d disks and a color_goal"
+				% [CombinationRule.ID, get_disk_count()])
+		return
+	var capacity: int = (rules.active_rules[0] as CombinationRule).capacity
+	var error_count: int = errors.size()
+	color_goal.check(get_peg_count(), capacity, disk_colors, errors)
+	if errors.size() > error_count:
+		return
+	if color_goal.is_met(start, disk_colors):
+		errors.append("the start already meets the colour goal")
+	if not color_goal.is_met(goal, disk_colors):
+		errors.append("the goal position does not meet the colour goal")
 
 
 ## JSON numbers parse as floats; whole ones become ints again so a level writes

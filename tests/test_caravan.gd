@@ -110,11 +110,9 @@ func test_caravan_road_runs_along_the_whole_road_easy_to_hard() -> void:
 			assert_true(moves >= previous, "never easier than the one before (%d)" % position)
 			previous = moves
 	assert_eq(positions.size(), 30)
-	assert_true(positions[0] >= 15 and positions[0] <= 20, "first at %d" % positions[0])
-	for i: int in range(1, positions.size()):
-		var gap: int = positions[i] - positions[i - 1]
-		assert_true(gap >= 4 and gap <= 10, "gap %d at %d" % [gap, positions[i]])
-	assert_true(LevelCatalog.track_length(MAIN) - positions[-1] <= 10, "to the end of the road")
+	assert_eq(positions[0], PathBuilder.CHAPTER_STARTS["adjacent_pegs"], "first at %d" % positions[0])
+	# Level structure v4: placed by the 1:1 mix, still to the end of the road.
+	assert_true(positions[-1] > PathBuilder.MIX_UNTIL, "to the end of the road (%d)" % positions[-1])
 
 
 func test_board_wears_the_caravan_dress_and_refuses_a_jump() -> void:
