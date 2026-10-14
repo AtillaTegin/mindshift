@@ -37,8 +37,7 @@ const BRANCH_AFTER: int = 50
 ## No easy level after this main path position (v4 section 1).
 const EASY_UNTIL: int = 50
 ## First slot of each chapter (user requests 2026-10-12 and 2026-10-13).
-const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "combination": 30,
-		"color_swap": 40}
+const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "color_swap": 40}
 ## The about 1:1 mix of classic and mechanic levels (v4 section 3).
 const MIX_FROM: int = 51
 const MIX_UNTIL: int = 200
@@ -102,9 +101,7 @@ static func build(levels_dir: String, errors: Array[String]) -> Dictionary:
 
 
 ## The path for these classic pools (tier -> entries, easiest first) and
-## mechanic entries ({file, id, level}); `pools` is used up. The mechanic level
-## builder calls it with stand-in combination levels to learn where they will
-## land (their stage depends on it).
+## mechanic entries ({file, id, level}); `pools` is used up.
 static func build_from(pools: Dictionary, mechanics: Array[Dictionary], errors: Array[String]) -> Dictionary:
 	# The small easy levels open the road (the first ones are the tutorial).
 	var first: Array[Dictionary] = []
@@ -154,16 +151,13 @@ static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: 
 			errors.append("%s: the %s chapter has no slot in CHAPTER_STARTS" % [entry["file"], mechanic])
 	if not errors.is_empty():
 		return {}
-	# Every chapter easiest first, whatever order they came in. Combination
-	# levels grow by stage, not by length (their min_moves is an example
-	# solution): they are built in road order, so ids give the order.
+	# Every chapter easiest first, whatever order they came in.
 	var by_length: Callable = func(a: Dictionary, b: Dictionary) -> bool:
 		var moves_a: int = (a["level"] as Level).min_moves
 		var moves_b: int = (b["level"] as Level).min_moves
 		return moves_a < moves_b if moves_a != moves_b else a["id"] < b["id"]
 	for mechanic: String in chapters:
-		(chapters[mechanic] as Array).sort_custom(by_length if mechanic != Difficulty.COMBINATION \
-				else func(a: Dictionary, b: Dictionary) -> bool: return a["id"] < b["id"])
+		(chapters[mechanic] as Array).sort_custom(by_length)
 	var pinned: Dictionary = {}
 	var starts: Dictionary = {}
 	for mechanic: String in chapters:

@@ -11,8 +11,6 @@ extends Control
 ##   caravan: sand dunes, and under every peg a small caravanserai on a dashed
 ##         road that links each stop only to its neighbours (the caravan
 ##         road's rule); the board keeps bottom_room() free for them
-##   glass: cool glass with a dot grid and two soft light streaks, for the
-##         "Birləşmə Tapmacası" (a modern chapter, no cultural root)
 
 ## How far the panel reaches past the board on every side.
 const BLEED: float = 12.0
@@ -31,6 +29,10 @@ var skin: String = "":
 	set(value):
 		skin = value
 		queue_redraw()
+## Each peg's cell on the board and the y (inside a cell) of the bottom of its
+## base, from the board's last layout pass (set_cells); empty before it.
+var cells: Array[Rect2] = []
+var base_bottom: float = 0.0
 
 
 func _ready() -> void:
@@ -46,6 +48,20 @@ func _notification(what: int) -> void:
 ## Height the board leaves free under its pegs for this dress.
 func bottom_room() -> float:
 	return CARAVAN_ROOM if skin == "caravan" else 0.0
+
+
+## Where the pegs stand now (board coordinates) and where their bases end.
+func set_cells(p_cells: Array[Rect2], p_base_bottom: float) -> void:
+	cells = p_cells.duplicate()
+	base_bottom = p_base_bottom
+	queue_redraw()
+
+
+## The x of the middle of peg `peg_index` (an even spread before the first layout).
+func peg_x(peg_index: int) -> float:
+	if peg_index < cells.size():
+		return cells[peg_index].get_center().x
+	return size.x / maxi(peg_count, 1) * (peg_index + 0.5)
 
 
 ## The area the panel covers, in local coordinates.
@@ -69,27 +85,6 @@ func _draw() -> void:
 			_draw_wood(inner)
 		"caravan":
 			_draw_caravan(inner)
-		"glass":
-			_draw_glass(inner)
-
-
-func _draw_glass(area: Rect2) -> void:
-	var dot: Color = ThemeManager.skin_color(skin, "pattern")
-	var spacing: float = 28.0
-	var y: float = area.position.y + spacing * 0.5
-	while y < area.end.y:
-		var x: float = area.position.x + spacing * 0.5
-		while x < area.end.x:
-			draw_circle(Vector2(x, y), 2.5, dot, true, -1.0, true)
-			x += spacing
-		y += spacing
-	# Two soft streaks of light across the glass, top left to bottom right.
-	var streak: Color = ThemeManager.skin_color(skin, "pattern")
-	streak.a *= 0.6
-	for offset: float in [0.18, 0.3]:
-		var start_x: float = area.position.x + area.size.x * offset
-		draw_colored_polygon(PackedVector2Array([Vector2(start_x, area.position.y), Vector2(start_x + 34.0, area.position.y),
-				Vector2(start_x + 34.0 + area.size.y * 0.35, area.end.y), Vector2(start_x + area.size.y * 0.35, area.end.y)]), streak)
 
 
 func _draw_jade(area: Rect2) -> void:
@@ -155,18 +150,17 @@ func _draw_caravan(area: Rect2) -> void:
 		y += 46.0
 		row += 1
 	# The road: a stop under every peg, each linked only to its neighbours.
-	var column: float = size.x / maxi(peg_count, 1)
 	var road_y: float = size.y - CARAVAN_ROOM * 0.32
 	for i: int in peg_count - 1:
-		var from: Vector2 = Vector2(column * (i + 0.5) + 22.0, road_y)
-		var to: Vector2 = Vector2(column * (i + 1.5) - 22.0, road_y)
+		var from: Vector2 = Vector2(peg_x(i) + 22.0, road_y)
+		var to: Vector2 = Vector2(peg_x(i + 1) - 22.0, road_y)
 		var travelled: float = 0.0
 		var length: float = from.distance_to(to)
 		while travelled < length:
 			draw_line(from + Vector2(travelled, 0.0), from + Vector2(minf(travelled + 10.0, length), 0.0), mark, 4.0, true)
 			travelled += 18.0
 	for i: int in peg_count:
-		_draw_caravanserai(Vector2(column * (i + 0.5), size.y - 4.0), mark, dune)
+		_draw_caravanserai(Vector2(peg_x(i), size.y - 4.0), mark, dune)
 
 
 ## A small caravanserai seen from the front: a flat-roofed wall with an arched

@@ -171,19 +171,12 @@ const SWAP_BOARDS: Array[Dictionary] = [
 const SWAP_MIN_MOVES: int = 5
 const SWAP_MAX_MOVES: int = 33
 
-## "Birləşmə Tapmacası" levels (level structure v4 section 4, corrections v2
-## and v3, user decisions 2026-10-13). Each level's size comes from its stage
-## on the road (Difficulty.COMBINATION_STAGES: peg capacity N up to 7, C
-## colours of N disks each; E is the measured Difficulty.COMBINATION_E_MIN),
-## so the builder first works out where the levels will land
-## (combination_positions). Inside a stage sizes grow along it, with seeded
-## variety. Every level is "Sadə Yığım" (sort): under Water Sort's rule (auto-
-## group addendum, user decision 2026-10-13) "Konkret Kombinasiya" was dropped.
-const COMBO_COUNT: int = 30
-## Starts tried per level before giving up.
-const COMBO_ATTEMPTS: int = 40
-## Positions the guided search may expand per start.
-const COMBO_BUDGET: int = 80000
+## Ids 9082-9111 belonged to the 30 "Birləşmə Tapmacası" levels, archived with
+## Water Sort (new mechanics specification v1, section 0: archive/water_sort/);
+## they stay unused. The great exchange keeps a block of SWAP_ID_BLOCK ids
+## after them, so it may grow to 40 levels without moving later ids.
+const RETIRED_COMBO_IDS: int = 30
+const SWAP_ID_BLOCK: int = 40
 
 
 func _initialize() -> void:
@@ -219,33 +212,19 @@ func _run() -> bool:
 		if _selected(only, spec["file"]):
 			ok = _write(build_rings(spec, next_id, BASE_SEED + 300 + i), spec) and ok
 		next_id += 1
-	var first_combo: int = next_id
-	# The great exchange levels take the ids after the combination levels, but
-	# are built first: where the combination levels land depends on them.
-	var swap_count: int = 0
+	next_id += RETIRED_COMBO_IDS
+	var built: int = next_id - Difficulty.MECHANIC_FIRST_ID - RETIRED_BOSS_IDS - RETIRED_COMBO_IDS
 	if only.is_empty() or only.begins_with("swap_"):
-		var swaps: Array[Level] = build_color_swaps(first_combo + COMBO_COUNT)
-		ok = not swaps.is_empty() and ok
-		swap_count = swaps.size()
+		var swaps: Array[Level] = build_color_swaps(next_id)
+		ok = not swaps.is_empty() and swaps.size() <= SWAP_ID_BLOCK and ok
+		built += swaps.size()
 		for i: int in swaps.size():
 			var spec: Dictionary = {"file": "swap_%02d.json" % (i + 1)}
 			if _selected(only, spec["file"]):
 				ok = _write(swaps[i], spec) and ok
 		if not only.ends_with(".json"):
 			_remove_extra_swaps(swaps.size())
-	var positions: Array[int] = []
-	for i: int in COMBO_COUNT:
-		var spec: Dictionary = {"file": "combo_%02d.json" % (i + 1)}
-		if _selected(only, spec["file"]):
-			if positions.is_empty():
-				positions = combination_positions(first_combo)
-				if positions.size() != COMBO_COUNT:
-					printerr("Cannot work out where the combination levels land on the road")
-					return false
-			spec.merge(combination_spec(positions[i], BASE_SEED + 400 + i))
-			ok = _write(build_combination(spec, next_id, BASE_SEED + 400 + i, _earlier_shapes(i)), spec) and ok
-		next_id += 1
-	var built: int = next_id - Difficulty.MECHANIC_FIRST_ID - RETIRED_BOSS_IDS + swap_count
+	next_id += SWAP_ID_BLOCK
 	print("mechanics: %s" % ("%d levels" % built if only.is_empty() else only))
 	return ok
 
@@ -443,169 +422,6 @@ static func build_fog(spec: Dictionary, id: int, seed_value: int) -> Level:
 	var level: Level = Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
 	level.covered_pegs = best["covered"]
 	return level
-
-
-## Main path positions the combination levels will get, in chapter order: the
-## path builder run with stand-ins for them (the first one easy, as its stage
-## is; the rest not), since a level's stage depends on its position.
-static func combination_positions(first_id: int) -> Array[int]:
-	var errors: Array[String] = []
-	var pools: Dictionary = {}
-	for tier: String in Difficulty.ORDER:
-		pools[tier] = PathBuilder.read_folder(Difficulty.LEVELS_DIR, tier, errors)
-	var mechanics: Array[Dictionary] = []
-	for file_name: String in DirAccess.get_files_at(MECHANICS_DIR):
-		if not file_name.ends_with(".json") or file_name.begins_with("combo_"):
-			continue
-		var level: Level = Level.load_file("%s/%s" % [MECHANICS_DIR, file_name], errors)
-		if level != null:
-			mechanics.append({"file": "%s/%s" % [Difficulty.MECHANICS, file_name], "id": level.id, "level": level})
-	for i: int in COMBO_COUNT:
-		var stand_in: Level = Level.new()
-		stand_in.id = first_id + i
-		stand_in.rule_ids.assign([CombinationRule.ID])
-		stand_in.difficulty = "easy" if i == 0 else "medium"
-		mechanics.append({"file": "%s/combo_%02d.json" % [Difficulty.MECHANICS, i + 1], "id": stand_in.id, "level": stand_in})
-	var positions: Array[int] = []
-	var path: Dictionary = PathBuilder.build_from(pools, mechanics, errors)
-	if not errors.is_empty():
-		printerr("; ".join(errors))
-		return positions
-	var main: Array = path[LevelCatalog.MAIN]
-	for i: int in main.size():
-		var id: int = main[i]["id"]
-		if id >= first_id and id < first_id + COMBO_COUNT:
-			positions.append(i + 1)
-	return positions
-
-
-## Size of the combination level at main path `position` (its stage in
-## Difficulty.COMBINATION_STAGES), drawn with `seed_value`.
-static func combination_spec(position: int, seed_value: int) -> Dictionary:
-	var stage: Dictionary = Difficulty.combination_stage(position)
-	var stage_from: int = 1
-	for earlier: Dictionary in Difficulty.COMBINATION_STAGES:
-		if earlier == stage:
-			break
-		stage_from = earlier["to"] + 1
-	var progress: float = clampf(float(position - stage_from) / maxf(stage["to"] - stage_from, 1.0), 0.0, 1.0)
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var capacity: int = _grow(stage["capacity"], progress, rng)
-	var colours: int = _grow(stage["colours"], progress, rng)
-	# Correction v3: E is measured (Difficulty.COMBINATION_E_MIN), not chosen.
-	var empty: int = Difficulty.combination_empty(colours, capacity)
-	return {"stage": stage["name"], "tier": stage["tier"], "position": position, "capacity": capacity,
-			"colours": colours, "empty": empty}
-
-
-## A value in `bounds` ([min, max]) that grows with `progress` (0..1) through
-## the stage, give or take a little.
-static func _grow(bounds: Array, progress: float, rng: RandomNumberGenerator) -> int:
-	return bounds[0] + roundi((bounds[1] - bounds[0]) * clampf(progress + rng.randf_range(-0.35, 0.35), 0.0, 1.0))
-
-
-## A "Birləşmə Tapmacası" level from a combination_spec(): `colours` colours of
-## `capacity` disks each, shuffled onto that many full pegs with `empty` empty
-## pegs among them (Water Sort's start). Only a start with a solution found by
-## search is kept (breadth-first, so the shortest, while there are at most
-## CombinationSolver.EXACT_DISKS disks; else guided search within COMBO_BUDGET,
-## then shortened): that solution is stored and proves the level solvable.
-## Starts that are partly done already, or an earlier level in other colours
-## (`used`: ColorGoal.shape_key), are skipped.
-static func build_combination(spec: Dictionary, id: int, seed_value: int, used: Dictionary = {}) -> Level:
-	if spec["empty"] < 1:
-		push_error("%s: E_min of %d colours x %d is not measured (tools/combination_e_min.gd)" % [spec["file"], spec["colours"], spec["capacity"]])
-		return null
-	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var capacity: int = spec["capacity"]
-	var peg_count: int = spec["colours"] + spec["empty"]
-	for attempt: int in spec.get("attempts", COMBO_ATTEMPTS):
-		# Colours come from the first six (dice faces 1-6, correction v3 section
-		# 5) while six are enough; only larger boards reach "6 | k" pips.
-		var disks: Array = []
-		var palette: Array = ColorGoal.LETTERS.keys().slice(0, maxi(spec["colours"], 6))
-		for color_name: String in _shuffled(palette, rng).slice(0, spec["colours"]):
-			for k: int in capacity:
-				disks.append(ColorGoal.letter_of(color_name))
-		var goal: ColorGoal = ColorGoal.sort()
-		var start: PackedStringArray = _place(_stacks(_shuffled(disks, rng), capacity), peg_count, rng)
-		if goal.matches(start) or _half_done(start) or used.has(goal.shape_key(start)):
-			continue
-		var result: Dictionary = CombinationSolver.search(start, capacity, goal) \
-				if disks.size() <= CombinationSolver.EXACT_DISKS \
-				else CombinationSolver.guided_search(start, capacity, goal, COMBO_BUDGET)
-		if not result["solvable"]:
-			continue
-		return _combination_level(id, spec, start, goal, CombinationSolver.shorten(start, result["path"], capacity, goal))
-	push_error("No combination level found for %s" % spec["file"])
-	return null
-
-
-## The level for a found start and solution: disk ids 1..N in the order they
-## stand, peg by peg, bottom to top; the goal position is where the solution ends.
-static func _combination_level(id: int, spec: Dictionary, pegs: PackedStringArray, goal: ColorGoal, path: Array[Move]) -> Level:
-	var layout: Array = []
-	var colours: Array[String] = []
-	for text: String in pegs:
-		var peg: Array = []
-		for letter: String in text:
-			colours.append(ColorGoal.colour_of(letter))
-			peg.append(colours.size())
-		layout.append(peg)
-	var start: PuzzleState = PuzzleState.new(layout)
-	var rule_ids: Array[String] = [CombinationRule.ID]
-	var params: Dictionary = {CombinationRule.ID: {"capacity": spec["capacity"]}}
-	var level: Level = Level.create(id, spec["tier"], start, start, rule_ids, path, params)
-	level.disk_colors = colours
-	level.color_goal = goal
-	# The rule judges by colour, so it needs the level's colours.
-	var rules: RuleSet = level.get_rule_set()
-	var position: PuzzleState = start
-	for move: Move in path:
-		position = rules.apply_move(position, move)
-	level.goal = position
-	return level
-
-
-## `letters` cut into stacks of `size`.
-static func _stacks(letters: Array, size: int) -> Array:
-	var stacks: Array = []
-	for i: int in range(0, letters.size(), size):
-		stacks.append("".join(PackedStringArray(letters.slice(i, i + size))))
-	return stacks
-
-
-## `stacks` on random pegs of `peg_count`, the others empty.
-static func _place(stacks: Array, peg_count: int, rng: RandomNumberGenerator) -> PackedStringArray:
-	var order: Array = _shuffled(range(peg_count), rng)
-	var pegs: PackedStringArray = PackedStringArray()
-	pegs.resize(peg_count)
-	for i: int in stacks.size():
-		pegs[order[i]] = stacks[i]
-	return pegs
-
-
-## ColorGoal.shape_key of the combination levels built before combo number
-## `index` (read from their files), so a later one never repeats one in other
-## colours.
-static func _earlier_shapes(index: int) -> Dictionary:
-	var shapes: Dictionary = {}
-	for i: int in index:
-		var errors: Array[String] = []
-		var level: Level = Level.load_file("%s/combo_%02d.json" % [MECHANICS_DIR, i + 1], errors)
-		if level != null and level.color_goal != null:
-			shapes[LevelValidator.puzzle_key(level)] = true
-	return shapes
-
-
-## A start that is partly done already: a peg of one colour only.
-static func _half_done(pegs: PackedStringArray) -> bool:
-	for text: String in pegs:
-		if not text.is_empty() and text.count(text[0]) == text.length():
-			return true
-	return false
 
 
 ## A seeded shuffle (Array.shuffle() uses the global generator).

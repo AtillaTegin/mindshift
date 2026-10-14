@@ -6,14 +6,12 @@ extends RefCounted
 
 ## BLOCKED: the top disk of the tapped peg may not be picked up right now.
 ## OPENED: the tap opened a closed karakuri box (nothing else happened).
-enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED, OPENED }
+## TARGETED: the first target of a linked pair was chosen; the partner's next.
+enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED, OPENED, TARGETED }
 
 ## Search budget for hints off the stored solution path. The packed solver
 ## stays far below it for every shipped level size.
 const HINT_MAX_STATES: int = 2000000
-## Positions the guided search of a combination hint may expand (a second or
-## so on a phone); past that the hint leads back to the stored solution.
-const COMBINATION_HINT_BUDGET: int = 6000
 
 var level: Level
 var rules: RuleSet
@@ -22,6 +20,9 @@ var state: PuzzleState
 var move_count: int = 0
 ## Peg whose top disk is picked up, or -1.
 var selected_peg: int = -1
+## A linked pair (RuleBase.partner_of): the target already chosen for the
+## selected disk while the partner's is still to come, or -1.
+var pending_target: int = -1
 var history: Array[Move] = []
 var undo_count: int = 0
 ## Play time of this attempt. The clock starts with the first move (thinking
@@ -62,6 +63,7 @@ func restart() -> void:
 	state = level.start.duplicate_state()
 	move_count = 0
 	selected_peg = -1
+	pending_target = -1
 	history.clear()
 	_previous_states.clear()
 	undo_count = 0
@@ -80,19 +82,36 @@ func get_selected_disk() -> int:
 	return state.get_top_disk(selected_peg) if selected_peg != -1 else -1
 
 
-## Every disk picked up with the selected peg (RuleSet.picked_up_disks: the
-## top disk, or a combination level's whole top run), bottom -> top; empty
-## when nothing is selected.
+## Every disk picked up with the selected peg: its top disk and, for a linked
+## disk (RuleBase.partner_of), its partner; empty when nothing is selected.
 func get_selected_disks() -> Array[int]:
+	var disks: Array[int] = []
 	if selected_peg == -1:
-		var none: Array[int] = []
-		return none
-	return rules.picked_up_disks(state, selected_peg)
+		return disks
+	disks.append(get_selected_disk())
+	var partner: int = rules.partner_of(disks[0])
+	if partner != 0:
+		disks.append(partner)
+	return disks
+
+
+## The peg of the partner of the selected linked disk, or -1.
+func get_partner_peg() -> int:
+	if selected_peg == -1:
+		return -1
+	var partner: int = rules.partner_of(get_selected_disk())
+	for peg_index: int in state.get_peg_count():
+		if partner != 0 and state.get_top_disk(peg_index) == partner:
+			return peg_index
+	return -1
 
 
 ## A tap on a peg. With nothing selected it picks up that peg's top disk; a
 ## second tap on the same peg puts it back; a tap on another peg moves it there.
 ## An illegal target keeps the selection so the player can pick another peg.
+## A linked disk lifts its partner too: the next tap names the tapped disk's
+## target (TARGETED), the one after it the partner's, and only then the
+## compound move is tried.
 func tap_peg(peg_index: int) -> TapResult:
 	if is_solved() or peg_index < 0 or peg_index >= state.get_peg_count():
 		return TapResult.IGNORED
@@ -104,10 +123,21 @@ func tap_peg(peg_index: int) -> TapResult:
 		if not rules.can_pick_up(state, peg_index):
 			return TapResult.BLOCKED
 		selected_peg = peg_index
+		pending_target = -1
 		return TapResult.SELECTED
-	if peg_index == selected_peg:
+	if peg_index == selected_peg and pending_target == -1:
 		selected_peg = -1
 		return TapResult.DESELECTED
+	var partner_peg: int = get_partner_peg()
+	if partner_peg != -1:
+		if pending_target == -1:
+			pending_target = peg_index
+			return TapResult.TARGETED
+		var first: int = pending_target
+		pending_target = -1
+		if try_move(Move.new(selected_peg, first, partner_peg, peg_index)):
+			return TapResult.MOVED
+		return TapResult.ILLEGAL
 	if try_move(Move.new(selected_peg, peg_index)):
 		return TapResult.MOVED
 	return TapResult.ILLEGAL
@@ -128,6 +158,7 @@ func try_move(move: Move) -> bool:
 	move_count += 1
 	history.append(move)
 	selected_peg = -1
+	pending_target = -1
 	clock_started = true
 	_reveal_tops()
 	return true
@@ -177,6 +208,7 @@ func undo() -> bool:
 	move_count -= 1
 	undo_count += 1
 	selected_peg = -1
+	pending_target = -1
 	_reveal_tops()
 	return true
 
@@ -203,38 +235,31 @@ func get_path_hint() -> Move:
 
 ## A hint when the search finds none: off the stored path, the last move taken
 ## back, which leads to a position on the path in the end (the start is on
-## it). Only where that move is legal and really restores the position before:
-## a Water Sort pour or a disk lifted off another colour cannot always go back
-## (then undo() helps). Null on the path, with nothing moved, or when the last
-## move cannot be reversed.
+## it). Only where that move is legal and really restores the position before,
+## memory included: a disk lifted off another colour or one that may not
+## return to a peg cannot always go back (then undo() helps). Null on the path,
+## with nothing moved, or when the last move cannot be reversed.
 func return_to_path_move() -> Move:
 	if history.is_empty() or _path_index.has(_path_key(state)):
 		return null
 	var last: Move = history[-1]
-	var back: Move = Move.new(last.to_peg, last.from_peg)
+	var back: Move = Move.new(last.to_peg, last.from_peg, last.to_peg_2, last.from_peg_2)
 	var before: PuzzleState = rules.apply_move(state, back)
-	return back if before != null and before.equals(_previous_states[-1]) else null
+	return back if before != null and _path_key(before) == _path_key(_previous_states[-1]) else null
 
 
-## What makes two positions the same for the stored solution: the search key,
-## or for a combination level only the colours (equal disks of one colour are
-## interchangeable).
+## What makes two positions the same for the stored solution: the search key
+## (the last moved disk and the memory included where a rule needs them).
 func _path_key(position: PuzzleState) -> String:
-	if level.color_goal != null:
-		return "|".join(ColorGoal.letters_of(position, level.disk_colors))
 	return rules.search_key(position)
 
 
-## First move of a shortest solution of `level` from `from_state`, or null. A
-## combination level (colour goal) is searched by CombinationSolver within
-## COMBINATION_HINT_BUDGET (a short solution on a large board, may find none);
-## every other one by the Solver. Null also when no solution is left (a dead
-## end of a level whose moves cannot all be taken back); then
-## return_to_path_move() or an undo helps. Only reads its arguments, so it can
-## run on a worker thread.
+## First move of a shortest solution of `level` from `from_state`, or null.
+## Null also when no solution is left (a dead end of a level whose moves cannot
+## all be taken back); then return_to_path_move() or an undo helps. Only reads
+## its arguments, so it can run on a worker thread.
 static func solve_hint(level: Level, from_state: PuzzleState, rule_set: RuleSet) -> Move:
-	var result: Dictionary = CombinationSolver.solve(level, from_state, COMBINATION_HINT_BUDGET) if level.color_goal != null \
-			else Solver.solve(from_state, level.goal, rule_set, HINT_MAX_STATES)
+	var result: Dictionary = Solver.solve(from_state, level.goal, rule_set, HINT_MAX_STATES)
 	return result["path"][0] if result["solvable"] and not result["path"].is_empty() else null
 
 

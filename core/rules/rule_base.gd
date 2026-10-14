@@ -13,8 +13,17 @@ extends RefCounted
 ##
 ## A rule that also depends on which disk moved last (PuzzleState.last_moved_disk)
 ## returns true from uses_last_move() and overrides is_disk_move_allowed_after();
-## the Solver then keeps that disk in its search state. No rule is ever named
-## in the Solver.
+## the Solver then keeps that disk in its search state.
+##
+## A rule that judges by more of the position (how many disks a peg holds, the
+## sum of their sizes, where a disk is) returns true from needs_facts() and
+## overrides is_move_allowed_with(), which gets a MoveFacts. A rule that must
+## remember something beyond the position (a lock that opened, the pegs a disk
+## visited) returns true from uses_memory() and keeps it in PuzzleState.memory
+## through start_memory() and memory_after(). Two linked disks that only move
+## together are named by partner_of(); peg groups that never exchange disks by
+## peg_groups(). The Solver handles all of these generically and never names a
+## rule.
 
 
 ## Translation key of the text shown when this rule refuses a move (addendum
@@ -34,25 +43,6 @@ func get_violation_message(_state: PuzzleState, _move: Move) -> String:
 	return violation_message
 
 
-## A rule that judges moves by disk colour gets the level's disk colours here
-## (Level.disk_colors: the colour of disk id i at i - 1); others ignore them.
-func bind_disk_colours(_colours: Array[String]) -> void:
-	pass
-
-
-## How many disks `move` carries from the top of its source (the others go
-## along in the order they stand). 1 for most rules; a rule that moves a group
-## returns more. RuleSet uses the largest any rule asks for.
-func disks_moved(_state: PuzzleState, _move: Move) -> int:
-	return 1
-
-
-## How many top disks of `stack` are picked up together (and shown lifted):
-## the most a move from it could carry. 1 for most rules.
-func disks_picked_up(_stack: Array) -> int:
-	return 1
-
-
 ## Takes this rule's settings from the level JSON `"rule_params": { "<id>": {...} }`
 ## (an empty Dictionary when the level gives none). Returns "" when they are
 ## fine, otherwise what is wrong. Rules without settings accept only {}.
@@ -70,6 +60,12 @@ func get_params() -> Dictionary:
 ## tap) and also in its move check (so every search sees the same rule).
 func is_disk_movable(_disk: int, _last_disk: int) -> bool:
 	return true
+
+
+## is_disk_movable() knowing the whole MoveFacts (a rule with memory, e.g. a
+## lock that has not opened yet). Defaults to is_disk_movable().
+func is_disk_movable_with(disk: int, facts: MoveFacts) -> bool:
+	return is_disk_movable(disk, facts.last_disk)
 
 
 ## Whether the top disk of `move.from_peg` may be placed on `move.to_peg`.
@@ -98,9 +94,55 @@ func is_disk_move_allowed_after(disk: int, from_peg: int, to_peg: int, target_to
 	return is_disk_move_allowed(disk, from_peg, to_peg, target_top)
 
 
+## The move decision knowing the MoveFacts of the position the move starts
+## from. Only rules with needs_facts() or uses_memory() need to override it.
+func is_move_allowed_with(disk: int, from_peg: int, to_peg: int, target_top: int, facts: MoveFacts) -> bool:
+	return is_disk_move_allowed_after(disk, from_peg, to_peg, target_top, facts.last_disk)
+
+
 ## True if this rule looks at the disk that moved last.
 func uses_last_move() -> bool:
 	return false
+
+
+## True if is_move_allowed_with() needs the MoveFacts beyond the last disk.
+func needs_facts() -> bool:
+	return false
+
+
+## True if this rule keeps a memory in PuzzleState.memory. At most one rule
+## of a RuleSet may (RuleSet.from_ids checks it).
+func uses_memory() -> bool:
+	return false
+
+
+## How many different memory values there can be on a board of this size (the
+## memory runs from 0 to this minus one).
+func memory_states(_peg_count: int, _disk_count: int) -> int:
+	return 1
+
+
+## The memory a level starts with in position `state`.
+func start_memory(_state: PuzzleState) -> int:
+	return 0
+
+
+## The memory after `disk` moved from `from_peg` to `to_peg`, `facts` being
+## those of the position before the move.
+func memory_after(facts: MoveFacts, _disk: int, _from_peg: int, _to_peg: int) -> int:
+	return facts.memory
+
+
+## The disk linked to `disk` (they only ever move together, as one compound
+## move), or 0 for a free disk.
+func partner_of(_disk: int) -> int:
+	return 0
+
+
+## Groups of pegs that never exchange disks (each group a separate board); the
+## Solver then solves every group on its own. Empty for one board.
+func peg_groups(_peg_count: int) -> Array[Array]:
+	return [] as Array[Array]
 
 
 ## True if is_disk_move_allowed_after() fully decides this rule's moves. Rules that

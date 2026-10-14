@@ -109,9 +109,9 @@ func _exit_tree() -> void:
 
 
 ## Shows a found hint and charges for it; a missing hint costs nothing. When
-## the search found none (a large combination board, or a dead end of a level
-## whose moves cannot all be taken back) the hint leads back to the stored
-## solution, or asks the player to take a move back where it cannot.
+## the search found none (a dead end of a level whose moves cannot all be taken
+## back) the hint leads back to the stored solution, or asks the player to take
+## a move back where it cannot.
 func _apply(move: Move, key: String) -> void:
 	if move == null:
 		move = _board.session.return_to_path_move()

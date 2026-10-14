@@ -160,7 +160,7 @@ func test_board_shows_sizes_and_two_colours() -> void:
 	var road: Array[Dictionary] = _on_road()
 	var level: Level = null
 	for entry: Dictionary in road:
-		if (entry["level"] as Level).get_peg_count() == Difficulty.COLOR_SWAP_MAX_PEGS:
+		if (entry["level"] as Level).get_peg_count() == Difficulty.MECHANIC_SIZES[Difficulty.COLOR_SWAP]["max_pegs"]:
 			level = entry["level"]
 			break
 	assert_not_null(level, "a board with 4 buffers")

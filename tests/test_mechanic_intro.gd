@@ -103,7 +103,7 @@ func test_free_play_after_the_guide_names_the_broken_rule() -> void:
 
 
 func test_restart_runs_the_introduction_again() -> void:
-	var first: int = LevelCatalog.first_main_position(CombinationRule.ID)
+	var first: int = LevelCatalog.first_main_position(ColorSwapRule.ID)
 	_open(first)
 	var move: Move = _board.session.level.solution_path[0]
 	_tap(move.from_peg)

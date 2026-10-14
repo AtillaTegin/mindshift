@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 136, "22 Nine Rings, 24 karakuri, 30 caravan road, 30 great exchange and 30 combination levels")
+	assert_eq(mechanic_files, 106, "22 Nine Rings, 24 karakuri, 30 caravan road and 30 great exchange levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -107,7 +107,6 @@ func test_mechanic_levels_are_ordinary_path_levels() -> void:
 	assert_eq(found.count("covered_pegs"), 24)
 	assert_eq(found.count("adjacent_pegs"), 30)
 	assert_eq(found.count(ColorSwapRule.ID), 30)
-	assert_eq(found.count(CombinationRule.ID), 30)
 
 
 func test_classic_and_mechanic_levels_take_turns_after_50() -> void:

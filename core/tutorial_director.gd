@@ -32,7 +32,6 @@ const INTRO_TEXTS: Dictionary = {
 	"adjacent_pegs": "INTRO_ADJACENT_PEGS",
 	"color_swap": "INTRO_COLOR_SWAP",
 	"color_swap_mixed": "INTRO_COLOR_SWAP_MIXED",
-	"combination": "INTRO_COMBINATION",
 }
 const INTRO_STEPS: int = 3
 const INTRO_SECONDS: float = 5.0

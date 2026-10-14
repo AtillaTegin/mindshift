@@ -285,30 +285,6 @@ msgstr ""
 msgid "RULE_PEG_FULL"
 msgstr ""
 
-#. [TODO: RU] az: Disk yalnız boş qülləyə və ya öz rənginin üstünə qoyula bilər.
-msgid "RULE_SAME_COLOUR"
-msgstr ""
-
-#. [TODO: RU] az: Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində.
-msgid "COMBINATION_SORT_INTRO"
-msgstr ""
-
-#. [TODO: RU] az: Hər rəng öz qülləsinə yığılmalıdır
-msgid "COMBINATION_SORT_GOAL"
-msgstr ""
-
-#. [TODO: RU] az: Nümunə həll: %d
-msgid "BOARD_EXAMPLE"
-msgstr ""
-
-#. [TODO: RU] az: Həll olundu! %d gedişdə (nümunə həll %d)
-msgid "BOARD_SOLVED_EXAMPLE"
-msgstr ""
-
-#. [TODO: RU] az: Gediş: %d / nümunə %d
-msgid "POPUP_MOVES_EXAMPLE"
-msgstr ""
-
 #. [TODO: RU] az: Karakuri qutusu: içində disklər gizlənib. Qutuya toxun, açılsın; hər dəfə yalnız üst disk görünür.
 msgid "INTRO_COVERED_PEGS"
 msgstr ""
@@ -327,10 +303,6 @@ msgstr ""
 
 #. [TODO: RU] az: Qarışıq karvan: qaralar sol uca, ağlar sağ uca. Fərqli rəngli disklər bir-birinə toxuna bilməz, böyük disk kiçiyin üstünə qoyulmur.
 msgid "INTRO_COLOR_SWAP_MIXED"
-msgstr ""
-
-#. [TODO: RU] az: Birləşmə: disk yalnız boş qülləyə və ya öz rənginin üstünə gedir. Üstdəki eyni rəngli disklər birlikdə köçür.
-msgid "INTRO_COMBINATION"
 msgstr ""
 
 #. [TODO: RU] az: Səviyyə tamamlandı!

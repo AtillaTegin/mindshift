@@ -11,9 +11,15 @@ extends RefCounted
 ##   ends and meets in the middle. This is what makes 4-5 peg / 8-10 disk levels
 ##   and in-game hints fast enough.
 ## - Packed search with history: when a rule also looks at the disk that moved
-##   last (RuleBase.uses_last_move), that disk is part of the search state.
-##   The packed code then carries it too, and the search runs one way only
-##   (a predecessor's own last disk is not known going backwards).
+##   last (RuleBase.uses_last_move), keeps a memory (uses_memory), judges with
+##   MoveFacts (needs_facts) or links two disks (partner_of), the packed code
+##   also carries the last disk and the memory, every searched position fills
+##   a MoveFacts, linked disks make compound moves, and the search runs one way
+##   only (a predecessor's own last disk or memory is not known going
+##   backwards).
+## - Split search: a rule that splits the board into peg groups that never
+##   exchange disks (RuleBase.peg_groups) gets every group solved on its own;
+##   the paths are joined, so the total is the sum of the shortest ones.
 ## - Generic search: standard BFS over PuzzleState keyed by RuleSet.search_key().
 ##   Works for any RuleSet.
 ## The Solver never refers to concrete rule classes; new rules only need to
@@ -30,7 +36,7 @@ const MAX_PACKED_CODE: int = 1 << 62
 ##   path: Array[Move]    - the moves, start -> goal (empty when start equals goal)
 ##   states_visited: int  - distinct positions the search stored
 ##   limit_reached: bool  - the search stopped at max_states before finding an answer
-##   strategy: String     - "packed", "packed_history", "generic", or "none" when no search was needed
+##   strategy: String     - "packed", "packed_history", "split", "generic", or "none" when no search was needed
 ## Neither `start` nor `goal` is modified.
 static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		max_states: int = DEFAULT_MAX_STATES) -> Dictionary:
@@ -42,7 +48,12 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		# Moves never add or remove pegs or disks.
 		return _result(false, [], 1, false)
 	var result: Dictionary
-	if _can_pack(start, goal, rules) and rules.uses_last_move():
+	var groups: Array[Array] = rules.peg_groups(start.pegs.size())
+	if not groups.is_empty():
+		result = _solve_split(start, goal, rules, groups, max_states)
+		result["strategy"] = "split"
+	elif _can_pack(start, goal, rules) and (rules.uses_last_move() or rules.uses_memory() or rules.needs_facts()
+			or rules.has_partners(start)):
 		result = _solve_packed_history(start, goal, rules, max_states)
 		result["strategy"] = "packed_history"
 	elif _can_pack(start, goal, rules):
@@ -52,6 +63,25 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		result = _solve_generic(start, goal, rules, max_states)
 		result["strategy"] = "generic"
 	return result
+
+
+## Every peg group solved on its own (with the rules that do not split the
+## board), the paths joined group after group.
+static func _solve_split(start: PuzzleState, goal: PuzzleState, rules: RuleSet, groups: Array[Array],
+		max_states: int) -> Dictionary:
+	var group_rules: RuleSet = rules.without_groups(start.pegs.size())
+	var path: Array[Move] = []
+	var visited: int = 0
+	for group: Array in groups:
+		var part_start: PuzzleState = PuzzleState.new(group.map(func(peg: int) -> Array: return start.pegs[peg]))
+		var part_goal: PuzzleState = PuzzleState.new(group.map(func(peg: int) -> Array: return goal.pegs[peg]))
+		var part: Dictionary = solve(part_start, part_goal, group_rules, max_states)
+		visited += part["states_visited"]
+		if not part["solvable"]:
+			return _result(false, [], visited, part["limit_reached"])
+		for move: Move in part["path"]:
+			path.append(Move.new(group[move.from_peg], group[move.to_peg]))
+	return _result(true, path, visited, false)
 
 
 static func _solve_generic(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
@@ -193,9 +223,13 @@ static func _solve_packed(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 
 
 ## One-way BFS over packed positions plus the rank of the disk that moved last
-## (code = position * (disk_count + 1) + last rank + 1; 0 means none). Every
-## move goes through RuleBase.is_disk_move_allowed_after(). The first time the
-## goal position is reached, with any last disk, the path is a shortest one.
+## and the rules' memory: key = (position * (disk_count + 1) + last rank + 1)
+## * memory states + memory (last rank + 1 = 0 means none). Every expanded
+## position fills one MoveFacts and every move goes through
+## RuleBase.is_move_allowed_with(). A linked pair (RuleBase.partner_of) moves
+## only as one compound move: both on top of different pegs, each to its own
+## different target. The first time the goal position is reached, with any
+## last disk and memory, the path is a shortest one.
 static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		max_states: int) -> Dictionary:
 	var peg_count: int = start.pegs.size()
@@ -208,63 +242,120 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 		rank_of[sizes[rank]] = rank
 		powers.append(power)
 		power *= peg_count
+	# Rank of each disk's partner, -1 for a free disk.
+	var partners: PackedInt32Array = PackedInt32Array()
+	for rank: int in disk_count:
+		var partner: int = rules.partner_of(sizes[rank])
+		partners.append(rank_of[partner] if rank_of.has(partner) else -1)
 	var lasts: int = disk_count + 1
+	var memory_rule: RuleBase = rules.memory_rule()
+	var memories: int = memory_rule.memory_states(peg_count, disk_count) if memory_rule != null else 1
 	var rule_list: Array[RuleBase] = rules.active_rules
 	var goal_code: int = _encode(goal, rank_of, powers)
 	var start_last: int = rank_of[start.last_moved_disk] + 1 if rank_of.has(start.last_moved_disk) else 0
-	var start_key: int = _encode(start, rank_of, powers) * lasts + start_last
+	var start_key: int = (_encode(start, rank_of, powers) * lasts + start_last) * memories + rules.memory_of(start)
 	# key -> previous key (start -> -1)
 	var parents: Dictionary[int, int] = {start_key: -1}
 	var frontier: PackedInt64Array = PackedInt64Array([start_key])
-	var tops: PackedInt32Array = PackedInt32Array()
-	tops.resize(peg_count)
+	var facts: MoveFacts = MoveFacts.new()
+	# The disk under each peg's top (-1 = none), for compound moves.
+	var seconds: PackedInt32Array = PackedInt32Array()
+	seconds.resize(peg_count)
 	var head: int = 0
 	while head < frontier.size():
 		var key: int = frontier[head]
 		head += 1
-		var code: int = key / lasts
-		var last_rank: int = key % lasts - 1
-		var last_disk: int = sizes[last_rank] if last_rank >= 0 else 0
-		tops.fill(-1)
-		var rest: int = code
-		for rank: int in disk_count:
-			var peg: int = rest % peg_count
-			rest /= peg_count
-			if tops[peg] == -1:
-				tops[peg] = rank
+		var memory: int = key % memories
+		var code: int = key / memories / lasts
+		var last_rank: int = key / memories % lasts - 1
+		facts.reset(peg_count, sizes[-1])
+		seconds.fill(-1)
+		# Largest first, so every peg is filled bottom to top.
+		for rank: int in range(disk_count - 1, -1, -1):
+			var peg: int = (code / powers[rank]) % peg_count
+			seconds[peg] = facts.tops[peg]
+			facts.add(sizes[rank], peg)
+		facts.last_disk = sizes[last_rank] if last_rank >= 0 else 0
+		facts.memory = memory
 		for a: int in peg_count:
-			var rank_a: int = tops[a]
-			if rank_a == -1:
+			var disk: int = facts.tops[a]
+			if disk == -1:
 				continue
-			var disk: int = sizes[rank_a]
+			var rank_a: int = rank_of[disk]
+			var rank_p: int = partners[rank_a]
+			if rank_p == -1:
+				for b: int in peg_count:
+					if b == a or not _allowed(rule_list, disk, a, b, facts.tops[b], facts):
+						continue
+					var next_code: int = code + (b - a) * powers[rank_a]
+					var next_memory: int = memory_rule.memory_after(facts, disk, a, b) if memory_rule != null else 0
+					var next_key: int = (next_code * lasts + rank_a + 1) * memories + next_memory
+					if parents.has(next_key):
+						continue
+					parents[next_key] = key
+					if next_code == goal_code:
+						return _result(true, _history_path(parents, next_key, memories * lasts, peg_count, powers),
+								parents.size(), false)
+					if parents.size() >= max_states:
+						return _result(false, [], parents.size(), true)
+					frontier.append(next_key)
+				continue
+			# A linked pair, taken once from its smaller disk; both on top.
+			var partner: int = sizes[rank_p]
+			if rank_p < rank_a or not facts.is_top(partner):
+				continue
+			var c: int = facts.peg_of[partner]
 			for b: int in peg_count:
 				if b == a:
 					continue
-				var target_top: int = -1 if tops[b] == -1 else sizes[tops[b]]
-				var allowed: bool = true
-				for rule: RuleBase in rule_list:
-					if not rule.is_disk_move_allowed_after(disk, a, b, target_top, last_disk):
-						allowed = false
-						break
-				if not allowed:
+				var top_b: int = seconds[c] if b == c else facts.tops[b]
+				if not _allowed(rule_list, disk, a, b, top_b, facts):
 					continue
-				var next_code: int = code + (b - a) * powers[rank_a]
-				var next_key: int = next_code * lasts + rank_a + 1
-				if parents.has(next_key):
-					continue
-				parents[next_key] = key
-				if next_code == goal_code:
-					var path: Array[Move] = []
-					var walk: int = next_key
-					while parents[walk] != -1:
-						path.append(_packed_move(parents[walk] / lasts, walk / lasts, peg_count, powers))
-						walk = parents[walk]
-					path.reverse()
-					return _result(true, path, parents.size(), false)
-				if parents.size() >= max_states:
-					return _result(false, [], parents.size(), true)
-				frontier.append(next_key)
+				for d: int in peg_count:
+					if d == c or d == b:
+						continue
+					var top_d: int = seconds[a] if d == a else facts.tops[d]
+					if not _allowed(rule_list, partner, c, d, top_d, facts):
+						continue
+					var next_code: int = code + (b - a) * powers[rank_a] + (d - c) * powers[rank_p]
+					var next_memory: int = 0
+					if memory_rule != null:
+						facts.memory = memory_rule.memory_after(facts, disk, a, b)
+						next_memory = memory_rule.memory_after(facts, partner, c, d)
+						facts.memory = memory
+					var next_key: int = (next_code * lasts + rank_a + 1) * memories + next_memory
+					if parents.has(next_key):
+						continue
+					parents[next_key] = key
+					if next_code == goal_code:
+						return _result(true, _history_path(parents, next_key, memories * lasts, peg_count, powers),
+								parents.size(), false)
+					if parents.size() >= max_states:
+						return _result(false, [], parents.size(), true)
+					frontier.append(next_key)
 	return _result(false, [], parents.size(), false)
+
+
+## Whether every rule lets `disk` go from `from_peg` to `to_peg` (top `target_top`).
+static func _allowed(rule_list: Array[RuleBase], disk: int, from_peg: int, to_peg: int, target_top: int,
+		facts: MoveFacts) -> bool:
+	for rule: RuleBase in rule_list:
+		if not rule.is_move_allowed_with(disk, from_peg, to_peg, target_top, facts):
+			return false
+	return true
+
+
+## The moves back from `last_key` to the start of a history search (`divisor`
+## turns a key into its packed position).
+static func _history_path(parents: Dictionary[int, int], last_key: int, divisor: int, peg_count: int,
+		powers: PackedInt64Array) -> Array[Move]:
+	var path: Array[Move] = []
+	var walk: int = last_key
+	while parents[walk] != -1:
+		path.append(_packed_move(parents[walk] / divisor, walk / divisor, peg_count, powers))
+		walk = parents[walk]
+	path.reverse()
+	return path
 
 
 static func _encode(state: PuzzleState, rank_of: Dictionary[int, int], powers: PackedInt64Array) -> int:
@@ -290,20 +381,24 @@ static func _packed_path(forward: Dictionary[int, int], backward: Dictionary[int
 	return path
 
 
-## The single move that turns position `before` into `after`.
+## The move that turns position `before` into `after`: one disk changed peg,
+## or two for a compound move (the smaller disk first).
 static func _packed_move(before: int, after: int, peg_count: int, powers: PackedInt64Array) -> Move:
+	var parts: Array[int] = []
 	for power: int in powers:
 		var from_peg: int = (before / power) % peg_count
 		var to_peg: int = (after / power) % peg_count
 		if from_peg != to_peg:
-			return Move.new(from_peg, to_peg)
-	return null
+			parts.append_array([from_peg, to_peg])
+	if parts.size() == 4:
+		return Move.new(parts[0], parts[1], parts[2], parts[3])
+	return Move.new(parts[0], parts[1]) if parts.size() == 2 else null
 
 
 static func _can_pack(start: PuzzleState, goal: PuzzleState, rules: RuleSet) -> bool:
 	var keeps_sorted: bool = false
 	for rule: RuleBase in rules.active_rules:
-		if not rule.supports_disk_move_check():
+		if not rule.supports_disk_move_check() and not rule.needs_facts() and not rule.uses_memory():
 			return false
 		keeps_sorted = keeps_sorted or rule.keeps_stacks_sorted()
 	if not keeps_sorted:

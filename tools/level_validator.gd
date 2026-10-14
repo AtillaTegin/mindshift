@@ -129,8 +129,6 @@ static func validate_path(levels_dir: String) -> Array[String]:
 			if track == LevelCatalog.MAIN and i < PathBuilder.FIRST_EASY \
 					and (level.difficulty != "easy" or level.mechanic() != Level.CLASSIC):
 				errors.append("main %d: %s is not a classic easy level" % [i + 1, file])
-			if track == LevelCatalog.MAIN and level.color_goal != null:
-				errors.append_array(combination_stage_errors(level, i + 1))
 			# Level structure v4, section 1: easy levels are for learning only.
 			if track == LevelCatalog.MAIN and i >= PathBuilder.EASY_UNTIL and level.difficulty == "easy":
 				errors.append("main %d: easy level %s after main %d" % [i + 1, file, PathBuilder.EASY_UNTIL])
@@ -161,8 +159,6 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
 		if plain >= level.min_moves:
 			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
-	if level.color_goal != null:
-		validate_combination_shape(level, errors)
 	if level.mechanic() == Difficulty.COLOR_SWAP:
 		validate_color_swap_shape(level, errors)
 	# A covered peg must hide something and be opened early by the stored
@@ -257,9 +253,6 @@ static func validate_level(level: Level, errors: Array[String]) -> void:
 	level.check(errors)
 	if errors.size() > error_count:
 		return
-	if level.color_goal != null:
-		_validate_combination_solution(level, errors)
-		return
 	var result: Dictionary = Solver.solve(level.start, level.goal, level.get_rule_set(), SOLVER_MAX_STATES)
 	if not result["solvable"]:
 		errors.append("the solver found no solution (limit reached: %s)" % str(result["limit_reached"]))
@@ -267,72 +260,15 @@ static func validate_level(level: Level, errors: Array[String]) -> void:
 		errors.append("min_moves is %d but the shortest solution has %d moves" % [level.min_moves, result["min_moves"]])
 
 
-## A combination level's stored solution is its proof: Level.check() already
-## replayed it to a position that meets the colour goal. Its min_moves is that
-## solution's length (an example, user decision 2026-10-13); while the board is
-## small enough for a full search (at most CombinationSolver.EXACT_DISKS disks)
-## it must also be the shortest.
-static func _validate_combination_solution(level: Level, errors: Array[String]) -> void:
-	if level.get_disk_count() > CombinationSolver.EXACT_DISKS:
-		return
-	var result: Dictionary = CombinationSolver.search(ColorGoal.letters_of(level.start, level.disk_colors),
-			CombinationSolver.capacity_of(level), level.color_goal, SOLVER_MAX_STATES)
-	if not result["solvable"]:
-		errors.append("the combination solver found no solution")
-	elif result["min_moves"] != level.min_moves:
-		errors.append("min_moves is %d but the shortest solution has %d moves" % [level.min_moves, result["min_moves"]])
-
-
-## Correction v2, error 2: Water Sort's shape. Every colour has exactly as many
-## disks as a peg holds (N), and the start has C full pegs and E empty ones.
-static func validate_combination_shape(level: Level, errors: Array[String]) -> void:
-	var capacity: int = CombinationSolver.capacity_of(level)
-	var colours: Array[String] = level.color_goal.goal_colours(level.disk_colors)
-	for color_name: String in colours:
-		if level.disk_colors.count(color_name) != capacity:
-			errors.append("%d %s disks, a peg holds %d (every colour fills a peg)" % [level.disk_colors.count(color_name), color_name, capacity])
-			return
-	for peg: Array in level.start.pegs:
-		if not peg.is_empty() and peg.size() != capacity:
-			errors.append("the start has a peg that is neither full nor empty")
-			return
-	if level.get_peg_count() - colours.size() < 1:
-		errors.append("a combination level needs at least one empty peg")
-
-
-## Corrections v2 and v3: a combination level at main path `position` has the
-## capacity and colours of its stage (Difficulty.COMBINATION_STAGES, capacity
-## never above Difficulty.COMBINATION_MAX_CAPACITY), the measured E_min empty
-## pegs and the stage's tier.
-static func combination_stage_errors(level: Level, position: int) -> Array[String]:
-	var errors: Array[String] = []
-	var stage: Dictionary = Difficulty.combination_stage(position)
-	var capacity: int = CombinationSolver.capacity_of(level)
-	var colours: int = level.color_goal.goal_colours(level.disk_colors).size()
-	var empty: int = level.get_peg_count() - colours
-	var checks: Dictionary = {"capacity": capacity, "colours": colours}
-	for key: String in checks:
-		if checks[key] < stage[key][0] or checks[key] > stage[key][1]:
-			errors.append("main %d (%s): %s %d is outside %s" % [position, stage["name"], key, checks[key], str(stage[key])])
-	if capacity > Difficulty.COMBINATION_MAX_CAPACITY:
-		errors.append("main %d: capacity %d is above %d" % [position, capacity, Difficulty.COMBINATION_MAX_CAPACITY])
-	if empty != Difficulty.combination_empty(colours, capacity):
-		errors.append("main %d: %d empty pegs, E_min of %dx%d is %d" % [position, empty, colours, capacity,
-				Difficulty.combination_empty(colours, capacity)])
-	if level.difficulty != stage["tier"]:
-		errors.append("main %d (%s): difficulty %s, the stage is %s" % [position, stage["name"], level.difficulty, stage["tier"]])
-	return errors
-
-
 ## Identity of a puzzle for duplicate detection (spec 4.4 step 6).
 static func pair_key(start: PuzzleState, goal: PuzzleState) -> String:
 	return "%s => %s" % [start.hash_key(), goal.hash_key()]
 
 
-## pair_key(), except that a combination level is told by its colours, up to
-## their names (ColorGoal.shape_key): its disk ids mean nothing, and the same
-## puzzle in other colours is still the same puzzle.
+## pair_key() plus, for a level with a special mechanic, its rules and their
+## settings: the same start and goal under another rule (a narrower balance, a
+## different capacity) is another puzzle.
 static func puzzle_key(level: Level) -> String:
-	if level.color_goal == null:
+	if level.mechanic() == Level.CLASSIC:
 		return pair_key(level.start, level.goal)
-	return level.color_goal.shape_key(ColorGoal.letters_of(level.start, level.disk_colors))
+	return "%s %s %s" % [pair_key(level.start, level.goal), str(level.rule_ids), JSON.stringify(level.rule_params)]

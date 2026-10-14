@@ -16,7 +16,7 @@ const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "disk_colors", "color_goal"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -28,17 +28,7 @@ var rule_params: Dictionary = {}
 ## Pegs that start under fog ("covered_pegs", bonus mechanics addendum 2):
 ## only their top disk shows until a move uses the peg. Purely visual.
 var covered_pegs: Array[int] = []
-## "Birləşmə Tapmacası" levels (CombinationRule): the colour of disk id i is
-## disk_colors[i - 1] ("disk_colors"); empty for every other level.
-var disk_colors: Array[String] = []
-## Their goal, read by colour ("color_goal"); null for every other level, whose
-## goal is the exact position `goal`. A combination level's `goal` is the
-## position its stored solution ends in, one of those that meet color_goal.
-var color_goal: ColorGoal
-## Length of a shortest solution, proven by the Solver. A combination level is
-## too large for that: its min_moves is the length of its stored example
-## solution (user decision 2026-10-13), and the stars measure against it all
-## the same (see example_solution()).
+## Length of a shortest solution, proven by the Solver.
 var min_moves: int = 0
 var solution_path: Array[Move] = []
 ## Highest move count that still earns two stars (spec 4.6).
@@ -88,25 +78,12 @@ func get_disk_count() -> int:
 
 
 ## Null if a rule id is unknown or its rule_params do not fit (reason in errors).
-## Rules that judge by colour get the level's disk colours.
 func get_rule_set(errors: Array[String] = []) -> RuleSet:
-	var rules: RuleSet = RuleSet.from_ids(rule_ids, rule_params, errors)
-	if rules != null and not disk_colors.is_empty():
-		rules.bind_disk_colours(disk_colors)
-	return rules
+	return RuleSet.from_ids(rule_ids, rule_params, errors)
 
 
-## Whether min_moves is only the length of an example solution (a combination
-## level) rather than a proven minimum; the board then says so.
-func example_solution() -> bool:
-	return color_goal != null
-
-
-## Whether `state` solves the level: its colour goal when it has one, else the
-## exact goal position.
+## Whether `state` solves the level: the exact goal position.
 func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
-	if color_goal != null:
-		return state != null and color_goal.is_met(state, disk_colors)
 	return rules.is_goal_state(state, goal)
 
 
@@ -154,10 +131,6 @@ func to_dict() -> Dictionary:
 		data["rule_params"] = rule_params.duplicate(true)
 	if not covered_pegs.is_empty():
 		data["covered_pegs"] = covered_pegs.duplicate()
-	if not disk_colors.is_empty():
-		data["disk_colors"] = disk_colors.duplicate()
-	if color_goal != null:
-		data["color_goal"] = color_goal.to_dict()
 	return data
 
 
@@ -235,13 +208,6 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.covered_pegs.assign(_whole_numbers_as_ints(covered))
 	else:
 		errors.append("\"covered_pegs\" must be an array of peg indices")
-	var colours: Variant = data.get("disk_colors", [])
-	if typeof(colours) == TYPE_ARRAY and colours.all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING):
-		level.disk_colors.assign(colours)
-	else:
-		errors.append("\"disk_colors\" must be a list of colour names")
-	if data.has("color_goal"):
-		level.color_goal = ColorGoal.from_dict(_whole_numbers_as_ints(data["color_goal"]), errors)
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:
@@ -280,7 +246,7 @@ func check(errors: Array[String]) -> void:
 	if not Difficulty.is_known(difficulty):
 		errors.append("unknown difficulty \"%s\"" % difficulty)
 		return
-	if not Difficulty.accepts_moves(difficulty, min_moves, mechanic()):
+	if not Difficulty.accepts_moves(difficulty, min_moves):
 		errors.append("min_moves %d is outside %s (%s)" % [min_moves, difficulty, Difficulty.describe_moves(difficulty)])
 	if mechanic() == CLASSIC:
 		if not Difficulty.accepts_id(difficulty, id):
@@ -322,8 +288,6 @@ func check(errors: Array[String]) -> void:
 		errors.append("goal is not a valid position")
 	if start.equals(goal):
 		errors.append("start equals goal")
-	if rule_ids.has(CombinationRule.ID) or color_goal != null or not disk_colors.is_empty():
-		_check_colours(rules, errors)
 	if solution_path.size() != min_moves:
 		errors.append("solution_path has %d moves, min_moves is %d" % [solution_path.size(), min_moves])
 	var state: PuzzleState = start
@@ -334,25 +298,6 @@ func check(errors: Array[String]) -> void:
 			return
 	if not state.equals(goal):
 		errors.append("solution_path does not end at the goal")
-
-
-## A combination level: the combination rule alone, a colour for every disk, a
-## colour goal that fits the board, a start that does not meet it yet and a goal
-## position (the stored solution's end) that does.
-func _check_colours(rules: RuleSet, errors: Array[String]) -> void:
-	if rule_ids.size() != 1 or rule_ids[0] != CombinationRule.ID or color_goal == null or disk_colors.size() != get_disk_count():
-		errors.append("a combination level needs rules [\"%s\"] alone, disk_colors for each of its %d disks and a color_goal"
-				% [CombinationRule.ID, get_disk_count()])
-		return
-	var capacity: int = (rules.active_rules[0] as CombinationRule).capacity
-	var error_count: int = errors.size()
-	color_goal.check(get_peg_count(), capacity, disk_colors, errors)
-	if errors.size() > error_count:
-		return
-	if color_goal.is_met(start, disk_colors):
-		errors.append("the start already meets the colour goal")
-	if not color_goal.is_met(goal, disk_colors):
-		errors.append("the goal position does not meet the colour goal")
 
 
 ## JSON numbers parse as floats; whole ones become ints again so a level writes

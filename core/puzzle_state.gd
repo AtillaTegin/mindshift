@@ -9,6 +9,11 @@ var pegs: Array[Array] = []
 ## Rules may look at it (RuleBase.uses_last_move); it is not part of the
 ## position itself, so equals() and hash_key() ignore it.
 var last_moved_disk: int = 0
+## What the rules remember beyond the position (RuleBase.uses_memory: a lock
+## that opened, the pegs a disk has visited, which face of each disk is up);
+## -1 until a move sets it: then the rules' start memory applies
+## (RuleSet.memory_of). Like last_moved_disk, equals() and hash_key() ignore it.
+var memory: int = -1
 
 
 ## `p_pegs` is deep-copied, so the caller's arrays are never shared.
@@ -52,6 +57,7 @@ func duplicate_state() -> PuzzleState:
 	for peg: Array in pegs:
 		copy.pegs.append(peg.duplicate())
 	copy.last_moved_disk = last_moved_disk
+	copy.memory = memory
 	return copy
 
 

@@ -44,60 +44,17 @@ const MECHANIC_MIN_PEGS: int = 3
 const MECHANIC_MAX_PEGS: int = 5
 const MECHANIC_MIN_DISKS: int = 3
 const MECHANIC_MAX_DISKS: int = 10
-## "Birləşmə Tapmacası" levels (CombinationRule, mechanic "combination") grow
-## with their place on the road (correction v3, replacing v2's table): a peg
-## holds at most COMBINATION_MAX_CAPACITY disks, and boards grow by colours
-## C (N disks of each) and so by pegs T = C + E. The empty pegs E are not
-## chosen but measured: E = COMBINATION_E_MIN, the fewest with which random
-## starts are solvable (tools/combination_e_min.gd). Each stage gives the
-## capacity and colour ranges and the tier (hint price; easy only while
-## learning). Their min_moves is the length of a known solution, not a proven
-## minimum (user decision 2026-10-13), so the tier comes from the stage. The
-## expert stage lies past the end of the main road (290 levels since the great
-## exchange v2 chapter; expert levels only go on the island).
-const COMBINATION: String = "combination"
-const COMBINATION_MAX_CAPACITY: int = 7
-const COMBINATION_MAX_PEGS: int = 12
-const COMBINATION_MAX_DISKS: int = 70
-const COMBINATION_STAGES: Array[Dictionary] = [
-	{"name": "intro", "to": 30, "tier": "easy", "capacity": [4, 4], "colours": [2, 2]},
-	{"name": "middle_1", "to": 80, "tier": "medium", "capacity": [5, 5], "colours": [3, 3]},
-	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4]},
-	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 7], "colours": [4, 6]},
-	{"name": "hard_2", "to": 300, "tier": "hard", "capacity": [7, 7], "colours": [6, 8]},
-	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [7, 7], "colours": [8, 9]},
-]
-## E_min by "CxN" (colours x capacity), measured again on 2026-10-14 under
-## Water Sort's rule (auto-group addendum) with tools/combination_e_min.gd:
-## the first E at which at least 6 of 8 random starts were solved (exhaustive
-## search up to 12 disks, guided search with a budget of 40000 positions
-## beyond). With one empty peg most larger starts are stuck; with two every
-## sample was solved, 10x7 too.
-const COMBINATION_E_MIN: Dictionary = {
-	"2x4": 1, "3x4": 1, "3x5": 2, "3x6": 2, "4x6": 2, "4x7": 2, "5x7": 2, "6x7": 2, "7x7": 2, "8x7": 2, "9x7": 2,
-	"10x7": 2,
-}
 ## "Böyük Mübadilə" v2 levels (ColorSwapRule, mechanic "color_swap"): k white
 ## and k black disks on the two end pegs with B empty pegs between them. Up to
 ## 4 buffers (6 pegs, one row) and 8 disks: an off-path hint on 6 pegs / 8
 ## disks takes up to 3.2 s on a desktop, 5 pegs / 10 disks 4.6 s and 6 pegs /
 ## 10 disks 22 s (measured 2026-10-14), too long for an in-game hint.
 const COLOR_SWAP: String = "color_swap"
-const COLOR_SWAP_MAX_PEGS: int = 6
-const COLOR_SWAP_MAX_DISKS: int = 8
-
-
-## The measured E_min for `colours` x `capacity`, or 0 if it was not measured.
-static func combination_empty(colours: int, capacity: int) -> int:
-	return COMBINATION_E_MIN.get("%dx%d" % [colours, capacity], 0)
-
-
-## The combination stage of main path position `position`.
-static func combination_stage(position: int) -> Dictionary:
-	for stage: Dictionary in COMBINATION_STAGES:
-		if position <= stage["to"]:
-			return stage
-	return COMBINATION_STAGES[-1]
+## Mechanics whose boards may leave MECHANIC_MAX_PEGS / MECHANIC_MAX_DISKS:
+## mechanic -> {max_pegs, max_disks}.
+const MECHANIC_SIZES: Dictionary = {
+	COLOR_SWAP: {"max_pegs": 6, "max_disks": 8},
+}
 
 
 static func is_known(tier: String) -> bool:
@@ -119,12 +76,8 @@ static func draw_count(tier: String) -> int:
 	return int(get_tier(tier).get("draw", default_count(tier)))
 
 
-## Whether `moves` fall in `tier`'s range. A combination level (`mechanic`
-## COMBINATION) takes its tier from its stage on the road, whatever its length
-## (LevelValidator.validate_path checks the stage).
-static func accepts_moves(tier: String, moves: int, mechanic: String = "") -> bool:
-	if mechanic == COMBINATION:
-		return is_known(tier) and moves >= 1
+## Whether `moves` fall in `tier`'s range.
+static func accepts_moves(tier: String, moves: int) -> bool:
 	var settings: Dictionary = get_tier(tier)
 	if settings.is_empty() or moves < settings["min_moves"]:
 		return false
@@ -157,13 +110,9 @@ static func is_mechanic_id(id: int) -> bool:
 
 
 static func accepts_mechanic_size(peg_count: int, disk_count: int, mechanic: String = "") -> bool:
-	if mechanic == COLOR_SWAP:
-		return peg_count >= MECHANIC_MIN_PEGS and peg_count <= COLOR_SWAP_MAX_PEGS \
-				and disk_count >= MECHANIC_MIN_DISKS and disk_count <= COLOR_SWAP_MAX_DISKS
-	var max_pegs: int = COMBINATION_MAX_PEGS if mechanic == COMBINATION else MECHANIC_MAX_PEGS
-	var max_disks: int = COMBINATION_MAX_DISKS if mechanic == COMBINATION else MECHANIC_MAX_DISKS
-	return peg_count >= MECHANIC_MIN_PEGS and peg_count <= max_pegs \
-			and disk_count >= MECHANIC_MIN_DISKS and disk_count <= max_disks
+	var sizes: Dictionary = MECHANIC_SIZES.get(mechanic, {})
+	return peg_count >= MECHANIC_MIN_PEGS and peg_count <= sizes.get("max_pegs", MECHANIC_MAX_PEGS) \
+			and disk_count >= MECHANIC_MIN_DISKS and disk_count <= sizes.get("max_disks", MECHANIC_MAX_DISKS)
 
 
 ## Tier of a classic level id, or "" if the id belongs to no tier (mechanic ids included).
