@@ -1,8 +1,9 @@
 extends SceneTree
 ## Measures E_min(C, N) for the "Birləşmə Tapmacası" sort goal (correction v3,
-## section 3): the fewest empty pegs with which random Water Sort starts (C
-## full pegs of N disks, one colour per N disks, no peg of a single colour)
-## are solvable. For each E from 1 up, SAMPLES starts are drawn (fixed seed)
+## section 3), under the rule CombinationSolver searches with (Water Sort's
+## since the auto-group addendum): the fewest empty pegs with which random
+## Water Sort starts (C full pegs of N disks, one colour per N disks, no peg of
+## a single colour) are solvable. For each E from 1 up, SAMPLES starts are drawn (fixed seed)
 ## and searched: exhaustively (BFS, which also proves a start unsolvable) while
 ## the board has at most EXACT_DISKS disks, else by guided search within
 ## BUDGET expanded positions (a start it does not solve then is only "not

@@ -1,8 +1,9 @@
 class_name MechanicLevelBuilder
 extends SceneTree
 ## Builds the levels with a special mechanic (Nine Rings alternation, karakuri
-## boxes on covered pegs, the caravan road, the great exchange bosses, the
-## "Birləşmə Tapmacası" combination puzzles) into data/levels/mechanics/:
+## boxes on covered pegs, the caravan road, the "Böyük Mübadilə" great
+## exchange, the "Birləşmə Tapmacası" combination puzzles) into
+## data/levels/mechanics/:
 ##   godot --headless --path . --script res://tools/mechanic_level_builder.gd
 ##   ... -- --only=fog_20.json   (rebuild one file; ids and seeds stay the same)
 ##   ... -- --only=caravan_*     (every file starting with "caravan_")
@@ -67,8 +68,9 @@ const FOG_SPECS: Array[Dictionary] = [
 
 
 ## More Nine Rings levels (user request 2026-10-12: ~20-25 along the whole
-## road, easy to hard like the karakuri). Built after the bosses so the ids of
-## every earlier level stay the same; the path sorts them by length anyway.
+## road, easy to hard like the karakuri). Built after the old bosses' ids so
+## the ids of every earlier level stay the same; the path sorts them by length
+## anyway.
 ## 4 pegs only (the rule matters reliably there) and at most 7 disks, so an
 ## in-game hint search stays near half a second on a desktop; that caps them
 ## at about 27 moves (4 pegs / 5 disks stop at 13).
@@ -130,19 +132,44 @@ const CARAVAN_SPECS: Array[Dictionary] = [
 	{"file": "caravan_30.json", "pegs": 4, "disks": 6, "min": 31, "max": 33},
 ]
 
-## "Böyük Mübadilə" bosses (caravan road addendum, section 2): 4 pegs, one
-## stack on each end peg, and the goal is the two stacks swapped. `split`:
-## "halves" (small disks on the left) or "interleaved" (odd sizes on the left).
-## Some keep plain Hanoi rules, some the caravan road's ("the chapter's rule"),
-## so the five rise from 17 to 33 moves (measured 2026-10-12; a caravan swap
-## of 5 disks would already need 37+).
-const BOSS_SPECS: Array[Dictionary] = [
-	{"file": "boss_01.json", "disks": 7, "split": "halves", "caravan": false},
-	{"file": "boss_02.json", "disks": 4, "split": "halves", "caravan": true},
-	{"file": "boss_03.json", "disks": 4, "split": "interleaved", "caravan": true},
-	{"file": "boss_04.json", "disks": 9, "split": "interleaved", "caravan": false},
-	{"file": "boss_05.json", "disks": 10, "split": "halves", "caravan": false},
+## Ids 9059-9063 belonged to the five great exchange bosses, removed by the
+## great exchange v2 addendum; they stay unused so later ids keep their values.
+const RETIRED_BOSS_IDS: int = 5
+
+## "Böyük Mübadilə" v2 (addendum 2026-10-13 and the user's decision on its two
+## kinds, ColorSwapRule): k white and k black disks, one of each size 1..k per
+## colour, on the two end pegs with `buffers` empty pegs between them; the goal
+## is every black disk on the left end and every white one on the right.
+## - "pure" ("Təmiz Dəyişmə"): whites on the left, blacks on the right, size
+##   rule only: the two stacks swap. One puzzle per board.
+## - "mixed" ("Qarışıq-Ayırma"): each end holds one disk of each size with the
+##   colours mixed; size rule plus "colours never touch". One puzzle per colour
+##   pattern; the largest pair always starts on the wrong ends (otherwise it is
+##   a smaller board on a fixed base), unsolvable patterns are dropped.
+## Boards measured 2026-10-14 with the Solver: one buffer is unsolvable, so at
+## least 2; up to 33 moves (the main road) and at most 8 disks, so an off-path
+## hint stays within about twice the slowest expert one (6 pegs / 8 disks:
+## 0.4-3.2 s on a desktop; 5 pegs / 10 disks took 4.6 s and 6 pegs / 10 disks
+## 22 s). More pure k = 2 boards would only repeat the 7-move swap, 4 buffers
+## / 3 disks (11 moves) would be one more easy level, so they are left out.
+## Levels go easiest first (pure first on a tie) and take the tier of their
+## min_moves.
+const SWAP_BOARDS: Array[Dictionary] = [
+	{"kind": "pure", "buffers": 2, "k": 2},
+	{"kind": "pure", "buffers": 2, "k": 3},
+	{"kind": "pure", "buffers": 2, "k": 4},
+	{"kind": "pure", "buffers": 3, "k": 3},
+	{"kind": "pure", "buffers": 3, "k": 4},
+	{"kind": "pure", "buffers": 4, "k": 4},
+	{"kind": "mixed", "buffers": 3, "k": 2},
+	{"kind": "mixed", "buffers": 2, "k": 3},
+	{"kind": "mixed", "buffers": 3, "k": 3},
+	{"kind": "mixed", "buffers": 4, "k": 3},
+	{"kind": "mixed", "buffers": 3, "k": 4},
+	{"kind": "mixed", "buffers": 4, "k": 4},
 ]
+const SWAP_MIN_MOVES: int = 5
+const SWAP_MAX_MOVES: int = 33
 
 ## "Birləşmə Tapmacası" levels (level structure v4 section 4, corrections v2
 ## and v3, user decisions 2026-10-13). Each level's size comes from its stage
@@ -150,9 +177,8 @@ const BOSS_SPECS: Array[Dictionary] = [
 ## colours of N disks each; E is the measured Difficulty.COMBINATION_E_MIN),
 ## so the builder first works out where the levels will land
 ## (combination_positions). Inside a stage sizes grow along it, with seeded
-## variety. "Konkret Kombinasiya" (a full colour sequence for every peg) only
-## on small boards (Difficulty.allows_pattern), drawn at random there; every
-## other level is "Sadə Yığım" (sort).
+## variety. Every level is "Sadə Yığım" (sort): under Water Sort's rule (auto-
+## group addendum, user decision 2026-10-13) "Konkret Kombinasiya" was dropped.
 const COMBO_COUNT: int = 30
 ## Starts tried per level before giving up.
 const COMBO_ATTEMPTS: int = 40
@@ -187,17 +213,26 @@ func _run() -> bool:
 		if _selected(only, spec["file"]):
 			ok = _write(build_caravan(spec, next_id, BASE_SEED + 200 + i), spec) and ok
 		next_id += 1
-	for i: int in BOSS_SPECS.size():
-		var spec: Dictionary = BOSS_SPECS[i]
-		if _selected(only, spec["file"]):
-			ok = _write(build_exchange(spec, next_id), spec) and ok
-		next_id += 1
+	next_id += RETIRED_BOSS_IDS
 	for i: int in RINGS_LATER_SPECS.size():
 		var spec: Dictionary = RINGS_LATER_SPECS[i]
 		if _selected(only, spec["file"]):
 			ok = _write(build_rings(spec, next_id, BASE_SEED + 300 + i), spec) and ok
 		next_id += 1
 	var first_combo: int = next_id
+	# The great exchange levels take the ids after the combination levels, but
+	# are built first: where the combination levels land depends on them.
+	var swap_count: int = 0
+	if only.is_empty() or only.begins_with("swap_"):
+		var swaps: Array[Level] = build_color_swaps(first_combo + COMBO_COUNT)
+		ok = not swaps.is_empty() and ok
+		swap_count = swaps.size()
+		for i: int in swaps.size():
+			var spec: Dictionary = {"file": "swap_%02d.json" % (i + 1)}
+			if _selected(only, spec["file"]):
+				ok = _write(swaps[i], spec) and ok
+		if not only.ends_with(".json"):
+			_remove_extra_swaps(swaps.size())
 	var positions: Array[int] = []
 	for i: int in COMBO_COUNT:
 		var spec: Dictionary = {"file": "combo_%02d.json" % (i + 1)}
@@ -207,10 +242,11 @@ func _run() -> bool:
 				if positions.size() != COMBO_COUNT:
 					printerr("Cannot work out where the combination levels land on the road")
 					return false
-			spec.merge(combination_spec(i, positions[i], BASE_SEED + 400 + i))
+			spec.merge(combination_spec(positions[i], BASE_SEED + 400 + i))
 			ok = _write(build_combination(spec, next_id, BASE_SEED + 400 + i, _earlier_shapes(i)), spec) and ok
 		next_id += 1
-	print("mechanics: %s" % ("%d levels" % (next_id - Difficulty.MECHANIC_FIRST_ID) if only.is_empty() else only))
+	var built: int = next_id - Difficulty.MECHANIC_FIRST_ID - RETIRED_BOSS_IDS + swap_count
+	print("mechanics: %s" % ("%d levels" % built if only.is_empty() else only))
 	return ok
 
 
@@ -278,26 +314,85 @@ static func build_caravan(spec: Dictionary, id: int, seed_value: int) -> Level:
 	return Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids, best["path"])
 
 
-## A great exchange boss: the left and right stacks of a 4-peg board swap
-## places. No search for the puzzle itself, only the Solver for its minimum.
-static func build_exchange(spec: Dictionary, id: int) -> Level:
-	var left: Array = []
-	var right: Array = []
-	for size: int in range(spec["disks"], 0, -1):
-		var to_left: bool = size % 2 == 1 if spec["split"] == "interleaved" else size <= spec["disks"] / 2
-		(left if to_left else right).append(size)
-	var start: PuzzleState = PuzzleState.new([left, [], [], right])
-	var goal: PuzzleState = PuzzleState.new([right, [], [], left])
-	var rule_ids: Array[String] = ["classic_hanoi"]
-	if spec["caravan"]:
-		rule_ids.append(AdjacentPegsRule.ID)
-	var result: Dictionary = Solver.solve(start, goal, RuleSet.from_ids(rule_ids), LevelValidator.SOLVER_MAX_STATES)
-	if not result["solvable"]:
-		push_error("No solution for %s" % spec["file"])
-		return null
-	var level: Level = Level.create(id, Difficulty.tier_for_moves(result["min_moves"]), start, goal, rule_ids, result["path"])
-	level.boss = Level.GREAT_EXCHANGE
-	return level
+## Every great exchange level of SWAP_BOARDS, easiest first (the pure kind
+## first on a tie), with ids from `first_id` in that order. Empty if a board
+## gives no level at all.
+static func build_color_swaps(first_id: int) -> Array[Level]:
+	var found: Array[Dictionary] = []
+	for board_index: int in SWAP_BOARDS.size():
+		var board: Dictionary = SWAP_BOARDS[board_index]
+		var mixed: bool = board["kind"] == "mixed"
+		var k: int = board["k"]
+		var patterns: Array[int] = [-1]
+		if mixed:
+			# Bit s - 1 set: the white disk of size s starts on the left. The
+			# largest one always does (the largest pair is on the wrong ends), and
+			# neither end may be of one colour.
+			patterns.clear()
+			for pattern: int in 1 << (k - 1):
+				var full: int = pattern | 1 << (k - 1)
+				if full != (1 << k) - 1:
+					patterns.append(full)
+		var before: int = found.size()
+		for pattern: int in patterns:
+			var start: PuzzleState = color_swap_start(k, board["buffers"], pattern)
+			var goal: PuzzleState = color_swap_goal(k, board["buffers"])
+			var rules: RuleSet = RuleSet.from_ids([ColorSwapRule.ID], {ColorSwapRule.ID: {"colour": mixed}})
+			var result: Dictionary = Solver.solve(start, goal, rules, LevelValidator.SOLVER_MAX_STATES)
+			var moves: int = result["min_moves"]
+			if not result["solvable"] or moves < SWAP_MIN_MOVES or moves > SWAP_MAX_MOVES:
+				continue
+			found.append({"moves": moves, "mixed": mixed, "order": board_index * 1000 + pattern + 1,
+					"start": start, "goal": goal, "path": result["path"]})
+		if found.size() == before:
+			push_error("The great exchange board %s gives no level" % str(board))
+			return [] as Array[Level]
+	found.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if a["moves"] != b["moves"]:
+			return a["moves"] < b["moves"]
+		return a["order"] < b["order"])
+	var levels: Array[Level] = []
+	var rule_ids: Array[String] = [ColorSwapRule.ID]
+	for i: int in found.size():
+		var item: Dictionary = found[i]
+		levels.append(Level.create(first_id + i, Difficulty.tier_for_moves(item["moves"]), item["start"], item["goal"],
+				rule_ids, item["path"], {ColorSwapRule.ID: {"colour": item["mixed"]}}))
+	return levels
+
+
+## The start of a great exchange board: k disks on each end peg (largest at the
+## bottom), `buffers` empty pegs between. `pattern` -1: the pure kind (all
+## white on the left); else bit s - 1 set puts the white disk of size s on the
+## left and its black twin on the right, and the other way round when clear.
+static func color_swap_start(k: int, buffers: int, pattern: int) -> PuzzleState:
+	var pegs: Array = []
+	for i: int in buffers + 2:
+		pegs.append([])
+	for size: int in range(k, 0, -1):
+		var white_left: bool = pattern < 0 or (pattern >> (size - 1)) & 1 == 1
+		pegs[0].append(ColorSwapRule.disk_of(size, white_left))
+		pegs[-1].append(ColorSwapRule.disk_of(size, not white_left))
+	return PuzzleState.new(pegs)
+
+
+## The goal of every great exchange board: all black disks on the left end,
+## all white ones on the right.
+static func color_swap_goal(k: int, buffers: int) -> PuzzleState:
+	var pegs: Array = []
+	for i: int in buffers + 2:
+		pegs.append([])
+	for size: int in range(k, 0, -1):
+		pegs[0].append(ColorSwapRule.disk_of(size, false))
+		pegs[-1].append(ColorSwapRule.disk_of(size, true))
+	return PuzzleState.new(pegs)
+
+
+## Deletes great exchange files numbered past `count` (left over from a run
+## with more boards), so every file on disk is one this run built.
+static func _remove_extra_swaps(count: int) -> void:
+	for file_name: String in DirAccess.get_files_at(MECHANICS_DIR):
+		if file_name.begins_with("swap_") and file_name.trim_prefix("swap_").to_int() > count:
+			DirAccess.remove_absolute("%s/%s" % [MECHANICS_DIR, file_name])
 
 
 ## A covered-peg level: plain Hanoi, with `spec.covered` pegs under fog. Only
@@ -384,9 +479,9 @@ static func combination_positions(first_id: int) -> Array[int]:
 	return positions
 
 
-## Size and goal of the combination level at main path `position` (its stage
-## in Difficulty.COMBINATION_STAGES), drawn with `seed_value`.
-static func combination_spec(index: int, position: int, seed_value: int) -> Dictionary:
+## Size of the combination level at main path `position` (its stage in
+## Difficulty.COMBINATION_STAGES), drawn with `seed_value`.
+static func combination_spec(position: int, seed_value: int) -> Dictionary:
 	var stage: Dictionary = Difficulty.combination_stage(position)
 	var stage_from: int = 1
 	for earlier: Dictionary in Difficulty.COMBINATION_STAGES:
@@ -400,13 +495,8 @@ static func combination_spec(index: int, position: int, seed_value: int) -> Dict
 	var colours: int = _grow(stage["colours"], progress, rng)
 	# Correction v3: E is measured (Difficulty.COMBINATION_E_MIN), not chosen.
 	var empty: int = Difficulty.combination_empty(colours, capacity)
-	# A pattern goal only on small boards, drawn at random there (correction
-	# v3, section 1); the very first level sorts, as its guide explains.
-	var kind: String = ColorGoal.SORT
-	if index > 0 and Difficulty.allows_pattern(colours, colours + empty) and rng.randf() < 0.5:
-		kind = ColorGoal.PATTERN
 	return {"stage": stage["name"], "tier": stage["tier"], "position": position, "capacity": capacity,
-			"colours": colours, "empty": empty, "kind": kind}
+			"colours": colours, "empty": empty}
 
 
 ## A value in `bounds` ([min, max]) that grows with `progress` (0..1) through
@@ -417,11 +507,10 @@ static func _grow(bounds: Array, progress: float, rng: RandomNumberGenerator) ->
 
 ## A "Birləşmə Tapmacası" level from a combination_spec(): `colours` colours of
 ## `capacity` disks each, shuffled onto that many full pegs with `empty` empty
-## pegs among them (Water Sort's start). A pattern goal is the same disks
-## shuffled into a full, mixed colour sequence for every peg that ends full.
-## Only a start with a solution found by search is kept (breadth-first, so the
-## shortest, while there are at most 10 disks; else guided search within
-## COMBO_BUDGET): that solution is stored and proves the level solvable.
+## pegs among them (Water Sort's start). Only a start with a solution found by
+## search is kept (breadth-first, so the shortest, while there are at most
+## CombinationSolver.EXACT_DISKS disks; else guided search within COMBO_BUDGET,
+## then shortened): that solution is stored and proves the level solvable.
 ## Starts that are partly done already, or an earlier level in other colours
 ## (`used`: ColorGoal.shape_key), are skipped.
 static func build_combination(spec: Dictionary, id: int, seed_value: int, used: Dictionary = {}) -> Level:
@@ -441,25 +530,15 @@ static func build_combination(spec: Dictionary, id: int, seed_value: int, used: 
 			for k: int in capacity:
 				disks.append(ColorGoal.letter_of(color_name))
 		var goal: ColorGoal = ColorGoal.sort()
-		if spec["kind"] == ColorGoal.PATTERN:
-			var stacks: Array = _stacks(_shuffled(disks, rng), capacity)
-			if stacks.any(func(text: String) -> bool: return text.count(text[0]) == text.length()):
-				continue  # every target peg shows a combination of colours
-			var targets: Array = []
-			for text: String in _place(stacks, peg_count, rng):
-				var target: Array = []
-				for letter: String in text:
-					target.append(ColorGoal.colour_of(letter))
-				targets.append(target)
-			goal = ColorGoal.pattern(targets)
 		var start: PackedStringArray = _place(_stacks(_shuffled(disks, rng), capacity), peg_count, rng)
-		if goal.matches(start) or _half_done(goal, start) or used.has(goal.shape_key(start)):
+		if goal.matches(start) or _half_done(start) or used.has(goal.shape_key(start)):
 			continue
-		var result: Dictionary = CombinationSolver.search(start, capacity, goal) if disks.size() <= 10 \
+		var result: Dictionary = CombinationSolver.search(start, capacity, goal) \
+				if disks.size() <= CombinationSolver.EXACT_DISKS \
 				else CombinationSolver.guided_search(start, capacity, goal, COMBO_BUDGET)
 		if not result["solvable"]:
 			continue
-		return _combination_level(id, spec, start, goal, CombinationSolver.shorten(start, result["path"]))
+		return _combination_level(id, spec, start, goal, CombinationSolver.shorten(start, result["path"], capacity, goal))
 	push_error("No combination level found for %s" % spec["file"])
 	return null
 
@@ -478,13 +557,15 @@ static func _combination_level(id: int, spec: Dictionary, pegs: PackedStringArra
 	var start: PuzzleState = PuzzleState.new(layout)
 	var rule_ids: Array[String] = [CombinationRule.ID]
 	var params: Dictionary = {CombinationRule.ID: {"capacity": spec["capacity"]}}
-	var rules: RuleSet = RuleSet.from_ids(rule_ids, params)
+	var level: Level = Level.create(id, spec["tier"], start, start, rule_ids, path, params)
+	level.disk_colors = colours
+	level.color_goal = goal
+	# The rule judges by colour, so it needs the level's colours.
+	var rules: RuleSet = level.get_rule_set()
 	var position: PuzzleState = start
 	for move: Move in path:
 		position = rules.apply_move(position, move)
-	var level: Level = Level.create(id, spec["tier"], start, position, rule_ids, path, params)
-	level.disk_colors = colours
-	level.color_goal = goal
+	level.goal = position
 	return level
 
 
@@ -519,15 +600,10 @@ static func _earlier_shapes(index: int) -> Dictionary:
 	return shapes
 
 
-## A start that is partly done already: a peg of one colour only (sort), or a
-## peg whose two bottom disks are already right (pattern).
-static func _half_done(goal: ColorGoal, pegs: PackedStringArray) -> bool:
-	for peg_index: int in pegs.size():
-		var text: String = pegs[peg_index]
-		if goal.kind == ColorGoal.SORT:
-			if not text.is_empty() and text.count(text[0]) == text.length():
-				return true
-		elif goal.placed_on(pegs, peg_index) >= mini(2, text.length()) and not text.is_empty():
+## A start that is partly done already: a peg of one colour only.
+static func _half_done(pegs: PackedStringArray) -> bool:
+	for text: String in pegs:
+		if not text.is_empty() and text.count(text[0]) == text.length():
 			return true
 	return false
 

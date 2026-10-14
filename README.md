@@ -132,7 +132,7 @@ ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəl
 
 Asan: generator əvvəlki kimi 22 səviyyə çəkir, 3 disklilərdən yalnız ilk 4-ü qalır (səviyyə strukturu v4: 3 diskli asan yalnız yolun ilk 4 səviyyəsidir). Tutorial səviyyələri və 4 disklilər dəyişmir.
 
-Üstəgəl 111 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə boss-u, 30 Birləşmə Tapmacası): cəmi 305 səviyyə (915 ulduz).
+Üstəgəl 136 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 30 Böyük Mübadilə, 30 Birləşmə Tapmacası): cəmi 330 səviyyə (990 ulduz).
 
 Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
 Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
@@ -142,15 +142,15 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
 [tools/path_builder.gd](tools/path_builder.gd) səviyyələri yola düzür (sabit seed, nəticə təkrarlanır), [səviyyə strukturu v4](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)-ə görə:
 
 - İlk 4 səviyyə 3 diskli klassik Asan-dır (öyrənmə), tutorial (1001, 1002) birinci gəlir. Sonra 4 diskli asanlar Orta-ya keçid olur. 50-ci səviyyədən sonra heç bir asan səviyyə yoxdur (nə klassik, nə mexanika).
-- Fəsillər sabit yerdə başlayır (`PathBuilder.CHAPTER_STARTS`): karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə Tapmacası 30. Böyük Mübadilə boss-ları 40, 80, 120, 160, 200-də, hər biri əvvəlkindən çətin.
-- 50-yə qədər yalnız fəsillərin asan giriş səviyyələri gəlir. 51–200 arasında klassik və mexanika təxminən 1:1 növbələşir: təxminən hər iki yerdən birində mexanika olur, yeri seed ilə seçilir (nə sərt ritm, nə uzun blok). 200-dən sonra qalan mexanikalar seyrəlir, amma hər fəsil yolun sonuna qədər çatır.
+- Fəsillər sabit yerdə başlayır (`PathBuilder.CHAPTER_STARTS`): karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə Tapmacası 30, Böyük Mübadilə 40. Köhnə nadir boss-lar yoxdur.
+- 50-yə qədər yalnız fəsillərin asan giriş səviyyələri gəlir. 51–200 arasında klassik və mexanika təxminən 1:1 növbələşir: təxminən hər iki yerdən birində mexanika olur, yeri seed ilə seçilir (nə sərt ritm, nə uzun blok). 200-dən sonra qalan mexanikalar yolun sonuna qədər paylanır, hər fəsil sona çatır. Böyük Mübadilə 30 səviyyəlik fəsil olandan sonra sondakı mexanika payı 0,48-dir, yəni ortadakı 1:1-dən yalnız bir az azdır.
 - Hər mexanika yeri öz bərabər paylanmasından ən çox geri qalan fəslə verilir. Fəslin içində səviyyələr asandan çətinə gedir.
 - Klassik yerlərdə çətinliklər çəki əyriləri ilə qarışdırılır: Asan yalnız əvvəldə, sonra Orta üstünlük təşkil edir, sonra Orta və Çətin qarışır, sona doğru Çətin artır. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə).
 - Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
 
 ### Mexanika səviyyələri
 
-111 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 5 Böyük Mübadilə, 30 Birləşmə Tapmacası). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və jeton verir.
+136 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 30 Böyük Mübadilə, 30 Birləşmə Tapmacası). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və jeton verir.
 
 - **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
@@ -164,38 +164,46 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - Qutunun üstünə qoyulan disklər görünür qalır. Undo heç nəyi yenidən gizlətmir, "Yenidən" bütün qutuları bağlayır.
   - Hədəf önizləməsindəki duman qutu açılanda qalxır.
 - **Karvan Yolu (variant C, xətti qonşuluq):** `"rules": ["classic_hanoi", "adjacent_pegs"]` ([Karvan Yolu əlavəsi](../MindShift_Karvan_Yolu_ve_BossLevel_Addendum.md), bölmə 1). Disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz. Bu, Bağlı Qüllələrin sabit xətti halıdır; Bağlı Qüllələr hələ qurulmadığı üçün ayrıca sadə qayda kimi yazılıb (`AdjacentPegsRule`), Solver-in sürətli yolu ilə işləyir. 3 qüllədə 3–4, 4–5 qüllədə 3–6 disk (3 qüllə / 5 diskdə həll artıq ~100 gedişdir).
-- **Böyük Mübadilə (variant E, boss):** `"boss": "great_exchange"`. 4 qüllə, hər ucda bir yığın (ağ və qara karvan), hədəf yığınların yer dəyişməsidir. Yeni qələbə yoxlaması lazım olmadı: səviyyələr onsuz da istənilən hədəf mövqeyi dəstəkləyir. Disklərin ölçüləri fərqlidir (mühərrik bərabər ölçülü disk tanımır), rəng isə karvanı göstərir. Bəziləri adi, bəziləri Karvan Yolu qaydası ilə: 17 → 20 → 22 → 29 → 33 gediş. Başlanğıcda boz izah mətni, xəritədə böyük, qızılı ikiqat halqalı dayanacaq.
-- **Birləşmə Tapmacası** ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 4; düzəlişlər [v2](../MindShift_Birlesme_Tapmacasi_Duzelis_v2.md) və [v3](../MindShift_Birlesme_Tapmacasi_Duzelis_v3.md)): bütün disklər eyni ölçüdədir, yalnız rəngləri fərqlidir. İstənilən disk istənilən diskin üstünə qoyula bilər, yeganə hədd qüllənin tutumudur (Water Sort kimi).
+- **Böyük Mübadilə v2** ([əlavə](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md), bölmə 1, və istifadəçinin iki alt-tip qərarı): `"rules": ["color_swap"]`, `"rule_params": {"color_swap": {"colour": false | true}}` (`ColorSwapRule`). Hər ölçüdən bir ağ, bir qara disk var. Disk id-si ikisini də daşıyır: 2s−1 ağ, 2s qara, ölçü s. Ölçüyə görə sıralı yığın id-yə görə də sıralıdır, ona görə Solver sürətli yolla işləyir.
+  - Uclarda k-şar disk, aralarında 2–4 boş qüllə. Hədəf həmişə eynidir: bütün qaralar sol ucda, bütün ağlar sağ ucda.
+  - **Təmiz Dəyişmə** (`colour: false`): ağlar solda, qaralar sağda başlayır, yalnız ölçü qaydası var. Yığınlar yer dəyişir.
+  - **Qarışıq-Ayırma** (`colour: true`): hər ucda hər ölçüdən bir disk var, rənglər qarışıqdır. Ölçü qaydası və "fərqli rəngli disklər toxunmur" qaydası birlikdə işləyir. Ən böyük cüt həmişə səhv ucda başlayır, yoxsa bu, sabit bazalı daha kiçik tapmaca olardı. Həlli olmayan başlanğıclar atılır.
+  - Eyni ölçülü disklər üst-üstə qoyulmur. Qadağan gediş həmişə səbəbini status sətrində yazır: "böyük kiçiyin üstünə", "eyni ölçü" və ya "fərqli rənglər toxuna bilməz" (boz, cəza yoxdur).
+  - 30 səviyyə, 7–31 gediş: 6 təmiz, 24 qarışıq. Lövhələr 2026-10-14-də ölçülüb. Bir bufer heç vaxt həll olunmur. Ən çox 8 disk saxlanılıb, çünki yoldan kənar Hint 6 qüllə / 8 diskdə kompüterdə 3,2 s-ə qədər çəkir, 5 qüllə / 10 diskdə 4,6 s, 6 qüllə / 10 diskdə 22 s. Təmiz növün hər lövhədə yalnız bir tapmacası var, ona görə 50/50 əvəzinə 6/24 alındı.
+  - Fəsil 40-da təmiz növlə başlayır, qarışıq növ 43-də gəlir. Hər alt-tipin öz bələdçisi var (`Level.lesson()`). Pillə gediş sayından gəlir. 6 qüllə də bir cərgədə qalır, disklərdə ölçü rəqəmi yazılır.
+- **Birləşmə Tapmacası** ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 4; düzəlişlər [v2](../MindShift_Birlesme_Tapmacasi_Duzelis_v2.md) və [v3](../MindShift_Birlesme_Tapmacasi_Duzelis_v3.md); Water Sort qaydası [auto-group əlavəsi](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md), bölmə 2): bütün disklər eyni ölçüdədir, yalnız rəngləri fərqlidir.
+  - **Qayda:** disk yalnız boş qülləyə və ya öz rənginin üstünə gedir, qüllənin tutumunu keçmir. Toxunuş üstdəki eyni rəngli bütün qrupu qaldırır. Qrup hədəfə sığdığı qədər köçür (üst hissə), qalanı yerində qalır. Bu, 1 gediş sayılır, həlledicidə də, ulduzlarda da. Başlanğıcda rənglərin qarışıq olması normaldır.
   - **Rəng və nöqtələr:** 10 rəngə qədər. Hər rəngin sabit domino nöqtələri var ([scripts/disk_symbols.gd](scripts/disk_symbols.gd)): qırmızı 1, göy 2, sarı 3, yaşıl 4, bənövşəyi 5, narıncı 6 (zər üzləri), sonra "6 | 1", "6 | 2"... iki qrup ayırıcı xətlə. 6-ya qədər rəngli lövhələr rəngləri ilk altısından götürür, ona görə yalnız adi zər üzləri görünür.
   - **Disklər kərpic formasındadır:** 34 hündürlük, 9 künc radiusu, pill forması yoxdur.
   - **Format:** `"rules": ["combination"]`, `"rule_params": {"combination": {"capacity": 4}}`, `"disk_colors": [...]` (disk id-sinin rəngi), `"color_goal"`. `goal` sahəsi saxlanmış həllin bitdiyi mövqedir.
   - **Hədəf həmişə bütün diskləri əhatə edir.** Hədəfdə olmayan rəng validatordan keçmir (v2, xəta 1).
     - **Sadə Yığım** (`{"kind": "sort"}`): hər rəng öz qülləsinə yığılır, hansı qüllə olursa olsun. Önizləmədə taxtadakı bütün rənglər kiçik bloklar kimi görünür, altında "Hər rəng öz qülləsinə yığılmalıdır" yazılır.
-    - **Konkret Kombinasiya** (`{"kind": "pattern", "pegs": [[...], [...], []]}`): hər qüllənin tam rəng sırası verilir, boş qüllə boş qalır. Yalnız kiçik lövhələrdə olur (C ≤ 3 və T ≤ 5, v3 bölmə 1), orada seed ilə təsadüfi seçilir. İlk səviyyə həmişə Sadə Yığımdır.
+    - "Konkret Kombinasiya" Water Sort qaydası ilə ləğv olundu (istifadəçi qərarı 2026-10-13): disk heç vaxt başqa rəngin üstünə getmir, qarışıq ardıcıllıq qurmaq olmur.
   - **Ölçülər** (v3, `Difficulty.COMBINATION_STAGES`):
     - Qüllənin tutumu N heç vaxt 7-dən çox olmur. Böyümə rəng sayından (C), deməli qüllə sayından gəlir.
-    - Boş qüllə sayı E seçilmir, ölçülür. Bu, təsadüfi başlanğıcların həll olunduğu ən kiçik E-dir ([tools/combination_e_min.gd](tools/combination_e_min.gd), nəticələr `Difficulty.COMBINATION_E_MIN`-dədir). E = 1 kifayətdir 5 rəng × 7-yə qədər, 6–8 rəngdə E = 2, 9 rəngdə E = 3. Bu dəyərlər Water Sort-dan kiçikdir, çünki burada istənilən disk istənilənin üstünə gedə bilir.
+    - Boş qüllə sayı E seçilmir, ölçülür. Bu, təsadüfi başlanğıcların həll olunduğu ən kiçik E-dir ([tools/combination_e_min.gd](tools/combination_e_min.gd), nəticələr `Difficulty.COMBINATION_E_MIN`-dədir). Water Sort qaydası ilə 2026-10-14-də yenidən ölçüldü: 2 × 4 və 3 × 4 lövhələrində E = 1, qalan bütün ölçülərdə (10 × 7 daxil) E = 2. Bir boş qüllə ilə böyük başlanğıcların çoxu ilişib qalır, iki boşla hər nümunə həll olundu.
 
     | Mərhələ | Yer | N | C | Disk | Qüllə |
     |---|---|---|---|---|---|
     | Giriş | ≤ 30 | 4 | 2 | 8 | 3 |
-    | Orta-1 | 31–80 | 5 | 3 | 15 | 4 |
-    | Orta-2 | 81–130 | 6 | 3–4 | 18–24 | 4–5 |
-    | Çətin-1 | 131–200 | 7 | 4–6 | 28–42 | 5–8 |
-    | Çətin-2 | 201–280 | 7 | 6–8 | 42–56 | 8–10 |
-    | Ekspert | 280+ | 7 | 8–9 | 56–63 | yolun sonundan kənardadır |
+    | Orta-1 | 31–80 | 5 | 3 | 15 | 5 |
+    | Orta-2 | 81–130 | 6 | 3–4 | 18–24 | 5–6 |
+    | Çətin-1 | 131–200 | 7 | 4–6 | 28–42 | 6–8 |
+    | Çətin-2 | 201–300 | 7 | 6–8 | 42–56 | 8–10 |
+    | Ekspert | 300+ | 7 | 8–9 | 56–63 | yolun sonundan kənardadır |
 
-    10 rəng × 7 praktik deyil: 3 boş qüllə ilə belə 8 başlanğıcdan yalnız 4-ü həll olundu, ona görə işlədilmir.
+    Çətin-2 280-dən 300-ə uzadıldı, çünki yol 290 səviyyəyə çatdı. Ekspert mərhələsi əvvəlki kimi yolun sonundan kənarda qalır.
 
     - Başlanğıc Water Sort-dakı kimidir: C dolu, E boş qüllə.
     - Pillə mərhələdən gəlir.
   - **Həll və ulduzlar** (istifadəçi qərarı 2026-10-13):
     - Builder hər səviyyəni yolun simulyasiyası ilə öz yerinə görə qurur ([tools/mechanic_level_builder.gd](tools/mechanic_level_builder.gd)).
-    - Təsadüfi başlanğıc yalnız axtarış onun həllini tapanda saxlanır. ≤10 diskdə BFS işlədilir, ondan böyük lövhələrdə ağırlıqlı A*.
+    - Təsadüfi başlanğıc yalnız axtarış onun həllini tapanda saxlanır. ≤10 diskdə BFS işlədilir, ondan böyük lövhələrdə ağırlıqlı A*, sonra lazımsız gedişlər atılır (`shorten`).
     - Həll faylda saxlanır və həll olunmanın sübutudur.
     - `min_moves` bu nümunə həllin uzunluğudur. Lövhədə "Nümunə həll: N" yazılır, ulduzlar ona görə verilir.
-  - Öz həlledicisi var ([core/combination_solver.gd](core/combination_solver.gd)), ölçüyə əsaslanan Solver-ə toxunulmayıb.
-    - Hint qısa büdcəli A* ilə axtarılır. Tapılmasa, oyunçunu son gedişini geri alaraq nümunə həllin yoluna qaytarır.
+  - Öz həlledicisi var ([core/combination_solver.gd](core/combination_solver.gd)), ölçüyə əsaslanan Solver-ə toxunulmayıb. Yalnız qüllələrin yeri fərqli olan mövqelər bir dəfə axtarılır.
+    - Hint qısa büdcəli A* ilə axtarılır.
+    - Tökmə həmişə geri tökülə bilmir, ona görə oyunçu çıxılmaz vəziyyətə düşə bilər. Hint yol tapmasa, son gedişi geri qaytarmağı göstərir, amma yalnız o gediş qanunidirsə və əvvəlki mövqeyi həqiqətən bərpa edirsə. Yoxsa pulsuz olaraq "Buradan yol tapılmadı. Bir neçə gediş geri al" yazır. Bu, Böyük Mübadilənin qarışıq növünə də aiddir.
   - 5-dən çox qüllə iki cərgədə dayanır, hədəf önizləməsi də eyni cərgələrdədir.
   - Eyni tapmacanın başqa rənglərdə təkrarı qadağandır.
   - v3-ün istinad etdiyi neon görünüş (`MindShift_Neon_Synthwave_Vizual_Spesifikasiya.md`) göndərilməyib, ona görə qurulmayıb.  - Don: "şüşə" (soyuq rəng, nöqtə şəbəkəsi). Bu fəsil şüurlu olaraq müasir, janrlar-arası fəsildir, mədəni kökü yoxdur.
@@ -211,7 +219,7 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   ```
 - **Validator-un dizayn qaydaları:**
   - klassikdən əlavə qayda (Doqquz Halqa, Karvan Yolu) ən qısa həlli uzatmalıdır;
-  - Böyük Mübadilə: 4 qüllə, hər ucda bir yığın, orta boş, hədəf yığınların yer dəyişməsi;
+  - Böyük Mübadilə: `color_swap` tək qaydadır, uclar arasında ən azı 2 boş qüllə var, hər ucda hər ölçüdən bir disk (cütün o biri qarşı ucda), hədəf qaralar solda, ağlar sağda; təmiz növ ağlarla solda başlayır, qarışıq növün hər iki ucu qarışıqdır və ən böyük ağ disk soldadır;
   - örtülü qüllədə ən azı 2 disk olmalıdır;
   - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır.
 ### Yeni qayda əlavə etmək
@@ -221,7 +229,10 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
      `is_disk_move_allowed()` + `supports_disk_move_check() -> true` (Solver sürətli yolu istifadə edə bilir);
    - qərar sonuncu tərpənən diskdən də asılıdırsa: `uses_last_move() -> true` + `is_disk_move_allowed_after()` (Solver sonuncu diski axtarışa daxil edir);
    - daha çox vəziyyət məlumatı lazımdırsa: `is_move_allowed()` (Solver ümumi BFS-ə keçir);
-   - mövqe məhdudiyyəti varsa: `is_state_valid()`.
+   - mövqe məhdudiyyəti varsa: `is_state_valid()`;
+   - bir neçə səbəbdən rədd edə bilirsə: `get_violation_message()` pozulan şərtin mətnini qaytarır;
+   - qrup köçürürsə (Water Sort): `disks_moved()` (gedişin apardığı disk sayı) və `disks_picked_up()` (toxunuşla qalxan disklər);
+   - disk rənglərinə baxırsa: `bind_disk_colours()` (`Level.get_rule_set()` səviyyənin rənglərini verir).
 2. Onu `RuleSet.create_rule()` reyestrinə əlavə edin.
 
 Solver-ə toxunmaq lazım deyil.
@@ -269,6 +280,7 @@ Solver-ə toxunmaq lazım deyil.
 | P-1 | Prototip: rəng ardıcıllığı, eyni ölçülü rəngli disklər, gediş limiti (ayrıca səhnə, oyuna qoşulmayıb) | ✅ sınaqda |
 | L-4 | Səviyyə strukturu v4: asan yalnız öyrənmə üçün, 51–200 arası 1:1 qarışıq; Birləşmə Tapmacası (30 səviyyə) ([əlavə](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)) | ✅ |
 | L-4.2 | Hər mexanikanın ilk səviyyəsində animasiyalı bələdçi (Dəyirman hələ yoxdur) | ✅ |
+| M-4 | Böyük Mübadilə v2: iki alt-tip, 30 səviyyəlik fəsil, boss-lar ləğv; Birləşmədə Water Sort qaydası və qrup köçürmə ([əlavə](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md)) | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
@@ -294,7 +306,7 @@ Solver-ə toxunmaq lazım deyil.
 - Coaching primitivləri `scenes/components/coaching/`-dadır (Scrim, FocusRing, GhostPointer, CoachToast).
   Onları ayrıca görmək üçün redaktorda `coaching_demo.tscn` açıb F6 basın.
 - Tutorial `easy_001`-də addım-addım, `easy_002`-də sərbəst rejimdə işləyir və yalnız səviyyə ilk dəfə tamamlanana qədər görünür.
-- Hər mexanikanın əsas yoldakı ilk səviyyəsində ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 2; karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə 30, Böyük Mübadilə 40) eyni üsul işləyir.
+- Hər mexanikanın əsas yoldakı ilk səviyyəsində ([v4 əlavəsi](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md), bölmə 2; karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Birləşmə 30, Böyük Mübadilə 40, onun qarışıq növü 43) eyni üsul işləyir.
   - Əvvəlcə ekranın yuxarısında mexanikanın öz izahı çıxır (5 saniyə).
   - Sonra ilk 3 gediş xəyali barmaqla göstərilir, yalnız göstərilən qüllə reaksiya verir.
   - Sonra "Əla! İndi özün sına!" və sərbəst oyun gəlir: yanlış gediş pozulan qaydanın mətnini göstərir.

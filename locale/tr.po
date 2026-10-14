@@ -233,6 +233,10 @@ msgstr ""
 msgid "HINT_NOT_FOUND"
 msgstr ""
 
+#. [TODO: TR] az: Buradan yol tapılmadı. Bir neçə gediş geri al və yenidən sına.
+msgid "HINT_TAKE_BACK"
+msgstr ""
+
 #. [TODO: TR] az: Fikrin yoxdursa, Hint sənə kömək edə bilər.
 msgid "NUDGE_MISTAKES"
 msgstr ""
@@ -257,8 +261,20 @@ msgstr ""
 msgid "RULE_ADJACENT_PEGS"
 msgstr ""
 
-#. [TODO: TR] az: Böyük Mübadilə: ağ karvan qaranın yerinə, qara karvan ağın yerinə keçsin.
-msgid "BOSS_EXCHANGE_INTRO"
+#. [TODO: TR] az: Böyük Mübadilə: ağ karvan sağ uca, qara karvan sol uca keçsin.
+msgid "COLOR_SWAP_GOAL"
+msgstr ""
+
+#. [TODO: TR] az: Qarışıq karvan: qaraları sol uca, ağları sağ uca yığ.
+msgid "COLOR_SWAP_MIXED_GOAL"
+msgstr ""
+
+#. [TODO: TR] az: Eyni ölçülü disklər üst-üstə qoyula bilməz.
+msgid "RULE_SAME_SIZE"
+msgstr ""
+
+#. [TODO: TR] az: Fərqli rəngli disklər bir-birinə toxuna bilməz.
+msgid "RULE_COLOUR_TOUCH"
 msgstr ""
 
 #. [TODO: TR] az: İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər.
@@ -267,6 +283,10 @@ msgstr ""
 
 #. [TODO: TR] az: Bu qüllə doludur.
 msgid "RULE_PEG_FULL"
+msgstr ""
+
+#. [TODO: TR] az: Disk yalnız boş qülləyə və ya öz rənginin üstünə qoyula bilər.
+msgid "RULE_SAME_COLOUR"
 msgstr ""
 
 #. [TODO: TR] az: Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində.
@@ -301,11 +321,15 @@ msgstr ""
 msgid "INTRO_ADJACENT_PEGS"
 msgstr ""
 
-#. [TODO: TR] az: Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Ortadakı qüllələr yalnız dayanacaqdır.
-msgid "INTRO_GREAT_EXCHANGE"
+#. [TODO: TR] az: Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Böyük disk kiçiyin üstünə qoyulmur, ortadakı qüllələr dayanacaqdır.
+msgid "INTRO_COLOR_SWAP"
 msgstr ""
 
-#. [TODO: TR] az: Birləşmə: disklər eyni ölçüdədir, istənilən disk istənilənin üstünə qoyula bilər. Amma hər qüllənin yeri məhduddur.
+#. [TODO: TR] az: Qarışıq karvan: qaralar sol uca, ağlar sağ uca. Fərqli rəngli disklər bir-birinə toxuna bilməz, böyük disk kiçiyin üstünə qoyulmur.
+msgid "INTRO_COLOR_SWAP_MIXED"
+msgstr ""
+
+#. [TODO: TR] az: Birləşmə: disk yalnız boş qülləyə və ya öz rənginin üstünə gedir. Üstdəki eyni rəngli disklər birlikdə köçür.
 msgid "INTRO_COMBINATION"
 msgstr ""
 

@@ -108,13 +108,15 @@ func _exit_tree() -> void:
 		_thread = null
 
 
-## Shows a found hint and charges for it; a missing hint costs nothing. A large
-## combination board whose search ran out leads back to the stored solution.
+## Shows a found hint and charges for it; a missing hint costs nothing. When
+## the search found none (a large combination board, or a dead end of a level
+## whose moves cannot all be taken back) the hint leads back to the stored
+## solution, or asks the player to take a move back where it cannot.
 func _apply(move: Move, key: String) -> void:
-	if move == null and _board.session.level.color_goal != null:
+	if move == null:
 		move = _board.session.return_to_path_move()
 	if move == null:
-		message_changed.emit(tr("HINT_NOT_FOUND"))
+		message_changed.emit(tr("HINT_TAKE_BACK" if _board.session.can_undo() else "HINT_NOT_FOUND"))
 		return
 	_economy.spend(_economy.hint_cost(_board.session.level.difficulty))
 	hint_move = move

@@ -136,7 +136,7 @@ const EXCHANGE_DISKS: Dictionary = {
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
-		"great_exchange": "caravan", "combination": "glass"}
+		"color_swap": "caravan", "combination": "glass"}
 
 var mode: String = LIGHT
 var theme: Theme

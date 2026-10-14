@@ -12,6 +12,12 @@ var disk_size: int = 1:
 	set(value):
 		disk_size = value
 		queue_redraw()
+## The number shown when it is not disk_size (a great exchange disk shows its
+## size, while its id also tells its colour); 0 for disk_size.
+var label: int = 0:
+	set(value):
+		label = value
+		queue_redraw()
 var color: Color = Color.WHITE:
 	set(value):
 		color = value
@@ -163,7 +169,7 @@ func _draw() -> void:
 		return
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(size.y * 0.55, 12.0, 28.0))
-	var text: String = str(disk_size)
+	var text: String = str(label if label > 0 else disk_size)
 	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	var baseline: Vector2 = Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5)
 	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ink)

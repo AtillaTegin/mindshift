@@ -28,6 +28,31 @@ func get_id() -> String:
 	return ""
 
 
+## Translation key of why this rule refuses `move` (a rule that can refuse for
+## more than one reason names the one that applies); violation_message by default.
+func get_violation_message(_state: PuzzleState, _move: Move) -> String:
+	return violation_message
+
+
+## A rule that judges moves by disk colour gets the level's disk colours here
+## (Level.disk_colors: the colour of disk id i at i - 1); others ignore them.
+func bind_disk_colours(_colours: Array[String]) -> void:
+	pass
+
+
+## How many disks `move` carries from the top of its source (the others go
+## along in the order they stand). 1 for most rules; a rule that moves a group
+## returns more. RuleSet uses the largest any rule asks for.
+func disks_moved(_state: PuzzleState, _move: Move) -> int:
+	return 1
+
+
+## How many top disks of `stack` are picked up together (and shown lifted):
+## the most a move from it could carry. 1 for most rules.
+func disks_picked_up(_stack: Array) -> int:
+	return 1
+
+
 ## Takes this rule's settings from the level JSON `"rule_params": { "<id>": {...} }`
 ## (an empty Dictionary when the level gives none). Returns "" when they are
 ## fine, otherwise what is wrong. Rules without settings accept only {}.

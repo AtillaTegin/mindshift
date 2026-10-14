@@ -12,14 +12,15 @@ extends SceneTree
 ##   (classic or mechanic).
 ## - Which slots hold a mechanic level: none before the first chapter; up to
 ##   EASY_UNTIL just enough for every easy mechanic level (the chapters' first,
-##   learning levels) and the first boss; from MIX_FROM to MIX_UNTIL classic and
-##   mechanic levels take turns about 1:1 (one mechanic slot drawn in every
-##   stratum of about two slots, so neither strictly alternating nor blocks);
-##   after that the rest thin out evenly to the end of the road.
+##   learning levels); from MIX_FROM to MIX_UNTIL classic and mechanic levels
+##   take turns about 1:1 (one mechanic slot drawn in every stratum of about
+##   two slots, so neither strictly alternating nor blocks); after that the
+##   rest thin out evenly to the end of the road.
 ## - Chapters (CHAPTER_STARTS) put their first level at a fixed slot; each
 ##   mechanic slot after that takes the chapter that lags its own even spread
 ##   the most, so every chapter runs, easiest first, to the end of the road.
-##   The great exchange bosses keep BOSS_FROM and every BOSS_EVERY after it.
+##   The great exchange is a chapter like the others since its v2 addendum
+##   (its old rare bosses are gone); it starts at the first boss's slot.
 ## - Classic slots mix the tiers by weight curves over the progress: easy only
 ##   at the start, medium leads, then medium and hard mixed with hard growing.
 ##   Each step takes the tier that lags its curve the most, with a little seeded
@@ -36,13 +37,12 @@ const BRANCH_AFTER: int = 50
 ## No easy level after this main path position (v4 section 1).
 const EASY_UNTIL: int = 50
 ## First slot of each chapter (user requests 2026-10-12 and 2026-10-13).
-const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "combination": 30}
+const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "combination": 30,
+		"color_swap": 40}
 ## The about 1:1 mix of classic and mechanic levels (v4 section 3).
 const MIX_FROM: int = 51
 const MIX_UNTIL: int = 200
 const MIX_SHARE: float = 0.5
-const BOSS_FROM: int = 40
-const BOSS_EVERY: int = 40
 const BRANCH_HARD: int = 8
 const BRANCH_MEDIUM: int = 4
 ## Largest random boost of a tier's lag (as a share of it) when picking the
@@ -139,18 +139,14 @@ static func build_from(pools: Dictionary, mechanics: Array[Dictionary], errors: 
 
 
 ## Main path slots of the mechanic levels (1-based position -> level), see the
-## class comment: fixed slots for the bosses and each chapter's first level,
-## then the other mechanic slots part by part, then the chapters onto them.
+## class comment: fixed slots for each chapter's first level, then the other
+## mechanic slots part by part, then the chapters onto them.
 static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: RandomNumberGenerator,
 		errors: Array[String]) -> Dictionary:
-	# Each chapter and the bosses, easiest first (the folder is read that way).
 	var chapters: Dictionary = {}
-	var bosses: Array[Dictionary] = []
 	for entry: Dictionary in mechanics:
 		var mechanic: String = (entry["level"] as Level).mechanic()
-		if mechanic == Level.GREAT_EXCHANGE:
-			bosses.append(entry)
-		elif CHAPTER_STARTS.has(mechanic):
+		if CHAPTER_STARTS.has(mechanic):
 			if not chapters.has(mechanic):
 				chapters[mechanic] = [] as Array[Dictionary]
 			(chapters[mechanic] as Array).append(entry)
@@ -158,26 +154,20 @@ static func _place_mechanics(mechanics: Array[Dictionary], main_size: int, rng: 
 			errors.append("%s: the %s chapter has no slot in CHAPTER_STARTS" % [entry["file"], mechanic])
 	if not errors.is_empty():
 		return {}
-	# Every chapter and the bosses easiest first, whatever order they came in.
-	# Combination levels grow by stage, not by length (their min_moves is an
-	# example solution): they are built in road order, so ids give the order.
+	# Every chapter easiest first, whatever order they came in. Combination
+	# levels grow by stage, not by length (their min_moves is an example
+	# solution): they are built in road order, so ids give the order.
 	var by_length: Callable = func(a: Dictionary, b: Dictionary) -> bool:
 		var moves_a: int = (a["level"] as Level).min_moves
 		var moves_b: int = (b["level"] as Level).min_moves
 		return moves_a < moves_b if moves_a != moves_b else a["id"] < b["id"]
-	bosses.sort_custom(by_length)
 	for mechanic: String in chapters:
 		(chapters[mechanic] as Array).sort_custom(by_length if mechanic != Difficulty.COMBINATION \
 				else func(a: Dictionary, b: Dictionary) -> bool: return a["id"] < b["id"])
 	var pinned: Dictionary = {}
-	for i: int in bosses.size():
-		pinned[BOSS_FROM + i * BOSS_EVERY] = bosses[i]
 	var starts: Dictionary = {}
 	for mechanic: String in chapters:
 		var start: int = CHAPTER_STARTS[mechanic]
-		if pinned.has(start):
-			errors.append("the %s chapter starts on a boss slot (%d)" % [mechanic, start])
-			return {}
 		pinned[start] = (chapters[mechanic] as Array).pop_front()
 		starts[mechanic] = start
 	var easy_left: int = 0

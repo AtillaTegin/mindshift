@@ -52,7 +52,9 @@ const MECHANIC_MAX_DISKS: int = 10
 ## starts are solvable (tools/combination_e_min.gd). Each stage gives the
 ## capacity and colour ranges and the tier (hint price; easy only while
 ## learning). Their min_moves is the length of a known solution, not a proven
-## minimum (user decision 2026-10-13), so the tier comes from the stage.
+## minimum (user decision 2026-10-13), so the tier comes from the stage. The
+## expert stage lies past the end of the main road (290 levels since the great
+## exchange v2 chapter; expert levels only go on the island).
 const COMBINATION: String = "combination"
 const COMBINATION_MAX_CAPACITY: int = 7
 const COMBINATION_MAX_PEGS: int = 12
@@ -62,30 +64,32 @@ const COMBINATION_STAGES: Array[Dictionary] = [
 	{"name": "middle_1", "to": 80, "tier": "medium", "capacity": [5, 5], "colours": [3, 3]},
 	{"name": "middle_2", "to": 130, "tier": "medium", "capacity": [6, 6], "colours": [3, 4]},
 	{"name": "hard_1", "to": 200, "tier": "hard", "capacity": [7, 7], "colours": [4, 6]},
-	{"name": "hard_2", "to": 280, "tier": "hard", "capacity": [7, 7], "colours": [6, 8]},
+	{"name": "hard_2", "to": 300, "tier": "hard", "capacity": [7, 7], "colours": [6, 8]},
 	{"name": "expert", "to": 100000, "tier": "expert", "capacity": [7, 7], "colours": [8, 9]},
 ]
-## E_min by "CxN" (colours x capacity), measured 2026-10-13 with
-## tools/combination_e_min.gd: the first E at which at least 6 of 8 random
-## starts were solved (exhaustive search up to 12 disks, guided search with a
-## budget of 40000 positions beyond). 10x7 is not practical: even with 3 empty
-## pegs only 4 of 8 were solved, so no stage uses 10 colours.
+## E_min by "CxN" (colours x capacity), measured again on 2026-10-14 under
+## Water Sort's rule (auto-group addendum) with tools/combination_e_min.gd:
+## the first E at which at least 6 of 8 random starts were solved (exhaustive
+## search up to 12 disks, guided search with a budget of 40000 positions
+## beyond). With one empty peg most larger starts are stuck; with two every
+## sample was solved, 10x7 too.
 const COMBINATION_E_MIN: Dictionary = {
-	"2x4": 1, "3x4": 1, "3x5": 1, "3x6": 1, "4x6": 1, "4x7": 1, "5x7": 1, "6x7": 2, "7x7": 2, "8x7": 2, "9x7": 3,
+	"2x4": 1, "3x4": 1, "3x5": 2, "3x6": 2, "4x6": 2, "4x7": 2, "5x7": 2, "6x7": 2, "7x7": 2, "8x7": 2, "9x7": 2,
+	"10x7": 2,
 }
-## "Konkret Kombinasiya" only on small boards (correction v3, section 1).
-const PATTERN_MAX_COLOURS: int = 3
-const PATTERN_MAX_PEGS: int = 5
+## "Böyük Mübadilə" v2 levels (ColorSwapRule, mechanic "color_swap"): k white
+## and k black disks on the two end pegs with B empty pegs between them. Up to
+## 4 buffers (6 pegs, one row) and 8 disks: an off-path hint on 6 pegs / 8
+## disks takes up to 3.2 s on a desktop, 5 pegs / 10 disks 4.6 s and 6 pegs /
+## 10 disks 22 s (measured 2026-10-14), too long for an in-game hint.
+const COLOR_SWAP: String = "color_swap"
+const COLOR_SWAP_MAX_PEGS: int = 6
+const COLOR_SWAP_MAX_DISKS: int = 8
 
 
 ## The measured E_min for `colours` x `capacity`, or 0 if it was not measured.
 static func combination_empty(colours: int, capacity: int) -> int:
 	return COMBINATION_E_MIN.get("%dx%d" % [colours, capacity], 0)
-
-
-## Whether a board of `colours` and `pegs` may have a pattern goal.
-static func allows_pattern(colours: int, pegs: int) -> bool:
-	return colours <= PATTERN_MAX_COLOURS and pegs <= PATTERN_MAX_PEGS
 
 
 ## The combination stage of main path position `position`.
@@ -153,6 +157,9 @@ static func is_mechanic_id(id: int) -> bool:
 
 
 static func accepts_mechanic_size(peg_count: int, disk_count: int, mechanic: String = "") -> bool:
+	if mechanic == COLOR_SWAP:
+		return peg_count >= MECHANIC_MIN_PEGS and peg_count <= COLOR_SWAP_MAX_PEGS \
+				and disk_count >= MECHANIC_MIN_DISKS and disk_count <= COLOR_SWAP_MAX_DISKS
 	var max_pegs: int = COMBINATION_MAX_PEGS if mechanic == COMBINATION else MECHANIC_MAX_PEGS
 	var max_disks: int = COMBINATION_MAX_DISKS if mechanic == COMBINATION else MECHANIC_MAX_DISKS
 	return peg_count >= MECHANIC_MIN_PEGS and peg_count <= max_pegs \

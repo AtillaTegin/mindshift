@@ -63,7 +63,15 @@ static func create_rule(id: String) -> RuleBase:
 			return AdjacentPegsRule.new()
 		CombinationRule.ID:
 			return CombinationRule.new()
+		ColorSwapRule.ID:
+			return ColorSwapRule.new()
 	return null
+
+
+## Hands the level's disk colours to every rule (RuleBase.bind_disk_colours).
+func bind_disk_colours(colours: Array[String]) -> void:
+	for rule: RuleBase in active_rules:
+		rule.bind_disk_colours(colours)
 
 
 ## The non-empty settings of the active rules, as written to level JSON.
@@ -101,6 +109,19 @@ func search_key(state: PuzzleState) -> String:
 func can_pick_up(state: PuzzleState, peg_index: int) -> bool:
 	var disk: int = state.get_top_disk(peg_index)
 	return disk != -1 and is_disk_movable(disk, state.last_moved_disk)
+
+
+## The disks a tap on `peg_index` picks up, bottom -> top: its top disk, or
+## the group a rule moves together (RuleBase.disks_picked_up). Empty for an
+## empty peg.
+func picked_up_disks(state: PuzzleState, peg_index: int) -> Array[int]:
+	var stack: Array = state.pegs[peg_index]
+	var count: int = 1
+	for rule: RuleBase in active_rules:
+		count = maxi(count, rule.disks_picked_up(stack))
+	var disks: Array[int] = []
+	disks.assign(stack.slice(maxi(stack.size() - count, 0)))
+	return disks
 
 
 ## Why the top disk of `peg_index` cannot be picked up: the violation_message
@@ -159,12 +180,18 @@ func apply_move(state: PuzzleState, move: Move) -> PuzzleState:
 
 
 ## Same as apply_move() without the legality check, for hot loops that only
-## apply moves returned by get_legal_moves().
+## apply moves returned by get_legal_moves(). A rule may make a move carry a
+## group of top disks (RuleBase.disks_moved); they keep their order.
 func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 	var next: PuzzleState = state.duplicate_state()
-	var disk: int = next.pegs[move.from_peg].pop_back()
-	next.pegs[move.to_peg].append(disk)
-	next.last_moved_disk = disk
+	var count: int = 1
+	for rule: RuleBase in active_rules:
+		count = maxi(count, rule.disks_moved(state, move))
+	var source: Array = next.pegs[move.from_peg]
+	var group: Array = source.slice(source.size() - count)
+	source.resize(source.size() - count)
+	next.pegs[move.to_peg].append_array(group)
+	next.last_moved_disk = group[-1]
 	return next
 
 
@@ -202,7 +229,7 @@ func get_violation_message(state: PuzzleState, move: Move) -> String:
 		return ""
 	for rule: RuleBase in active_rules:
 		if not rule.is_move_allowed(state, move):
-			return rule.violation_message
+			return rule.get_violation_message(state, move)
 	return ""
 
 

@@ -1,0 +1,14 @@
+{
+  "id": 9122,
+  "difficulty": "medium",
+  "pegs": 6,
+  "disks": 8,
+  "start": [[7,5,3,1],[],[],[],[],[8,6,4,2]],
+  "goal": [[8,6,4,2],[],[],[],[],[7,5,3,1]],
+  "rules": ["color_swap"],
+  "min_moves": 15,
+  "solution_path": [[0,1],[0,2],[0,3],[0,4],[5,2],[5,3],[5,4],[5,0],[4,0],[4,5],[3,0],[3,5],[2,0],[2,5],[1,5]],
+  "star_thresholds": {"three":15,"two":19},
+  "time_limit_seconds": null,
+  "rule_params": {"color_swap":{"colour":false}}
+}

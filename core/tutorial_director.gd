@@ -14,7 +14,8 @@ extends Node
 ##   section 2): the mechanic's own words first (INTRO_TEXTS, kept on screen
 ##   for INTRO_SECONDS), then its first INTRO_STEPS moves guided like level 1,
 ##   then FREE as on level 2. Karakuri boxes need no extra step: the first
-##   moves use a box, and a tap on the shown box opens it.
+##   moves use a box, and a tap on the shown box opens it. The great exchange's
+##   two kinds are two lessons (Level.lesson()): each one's first level.
 ## - Other levels: off. A tutorial only runs until its level was completed once.
 
 enum Mode { OFF, GUIDED, FREE }
@@ -24,12 +25,13 @@ const FREE_LEVEL_ID: int = 1002
 ## Translation keys of the toasts.
 const STEP_DONE_TEXT: String = "TUTORIAL_STEP_DONE"
 const TRY_YOURSELF_TEXT: String = "TUTORIAL_TRY_YOURSELF"
-## Level.mechanic() -> what is new about it.
+## Level.lesson() -> what is new about it.
 const INTRO_TEXTS: Dictionary = {
 	"covered_pegs": "INTRO_COVERED_PEGS",
 	"alternation": "INTRO_ALTERNATION",
 	"adjacent_pegs": "INTRO_ADJACENT_PEGS",
-	"great_exchange": "INTRO_GREAT_EXCHANGE",
+	"color_swap": "INTRO_COLOR_SWAP",
+	"color_swap_mixed": "INTRO_COLOR_SWAP_MIXED",
 	"combination": "INTRO_COMBINATION",
 }
 const INTRO_STEPS: int = 3
@@ -75,7 +77,7 @@ func _on_level_started() -> void:
 		mode = Mode.FREE
 		_coaching.toast.show_message(tr(TRY_YOURSELF_TEXT))
 	elif is_mechanic_intro(level):
-		intro_mechanic = level.mechanic()
+		intro_mechanic = level.lesson()
 		_intro_steps_left = INTRO_STEPS
 		mode = Mode.GUIDED
 		# At the top: the words stay readable while the ghost finger works below.
@@ -83,13 +85,13 @@ func _on_level_started() -> void:
 		_show_next_step()
 
 
-## Whether `level` is the first level of its mechanic on the main path.
+## Whether `level` is the first level of its lesson on the main path.
 static func is_mechanic_intro(level: Level) -> bool:
-	var mechanic: String = level.mechanic()
-	if not INTRO_TEXTS.has(mechanic):
+	var lesson: String = level.lesson()
+	if not INTRO_TEXTS.has(lesson):
 		return false
 	var place: Dictionary = LevelCatalog.place_of(level.id)
-	return place.get("track", "") == LevelCatalog.MAIN and place["position"] == LevelCatalog.first_main_position(mechanic)
+	return place.get("track", "") == LevelCatalog.MAIN and place["position"] == LevelCatalog.first_main_position(lesson)
 
 
 func _on_position_changed() -> void:

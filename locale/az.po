@@ -178,6 +178,9 @@ msgstr "Hint hesablanır..."
 msgid "HINT_NOT_FOUND"
 msgstr "Hint tapılmadı"
 
+msgid "HINT_TAKE_BACK"
+msgstr "Buradan yol tapılmadı. Bir neçə gediş geri al və yenidən sına."
+
 msgid "NUDGE_MISTAKES"
 msgstr "Fikrin yoxdursa, Hint sənə kömək edə bilər."
 
@@ -196,14 +199,26 @@ msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 msgid "RULE_ADJACENT_PEGS"
 msgstr "Karvan yalnız qonşu dayanacağa gedə bilər."
 
-msgid "BOSS_EXCHANGE_INTRO"
-msgstr "Böyük Mübadilə: ağ karvan qaranın yerinə, qara karvan ağın yerinə keçsin."
+msgid "COLOR_SWAP_GOAL"
+msgstr "Böyük Mübadilə: ağ karvan sağ uca, qara karvan sol uca keçsin."
+
+msgid "COLOR_SWAP_MIXED_GOAL"
+msgstr "Qarışıq karvan: qaraları sol uca, ağları sağ uca yığ."
+
+msgid "RULE_SAME_SIZE"
+msgstr "Eyni ölçülü disklər üst-üstə qoyula bilməz."
+
+msgid "RULE_COLOUR_TOUCH"
+msgstr "Fərqli rəngli disklər bir-birinə toxuna bilməz."
 
 msgid "RULE_ALTERNATION"
 msgstr "İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər."
 
 msgid "RULE_PEG_FULL"
 msgstr "Bu qüllə doludur."
+
+msgid "RULE_SAME_COLOUR"
+msgstr "Disk yalnız boş qülləyə və ya öz rənginin üstünə qoyula bilər."
 
 msgid "COMBINATION_SORT_INTRO"
 msgstr "Eyni rəngləri bir yerə yığ: hər rəng öz qülləsində."
@@ -229,11 +244,14 @@ msgstr "Doqquz Halqa: 1-ci disk həmişə gedə bilər, başqa disk yalnız sonu
 msgid "INTRO_ADJACENT_PEGS"
 msgstr "Karvan Yolu: disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz."
 
-msgid "INTRO_GREAT_EXCHANGE"
-msgstr "Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Ortadakı qüllələr yalnız dayanacaqdır."
+msgid "INTRO_COLOR_SWAP"
+msgstr "Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Böyük disk kiçiyin üstünə qoyulmur, ortadakı qüllələr dayanacaqdır."
+
+msgid "INTRO_COLOR_SWAP_MIXED"
+msgstr "Qarışıq karvan: qaralar sol uca, ağlar sağ uca. Fərqli rəngli disklər bir-birinə toxuna bilməz, böyük disk kiçiyin üstünə qoyulmur."
 
 msgid "INTRO_COMBINATION"
-msgstr "Birləşmə: disklər eyni ölçüdədir, istənilən disk istənilənin üstünə qoyula bilər. Amma hər qüllənin yeri məhduddur."
+msgstr "Birləşmə: disk yalnız boş qülləyə və ya öz rənginin üstünə gedir. Üstdəki eyni rəngli disklər birlikdə köçür."
 
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"

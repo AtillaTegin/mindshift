@@ -80,6 +80,16 @@ func get_selected_disk() -> int:
 	return state.get_top_disk(selected_peg) if selected_peg != -1 else -1
 
 
+## Every disk picked up with the selected peg (RuleSet.picked_up_disks: the
+## top disk, or a combination level's whole top run), bottom -> top; empty
+## when nothing is selected.
+func get_selected_disks() -> Array[int]:
+	if selected_peg == -1:
+		var none: Array[int] = []
+		return none
+	return rules.picked_up_disks(state, selected_peg)
+
+
 ## A tap on a peg. With nothing selected it picks up that peg's top disk; a
 ## second tap on the same peg puts it back; a tap on another peg moves it there.
 ## An illegal target keeps the selection so the player can pick another peg.
@@ -191,15 +201,19 @@ func get_path_hint() -> Move:
 	return level.solution_path[_path_index[key]] if _path_index.has(key) else null
 
 
-## A hint that always exists for a level with a stored solution: off its path,
-## take the last move back (every move can be taken back), which leads to a
-## position on the path in the end (the start is on it). Null on the path or
-## with nothing moved.
+## A hint when the search finds none: off the stored path, the last move taken
+## back, which leads to a position on the path in the end (the start is on
+## it). Only where that move is legal and really restores the position before:
+## a Water Sort pour or a disk lifted off another colour cannot always go back
+## (then undo() helps). Null on the path, with nothing moved, or when the last
+## move cannot be reversed.
 func return_to_path_move() -> Move:
 	if history.is_empty() or _path_index.has(_path_key(state)):
 		return null
 	var last: Move = history[-1]
-	return Move.new(last.to_peg, last.from_peg)
+	var back: Move = Move.new(last.to_peg, last.from_peg)
+	var before: PuzzleState = rules.apply_move(state, back)
+	return back if before != null and before.equals(_previous_states[-1]) else null
 
 
 ## What makes two positions the same for the stored solution: the search key,
@@ -213,9 +227,11 @@ func _path_key(position: PuzzleState) -> String:
 
 ## First move of a shortest solution of `level` from `from_state`, or null. A
 ## combination level (colour goal) is searched by CombinationSolver within
-## COMBINATION_HINT_BUDGET (a short solution on a large board, may find none:
-## then return_to_path_move() helps); every other one by the Solver. Only reads
-## its arguments, so it can run on a worker thread.
+## COMBINATION_HINT_BUDGET (a short solution on a large board, may find none);
+## every other one by the Solver. Null also when no solution is left (a dead
+## end of a level whose moves cannot all be taken back); then
+## return_to_path_move() or an undo helps. Only reads its arguments, so it can
+## run on a worker thread.
 static func solve_hint(level: Level, from_state: PuzzleState, rule_set: RuleSet) -> Move:
 	var result: Dictionary = CombinationSolver.solve(level, from_state, COMBINATION_HINT_BUDGET) if level.color_goal != null \
 			else Solver.solve(from_state, level.goal, rule_set, HINT_MAX_STATES)

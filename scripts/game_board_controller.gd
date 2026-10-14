@@ -76,6 +76,8 @@ var _coins_in_flight: int = 0
 ## Disks a peg holds on a "Birləşmə Tapmacası" level (CombinationRule); 0 for
 ## other levels. The rods are drawn that tall, so a full peg looks full.
 var _capacity: int = 0
+## The level's _disk_palette(), kept for the layout.
+var _palette: Dictionary = {}
 
 @onready var _level_label: Label = %LevelLabel
 @onready var _moves_label: Label = %MovesLabel
@@ -219,14 +221,14 @@ func restart() -> void:
 
 
 ## A goal the preview alone does not tell is said in words before the first
-## move, on every attempt: a great exchange is a swap, not one tower (caravan
-## road addendum 2), and a "Sadə Yığım" goal is given in words (level
-## structure v4, section 4; a pattern goal is only shown). The caller refreshes.
+## move, on every attempt: a great exchange is a swap or a sorting of the two
+## colours, not one tower, and a "Sadə Yığım" goal is given in words (level
+## structure v4, section 4). The caller refreshes.
 func _show_goal_words() -> void:
 	var level: Level = session.level
-	if level.boss == Level.GREAT_EXCHANGE:
-		_message = tr("BOSS_EXCHANGE_INTRO")
-	elif level.color_goal != null and level.color_goal.kind == ColorGoal.SORT:
+	if level.mechanic() == Difficulty.COLOR_SWAP:
+		_message = tr("COLOR_SWAP_MIXED_GOAL" if level.lesson() == Level.COLOR_SWAP_MIXED else "COLOR_SWAP_GOAL")
+	elif level.color_goal != null:
 		_message = tr("COMBINATION_SORT_INTRO")
 	else:
 		return
@@ -327,7 +329,12 @@ func on_peg_pressed(peg_index: int) -> void:
 	match result:
 		GameSession.TapResult.ILLEGAL:
 			_peg_views[peg_index].flash_invalid()
-			illegal_move.emit(target_move, tr(session.rules.get_violation_message(session.state, target_move)))
+			var reason: String = tr(session.rules.get_violation_message(session.state, target_move))
+			# The great exchange says which condition the move broke (user
+			# decision on its v2: never a silent refusal); soft, nothing is punished.
+			if session.level.mechanic() == Difficulty.COLOR_SWAP:
+				show_message(reason, true)
+			illegal_move.emit(target_move, reason)
 		GameSession.TapResult.MOVED:
 			position_changed.emit()
 			if session.is_solved():
@@ -404,10 +411,12 @@ func _release_chest() -> void:
 	_coins_in_flight = 0
 
 
-## Disk size -> {fill, text} for a great exchange: the stack that starts on the
-## left is the white caravan, the other the black one. A "Birləşmə Tapmacası"
-## disk (id) -> {fill, text, outline, symbol} from its colour. Empty for other
-## levels (their disks keep one colour each).
+## Disk id -> its looks where the id alone does not give them. A great
+## exchange disk: {fill, text, outline} of the white or black caravan, plus
+## `label` (its size, the number it shows), `size` and `sizes` (k) for its
+## width (ColorSwapRule: ids 2s - 1 and 2s are the white and black disk of
+## size s). A "Birləşmə Tapmacası" disk: {fill, text, outline, symbol} from its
+## colour. Empty for other levels (their disks keep one colour each).
 func _disk_palette() -> Dictionary:
 	var palette: Dictionary = {}
 	if session.level.color_goal != null:
@@ -417,13 +426,35 @@ func _disk_palette() -> Dictionary:
 			colors["symbol"] = color_name
 			palette[disk] = colors
 		return palette
-	if session.level.boss != Level.GREAT_EXCHANGE:
+	if session.level.mechanic() != Difficulty.COLOR_SWAP:
 		return palette
-	for peg_index: int in session.level.start.get_peg_count():
-		var caravan: String = "white" if peg_index == 0 else "black"
-		for disk: int in session.level.start.pegs[peg_index]:
-			palette[disk] = ThemeManager.EXCHANGE_DISKS[caravan]
+	var sizes: int = session.level.get_disk_count() / 2
+	for disk: int in range(1, session.level.get_disk_count() + 1):
+		var colors: Dictionary = ThemeManager.EXCHANGE_DISKS["white" if ColorSwapRule.is_white(disk) else "black"].duplicate()
+		colors["label"] = ColorSwapRule.size_of(disk)
+		colors["size"] = ColorSwapRule.size_of(disk)
+		colors["sizes"] = sizes
+		palette[disk] = colors
 	return palette
+
+
+## Disks one peg can hold: a combination level's capacity, a great exchange's
+## k (one disk of each size), else every disk.
+func _stack_room() -> int:
+	if _capacity > 0:
+		return _capacity
+	if session.level.mechanic() == Difficulty.COLOR_SWAP:
+		return maxi(session.state.get_disk_count() / 2, 1)
+	return maxi(session.state.get_disk_count(), 1)
+
+
+## Rows of pegs: many pegs (a large combination board) stand in two rows, like
+## Water Sort. A great exchange keeps one row (its two ends are the point).
+func _row_count() -> int:
+	var peg_count: int = session.state.get_peg_count()
+	if peg_count <= BoardLayout.ONE_ROW_PEGS or session.level.mechanic() == Difficulty.COLOR_SWAP:
+		return 1
+	return 2
 
 
 ## Under a rule that looks at the last move (the Nine Rings alternation) the
@@ -477,6 +508,7 @@ func _build_views() -> void:
 		_fogs[peg_index] = fog
 	var disk_count: int = session.state.get_disk_count()
 	var palette: Dictionary = _disk_palette()
+	_palette = palette
 	for peg_index: int in session.state.get_peg_count():
 		var peg: PegView = PEG_SCENE.instantiate()
 		peg.peg_index = peg_index
@@ -494,6 +526,7 @@ func _build_views() -> void:
 				disk.number_color = palette[disk_size]["text"]
 				disk.outline_color = palette[disk_size].get("outline")
 				disk.symbol = palette[disk_size].get("symbol", "")
+				disk.label = palette[disk_size].get("label", 0)
 				if palette[disk_size].has("symbol"):
 					disk.corner = BoardLayout.BLOCK_RADIUS
 			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
@@ -527,9 +560,8 @@ func _layout(animated: bool) -> void:
 		return
 	var peg_count: int = session.state.get_peg_count()
 	var disk_count: int = maxi(session.state.get_disk_count(), 1)
-	# Many pegs (a large combination board) stand in two rows, like Water Sort;
-	# a shorter second row is centred.
-	var rows: int = 2 if peg_count > BoardLayout.ONE_ROW_PEGS else 1
+	# A shorter second row is centred.
+	var rows: int = _row_count()
 	var per_row: int = ceili(float(peg_count) / rows)
 	var column: float = _board.size.x / per_row
 	# The dress may keep a strip under the pegs free (the caravan road's stops).
@@ -537,9 +569,9 @@ func _layout(animated: bool) -> void:
 	# Never below zero: before the first layout pass the board has no size yet,
 	# and a coach pointing at a peg then must not get a negative area.
 	var height: float = maxf((_board.size.y - floor_room) / rows, 0.0)
-	# Room for every disk on one peg plus the lifted disk above the rod; with a
-	# capacity, room for a full peg, and the rod just as tall.
-	var stack: int = _capacity if _capacity > 0 else disk_count
+	# Room for the fullest peg there can be plus the lifted disk above the rod;
+	# with a capacity, room for a full peg, and the rod just as tall.
+	var stack: int = _stack_room()
 	# Combination disks are blocks of BLOCK_HEIGHT whenever the board has room.
 	var disk_height: float = minf(height / (stack + (3.5 if rows == 1 else 2.6)),
 			BoardLayout.BLOCK_HEIGHT + 4.0 if _capacity > 0 else MAX_DISK_HEIGHT)
@@ -559,7 +591,9 @@ func _layout(animated: bool) -> void:
 		peg.configure(base_top, base_height, rod_top, maxf(column * 0.05, 6.0), column * 0.96)
 		_peg_areas.append(Rect2(corner.x + column * 0.02, corner.y + lifted_y,
 				column * 0.96, base_top + base_height - lifted_y))
-	var selected_disk: int = session.get_selected_disk()
+	# The picked-up disks rise together, the top one to lifted_y (a combination
+	# level lifts its whole top run of one colour).
+	var lifted: Array[int] = session.get_selected_disks()
 	for peg_index: int in peg_count:
 		var peg: Array = session.state.pegs[peg_index]
 		for level_index: int in peg.size():
@@ -567,10 +601,13 @@ func _layout(animated: bool) -> void:
 			var view: DiskView = _disk_views[disk_size]
 			var width: float = column * BoardLayout.EQUAL_DISK_SHARE if _capacity > 0 \
 					else BoardLayout.disk_width(disk_size, disk_count, column)
+			if _palette.has(disk_size) and _palette[disk_size].has("size"):
+				width = BoardLayout.disk_width(_palette[disk_size]["size"], _palette[disk_size]["sizes"], column)
 			var y: float = base_top - disk_height * (level_index + 1)
-			if disk_size == selected_disk:
-				y = lifted_y
-			view.selected = disk_size == selected_disk
+			var raised: bool = lifted.has(disk_size)
+			if raised:
+				y = lifted_y + disk_height * (peg.size() - 1 - level_index)
+			view.selected = raised
 			view.size = Vector2(width, disk_height - 4.0)
 			var target: Vector2 = corners[peg_index] + Vector2(column * 0.5 - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)

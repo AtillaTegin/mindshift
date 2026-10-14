@@ -15,9 +15,6 @@ const LEVELS_DIR: String = "res://data/levels"
 const SOLVER_MAX_STATES: int = 5000000
 ## A covered peg must be used within this many moves of the stored solution.
 const COVERED_REVEAL_WITHIN: int = 3
-## Combination levels up to this many disks are small enough to prove their
-## min_moves the shortest.
-const COMBINATION_EXACT_DISKS: int = 10
 ## The tutorial levels that must open the path: TutorialDirector.GUIDED_LEVEL_ID
 ## and FREE_LEVEL_ID (not referenced: TutorialDirector pulls in UI scripts that
 ## need the autoloads, which --script tools do not have). A test keeps them equal.
@@ -154,8 +151,8 @@ static func validate_path(levels_dir: String) -> Array[String]:
 
 ## Design rules of the mechanic levels, on top of the normal checks. A rule
 ## beyond classic Hanoi (Nine Rings alternation, caravan road) must make the
-## level longer than plain Hanoi, or it changes nothing; a great exchange boss
-## must have its swap shape.
+## level longer than plain Hanoi, or it changes nothing; a great exchange must
+## have its board shape.
 static func validate_mechanic_design(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
 	if rules == null:
@@ -166,8 +163,8 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
 	if level.color_goal != null:
 		validate_combination_shape(level, errors)
-	if level.boss == Level.GREAT_EXCHANGE and not is_great_exchange(level.start, level.goal):
-		errors.append("a great exchange needs 4 pegs, a stack on each end peg, the middle empty, and the stacks swapped as the goal")
+	if level.mechanic() == Difficulty.COLOR_SWAP:
+		validate_color_swap_shape(level, errors)
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
 	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).
@@ -184,15 +181,44 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
 
 
-## Caravan road addendum 2: 4 pegs, a stack on each end peg, nothing in the
-## middle, and the goal is the same position with the two stacks swapped.
-static func is_great_exchange(start: PuzzleState, goal: PuzzleState) -> bool:
-	if start.get_peg_count() != 4 or goal.get_peg_count() != 4:
-		return false
-	var s: Array[Array] = start.pegs
-	var g: Array[Array] = goal.pegs
-	return not s[0].is_empty() and not s[3].is_empty() and s[1].is_empty() and s[2].is_empty() \
-			and g[0] == s[3] and g[3] == s[0] and g[1].is_empty() and g[2].is_empty()
+## "Böyük Mübadilə" v2 (ColorSwapRule alone, at least two empty pegs between
+## the ends): each end peg starts with one disk of every size k..1, the two
+## disks of a size on opposite ends, the pegs between empty; the goal is every
+## black disk on the left end and every white one on the right. The pure kind
+## (no colour rule) starts all white on the left: the stacks swap. The mixed
+## kind starts with both ends mixed and the largest pair on the wrong ends.
+static func validate_color_swap_shape(level: Level, errors: Array[String]) -> void:
+	var rules: RuleSet = level.get_rule_set()
+	if level.rule_ids.size() != 1 or level.get_disk_count() % 2 != 0 or level.get_peg_count() < 4:
+		errors.append("a great exchange has the %s rule alone, k disks of each colour and at least 2 empty pegs between the ends" % ColorSwapRule.ID)
+		return
+	var colour_bound: bool = (rules.active_rules[0] as ColorSwapRule).colour_bound
+	var k: int = level.get_disk_count() / 2
+	var last: int = level.get_peg_count() - 1
+	var black: Array = []
+	var white: Array = []
+	for size: int in range(k, 0, -1):
+		black.append(ColorSwapRule.disk_of(size, false))
+		white.append(ColorSwapRule.disk_of(size, true))
+	for peg_index: int in range(1, last):
+		if not level.start.pegs[peg_index].is_empty() or not level.goal.pegs[peg_index].is_empty():
+			errors.append("the pegs between the two ends start and end empty")
+			return
+	if level.goal.pegs[0] != black or level.goal.pegs[last] != white:
+		errors.append("the goal is every black disk on the left end and every white one on the right")
+	var left: Array = level.start.pegs[0]
+	var right: Array = level.start.pegs[last]
+	var paired: bool = left.size() == k and right.size() == k
+	for i: int in mini(left.size(), right.size()):
+		paired = paired and ColorSwapRule.size_of(left[i]) == k - i and ColorSwapRule.size_of(right[i]) == k - i \
+				and ColorSwapRule.is_white(left[i]) != ColorSwapRule.is_white(right[i])
+	if not paired:
+		errors.append("each end starts with one disk of every size, the two of a size on opposite ends")
+		return
+	if not colour_bound and left != white:
+		errors.append("the pure kind starts with every white disk on the left")
+	if colour_bound and (left == white or left[0] != white[0]):
+		errors.append("the mixed kind starts with both ends mixed and the largest white disk on the left")
 
 
 ## Loads one level file and checks it on its own: a tier folder holds classic
@@ -244,10 +270,10 @@ static func validate_level(level: Level, errors: Array[String]) -> void:
 ## A combination level's stored solution is its proof: Level.check() already
 ## replayed it to a position that meets the colour goal. Its min_moves is that
 ## solution's length (an example, user decision 2026-10-13); while the board is
-## small enough for a full search (at most COMBINATION_EXACT_DISKS disks) it
-## must also be the shortest.
+## small enough for a full search (at most CombinationSolver.EXACT_DISKS disks)
+## it must also be the shortest.
 static func _validate_combination_solution(level: Level, errors: Array[String]) -> void:
-	if level.get_disk_count() > COMBINATION_EXACT_DISKS:
+	if level.get_disk_count() > CombinationSolver.EXACT_DISKS:
 		return
 	var result: Dictionary = CombinationSolver.search(ColorGoal.letters_of(level.start, level.disk_colors),
 			CombinationSolver.capacity_of(level), level.color_goal, SOLVER_MAX_STATES)
@@ -277,7 +303,7 @@ static func validate_combination_shape(level: Level, errors: Array[String]) -> v
 ## Corrections v2 and v3: a combination level at main path `position` has the
 ## capacity and colours of its stage (Difficulty.COMBINATION_STAGES, capacity
 ## never above Difficulty.COMBINATION_MAX_CAPACITY), the measured E_min empty
-## pegs, a pattern goal only on a small board, and the stage's tier.
+## pegs and the stage's tier.
 static func combination_stage_errors(level: Level, position: int) -> Array[String]:
 	var errors: Array[String] = []
 	var stage: Dictionary = Difficulty.combination_stage(position)
@@ -293,8 +319,6 @@ static func combination_stage_errors(level: Level, position: int) -> Array[Strin
 	if empty != Difficulty.combination_empty(colours, capacity):
 		errors.append("main %d: %d empty pegs, E_min of %dx%d is %d" % [position, empty, colours, capacity,
 				Difficulty.combination_empty(colours, capacity)])
-	if level.color_goal.kind == ColorGoal.PATTERN and not Difficulty.allows_pattern(colours, level.get_peg_count()):
-		errors.append("main %d: a pattern goal on a board of %d colours / %d pegs" % [position, colours, level.get_peg_count()])
 	if level.difficulty != stage["tier"]:
 		errors.append("main %d (%s): difficulty %s, the stage is %s" % [position, stage["name"], level.difficulty, stage["tier"]])
 	return errors

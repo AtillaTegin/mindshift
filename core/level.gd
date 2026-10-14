@@ -8,16 +8,15 @@ extends RefCounted
 const TWO_STAR_FACTOR: float = 1.25
 ## mechanic() of a level with plain Hanoi rules and nothing covered.
 const CLASSIC: String = "classic"
-## `boss` value of a "Böyük Mübadilə" level (caravan road addendum, section 2):
-## two stacks on the end pegs swap places.
-const GREAT_EXCHANGE: String = "great_exchange"
-const BOSSES: Array[String] = [GREAT_EXCHANGE]
+## lesson() of a "Böyük Mübadilə" level of the mixed kind ("Qarışıq-Ayırma":
+## colours may not touch), which a player meets apart from the pure kind.
+const COLOR_SWAP_MIXED: String = "color_swap_mixed"
 ## Top-level keys, in the order they are written.
 const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal", "rules",
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "boss", "disk_colors", "color_goal"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "disk_colors", "color_goal"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -29,8 +28,6 @@ var rule_params: Dictionary = {}
 ## Pegs that start under fog ("covered_pegs", bonus mechanics addendum 2):
 ## only their top disk shows until a move uses the peg. Purely visual.
 var covered_pegs: Array[int] = []
-## A rare "boss" level (`boss`, e.g. GREAT_EXCHANGE), "" for an ordinary one.
-var boss: String = ""
 ## "Birləşmə Tapmacası" levels (CombinationRule): the colour of disk id i is
 ## disk_colors[i - 1] ("disk_colors"); empty for every other level.
 var disk_colors: Array[String] = []
@@ -91,8 +88,12 @@ func get_disk_count() -> int:
 
 
 ## Null if a rule id is unknown or its rule_params do not fit (reason in errors).
+## Rules that judge by colour get the level's disk colours.
 func get_rule_set(errors: Array[String] = []) -> RuleSet:
-	return RuleSet.from_ids(rule_ids, rule_params, errors)
+	var rules: RuleSet = RuleSet.from_ids(rule_ids, rule_params, errors)
+	if rules != null and not disk_colors.is_empty():
+		rules.bind_disk_colours(disk_colors)
+	return rules
 
 
 ## Whether min_moves is only the length of an example solution (a combination
@@ -109,19 +110,26 @@ func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
 	return rules.is_goal_state(state, goal)
 
 
-## What makes the level special: its boss kind, else the first rule beyond
-## classic Hanoi (e.g. "alternation"), "covered_pegs" for karakuri boxes, or
-## CLASSIC. It picks the level's dress and place on the path; it is never shown
-## as a category.
+## What makes the level special: the first rule beyond classic Hanoi (e.g.
+## "alternation"), "covered_pegs" for karakuri boxes, or CLASSIC. It picks the
+## level's dress and chapter on the path; it is never shown as a category.
 func mechanic() -> String:
-	if not boss.is_empty():
-		return boss
 	for rule_id: String in rule_ids:
 		if rule_id != ClassicHanoiRule.ID:
 			return rule_id
 	if not covered_pegs.is_empty():
 		return "covered_pegs"
 	return CLASSIC
+
+
+## What is new to a player on the first level that has it (TutorialDirector):
+## mechanic(), except that the great exchange's two kinds are two lessons (the
+## mixed kind adds the colour rule, COLOR_SWAP_MIXED).
+func lesson() -> String:
+	var kind: String = mechanic()
+	if kind == ColorSwapRule.ID and (rule_params.get(ColorSwapRule.ID, {}) as Dictionary).get("colour", false):
+		return COLOR_SWAP_MIXED
+	return kind
 
 
 func to_dict() -> Dictionary:
@@ -146,8 +154,6 @@ func to_dict() -> Dictionary:
 		data["rule_params"] = rule_params.duplicate(true)
 	if not covered_pegs.is_empty():
 		data["covered_pegs"] = covered_pegs.duplicate()
-	if not boss.is_empty():
-		data["boss"] = boss
 	if not disk_colors.is_empty():
 		data["disk_colors"] = disk_colors.duplicate()
 	if color_goal != null:
@@ -229,11 +235,6 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.covered_pegs.assign(_whole_numbers_as_ints(covered))
 	else:
 		errors.append("\"covered_pegs\" must be an array of peg indices")
-	var boss_kind: Variant = data.get("boss", "")
-	if typeof(boss_kind) == TYPE_STRING and (boss_kind == "" or BOSSES.has(boss_kind)):
-		level.boss = boss_kind
-	else:
-		errors.append("\"boss\" must be one of %s" % str(BOSSES))
 	var colours: Variant = data.get("disk_colors", [])
 	if typeof(colours) == TYPE_ARRAY and colours.all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING):
 		level.disk_colors.assign(colours)

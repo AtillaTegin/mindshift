@@ -3,8 +3,7 @@ extends PolishedButton
 ## One round stop on the level map: its number with the earned stars under it
 ## (none before the level is played), or a padlock when locked. The next level
 ## to play is filled with the accent colour; a level with a special mechanic
-## wears a ring in its dress colour; a boss (the great exchange) is larger and
-## wears a second, golden ring.
+## wears a ring in its dress colour.
 
 var level_index: int = 0
 var stars: int = 0
@@ -14,11 +13,6 @@ var current: bool = false:
 	set(value):
 		current = value
 		theme_type_variation = &"MapStopCurrent" if current else &"MapStop"
-		queue_redraw()
-## A boss level: drawn with a golden double ring.
-var boss: bool = false:
-	set(value):
-		boss = value
 		queue_redraw()
 ## Visual dress (ThemeManager.SKINS), "" for a classic level.
 var skin: String = "":
@@ -43,10 +37,6 @@ func setup(p_level_index: int, p_stars: int, p_locked: bool) -> void:
 func _draw() -> void:
 	if not skin.is_empty():
 		draw_arc(size * 0.5, size.x * 0.5 - 4.0, 0.0, TAU, 48, ThemeManager.skin_color(skin, "mark"), 8.0, true)
-	if boss:
-		var gold: Color = ThemeManager.icon_color("chest_band")
-		draw_arc(size * 0.5, size.x * 0.5 - 13.0, 0.0, TAU, 48, gold, 4.0, true)
-		draw_arc(size * 0.5, size.x * 0.5 + 6.0, 0.0, TAU, 48, gold, 4.0, true)
 	if locked:
 		_draw_padlock(size * Vector2(0.5, 0.5), size.y * 0.16)
 		return
