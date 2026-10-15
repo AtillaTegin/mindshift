@@ -178,6 +178,71 @@ const SWAP_MAX_MOVES: int = 33
 const RETIRED_COMBO_IDS: int = 30
 const SWAP_ID_BLOCK: int = 40
 
+## Pilot levels of the new mechanics (new mechanics specification v1, sections
+## 1-6, 8 and 9; 3-4 each, user decision 2026-10-15: on the main road, in the
+## slots the archived combination puzzles left). Every one is classic Hanoi
+## plus its mechanic's rule, between a random start and a random goal (half of
+## them a full tower), and the rule must make it longer than plain Hanoi; the
+## longest candidate in range wins (ties: first found). Sizes come from
+## measuring random boards (2026-10-15):
+## - peg_capacity: on 3 pegs a capacity never changes a solution (moving the
+##   largest disk needs all the others on the third peg anyway), so 4 pegs.
+## - foundation: `locked` largest disks, `keys` smallest ones whose goal pegs
+##   open the lock (FoundationRule; targets taken from the goal).
+## - balance: start and goal are drawn from every position within the
+##   tolerance (random boards are almost never balanced).
+## - stripes: random alternating positions (a tower alternates anyway).
+## - chain: 4 pegs (on 3 the pair is nearly always stuck); the solution must
+##   use the compound move.
+## - mirror: `boards` [first, second] disks on two 3-peg boards.
+## - trail: the disk may not return to either of the last two pegs it stood
+##   on ("recent": 2). With its whole history (the specification's own words)
+##   the rule changed 0-6 of 100 random boards, and only slightly; it either
+##   allowed the classic solution or left none. The specification left that
+##   choice to the builder (section 3: "son N qülləni xatırla"). 3 pegs only:
+##   on 4 pegs the remembered pegs multiply the positions (a 4 peg / 6 disk
+##   search ran for minutes).
+const PILOT_SPECS: Array[Dictionary] = [
+	{"file": "capacity_01.json", "mechanic": "peg_capacity", "pegs": 4, "disks": 5, "min": 7, "max": 11,
+			"params": {"capacities": [5, 2, 2, 5]}, "attempts": 6000},
+	{"file": "capacity_02.json", "mechanic": "peg_capacity", "pegs": 4, "disks": 6, "min": 13, "max": 17,
+			"params": {"capacities": [6, 2, 3, 6]}},
+	{"file": "capacity_03.json", "mechanic": "peg_capacity", "pegs": 4, "disks": 7, "min": 18, "max": 24,
+			"params": {"capacities": [7, 3, 2, 7]}},
+	{"file": "capacity_04.json", "mechanic": "peg_capacity", "pegs": 4, "disks": 7, "min": 24, "max": 30,
+			"params": {"capacities": [7, 2, 2, 7]}},
+	{"file": "foundation_01.json", "mechanic": "foundation", "pegs": 3, "disks": 4, "min": 8, "max": 11, "locked": 1, "keys": 2},
+	{"file": "foundation_02.json", "mechanic": "foundation", "pegs": 3, "disks": 5, "min": 16, "max": 20, "locked": 1, "keys": 2},
+	{"file": "foundation_03.json", "mechanic": "foundation", "pegs": 4, "disks": 6, "min": 17, "max": 21, "locked": 2, "keys": 3},
+	{"file": "foundation_04.json", "mechanic": "foundation", "pegs": 4, "disks": 7, "min": 21, "max": 26, "locked": 2, "keys": 3},
+	{"file": "balance_01.json", "mechanic": "balance", "pegs": 4, "disks": 5, "min": 12, "max": 16, "params": {"tolerance": 6}},
+	{"file": "balance_02.json", "mechanic": "balance", "pegs": 4, "disks": 6, "min": 14, "max": 20, "params": {"tolerance": 7}},
+	{"file": "balance_03.json", "mechanic": "balance", "pegs": 4, "disks": 6, "min": 16, "max": 24, "params": {"tolerance": 6}},
+	{"file": "balance_04.json", "mechanic": "balance", "pegs": 4, "disks": 7, "min": 20, "max": 30, "params": {"tolerance": 7}},
+	{"file": "cyclic_01.json", "mechanic": "cyclic", "pegs": 3, "disks": 3, "min": 8, "max": 11},
+	{"file": "cyclic_02.json", "mechanic": "cyclic", "pegs": 3, "disks": 4, "min": 15, "max": 20},
+	{"file": "cyclic_03.json", "mechanic": "cyclic", "pegs": 4, "disks": 4, "min": 18, "max": 24},
+	{"file": "cyclic_04.json", "mechanic": "cyclic", "pegs": 4, "disks": 5, "min": 26, "max": 33},
+	{"file": "stripes_01.json", "mechanic": "stripes", "pegs": 4, "disks": 5, "min": 7, "max": 11, "attempts": 4000},
+	{"file": "stripes_02.json", "mechanic": "stripes", "pegs": 4, "disks": 6, "min": 13, "max": 16, "attempts": 4000},
+	{"file": "stripes_03.json", "mechanic": "stripes", "pegs": 4, "disks": 7, "min": 17, "max": 22, "attempts": 4000},
+	{"file": "stripes_04.json", "mechanic": "stripes", "pegs": 3, "disks": 5, "min": 28, "max": 33, "attempts": 4000},
+	{"file": "chain_01.json", "mechanic": "chain", "pegs": 4, "disks": 5, "min": 12, "max": 14, "params": {"disks": [2, 4]}},
+	{"file": "chain_02.json", "mechanic": "chain", "pegs": 4, "disks": 6, "min": 14, "max": 18, "params": {"disks": [2, 5]}},
+	{"file": "chain_03.json", "mechanic": "chain", "pegs": 4, "disks": 6, "min": 17, "max": 22, "params": {"disks": [1, 4]}},
+	{"file": "chain_04.json", "mechanic": "chain", "pegs": 4, "disks": 7, "min": 20, "max": 26, "params": {"disks": [3, 6]}},
+	{"file": "mirror_01.json", "mechanic": "mirror", "pegs": 6, "boards": [3, 3], "min": 12, "max": 14},
+	{"file": "mirror_02.json", "mechanic": "mirror", "pegs": 6, "boards": [3, 4], "min": 16, "max": 21},
+	{"file": "mirror_03.json", "mechanic": "mirror", "pegs": 6, "boards": [4, 4], "min": 22, "max": 27},
+	{"file": "mirror_04.json", "mechanic": "mirror", "pegs": 6, "boards": [4, 5], "min": 28, "max": 33},
+	{"file": "trail_01.json", "mechanic": "trail", "pegs": 3, "disks": 4, "min": 12, "max": 16, "params": {"disk": 1, "recent": 2}},
+	{"file": "trail_02.json", "mechanic": "trail", "pegs": 3, "disks": 5, "min": 17, "max": 22, "params": {"disk": 1, "recent": 2}},
+	{"file": "trail_03.json", "mechanic": "trail", "pegs": 3, "disks": 5, "min": 20, "max": 26, "params": {"disk": 2, "recent": 2}},
+	{"file": "trail_04.json", "mechanic": "trail", "pegs": 3, "disks": 6, "min": 26, "max": 33, "params": {"disk": 1, "recent": 2}},
+]
+## Balanced positions by "pegs/disks/tolerance" (read once per run).
+static var _balanced: Dictionary = {}
+
 
 func _initialize() -> void:
 	quit(0 if _run() else 1)
@@ -225,8 +290,152 @@ func _run() -> bool:
 		if not only.ends_with(".json"):
 			_remove_extra_swaps(swaps.size())
 	next_id += SWAP_ID_BLOCK
+	for i: int in PILOT_SPECS.size():
+		var spec: Dictionary = PILOT_SPECS[i]
+		if _selected(only, spec["file"]):
+			ok = _write(build_pilot(spec, next_id, BASE_SEED + 500 + i), spec) and ok
+		next_id += 1
+		built += 1
 	print("mechanics: %s" % ("%d levels" % built if only.is_empty() else only))
 	return ok
+
+
+## A pilot level of a new mechanic (PILOT_SPECS): classic Hanoi plus the
+## mechanic's rule, longer than plain Hanoi; the longest candidate in range
+## wins (ties: first found).
+static func build_pilot(spec: Dictionary, id: int, seed_value: int) -> Level:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var mechanic: String = spec["mechanic"]
+	var rule_ids: Array[String] = ["classic_hanoi", mechanic]
+	var best: Dictionary = {}
+	for attempt: int in spec.get("attempts", MAX_ATTEMPTS / 4):
+		var pair: Array[PuzzleState] = _pilot_pair(spec, rng)
+		var start: PuzzleState = pair[0]
+		var goal: PuzzleState = pair[1]
+		if goal.equals(start) or classic_pairs().has(LevelValidator.pair_key(start, goal)):
+			continue
+		var params: Dictionary = {}
+		var own: Dictionary = _pilot_params(spec, goal)
+		if not own.is_empty():
+			params[mechanic] = own
+		var rules: RuleSet = RuleSet.from_ids(rule_ids, params)
+		if not rules.is_state_valid(start) or not rules.is_state_valid(goal):
+			continue
+		if rules.uses_memory() and mechanic == FoundationRule.ID and rules.memory_of(start) != 0:
+			continue  # the lock must be closed at the start
+		var result: Dictionary = Solver.solve(start, goal, rules, LevelValidator.SOLVER_MAX_STATES)
+		var moves: int = result["min_moves"]
+		if not result["solvable"] or moves < spec["min"] or moves > spec["max"]:
+			continue
+		if not best.is_empty() and moves <= best["moves"]:
+			continue
+		if Solver.solve(start, goal, RuleSet.classic())["min_moves"] >= moves:
+			continue  # the rule must matter
+		var path: Array[Move] = result["path"]
+		if mechanic == ChainRule.ID and not path.any(func(move: Move) -> bool: return move.is_compound()):
+			continue  # the chain must move
+		best = {"moves": moves, "start": start, "goal": goal, "path": path, "params": params}
+		if moves >= spec["max"]:
+			break  # nothing longer can win
+	if best.is_empty():
+		push_error("No pilot level found for %s" % spec["file"])
+		return null
+	var level: Level = Level.create(id, Difficulty.tier_for_moves(best["moves"]), best["start"], best["goal"], rule_ids,
+			best["path"], best["params"])
+	return level
+
+
+## A start and a goal for a pilot of `spec`: random positions (the goal a full
+## tower half of the time), or as the mechanic needs them.
+static func _pilot_pair(spec: Dictionary, rng: RandomNumberGenerator) -> Array[PuzzleState]:
+	var pegs: int = spec["pegs"]
+	match spec["mechanic"]:
+		BalanceRule.ID:
+			var positions: Array = _balanced_positions(pegs, spec["disks"], spec["params"]["tolerance"])
+			return [positions[rng.randi_range(0, positions.size() - 1)], positions[rng.randi_range(0, positions.size() - 1)]]
+		StripesRule.ID:
+			var goal: PuzzleState = LevelGenerator.tower_state(pegs, spec["disks"], rng.randi_range(0, pegs - 1)) \
+					if rng.randf() < LevelGenerator.TOWER_GOAL_CHANCE else _striped_state(rng, pegs, spec["disks"])
+			return [_striped_state(rng, pegs, spec["disks"]), goal]
+		MirrorRule.ID:
+			var boards: Array = spec["boards"]
+			var first: Array[PuzzleState] = _random_pair(rng, pegs / 2, boards[0], 0)
+			var second: Array[PuzzleState] = _random_pair(rng, pegs / 2, boards[1], boards[0])
+			return [PuzzleState.new(first[0].pegs + second[0].pegs), PuzzleState.new(first[1].pegs + second[1].pegs)]
+	return _random_pair(rng, pegs, spec["disks"], 0)
+
+
+## A random start and goal of `disks` disks numbered from `offset` + 1.
+static func _random_pair(rng: RandomNumberGenerator, pegs: int, disks: int, offset: int) -> Array[PuzzleState]:
+	var start: PuzzleState = LevelGenerator.random_state(rng, pegs, disks)
+	var goal: PuzzleState = LevelGenerator.tower_state(pegs, disks, rng.randi_range(0, pegs - 1)) \
+			if rng.randf() < LevelGenerator.TOWER_GOAL_CHANCE else LevelGenerator.random_state(rng, pegs, disks)
+	var pair: Array[PuzzleState] = []
+	for state: PuzzleState in [start, goal]:
+		var layout: Array = []
+		for peg: Array in state.pegs:
+			layout.append(peg.map(func(disk: int) -> int: return disk + offset))
+		pair.append(PuzzleState.new(layout))
+	return pair
+
+
+## The rule settings of a pilot: fixed in the spec, or (foundation) the
+## locked and key disks with the keys' goal pegs.
+static func _pilot_params(spec: Dictionary, goal: PuzzleState) -> Dictionary:
+	if spec["mechanic"] != FoundationRule.ID:
+		return spec.get("params", {}).duplicate(true)
+	var disks: int = spec["disks"]
+	var locked: Array = []
+	for i: int in spec["locked"]:
+		locked.append(disks - i)
+	var keys: Array = []
+	var targets: Array = []
+	for disk: int in range(1, spec["keys"] + 1):
+		keys.append(disk)
+		for peg_index: int in goal.pegs.size():
+			if goal.pegs[peg_index].has(disk):
+				targets.append(peg_index)
+	return {"locked": locked, "keys": keys, "targets": targets}
+
+
+## Every position of `disks` disks on `pegs` pegs whose pairs are within
+## `tolerance` (BalanceRule), sorted pegs only.
+static func _balanced_positions(pegs: int, disks: int, tolerance: int) -> Array:
+	var key: String = "%d/%d/%d" % [pegs, disks, tolerance]
+	if not _balanced.has(key):
+		var rule: BalanceRule = BalanceRule.new()
+		rule.configure({"tolerance": tolerance})
+		var found: Array = []
+		for code: int in int(pow(pegs, disks)):
+			var layout: Array = []
+			for i: int in pegs:
+				layout.append([])
+			var rest: int = code
+			for size: int in range(disks, 0, -1):
+				layout[rest % pegs].append(size)
+				rest /= pegs
+			var state: PuzzleState = PuzzleState.new(layout)
+			if rule.is_state_valid(state):
+				found.append(state)
+		_balanced[key] = found
+	return _balanced[key]
+
+
+## A random position whose stacks alternate odd and even sizes (StripesRule):
+## each disk, largest first, goes on a peg that is empty or tops another parity.
+static func _striped_state(rng: RandomNumberGenerator, pegs: int, disks: int) -> PuzzleState:
+	var layout: Array = []
+	for i: int in pegs:
+		layout.append([])
+	for size: int in range(disks, 0, -1):
+		var allowed: Array[int] = []
+		for peg_index: int in pegs:
+			var stack: Array = layout[peg_index]
+			if stack.is_empty() or int(stack[-1]) % 2 != size % 2:
+				allowed.append(peg_index)
+		layout[allowed[rng.randi_range(0, allowed.size() - 1)]].append(size)
+	return PuzzleState.new(layout)
 
 
 ## A Nine Rings level: plain Hanoi plus the alternation rule, between a random

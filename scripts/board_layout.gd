@@ -45,8 +45,10 @@ static func peg_cells(kind: String, peg_count: int, area: Vector2) -> Array[Rect
 			for i: int in peg_count:
 				cells.append(Rect2(Vector2(unit * (i + (i / 2) * PAIR_GAP), 0.0), Vector2(unit, area.y)))
 		CIRCLE:
-			var size: Vector2 = Vector2(area.x * (0.42 if count <= 3 else 0.36 if count == 4 else 0.31),
-					area.y * (0.5 if count <= 4 else 0.42))
+			# Small enough that neighbours never overlap and the middle stays free
+			# for the dial's arrow (circle_center()).
+			var size: Vector2 = Vector2(area.x * (0.4 if count <= 3 else 0.3 if count == 4 else 0.27),
+					area.y * (0.44 if count <= 3 else 0.36 if count == 4 else 0.32))
 			var center: Vector2 = area * 0.5
 			var radius: Vector2 = (area - size) * 0.5
 			for i: int in peg_count:
@@ -57,6 +59,14 @@ static func peg_cells(kind: String, peg_count: int, area: Vector2) -> Array[Rect
 			for i: int in peg_count:
 				cells.append(Rect2(Vector2(size.x * i, 0.0), size))
 	return cells
+
+
+## Where a circle of `cells` leaves room for the dial's arrow: the middle of
+## the area, or with three pegs between the two lower ones.
+static func circle_center(cells: Array[Rect2], area: Vector2) -> Vector2:
+	if cells.size() == 3:
+		return Vector2(area.x * 0.5, cells[1].get_center().y)
+	return area * 0.5
 
 
 ## Whether pegs of this layout stand in more than one line (the disks then get

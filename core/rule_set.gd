@@ -72,6 +72,24 @@ static func create_rule(id: String) -> RuleBase:
 			return AdjacentPegsRule.new()
 		ColorSwapRule.ID:
 			return ColorSwapRule.new()
+		PegCapacityRule.ID:
+			return PegCapacityRule.new()
+		FoundationRule.ID:
+			return FoundationRule.new()
+		BalanceRule.ID:
+			return BalanceRule.new()
+		CyclicRule.ID:
+			return CyclicRule.new()
+		StripesRule.ID:
+			return StripesRule.new()
+		ChainRule.ID:
+			return ChainRule.new()
+		MirrorRule.ID:
+			return MirrorRule.new()
+		TrailRule.ID:
+			return TrailRule.new()
+		MagnetRule.ID:
+			return MagnetRule.new()
 	return null
 
 

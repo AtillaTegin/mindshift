@@ -28,6 +28,9 @@ var skin: String = "":
 ## hold (the rods are drawn for it); set before position_state.
 var layout_kind: String = BoardLayout.ROW
 var stack_room: int = 0
+## Per peg, how many disks its rod is drawn for (unequal capacity); empty: every
+## rod is drawn for stack_room.
+var rod_rooms: Array[int] = []
 ## Covered pegs (bonus mechanics addendum 2): the goal shows the same fog,
 ## lifted together with the board's (reveal_peg), so the goal does not give
 ## the hidden disks away.
@@ -127,10 +130,12 @@ func _draw() -> void:
 	var cells: Array[Rect2] = get_cells()
 	var disk_height: float = _disk_height(cells[0].size.y)
 	var peg_color: Color = ThemeManager.skin_color(skin, "peg")
-	for cell: Rect2 in cells:
+	for peg_index: int in cells.size():
+		var cell: Rect2 = cells[peg_index]
 		var center_x: float = cell.get_center().x
 		var base_top: float = cell.end.y - BASE_HEIGHT
-		draw_rect(Rect2(center_x - 3.0, base_top - disk_height * (stack + 0.5), 6.0, disk_height * (stack + 0.5)), peg_color)
+		var rod: float = disk_height * ((rod_rooms[peg_index] + 0.3) if peg_index < rod_rooms.size() else (stack + 0.5))
+		draw_rect(Rect2(center_x - 3.0, base_top - rod, 6.0, rod), peg_color)
 		draw_rect(Rect2(center_x - cell.size.x * 0.45, base_top, cell.size.x * 0.9, BASE_HEIGHT), peg_color)
 	var font: Font = get_theme_default_font()
 	var text_color: Color = ThemeManager.color("text_on_disk")

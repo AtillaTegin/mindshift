@@ -194,6 +194,11 @@ func _reveal_tops() -> void:
 			_hidden[peg_index] = maxi(state.pegs[peg_index].size() - 1, 0)
 
 
+## The position before the last move, or null at the start.
+func previous_state() -> PuzzleState:
+	return _previous_states[-1] if not _previous_states.is_empty() else null
+
+
 func can_undo() -> bool:
 	return not history.is_empty() and not is_solved()
 

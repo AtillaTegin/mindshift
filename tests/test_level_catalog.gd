@@ -41,7 +41,7 @@ func test_every_level_is_on_the_path_once() -> void:
 	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
 		if file_name.ends_with(".json"):
 			mechanic_files += 1
-	assert_eq(mechanic_files, 106, "22 Nine Rings, 24 karakuri, 30 caravan road and 30 great exchange levels")
+	assert_eq(mechanic_files, 138, "22 Nine Rings, 24 karakuri, 30 caravan road, 30 great exchange and 32 pilot levels")
 	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
@@ -138,8 +138,9 @@ func test_classic_and_mechanic_levels_take_turns_after_50() -> void:
 			continue
 		last[mechanic] = position
 		tail += 1 if position > PathBuilder.MIX_UNTIL else 0
-	# Since the great exchange became a 30-level chapter (v2 addendum) the end of
-	# the road is only a little thinner than the 1:1 middle (0.48 of its slots).
+	# Since the great exchange became a 30-level chapter (v2 addendum) and the
+	# pilots joined, the end of the road is only a little thinner than the 1:1
+	# middle (0.46 of its slots).
 	var share: float = float(tail) / (main_length - PathBuilder.MIX_UNTIL)
 	assert_true(share > 0.15 and share < PathBuilder.MIX_SHARE, "the end of the road has fewer but some (%.2f)" % share)
 	for mechanic: String in PathBuilder.CHAPTER_STARTS:

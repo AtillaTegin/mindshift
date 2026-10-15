@@ -71,6 +71,8 @@ var _fogs: Dictionary[int, PegFog] = {}
 var _fog_layer: Control
 ## Dress of a level with a special mechanic, behind the pegs.
 var _board_skin: BoardSkin
+## A mechanic's marks over the disks (a chain, locks), above them.
+var _marks: BoardMarks
 ## Coins of a chest that are still flying to the counter (shown once they land).
 var _coins_in_flight: int = 0
 ## The level's looks (BoardDress), kept for the layout: disk palette, peg
@@ -144,6 +146,10 @@ func _ready() -> void:
 	_fog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fog_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_board.add_child(_fog_layer)
+	_marks = BoardMarks.new()
+	_marks.name = "BoardMarks"
+	_marks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_board.add_child(_marks)
 	_popup = POPUP_SCENE.instantiate()
 	_popup.visible = false
 	_popup.next_requested.connect(play_next_level)
@@ -197,6 +203,7 @@ func start_level(level: Level) -> void:
 	_goal_preview.skin = _board_skin.skin
 	_goal_preview.layout_kind = BoardDress.layout_kind(level)
 	_goal_preview.stack_room = BoardDress.stack_room(level)
+	_goal_preview.rod_rooms = BoardDress.rod_rooms(level)
 	_goal_preview.disk_palette = _palette
 	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
@@ -225,13 +232,13 @@ func restart() -> void:
 
 
 ## A goal the preview alone does not tell is said in words before the first
-## move, on every attempt (BoardDress.goal_words; e.g. a great exchange is a
+## move, on every attempt (BoardDress.goal_text; e.g. a great exchange is a
 ## swap or a sorting of the two colours, not one tower). The caller refreshes.
 func _show_goal_words() -> void:
-	var words: String = BoardDress.goal_words(session.level)
+	var words: String = BoardDress.goal_text(session.level)
 	if words.is_empty():
 		return
-	_message = tr(words)
+	_message = words
 	_message_soft = true
 
 
@@ -340,8 +347,13 @@ func on_peg_pressed(peg_index: int) -> void:
 			illegal_move.emit(target_move, reason)
 		GameSession.TapResult.TARGETED:
 			# The partner's target comes next (a coach follows the selection).
+			show_message(tr("CHAIN_SECOND_TARGET"), true)
 			selection_changed.emit(session.selected_peg)
 		GameSession.TapResult.MOVED:
+			# A mechanic's progress note (e.g. the foundation's keys in place).
+			var note: String = BoardDress.progress_text(session)
+			if not note.is_empty() and not session.is_solved():
+				show_message(note, true)
 			position_changed.emit()
 			if session.is_solved():
 				_on_solved()
@@ -469,6 +481,7 @@ func _build_views() -> void:
 	var disk_count: int = session.state.get_disk_count()
 	var palette: Dictionary = BoardDress.disk_palette(session.level)
 	_palette = palette
+	_marks.disk_views = _disk_views
 	_layout_kind = BoardDress.layout_kind(session.level)
 	_stack = BoardDress.stack_room(session.level)
 	_rod_rooms = BoardDress.rod_rooms(session.level)
@@ -506,6 +519,8 @@ func _refresh(animated: bool) -> void:
 		_status_label.theme_type_variation = &"SecondaryLabel" if _message_soft else &"DangerLabel"
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
+	_board_skin.marks = BoardDress.skin_marks(session)
+	_marks.marks = BoardDress.overlay_marks(session)
 	_update_rings()
 	_update_buttons()
 	_layout(animated)

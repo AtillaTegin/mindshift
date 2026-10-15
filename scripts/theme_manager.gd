@@ -105,6 +105,47 @@ const SKINS: Dictionary = {
 		LIGHT: {"board": Color("f5e6c4"), "pattern": Color("e0c58e"), "peg": Color("8c5b2e"), "mark": Color("c27a2e")},
 		DARK: {"board": Color("30271a"), "pattern": Color("4f3f25"), "peg": Color("c49255"), "mark": Color("db923f")},
 	},
+	# Unequal capacity: sandstone and gold, temple towers of the Brahma legend.
+	"temple": {
+		LIGHT: {"board": Color("f3e3cf"), "pattern": Color("e2c9a8"), "peg": Color("9a6a3c"), "mark": Color("c9962a")},
+		DARK: {"board": Color("2f2418"), "pattern": Color("4a3826"), "peg": Color("c08a52"), "mark": Color("e0b040")},
+	},
+	# Foundation stone: cool grey ashlar, a temple being built from its base.
+	"stone": {
+		LIGHT: {"board": Color("e6e6e2"), "pattern": Color("cdccc5"), "peg": Color("6b6a66"), "mark": Color("8a7a5a")},
+		DARK: {"board": Color("24252a"), "pattern": Color("3a3c43"), "peg": Color("9a9890"), "mark": Color("b8a578")},
+	},
+	# The ancient scale: brass beams on a market stall, after the Silk Road
+	# merchants (the caravan road's sequel).
+	"scales": {
+		LIGHT: {"board": Color("f4e9d2"), "pattern": Color("e4cfa4"), "peg": Color("7d5a2c"), "mark": Color("b0832e")},
+		DARK: {"board": Color("2d2619"), "pattern": Color("4a3d26"), "peg": Color("c29a58"), "mark": Color("d9a845")},
+	},
+	# The clock tower: a night-blue zodiac dial.
+	"zodiac": {
+		LIGHT: {"board": Color("e3e7f5"), "pattern": Color("c5cde8"), "peg": Color("4c5a8c"), "mark": Color("6a5acd")},
+		DARK: {"board": Color("171b30"), "pattern": Color("2a3152"), "peg": Color("8291c8"), "mark": Color("a596ff")},
+	},
+	# The striped tower: soft barber-pole stripes.
+	"stripes": {
+		LIGHT: {"board": Color("f7eeee"), "pattern": Color("ecd6d6"), "peg": Color("8a4a4a"), "mark": Color("c04848")},
+		DARK: {"board": Color("2a1d1f"), "pattern": Color("432c30"), "peg": Color("c07a7a"), "mark": Color("e06464")},
+	},
+	# The chain: plain steel with a row of links.
+	"chain": {
+		LIGHT: {"board": Color("e8eaee"), "pattern": Color("d0d4dc"), "peg": Color("5e6675"), "mark": Color("b08a2a")},
+		DARK: {"board": Color("1f2228"), "pattern": Color("343a45"), "peg": Color("9aa3b4"), "mark": Color("d8ad40")},
+	},
+	# The twin temples: white marble with a mirror line between the two boards.
+	"mirror": {
+		LIGHT: {"board": Color("eef1f2"), "pattern": Color("d6dde0"), "peg": Color("5f7480"), "mark": Color("4f9fb0")},
+		DARK: {"board": Color("1c2327"), "pattern": Color("2f3b41"), "peg": Color("8fa8b4"), "mark": Color("6cc4d6")},
+	},
+	# The sandy path: the caravan road's sand, with footprints.
+	"trail": {
+		LIGHT: {"board": Color("f6e8c8"), "pattern": Color("e6cf98"), "peg": Color("8c5b2e"), "mark": Color("b07030")},
+		DARK: {"board": Color("2f2719"), "pattern": Color("4d3e24"), "peg": Color("c49255"), "mark": Color("d8903c")},
+	},
 }
 ## The two caravans of a great exchange: disk fill, number colour and (for the
 ## light one, so it shows on sand) an outline; the same in both modes (they are
@@ -113,9 +154,28 @@ const EXCHANGE_DISKS: Dictionary = {
 	"white": {"fill": Color("faf6ee"), "text": Color("3b3a52"), "outline": Color("3b3a52")},
 	"black": {"fill": Color("3b3a52"), "text": Color("f3ead6")},
 }
+## The two colours of the striped tower (odd and even sizes), after a barber
+## pole; the same in both modes.
+const STRIPE_DISKS: Dictionary = {
+	"odd": {"fill": Color("d64545"), "text": Color("fff6f2"), "outline": Color("a83232")},
+	"even": {"fill": Color("f7f3ea"), "text": Color("33354a"), "outline": Color("33354a")},
+}
+## Board details drawn over the dresses: the lock of a locked disk, a trail
+## footprint, the chain between linked disks (bright when they can move), a
+## scale beam within and at its tolerance; the same in both modes.
+const MARK_COLORS: Dictionary = {
+	"lock": Color("4a4f63"),
+	"lock_shackle": Color("c9a227"),
+	"footprint": Color(0.45, 0.32, 0.18, 0.55),
+	"chain": Color("c9a227"),
+	"chain_faded": Color(0.55, 0.55, 0.6, 0.45),
+	"beam_level": Color("3f9f6b"),
+	"beam_limit": Color("e0a020"),
+}
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
-		"color_swap": "caravan"}
+		"color_swap": "caravan", "peg_capacity": "temple", "foundation": "stone", "balance": "scales",
+		"cyclic": "zodiac", "stripes": "stripes", "chain": "chain", "mirror": "mirror", "trail": "trail"}
 
 var mode: String = LIGHT
 var theme: Theme
@@ -148,6 +208,14 @@ func icon_color(role: String) -> Color:
 		push_error("Unknown icon colour \"%s\"" % role)
 		return Color.MAGENTA
 	return ICON_COLORS[role]
+
+
+## A fixed board-detail colour (MARK_COLORS); the same in light and dark mode.
+func mark_color(role: String) -> Color:
+	if not MARK_COLORS.has(role):
+		push_error("Unknown mark colour \"%s\"" % role)
+		return Color.MAGENTA
+	return MARK_COLORS[role]
 
 
 ## The dress of a level with mechanic `mechanic`, "" for none.

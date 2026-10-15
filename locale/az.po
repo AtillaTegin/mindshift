@@ -211,6 +211,42 @@ msgstr "Eyni ölçülü disklər üst-üstə qoyula bilməz."
 msgid "RULE_COLOUR_TOUCH"
 msgstr "Fərqli rəngli disklər bir-birinə toxuna bilməz."
 
+msgid "RULE_FOUNDATION"
+msgstr "Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar."
+
+msgid "RULE_BALANCE"
+msgstr "Bu gediş tərəzinin tarazlığını pozur."
+
+msgid "RULE_CYCLIC"
+msgstr "Disk yalnız saat əqrəbi istiqamətində qonşu qülləyə gedə bilər."
+
+msgid "RULE_STRIPES"
+msgstr "Eyni rəngli disklər bir-birinin üstünə qoyula bilməz."
+
+msgid "RULE_CHAIN"
+msgstr "Zəncirli disklər yalnız birlikdə gedə bilər: ikisi də üstdə olmalıdır."
+
+msgid "RULE_MIRROR"
+msgstr "Disk öz lövhəsindən o biri lövhəyə keçə bilməz."
+
+msgid "RULE_TRAIL"
+msgstr "İzli disk son iki dayandığı qülləyə qayıda bilməz."
+
+msgid "RULE_MAGNET"
+msgstr "Toxunan üzlər eyni rəngdədir: maqnitlər bir-birini itələyir."
+
+msgid "FOUNDATION_PROGRESS"
+msgstr "Təməl: %d/%d kiçik disk yerindədir"
+
+msgid "FOUNDATION_OPEN"
+msgstr "Təməl qoyuldu: qıfıllar açıldı."
+
+msgid "BALANCE_LIMIT"
+msgstr "Tərəzinin iki gözü arasında fərq ən çox %d ola bilər."
+
+msgid "CHAIN_SECOND_TARGET"
+msgstr "İndi zəncirin o biri diskinin qülləsini seç."
+
 msgid "RULE_ALTERNATION"
 msgstr "İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər."
 
@@ -231,6 +267,30 @@ msgstr "Böyük Mübadilə: ağ və qara karvan yerini dəyişir. Böyük disk k
 
 msgid "INTRO_COLOR_SWAP_MIXED"
 msgstr "Qarışıq karvan: qaralar sol uca, ağlar sağ uca. Fərqli rəngli disklər bir-birinə toxuna bilməz, böyük disk kiçiyin üstünə qoyulmur."
+
+msgid "INTRO_PEG_CAPACITY"
+msgstr "Məbəd qüllələri: hər qüllənin öz hündürlüyü var. Qısa qüllə az disk tutur, dolu qülləyə disk qoyulmur."
+
+msgid "INTRO_FOUNDATION"
+msgstr "Təməl Daşı: qıfıllı böyük disklər əvvəlcə tərpənmir. Kiçik diskləri öz yerinə yığ: təməl qoyulanda qıfıllar açılır."
+
+msgid "INTRO_BALANCE"
+msgstr "Qədim Tərəzi: yanaşı iki qüllə bir tərəzidir. Gözlərdəki disklərin ölçü cəmi həddən çox fərqlənsə, tərəzi pozulur."
+
+msgid "INTRO_CYCLIC"
+msgstr "Saat Qülləsi: disk yalnız saat əqrəbi istiqamətində, qonşu qülləyə gedir. Geri qayıtmaq üçün bütün dairəni dolanmaq lazımdır."
+
+msgid "INTRO_STRIPES"
+msgstr "Zolaqlı Qüllə: tək və cüt ölçülər iki rəngdədir. Eyni rəngli iki disk bir-birinin üstünə qoyulmur."
+
+msgid "INTRO_CHAIN"
+msgstr "Zəncir: iki disk bir-birinə bağlıdır və yalnız birlikdə gedir. Birinə toxun, əvvəl onun, sonra yoldaşının qülləsini seç."
+
+msgid "INTRO_MIRROR"
+msgstr "Güzgü Qoşa Məbəd: iki ayrı lövhə var, ikisi də öz hədəfinə çatmalıdır. Disk öz lövhəsindən çıxmır."
+
+msgid "INTRO_TRAIL"
+msgstr "Qumlu Cığır: izli disk son iki dayandığı qülləyə qayıda bilməz. Qumdakı izlər bağlı yolları göstərir."
 
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"

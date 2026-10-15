@@ -161,6 +161,11 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
 	if level.mechanic() == Difficulty.COLOR_SWAP:
 		validate_color_swap_shape(level, errors)
+	# The foundation's lock must be closed at the start, and a chain must move.
+	if level.mechanic() == FoundationRule.ID and rules.memory_of(level.start) != 0:
+		errors.append("the foundation's keys already stand on their pegs at the start")
+	if level.mechanic() == ChainRule.ID and not level.solution_path.any(func(move: Move) -> bool: return move.is_compound()):
+		errors.append("the chained disks never move in the solution")
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
 	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).

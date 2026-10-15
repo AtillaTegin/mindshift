@@ -64,6 +64,10 @@ func test_every_mechanic_is_introduced_on_its_first_level() -> void:
 			_tap(path[k].from_peg)
 			assert_eq(_board.restricted_peg, path[k].to_peg)
 			_tap(path[k].to_peg)
+			if path[k].is_compound():
+				# A chained pair: the partner's target is shown next.
+				assert_eq(_board.restricted_peg, path[k].to_peg_2, "%s step %d: the partner's peg" % [mechanic, k])
+				_tap(path[k].to_peg_2)
 			assert_eq(session.move_count, k + 1, "%s step %d made" % [mechanic, k])
 		assert_eq(tutorial.mode, TutorialDirector.Mode.FREE, "%s: then free play" % mechanic)
 		assert_eq(_board.restricted_peg, -1)

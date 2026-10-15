@@ -1,0 +1,14 @@
+{
+  "id": 9182,
+  "difficulty": "hard",
+  "pegs": 3,
+  "disks": 5,
+  "start": [[],[3],[5,4,2,1]],
+  "goal": [[5,4],[2],[3,1]],
+  "rules": ["classic_hanoi","trail"],
+  "min_moves": 26,
+  "solution_path": [[1,0],[2,0],[2,1],[0,2],[1,0],[2,0],[2,1],[0,1],[0,2],[1,2],[0,1],[2,0],[2,1],[0,1],[2,0],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[1,0],[2,0],[2,1],[0,2]],
+  "star_thresholds": {"three":26,"two":33},
+  "time_limit_seconds": null,
+  "rule_params": {"trail":{"disk":2,"recent":2}}
+}

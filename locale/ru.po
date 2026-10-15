@@ -277,6 +277,54 @@ msgstr ""
 msgid "RULE_COLOUR_TOUCH"
 msgstr ""
 
+#. [TODO: RU] az: Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar.
+msgid "RULE_FOUNDATION"
+msgstr ""
+
+#. [TODO: RU] az: Bu gediş tərəzinin tarazlığını pozur.
+msgid "RULE_BALANCE"
+msgstr ""
+
+#. [TODO: RU] az: Disk yalnız saat əqrəbi istiqamətində qonşu qülləyə gedə bilər.
+msgid "RULE_CYCLIC"
+msgstr ""
+
+#. [TODO: RU] az: Eyni rəngli disklər bir-birinin üstünə qoyula bilməz.
+msgid "RULE_STRIPES"
+msgstr ""
+
+#. [TODO: RU] az: Zəncirli disklər yalnız birlikdə gedə bilər: ikisi də üstdə olmalıdır.
+msgid "RULE_CHAIN"
+msgstr ""
+
+#. [TODO: RU] az: Disk öz lövhəsindən o biri lövhəyə keçə bilməz.
+msgid "RULE_MIRROR"
+msgstr ""
+
+#. [TODO: RU] az: İzli disk son iki dayandığı qülləyə qayıda bilməz.
+msgid "RULE_TRAIL"
+msgstr ""
+
+#. [TODO: RU] az: Toxunan üzlər eyni rəngdədir: maqnitlər bir-birini itələyir.
+msgid "RULE_MAGNET"
+msgstr ""
+
+#. [TODO: RU] az: Təməl: %d/%d kiçik disk yerindədir
+msgid "FOUNDATION_PROGRESS"
+msgstr ""
+
+#. [TODO: RU] az: Təməl qoyuldu: qıfıllar açıldı.
+msgid "FOUNDATION_OPEN"
+msgstr ""
+
+#. [TODO: RU] az: Tərəzinin iki gözü arasında fərq ən çox %d ola bilər.
+msgid "BALANCE_LIMIT"
+msgstr ""
+
+#. [TODO: RU] az: İndi zəncirin o biri diskinin qülləsini seç.
+msgid "CHAIN_SECOND_TARGET"
+msgstr ""
+
 #. [TODO: RU] az: İndi yalnız 1-ci disk və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. 1-ci diskdən sonra istənilən disk gedə bilər.
 msgid "RULE_ALTERNATION"
 msgstr ""
@@ -303,6 +351,38 @@ msgstr ""
 
 #. [TODO: RU] az: Qarışıq karvan: qaralar sol uca, ağlar sağ uca. Fərqli rəngli disklər bir-birinə toxuna bilməz, böyük disk kiçiyin üstünə qoyulmur.
 msgid "INTRO_COLOR_SWAP_MIXED"
+msgstr ""
+
+#. [TODO: RU] az: Məbəd qüllələri: hər qüllənin öz hündürlüyü var. Qısa qüllə az disk tutur, dolu qülləyə disk qoyulmur.
+msgid "INTRO_PEG_CAPACITY"
+msgstr ""
+
+#. [TODO: RU] az: Təməl Daşı: qıfıllı böyük disklər əvvəlcə tərpənmir. Kiçik diskləri öz yerinə yığ: təməl qoyulanda qıfıllar açılır.
+msgid "INTRO_FOUNDATION"
+msgstr ""
+
+#. [TODO: RU] az: Qədim Tərəzi: yanaşı iki qüllə bir tərəzidir. Gözlərdəki disklərin ölçü cəmi həddən çox fərqlənsə, tərəzi pozulur.
+msgid "INTRO_BALANCE"
+msgstr ""
+
+#. [TODO: RU] az: Saat Qülləsi: disk yalnız saat əqrəbi istiqamətində, qonşu qülləyə gedir. Geri qayıtmaq üçün bütün dairəni dolanmaq lazımdır.
+msgid "INTRO_CYCLIC"
+msgstr ""
+
+#. [TODO: RU] az: Zolaqlı Qüllə: tək və cüt ölçülər iki rəngdədir. Eyni rəngli iki disk bir-birinin üstünə qoyulmur.
+msgid "INTRO_STRIPES"
+msgstr ""
+
+#. [TODO: RU] az: Zəncir: iki disk bir-birinə bağlıdır və yalnız birlikdə gedir. Birinə toxun, əvvəl onun, sonra yoldaşının qülləsini seç.
+msgid "INTRO_CHAIN"
+msgstr ""
+
+#. [TODO: RU] az: Güzgü Qoşa Məbəd: iki ayrı lövhə var, ikisi də öz hədəfinə çatmalıdır. Disk öz lövhəsindən çıxmır.
+msgid "INTRO_MIRROR"
+msgstr ""
+
+#. [TODO: RU] az: Qumlu Cığır: izli disk son iki dayandığı qülləyə qayıda bilməz. Qumdakı izlər bağlı yolları göstərir.
+msgid "INTRO_TRAIL"
 msgstr ""
 
 #. [TODO: RU] az: Səviyyə tamamlandı!

@@ -32,6 +32,14 @@ const INTRO_TEXTS: Dictionary = {
 	"adjacent_pegs": "INTRO_ADJACENT_PEGS",
 	"color_swap": "INTRO_COLOR_SWAP",
 	"color_swap_mixed": "INTRO_COLOR_SWAP_MIXED",
+	"peg_capacity": "INTRO_PEG_CAPACITY",
+	"foundation": "INTRO_FOUNDATION",
+	"balance": "INTRO_BALANCE",
+	"cyclic": "INTRO_CYCLIC",
+	"stripes": "INTRO_STRIPES",
+	"chain": "INTRO_CHAIN",
+	"mirror": "INTRO_MIRROR",
+	"trail": "INTRO_TRAIL",
 }
 const INTRO_STEPS: int = 3
 const INTRO_SECONDS: float = 5.0
@@ -116,7 +124,9 @@ func _on_position_changed() -> void:
 func _on_selection_changed(peg_index: int) -> void:
 	if mode == Mode.GUIDED and step_move != null and peg_index == step_move.from_peg:
 		MoveCoach.present(_coaching, _board, step_move, true)
-		_board.restricted_peg = step_move.to_peg
+		# A compound move: once the first target is chosen, the partner's is next.
+		var second: bool = step_move.is_compound() and _board.session.pending_target != -1
+		_board.restricted_peg = step_move.to_peg_2 if second else step_move.to_peg
 
 
 func _on_illegal_move(_move: Move, message: String) -> void:

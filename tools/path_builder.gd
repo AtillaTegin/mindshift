@@ -37,7 +37,12 @@ const BRANCH_AFTER: int = 50
 ## No easy level after this main path position (v4 section 1).
 const EASY_UNTIL: int = 50
 ## First slot of each chapter (user requests 2026-10-12 and 2026-10-13).
-const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "color_swap": 40}
+## The new mechanics' pilot chapters (specification v1, user decision
+## 2026-10-15: in the slots the combination puzzles left) start between them:
+## those before EASY_UNTIL open with an easy pilot, the others with a medium one.
+const CHAPTER_STARTS: Dictionary = {"covered_pegs": 12, "adjacent_pegs": 17, "alternation": 20, "peg_capacity": 25,
+		"foundation": 30, "cyclic": 35, "color_swap": 40, "stripes": 45, "balance": 55, "chain": 65, "mirror": 75,
+		"trail": 85}
 ## The about 1:1 mix of classic and mechanic levels (v4 section 3).
 const MIX_FROM: int = 51
 const MIX_UNTIL: int = 200
