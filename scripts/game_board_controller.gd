@@ -97,6 +97,7 @@ var _cells: Array[Rect2] = []
 ## specification v1, section 2; texts from ModeTexts).
 @onready var _rule_name: Label = %RuleName
 @onready var _rule_text: Label = %RuleText
+@onready var _variant_text: Label = %VariantText
 @onready var _goal_preview: BoardPreview = %GoalPreview
 @onready var _board: Control = %Board
 @onready var _peg_layer: Control = %PegLayer
@@ -219,6 +220,9 @@ func start_level(level: Level) -> void:
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
 	_rule_name.text = ModeTexts.name_of(level)
 	_rule_text.text = ModeTexts.rule_of(level)
+	# The sub-elements' rules under the mode's (chapter waves v1).
+	_variant_text.text = ModeTexts.variants_of(level)
+	_variant_text.visible = not _variant_text.text.is_empty()
 	_show_goal_words()
 	_refresh(false)
 	level_started.emit()
@@ -349,7 +353,7 @@ func on_peg_pressed(peg_index: int) -> void:
 	match result:
 		GameSession.TapResult.ILLEGAL:
 			_peg_views[peg_index].flash_invalid()
-			var reason: String = tr(session.rules.get_violation_message(session.state, target_move))
+			var reason: String = tr(BoardDress.refusal_key(session.level, session.rules.get_violation_message(session.state, target_move)))
 			# Some mechanics say which condition the move broke (e.g. the great
 			# exchange v2: never a silent refusal); soft, nothing is punished.
 			if BoardDress.says_why(session.level):
@@ -369,7 +373,7 @@ func on_peg_pressed(peg_index: int) -> void:
 				_on_solved()
 		GameSession.TapResult.BLOCKED:
 			_disk_views[session.state.get_top_disk(peg_index)].wobble()
-			var message: String = tr(session.rules.get_pick_up_violation_message(session.state, peg_index))
+			var message: String = tr(BoardDress.refusal_key(session.level, session.rules.get_pick_up_violation_message(session.state, peg_index)))
 			# A held-back disk is no mistake to scold (cultural addendum 1: no punishment).
 			show_message(message, true)
 			pick_up_refused.emit(peg_index, message)
@@ -515,6 +519,7 @@ func _build_views() -> void:
 				disk.label = palette[disk_size].get("label", 0)
 			disk.ring_color = ThemeManager.skin_color(_board_skin.skin, "mark") if not _board_skin.skin.is_empty() \
 					else ThemeManager.color("accent")
+			disk.glass = session.level.glass_disks.has(disk_size)
 			_disk_layer.add_child(disk)
 			_disk_views[disk_size] = disk
 
@@ -558,6 +563,7 @@ func _layout(animated: bool) -> void:
 	var rod_top: float = base_top - disk_height * (_stack + 0.6)
 	var lifted_y: float = rod_top - disk_height * 1.5
 	_peg_areas.clear()
+	var rods: Array[Rect2] = []
 	for peg: PegView in _peg_views:
 		var cell: Rect2 = _cells[peg.peg_index]
 		var column: float = cell.size.x
@@ -570,6 +576,9 @@ func _layout(animated: bool) -> void:
 		peg.configure(base_top, base_height, own_top, maxf(column * 0.05, 6.0), column * 0.96)
 		_peg_areas.append(Rect2(cell.position.x + column * 0.02, cell.position.y + lifted_y,
 				column * 0.96, base_top + base_height - lifted_y))
+		rods.append(Rect2(cell.position.x + column * 0.02, cell.position.y + own_top, column * 0.96,
+				base_top + base_height - own_top))
+	_marks.peg_rects = rods
 	_board_skin.set_cells(_cells, base_top + base_height)
 	# The picked-up disks hover above their pegs (a linked pair both); once its
 	# first target is chosen, the tapped disk hovers above that peg instead.
@@ -605,6 +614,10 @@ func _sync_fogs(disk_height: float, base_top: float, bottom: float, rod_top: flo
 	for peg_index: int in _fogs:
 		var fog: PegFog = _fogs[peg_index]
 		var closed: bool = session.is_covered(peg_index)
+		# A count board's lid tells how many disks the box hides; a seal stays
+		# on the lid until it breaks.
+		fog.count = session.hidden_count(peg_index) if session.level.variants.has("count_board") else -1
+		fog.sealed = session.is_sealed(peg_index)
 		if not closed and _goal_preview.covered_pegs.has(peg_index):
 			_goal_preview.reveal_peg(peg_index)
 		var hidden: int = session.hidden_count(peg_index)

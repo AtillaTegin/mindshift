@@ -18,6 +18,24 @@ var skin: String = "":
 		skin = value
 		queue_redraw()
 
+## Karakuri waves (chapter waves v1): the number on the lid, how many disks
+## the box holds ("Say lövhəsi"; -1: no number, a question mark), and a seal
+## on the lid ("Möhürlü qutu").
+var count: int = -1:
+	set(value):
+		count = value
+		queue_redraw()
+var sealed: bool = false:
+	set(value):
+		if sealed and not value and visible:
+			# The seal breaks: a short mechanical "click" of the box.
+			pivot_offset = size * 0.5
+			var click: Tween = create_tween()
+			click.tween_property(self, "scale", Vector2(1.06, 0.94), 0.08)
+			click.tween_property(self, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		sealed = value
+		queue_redraw()
+
 var _resize: Tween
 ## Where the box is (or is sliding to).
 var _target: Rect2 = Rect2()
@@ -90,10 +108,25 @@ func _draw() -> void:
 		draw_circle(center, minf(size.x, size.y) * 0.18, puff, true, -1.0, true)
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(minf(size.x, size.y) * 0.45, 18.0, 48.0))
-	var mark: String = "?"
+	var mark: String = _mark()
 	var text_size: Vector2 = font.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	draw_string(font, Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5),
 			mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ThemeManager.color("text_secondary"))
+	if sealed:
+		_draw_seal(Vector2(size.x * 0.5, size.y - 26.0))
+
+
+## "?" or the count on the lid.
+func _mark() -> String:
+	return str(count) if count >= 0 else "?"
+
+
+## A wax seal: a round disc with a ring pressed in.
+func _draw_seal(center: Vector2) -> void:
+	var wax: Color = ThemeManager.mark_color("seal")
+	draw_circle(center, 15.0, wax, true, -1.0, true)
+	draw_arc(center, 9.0, 0.0, TAU, 20, wax.darkened(0.3), 2.5, true)
+	draw_line(center + Vector2(-5.0, 0.0), center + Vector2(5.0, 0.0), wax.darkened(0.3), 2.5, true)
 
 
 ## A wooden box in the level's dress: grain lines, a darker rim and a clasp
@@ -116,6 +149,9 @@ func _draw_box() -> void:
 	draw_circle(clasp, 18.0, light, true, -1.0, true)
 	var font: Font = get_theme_default_font()
 	var font_size: int = 26
-	var text_size: Vector2 = font.get_string_size("?", HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-	draw_string(font, clasp + Vector2(-text_size.x * 0.5, font.get_ascent(font_size) * 0.38), "?",
+	var mark: String = _mark()
+	var text_size: Vector2 = font.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	draw_string(font, clasp + Vector2(-text_size.x * 0.5, font.get_ascent(font_size) * 0.38), mark,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, wood)
+	if sealed:
+		_draw_seal(Vector2(size.x * 0.5, minf(clasp.y + 46.0, size.y - 20.0)))

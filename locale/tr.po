@@ -309,6 +309,126 @@ msgstr ""
 msgid "FOUNDATION_OPEN"
 msgstr ""
 
+#. [TODO: TR] az: Açar: %d/%d yerindədir
+msgid "LOCK_KEYS"
+msgstr ""
+
+#. [TODO: TR] az: Bir kilid açıldı: azad olan disk növbəti kilidin açarıdır.
+msgid "LOCK_NEXT"
+msgstr ""
+
+#. [TODO: TR] az: Bu disk kilidlidir: əvvəl açar diski açar yerinə apar.
+msgid "RULE_LOCK_KEY"
+msgstr ""
+
+#. [TODO: TR] az: Bu disk tağdan keçmir: tağın rəqəmindən böyükdür.
+msgid "RULE_ARCH"
+msgstr ""
+
+#. [TODO: TR] az: Bu disk deşikdən düşər: boş qülləyə rəqəmdən kiçik disk qoyulmur.
+msgid "RULE_HOLE"
+msgstr ""
+
+#. [TODO: TR] az: Möhürlü qutu: yalnız ən kiçik disk qapağa qoyula bilər, sonra qutu açılır.
+msgid "RULE_SEALED"
+msgstr ""
+
+#. [TODO: TR] az: Möhür qırıldı: qutu açıldı.
+msgid "SEALED_OPEN"
+msgstr ""
+
+#. [TODO: TR] az: Yeni: %s — %s
+msgid "INTRO_VARIANT"
+msgstr ""
+
+#. [TODO: TR] az: Dar keçid
+msgid "VARIANT_NARROW_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bu alçaq qüllə yalnız 1 disk tutur.
+msgid "VARIANT_NARROW_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Tağ
+msgid "VARIANT_ARCH_NAME"
+msgstr ""
+
+#. [TODO: TR] az: tağdan yalnız rəqəmindən böyük olmayan disklər keçir.
+msgid "VARIANT_ARCH_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Deşikli qüllə
+msgid "VARIANT_HOLED_NAME"
+msgstr ""
+
+#. [TODO: TR] az: boş qüllədə yalnız rəqəmindən kiçik olmayan disk dayanır.
+msgid "VARIANT_HOLED_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Say lövhəsi
+msgid "VARIANT_COUNT_BOARD_NAME"
+msgstr ""
+
+#. [TODO: TR] az: hər qutunun qapağında içindəki disklərin sayı yazılıb.
+msgid "VARIANT_COUNT_BOARD_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Şüşə disk
+msgid "VARIANT_GLASS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: qutu bağlı olsa da görünür.
+msgid "VARIANT_GLASS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Boş qutu
+msgid "VARIANT_EMPTY_BOX_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bəzi qutular boşdur, amma eyni görünür.
+msgid "VARIANT_EMPTY_BOX_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Möhürlü qutu
+msgid "VARIANT_SEALED_NAME"
+msgstr ""
+
+#. [TODO: TR] az: ən kiçik diski qapağına qoy, qutu həmişəlik açılsın.
+msgid "VARIANT_SEALED_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Yenidən bağlanan qutu
+msgid "VARIANT_RECLOSING_NAME"
+msgstr ""
+
+#. [TODO: TR] az: açıq qutuya 3 gediş toxunulmasa, yenidən bağlanır.
+msgid "VARIANT_RECLOSING_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Açar disk
+msgid "VARIANT_KEY_DISK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: açar işarəli disk açar yerinə çatanda kilid açılır.
+msgid "VARIANT_KEY_DISK_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ortadakı kilid
+msgid "VARIANT_MIDDLE_LOCK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: kilidli disk yığının ortasındadır: o və altındakılar açılana qədər qalır.
+msgid "VARIANT_MIDDLE_LOCK_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Zəncirvari kilid
+msgid "VARIANT_CHAIN_LOCK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: kilidlər ardıcıl açılır: açılan disk növbəti kilidin açarıdır.
+msgid "VARIANT_CHAIN_LOCK_RULE"
+msgstr ""
+
 #. [TODO: TR] az: İndi zəncirin o biri diskinin qülləsini seç.
 msgid "CHAIN_SECOND_TARGET"
 msgstr ""

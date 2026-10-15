@@ -38,8 +38,17 @@ var clock_started: bool = false
 ## Closed boxes:
 var covered_pegs: Array[int] = []
 
+## Chapter waves v1: a sealed box (SealedBoxRule) never opens on a tap, only
+## once the smallest disk is put on its lid; a "reclosing" level's boxes close
+## again after RECLOSE_AFTER moves that leave them alone (the karakuri
+## island's sub-element).
+const RECLOSE_AFTER: int = 3
+
 ## Opened box peg -> how many disks at its bottom are still hidden.
 var _hidden: Dictionary[int, int] = {}
+## Opened box peg -> move count when a move last used it (reclosing levels).
+var _touched: Dictionary[int, int] = {}
+var _sealed_rule: SealedBoxRule
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
 ## _path_key of each position along level.solution_path -> index of the next
@@ -50,6 +59,9 @@ var _path_index: Dictionary[String, int] = {}
 func _init(p_level: Level) -> void:
 	level = p_level
 	rules = level.get_rule_set()
+	for rule: RuleBase in rules.active_rules:
+		if rule is SealedBoxRule:
+			_sealed_rule = rule
 	var position: PuzzleState = level.start
 	for i: int in level.solution_path.size():
 		_path_index[_path_key(position)] = i
@@ -71,6 +83,7 @@ func restart() -> void:
 	clock_started = false
 	covered_pegs = level.covered_pegs.duplicate()
 	_hidden.clear()
+	_touched.clear()
 
 
 func is_solved() -> bool:
@@ -160,7 +173,10 @@ func try_move(move: Move) -> bool:
 	selected_peg = -1
 	pending_target = -1
 	clock_started = true
+	# The smallest disk on a sealed lid breaks the seal: the box opens.
+	open_box(move.to_peg)
 	_reveal_tops()
+	_reclose(move)
 	return true
 
 
@@ -178,13 +194,34 @@ func hidden_count(peg_index: int) -> int:
 
 
 ## Opens the closed box on `peg_index`: its top disk shows. False if it was no
-## closed box.
+## closed box, or a sealed one.
 func open_box(peg_index: int) -> bool:
-	if not is_covered(peg_index):
+	if not is_covered(peg_index) or is_sealed(peg_index):
 		return false
 	covered_pegs.erase(peg_index)
 	_hidden[peg_index] = maxi(state.pegs[peg_index].size() - 1, 0)
+	_touched[peg_index] = move_count
 	return true
+
+
+## Whether `peg_index` is a box still under its seal (SealedBoxRule).
+func is_sealed(peg_index: int) -> bool:
+	return _sealed_rule != null and _sealed_rule.is_sealed(rules.memory_of(state), peg_index)
+
+
+## A reclosing level: each opened box that `move` left alone for
+## RECLOSE_AFTER moves closes again, hiding its whole stack once more.
+func _reclose(move: Move) -> void:
+	if not level.variants.has("reclosing"):
+		return
+	for peg_index: int in level.covered_pegs:
+		if is_covered(peg_index):
+			continue
+		if peg_index in [move.from_peg, move.to_peg, move.from_peg_2, move.to_peg_2]:
+			_touched[peg_index] = move_count
+		elif move_count - _touched.get(peg_index, move_count) >= RECLOSE_AFTER and not state.pegs[peg_index].is_empty():
+			covered_pegs.append(peg_index)
+			_hidden.erase(peg_index)
 
 
 ## A hidden disk that has become the top of its box shows.

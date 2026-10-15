@@ -126,7 +126,6 @@ func test_mode_chapters_mix_classic_and_repeats() -> void:
 		var repeats_first_half: int = 0
 		var run: int = 0
 		var longest_classic_run: int = 0
-		var previous: int = 0
 		for position: int in range(first, int(chapter["last"]) + 1):
 			var level: Level = _level_at(MAIN, position)
 			var lesson: String = level.lesson()
@@ -136,14 +135,12 @@ func test_mode_chapters_mix_classic_and_repeats() -> void:
 			if lesson != Level.CLASSIC and lesson != chapter["mode"]:
 				assert_true(ChapterPlan.modes_before(first).has(lesson), "main %d repeats an earlier mode" % position)
 				repeats_first_half += 1 if position - first < length / 2 else 0
-			if lesson == chapter["mode"]:
-				assert_true(level.min_moves >= previous, "main %d: the chapter's mode never gets easier" % position)
-				previous = level.min_moves
+		# How the mode's own levels climb (in waves) is checked in test_waves.gd.
 		assert_eq(LevelCatalog.lesson_at(MAIN, first), chapter["mode"], "%s opens its chapter" % chapter["mode"])
 		var classic: int = counts.get(Level.CLASSIC, 0)
 		var expected: float = length / (float(chapter["ratio"]) + 1.0)
 		assert_true(absf(classic - expected) <= 1.0, "%s: %d classic levels (%.1f)" % [chapter["mode"], classic, expected])
-		assert_true(longest_classic_run <= 2, "classic levels never bunch up")
+		assert_true(longest_classic_run <= 1, "classic levels never bunch up")
 		assert_eq(repeats_first_half, 0, "repeats only in the second half")
 		var repeats: int = length - classic - counts[chapter["mode"]]
 		var earlier: Array[String] = ChapterPlan.modes_before(first)

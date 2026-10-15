@@ -97,6 +97,43 @@ const LATER_CLASSIC_BANDS: Array[String] = ["medium_hard", "hard"]
 const ISLAND_LEVELS: int = 10
 const CLASSIC_ISLAND: Dictionary = {"expert": 28, "hard": 8, "medium": 4}
 
+## Waves inside a mode chapter (chapter waves v1, MindShift_Fesil_Daxili_
+## Dalgalar_v1.md): each mode's sub-elements in the order they arrive. The
+## first wave is the mode's base form ("base", no sub-element); each later
+## wave brings one new sub-element; `mixed` adds a closing wave with several
+## of them at once. Modes not listed keep one wave (their chapters are not
+## built yet). The chapter's last level is the "Böyük Sınaq" of Fəsil Sistemi
+## v1.2, which has not arrived yet: until then it is the hardest mixed level.
+const BASE: String = "base"
+const WAVES: Dictionary = {
+	"peg_capacity": {"waves": ["base", "narrow", "arch"], "mixed": false},
+	"covered_pegs": {"waves": ["base", "count_board", "glass", "empty_box", "sealed"], "mixed": true},
+	"foundation": {"waves": ["base", "key_disk", "middle_lock", "chain_lock"], "mixed": true},
+}
+## Sub-elements only the islands use (section 3): one per island, mixed with
+## the chapter's own.
+const ISLAND_VARIANTS: Dictionary = {"peg_capacity": "holed", "covered_pegs": "reclosing"}
+## Sub-elements that cannot share a level: a count board tells which box is
+## empty.
+const CLASHES: Array[Array] = [["count_board", "empty_box"]]
+## Rules that belong to a mode as one of its sub-elements (not modes).
+const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
+
+
+## The sub-elements of `mode` in wave order (base first), chapter and island.
+static func variants_of(mode: String) -> Array[String]:
+	var found: Array[String] = []
+	found.assign(WAVES.get(mode, {}).get("waves", [BASE]))
+	if ISLAND_VARIANTS.has(mode):
+		found.append(ISLAND_VARIANTS[mode])
+	return found
+
+
+## The mode a rule id belongs to: itself, or the mode of a sub-element rule.
+static func mode_of_rule(rule_id: String) -> String:
+	return SUB_RULES.get(rule_id, rule_id)
+
+
 ## Mode categories (section 4.1).
 const CATEGORIES: Dictionary = {
 	"peg_capacity": ["local"], "foundation": ["local"],

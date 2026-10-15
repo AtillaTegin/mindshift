@@ -199,25 +199,95 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 		errors.append("a rule of %s changes nothing (as short without it)" % ChapterPlan.combo_key(level.modes()))
 	if level.mechanic() == Difficulty.COLOR_SWAP:
 		validate_color_swap_shape(level, errors)
-	# The foundation's lock must be closed at the start, and a chain must move.
-	if level.mechanic() == FoundationRule.ID and rules.memory_of(level.start) != 0:
-		errors.append("the foundation's keys already stand on their pegs at the start")
+	# Every lock and seal must be closed at the start, and a chain must move.
+	if (level.rule_ids.has(FoundationRule.ID) or level.rule_ids.has(SealedBoxRule.ID)) and rules.memory_of(level.start) != 0:
+		errors.append("a lock or seal is open at the start")
 	if level.mechanic() == ChainRule.ID and not level.solution_path.any(func(move: Move) -> bool: return move.is_compound()):
 		errors.append("the chained disks never move in the solution")
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
-	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves).
+	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves). User decision
+	# 2026-10-16: a count board (each box shows its count) and an empty box
+	# show enough, so they are exempt; a sealed box only from the early use (a
+	# tap never opens it, the smallest disk does).
+	var sealed: Array = level.rule_params.get(SealedBoxRule.ID, {}).get("pegs", [])
 	for peg_index: int in level.covered_pegs:
-		if peg_index < 0 or peg_index >= level.get_peg_count():
-			continue  # reported by Level.check()
+		if peg_index < 0 or peg_index >= level.get_peg_count() or level.variants.has("count_board"):
+			continue  # bad indices are reported by Level.check()
+		if level.variants.has("empty_box") and level.start.pegs[peg_index].is_empty():
+			continue
 		if level.start.pegs[peg_index].size() < 2:
 			errors.append("covered peg %d hides nothing (fewer than 2 disks)" % peg_index)
-		var used: bool = false
+		var used: bool = sealed.has(peg_index)
 		for i: int in mini(COVERED_REVEAL_WITHIN, level.solution_path.size()):
 			var move: Move = level.solution_path[i]
 			used = used or move.from_peg == peg_index or move.to_peg == peg_index
 		if not used:
 			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
+	for peg_index: int in sealed:
+		if not level.covered_pegs.has(peg_index):
+			errors.append("sealed peg %d is no karakuri box" % peg_index)
+	for disk: int in level.glass_disks:
+		if not level.covered_pegs.any(func(peg: int) -> bool: return peg < level.get_peg_count() and level.start.pegs[peg].has(disk)):
+			errors.append("glass disk %d is not inside a box" % disk)
+	validate_variants(level, errors)
+
+
+## Chapter waves v1: every sub-element the level names is really there, every
+## rule-changing one makes it longer on its own, and nothing is there that it
+## does not name (the guides and the rule panel go by the names).
+static func validate_variants(level: Level, errors: Array[String]) -> void:
+	var rules: RuleSet = level.get_rule_set()
+	var capacity: PegCapacityRule = null
+	var lock: FoundationRule = null
+	for rule: RuleBase in rules.active_rules:
+		if rule is PegCapacityRule:
+			capacity = rule
+		elif rule is FoundationRule:
+			lock = rule
+	var found: Array[String] = []
+	if capacity != null:
+		if capacity.capacities.has(1):
+			found.append("narrow")
+		if capacity.arches.any(func(n: int) -> bool: return n > 0):
+			found.append("arch")
+		if capacity.holes.any(func(n: int) -> bool: return n > 0):
+			found.append("holed")
+	if lock != null and lock.stages.size() > 1:
+		found.append("chain_lock")
+	if level.rule_ids.has(SealedBoxRule.ID):
+		found.append("sealed")
+	if not level.glass_disks.is_empty():
+		found.append("glass")
+	for variant: String in found:
+		if not level.variants.has(variant):
+			errors.append("the level has a %s but does not name it" % variant)
+	for variant: String in level.variants:
+		var missing: bool = false
+		match variant:
+			"narrow", "arch", "holed", "chain_lock", "sealed", "glass":
+				missing = not found.has(variant)
+			"count_board":
+				missing = level.covered_pegs.size() != level.get_peg_count()
+			"empty_box":
+				missing = not level.covered_pegs.any(func(peg: int) -> bool:
+					return peg < level.get_peg_count() and level.start.pegs[peg].is_empty())
+			"reclosing":
+				missing = level.covered_pegs.is_empty()
+			"key_disk":
+				missing = lock == null or lock.keys.size() != 1
+			"middle_lock":
+				missing = lock == null or not lock.locked.any(func(disk: int) -> bool:
+					for stack: Array in level.start.pegs:
+						var at: int = stack.find(disk)
+						if at > 0 and at < stack.size() - 1:
+							return true
+					return false)
+		if missing:
+			errors.append("the level names %s but has none" % variant)
+	if not LevelForge.variants_matter(level.start, level.goal, level.rule_ids, level.rule_params, level.variants,
+			level.min_moves):
+		errors.append("a sub-element of %s changes nothing" % str(level.variants))
 
 
 ## "Böyük Mübadilə" v2 (ColorSwapRule alone, at least two empty pegs between

@@ -87,7 +87,7 @@ static func rod_rooms(level: Level) -> Array[int]:
 ## new mechanics specification v1 ("blocked, with a message").
 static func says_why(level: Level) -> bool:
 	for id: String in [Difficulty.COLOR_SWAP, PegCapacityRule.ID, FoundationRule.ID, BalanceRule.ID, CyclicRule.ID,
-			StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID]:
+			StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID, SealedBoxRule.ID]:
 		if _has(level, id):
 			return true
 	return false
@@ -99,22 +99,43 @@ static func says_why(level: Level) -> bool:
 static func goal_text(level: Level) -> String:
 	if _has(level, FoundationRule.ID):
 		var rule: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
-		return Languages.text("FOUNDATION_PROGRESS") % [rule.keys_in_place(level.start), rule.keys.size()]
+		return Languages.text(_keys_text(level)) % [rule.keys_in_place(level.start), rule.keys_needed()]
 	return ""
 
 
 ## A note after a move (translated), or "": the foundation's keys in place
-## while it is locked, and the moment it opens.
+## while it is locked, the moment one of a chain's locks opens and the moment
+## the last one does, and the moment a sealed box's seal breaks.
 static func progress_text(session: GameSession) -> String:
+	var before: PuzzleState = session.previous_state()
+	if _has(session.level, SealedBoxRule.ID):
+		if before != null and session.rules.memory_of(session.state) != session.rules.memory_of(before):
+			return Languages.text("SEALED_OPEN")
+		return ""
 	if not _has(session.level, FoundationRule.ID):
 		return ""
 	var rule: FoundationRule = _rule(session.level, FoundationRule.ID) as FoundationRule
-	if session.rules.memory_of(session.state) == 0:
-		return Languages.text("FOUNDATION_PROGRESS") % [rule.keys_in_place(session.state), rule.keys.size()]
-	var before: PuzzleState = session.previous_state()
-	if before != null and session.rules.memory_of(before) == 0:
-		return Languages.text("FOUNDATION_OPEN")
+	var open: int = session.rules.memory_of(session.state)
+	var was_open: int = session.rules.memory_of(before) if before != null else open
+	if open > was_open:
+		return Languages.text("FOUNDATION_OPEN" if open == rule.stages.size() else "LOCK_NEXT")
+	if open < rule.stages.size():
+		return Languages.text(_keys_text(session.level)) % [rule.keys_in_place(session.state, open), rule.keys_needed(open)]
 	return ""
+
+
+## "Təməl: 1/2 kiçik disk" for the base lock, "Açar: 0/1" for a key disk or a
+## chain of locks.
+static func _keys_text(level: Level) -> String:
+	return "LOCK_KEYS" if level.variants.has("key_disk") or level.variants.has("chain_lock") else "FOUNDATION_PROGRESS"
+
+
+## The translation key the board shows for a refusal `key`: a lock opened by
+## a key disk says so rather than "the small disks first".
+static func refusal_key(level: Level, key: String) -> String:
+	if key == "RULE_FOUNDATION" and (level.variants.has("key_disk") or level.variants.has("chain_lock")):
+		return "RULE_LOCK_KEY"
+	return key
 
 
 ## What the dress draws under the pegs for this position (BoardSkin.marks):
@@ -144,9 +165,12 @@ static func skin_marks(session: GameSession) -> Dictionary:
 	return marks
 
 
-## What is drawn over the disks (BoardMarks): "chain" [disk, disk, can move
-## now], "locked" [disks still locked], "trail_disk" (the disk that leaves the
-## trail).
+## What is drawn over the disks and pegs (BoardMarks): "chain" [disk, disk,
+## can move now], "locked" [disks still locked], "trail_disk" (the disk that
+## leaves the trail), and the chapter waves' marks: "keys" [[key disk, its key
+## place peg]] of the locks still closed (a key disk or a chain of locks),
+## "links" [[key disk, locked disk]] between a chain's locks, "arches" and
+## "holes" {peg: size}.
 static func overlay_marks(session: GameSession) -> Dictionary:
 	var level: Level = session.level
 	var marks: Dictionary = {}
@@ -157,8 +181,33 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 			if session.state.get_top_disk(peg_index) == pair[0]:
 				free = session.rules.can_pick_up(session.state, peg_index)
 		marks["chain"] = [pair[0], pair[1], free]
-	if _has(level, FoundationRule.ID) and session.rules.memory_of(session.state) == 0:
-		marks["locked"] = (_rule(level, FoundationRule.ID) as FoundationRule).locked.duplicate()
+	if _has(level, FoundationRule.ID):
+		var lock: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
+		var open: int = session.rules.memory_of(session.state)
+		if open < lock.stages.size():
+			marks["locked"] = lock.locked_now(open)
+		if level.variants.has("key_disk") or level.variants.has("chain_lock"):
+			var keys: Array = []
+			var links: Array = []
+			for stage: int in range(open, lock.stages.size()):
+				for i: int in (lock.stages[stage]["keys"] as Array).size():
+					var key: int = lock.stages[stage]["keys"][i]
+					keys.append([key, lock.stages[stage]["targets"][i]])
+					if stage > 0 or level.variants.has("chain_lock"):
+						for locked: int in lock.stages[stage]["locked"]:
+							links.append([key, locked])
+			marks["keys"] = keys
+			marks["links"] = links
+	if _has(level, PegCapacityRule.ID):
+		var capacity: PegCapacityRule = _rule(level, PegCapacityRule.ID) as PegCapacityRule
+		for list: String in ["arches", "holes"]:
+			var sizes: Array[int] = capacity.arches if list == "arches" else capacity.holes
+			var found: Dictionary = {}
+			for peg_index: int in sizes.size():
+				if sizes[peg_index] > 0:
+					found[peg_index] = sizes[peg_index]
+			if not found.is_empty():
+				marks[list] = found
 	if _has(level, TrailRule.ID):
 		marks["trail_disk"] = (_rule(level, TrailRule.ID) as TrailRule).disk
 	return marks

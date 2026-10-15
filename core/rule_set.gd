@@ -62,9 +62,10 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 
 
 ## Every id create_rule() knows (a test keeps the two in step, and checks that
-## each mode has its texts in ModeTexts).
+## each mode has its texts in ModeTexts; a sub-element's rule, e.g. the sealed
+## box, belongs to its mode: ChapterPlan.SUB_RULES).
 const RULE_IDS: Array[String] = ["classic_hanoi", "alternation", "adjacent_pegs", "color_swap", "peg_capacity",
-		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet"]
+		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet", "sealed_box"]
 
 
 ## Rule registry: a fresh rule for a level JSON id, or null if the id is unknown.
@@ -96,6 +97,8 @@ static func create_rule(id: String) -> RuleBase:
 			return TrailRule.new()
 		MagnetRule.ID:
 			return MagnetRule.new()
+		SealedBoxRule.ID:
+			return SealedBoxRule.new()
 	return null
 
 

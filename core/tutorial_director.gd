@@ -19,6 +19,9 @@ extends Node
 ## - The first level of each combination (chapter plan section 3.4: a
 ##   mini-tutorial, both rules together): the same, with both modes' names
 ##   and rules (COMBO_TEXT) as its words.
+## - The first level of each sub-element of a mode (chapter waves v1, the
+##   intro of its wave): the same, with "Yeni: <name> — <rule>"
+##   (VARIANT_TEXT).
 ## - Other levels: off. A tutorial only runs until its level was completed once.
 
 enum Mode { OFF, GUIDED, FREE }
@@ -46,6 +49,10 @@ const INTRO_TEXTS: Dictionary = {
 }
 ## A combination's words: its name ("Tutum + Kilid") and both rules.
 const COMBO_TEXT: String = "INTRO_COMBO"
+## A sub-element's words: "Yeni: Şüşə disk — qutu bağlı olsa da görünür."
+const VARIANT_TEXT: String = "INTRO_VARIANT"
+## intro_mechanic of a sub-element's introduction: this prefix and its name.
+const VARIANT_PREFIX: String = "variant:"
 const INTRO_STEPS: int = 3
 const INTRO_SECONDS: float = 5.0
 
@@ -89,7 +96,7 @@ func _on_level_started() -> void:
 		mode = Mode.FREE
 		_coaching.toast.show_message(tr(TRY_YOURSELF_TEXT))
 	elif is_mechanic_intro(level):
-		intro_mechanic = level.lesson()
+		intro_mechanic = intro_lesson(level)
 		_intro_steps_left = INTRO_STEPS
 		mode = Mode.GUIDED
 		# At the top: the words stay readable while the ghost finger works below.
@@ -97,20 +104,38 @@ func _on_level_started() -> void:
 		_show_next_step()
 
 
-## The words that introduce `level`'s lesson (translated).
+## The words that introduce `level`'s lesson or sub-element (translated).
 static func intro_text(level: Level) -> String:
+	var lesson: String = intro_lesson(level)
+	if lesson.begins_with(VARIANT_PREFIX):
+		var variant: String = lesson.trim_prefix(VARIANT_PREFIX)
+		return Languages.text(VARIANT_TEXT) % [ModeTexts.variant_name(variant), ModeTexts.variant_rule(variant)]
 	if level.is_combo():
 		return Languages.text(COMBO_TEXT) % [ModeTexts.name_of(level), ModeTexts.rule_of(level)]
-	return Languages.text(INTRO_TEXTS[level.lesson()])
+	return Languages.text(INTRO_TEXTS[lesson])
 
 
-## Whether `level` is the first level of its lesson on the main path.
-static func is_mechanic_intro(level: Level) -> bool:
-	var lesson: String = level.lesson()
-	if not INTRO_TEXTS.has(lesson) and not (level.is_combo() and ModeTexts.has(lesson)):
-		return false
+## What `level` introduces: its lesson where it is that lesson's first level
+## on the main path, else "variant:<name>" where it is a sub-element's first
+## level there, else "".
+static func intro_lesson(level: Level) -> String:
 	var place: Dictionary = LevelCatalog.place_of(level.id)
-	return place.get("track", "") == LevelCatalog.MAIN and place["position"] == LevelCatalog.first_main_position(lesson)
+	if place.get("track", "") != LevelCatalog.MAIN:
+		return ""
+	var lesson: String = level.lesson()
+	if (INTRO_TEXTS.has(lesson) or (level.is_combo() and ModeTexts.has(lesson))) \
+			and place["position"] == LevelCatalog.first_main_position(lesson):
+		return lesson
+	for variant: String in level.variants:
+		if ModeTexts.VARIANTS.has(variant) and place["position"] == LevelCatalog.first_variant_position(lesson, variant):
+			return VARIANT_PREFIX + variant
+	return ""
+
+
+## Whether `level` is the first level of its lesson, or of one of its
+## sub-elements, on the main path.
+static func is_mechanic_intro(level: Level) -> bool:
+	return not intro_lesson(level).is_empty()
 
 
 func _on_position_changed() -> void:

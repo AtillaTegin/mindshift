@@ -32,6 +32,8 @@ static var _places: Dictionary = {}
 static var _mechanics: Dictionary = {}
 ## Mechanic level file -> its Level.lesson().
 static var _lessons: Dictionary = {}
+## Mechanic level file -> its Level.variants.
+static var _variants: Dictionary = {}
 ## Classic level files per tier (tools and tests).
 static var _counts: Dictionary = {}
 
@@ -43,6 +45,7 @@ static func clear_cache() -> void:
 	_places = {}
 	_mechanics.clear()
 	_lessons.clear()
+	_variants.clear()
 	_counts.clear()
 
 
@@ -208,6 +211,16 @@ static func _read_mechanic(track: String, position: int, file: String) -> void:
 	var level: Level = load_at(track, position)
 	_mechanics[file] = level.mechanic() if level != null else Level.CLASSIC
 	_lessons[file] = level.lesson() if level != null else Level.CLASSIC
+	_variants[file] = level.variants.duplicate() if level != null else []
+
+
+## Level.variants of the level at a path position (see mechanic_at()).
+static func variants_at(track: String, position: int) -> Array:
+	var file: String = entry(track, position).get("file", "")
+	if not file.begins_with(Difficulty.MECHANICS + "/"):
+		return []
+	_read_mechanic(track, position, file)
+	return _variants[file]
 
 
 ## Main path position of the first level with `lesson` (Level.lesson(), which
@@ -215,6 +228,15 @@ static func _read_mechanic(track: String, position: int, file: String) -> void:
 static func first_main_position(lesson: String) -> int:
 	for position: int in range(1, track_length(MAIN) + 1):
 		if lesson_at(MAIN, position) == lesson:
+			return position
+	return 0
+
+
+## Main path position of the first level of `lesson` that uses sub-element
+## `variant` (chapter waves v1), or 0.
+static func first_variant_position(lesson: String, variant: String) -> int:
+	for position: int in range(1, track_length(MAIN) + 1):
+		if lesson_at(MAIN, position) == lesson and variants_at(MAIN, position).has(variant):
 			return position
 	return 0
 

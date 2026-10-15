@@ -16,7 +16,7 @@ const KEYS: Array[String] = ["id", "difficulty", "pegs", "disks", "start", "goal
 		"min_moves", "solution_path", "star_thresholds", "time_limit_seconds"]
 ## Keys a level may leave out; written only when not empty, so files without
 ## them (all 200 main levels) keep exactly their old form.
-const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs"]
+const OPTIONAL_KEYS: Array[String] = ["rule_params", "covered_pegs", "variants", "glass_disks"]
 
 var id: int = 0
 var difficulty: String = ""
@@ -28,6 +28,14 @@ var rule_params: Dictionary = {}
 ## Pegs that start under fog ("covered_pegs", bonus mechanics addendum 2):
 ## only their top disk shows until a move uses the peg. Purely visual.
 var covered_pegs: Array[int] = []
+## The sub-elements of its mode the level uses ("variants", chapter waves v1:
+## e.g. "narrow", "glass", "chain_lock"); empty for a mode's base form. They
+## name what the level teaches (guides, rule panel); the rules and boxes
+## themselves are in the other fields.
+var variants: Array[String] = []
+## Disks made of glass ("glass_disks"): they show even inside a closed box.
+## Purely visual.
+var glass_disks: Array[int] = []
 ## Length of a shortest solution, proven by the Solver.
 var min_moves: int = 0
 var solution_path: Array[Move] = []
@@ -90,10 +98,11 @@ func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
 ## What makes the level special: the first rule beyond classic Hanoi (e.g.
 ## "alternation"), "covered_pegs" for karakuri boxes, or CLASSIC. It picks the
 ## level's dress and chapter on the path; it is never shown as a category.
+## A sub-element's rule (the sealed box) counts as its mode.
 func mechanic() -> String:
 	for rule_id: String in rule_ids:
 		if rule_id != ClassicHanoiRule.ID:
-			return rule_id
+			return ChapterPlan.mode_of_rule(rule_id)
 	if not covered_pegs.is_empty():
 		return "covered_pegs"
 	return CLASSIC
@@ -104,8 +113,11 @@ func mechanic() -> String:
 ## Empty for a classic level, two for a combination.
 func modes() -> Array[String]:
 	var found: Array[String] = []
+	var own: Array[String] = []
+	for rule_id: String in rule_ids:
+		own.append(ChapterPlan.mode_of_rule(rule_id))
 	for mode: String in ChapterPlan.MODES:
-		if rule_ids.has(mode) or (mode == ChapterPlan.COVERED and not covered_pegs.is_empty()):
+		if own.has(mode) or (mode == ChapterPlan.COVERED and not covered_pegs.is_empty()):
 			found.append(mode)
 	return found
 
@@ -150,6 +162,10 @@ func to_dict() -> Dictionary:
 		data["rule_params"] = rule_params.duplicate(true)
 	if not covered_pegs.is_empty():
 		data["covered_pegs"] = covered_pegs.duplicate()
+	if not variants.is_empty():
+		data["variants"] = variants.duplicate()
+	if not glass_disks.is_empty():
+		data["glass_disks"] = glass_disks.duplicate()
 	return data
 
 
@@ -227,6 +243,16 @@ static func from_dict(data: Variant, errors: Array[String]) -> Level:
 		level.covered_pegs.assign(_whole_numbers_as_ints(covered))
 	else:
 		errors.append("\"covered_pegs\" must be an array of peg indices")
+	var named: Variant = data.get("variants", [])
+	if typeof(named) == TYPE_ARRAY and named.all(func(v: Variant) -> bool: return typeof(v) == TYPE_STRING):
+		level.variants.assign(named)
+	else:
+		errors.append("\"variants\" must be an array of strings")
+	var glass: Variant = data.get("glass_disks", [])
+	if typeof(glass) == TYPE_ARRAY and glass.all(func(v: Variant) -> bool: return typeof(_whole_numbers_as_ints(v)) == TYPE_INT):
+		level.glass_disks.assign(_whole_numbers_as_ints(glass))
+	else:
+		errors.append("\"glass_disks\" must be an array of disks")
 	level.min_moves = _read_int(data, "min_moves", errors)
 	if typeof(data["solution_path"]) == TYPE_ARRAY:
 		for pair: Variant in data["solution_path"]:
@@ -285,6 +311,15 @@ func check(errors: Array[String]) -> void:
 	for peg_index: int in covered_pegs:
 		if peg_index < 0 or peg_index >= get_peg_count() or covered_pegs.count(peg_index) > 1:
 			errors.append("covered_pegs %s must be distinct peg indices" % str(covered_pegs))
+			break
+	for disk: int in glass_disks:
+		if disk < 1 or disk > get_disk_count() or glass_disks.count(disk) > 1:
+			errors.append("glass_disks %s must be distinct disks of the level" % str(glass_disks))
+			break
+	var known: Array[String] = ChapterPlan.variants_of(mechanic())
+	for variant: String in variants:
+		if variant == ChapterPlan.BASE or not known.has(variant) or variants.count(variant) > 1:
+			errors.append("variant \"%s\" is not a sub-element of %s" % [variant, mechanic()])
 			break
 	if goal.get_peg_count() != get_peg_count():
 		errors.append("goal has %d pegs, start has %d" % [goal.get_peg_count(), get_peg_count()])

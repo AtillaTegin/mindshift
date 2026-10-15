@@ -29,6 +29,49 @@ const MODES: Dictionary = {
 }
 
 
+## Sub-elements of the modes (chapter waves v1): Level.variants entry ->
+## [name key, rule key]; the rule continues the name ("Şüşə disk — qutu bağlı
+## olsa da görünür."). The rule panel adds them under the mode's rule, and each
+## one's first level introduces it with them (INTRO_VARIANT).
+const VARIANTS: Dictionary = {
+	"narrow": ["VARIANT_NARROW_NAME", "VARIANT_NARROW_RULE"],
+	"arch": ["VARIANT_ARCH_NAME", "VARIANT_ARCH_RULE"],
+	"holed": ["VARIANT_HOLED_NAME", "VARIANT_HOLED_RULE"],
+	"count_board": ["VARIANT_COUNT_BOARD_NAME", "VARIANT_COUNT_BOARD_RULE"],
+	"glass": ["VARIANT_GLASS_NAME", "VARIANT_GLASS_RULE"],
+	"empty_box": ["VARIANT_EMPTY_BOX_NAME", "VARIANT_EMPTY_BOX_RULE"],
+	"sealed": ["VARIANT_SEALED_NAME", "VARIANT_SEALED_RULE"],
+	"reclosing": ["VARIANT_RECLOSING_NAME", "VARIANT_RECLOSING_RULE"],
+	"key_disk": ["VARIANT_KEY_DISK_NAME", "VARIANT_KEY_DISK_RULE"],
+	"middle_lock": ["VARIANT_MIDDLE_LOCK_NAME", "VARIANT_MIDDLE_LOCK_RULE"],
+	"chain_lock": ["VARIANT_CHAIN_LOCK_NAME", "VARIANT_CHAIN_LOCK_RULE"],
+}
+
+
+## The name of sub-element `variant` (translated).
+static func variant_name(variant: String) -> String:
+	return Languages.text(VARIANTS[variant][0])
+
+
+## The rule of sub-element `variant` (translated).
+static func variant_rule(variant: String) -> String:
+	return Languages.text(VARIANTS[variant][1])
+
+
+## "Şüşə disk — qutu bağlı olsa da görünür."
+static func variant_line(variant: String) -> String:
+	return "%s — %s" % [variant_name(variant), variant_rule(variant)]
+
+
+## The rule panel's line for `level`'s sub-elements, one sentence each, in
+## order; "" for a base-form level.
+static func variants_of(level: Level) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for variant: String in level.variants:
+		parts.append(variant_line(variant))
+	return " ".join(parts)
+
+
 ## Whether `lesson` is registered; a combination ("peg_capacity+foundation",
 ## chapter plan section 4) when each of its modes is.
 static func has(lesson: String) -> bool:

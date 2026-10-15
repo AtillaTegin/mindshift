@@ -36,6 +36,17 @@ const BUILT_WORLDS: Array[int] = [1, 2]
 ## (draw_group()); a draw with a count not seen yet wins at once.
 const ATTEMPTS_PER_LEVEL: int = 600
 const CANDIDATES: int = 3
+## Waves (chapter waves v1): the closing mixed wave's length, how many levels
+## of a new sub-element alone follow its intro, how far a level's window
+## reaches around its target, and the chapter's closing level's lowest count.
+const MIXED_WAVE: int = 10
+const DEV_LEVELS: int = 3
+const WINDOW: int = 2
+const CLOSING_LOW: int = 30
+## Lowest move count a mode's waves start from where the band's (7) is too
+## low: an unequal capacity of at least two per peg rarely matters below 9
+## (measured 2026-10-16).
+const MODE_FLOOR: Dictionary = {"peg_capacity": 9}
 ## The tutorial levels (addendum 6B) open the road exactly as they always did.
 const TUTORIAL_LEVELS: Array[Dictionary] = [
 	{"start": [[1], [2], [3]], "goal": [[3], [1], [2]]},
@@ -87,9 +98,9 @@ const RECIPES: Dictionary = {
 		"medium_hard": [{"pegs": 4, "disks": 7, "covered": 2}, {"pegs": 3, "disks": 6, "covered": 0},
 			{"pegs": 4, "disks": 8, "covered": 2}],
 		"hard": [{"pegs": 4, "disks": 8, "covered": 3}, {"pegs": 3, "disks": 6, "covered": 2},
+			{"pegs": 4, "disks": 8, "covered": 2}],
+		"expert": [{"pegs": 3, "disks": 6, "covered": 2}, {"pegs": 3, "disks": 7, "covered": 2},
 			{"pegs": 4, "disks": 9, "covered": 2}],
-		"expert": [{"pegs": 4, "disks": 9, "covered": 2}, {"pegs": 3, "disks": 6, "covered": 0},
-			{"pegs": 4, "disks": 9, "covered": 3}],
 	},
 	"foundation": {
 		"easy_medium": [{"pegs": 3, "disks": 4, "locked": 1, "keys": 2}, {"pegs": 4, "disks": 5, "locked": 1, "keys": 2},
@@ -183,7 +194,7 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 	var order: Array[String] = []
 	for track: Array in tracks:
 		for slot: Dictionary in track:
-			if slot.has("fixed"):
+			if slot.has("fixed") or slot.has("low"):
 				continue
 			var group: String = "%s/%s" % [stream_of(slot["modes"]), slot["band"]]
 			if not groups.has(group):
@@ -195,6 +206,34 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 		if slot.has("fixed"):
 			slot["draft"] = _tutorial_draft(slot["fixed"])
 			used[slot["draft"]["key"]] = true
+	# Wave levels (a window of their own each), in road order.
+	for t: int in tracks.size():
+		var started: int = Time.get_ticks_msec()
+		var count: int = 0
+		for i: int in (tracks[t] as Array).size():
+			var slot: Dictionary = tracks[t][i]
+			if not slot.has("low"):
+				continue
+			var draft: Dictionary = draw_one(slot, BASE_SEED + t * 10000 + i, used)
+			# Too many sub-elements for the window: the later ones go, one by one
+			# (the first is the one the wave teaches).
+			while draft.is_empty() and (slot["variants"] as Array).size() > 1:
+				var fewer: Array[String] = []
+				fewer.assign((slot["variants"] as Array).slice(0, -1))
+				print("  track %d slot %d: %s too much for %d-%d, now %s" % [t, i + 1, str(slot["variants"]), slot["low"],
+						slot["high"], str(fewer)])
+				slot["variants"] = fewer
+				slot["extra"]["variants"] = fewer
+				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
+			if draft.is_empty():
+				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
+						str(slot["variants"]), slot["low"], slot["high"]])
+				continue
+			used[draft["key"]] = true
+			slot["draft"] = draft
+			count += 1
+		if count > 0:
+			print("  track %d: %d wave levels in %.1f s" % [t, count, (Time.get_ticks_msec() - started) / 1000.0])
 	for group: String in order:
 		var slots: Array = groups[group]
 		var first: Dictionary = slots[0]
@@ -227,10 +266,7 @@ static func layout(worlds: Array[int]) -> Dictionary:
 				islands.append({"mode": Level.CLASSIC, "after": chapter["last"], "slots": _classic_island()})
 			ChapterPlan.MODE_CHAPTER:
 				main.append_array(_mode_chapter(chapter, rng))
-				var slots: Array[Dictionary] = []
-				for i: int in ChapterPlan.ISLAND_LEVELS:
-					slots.append({"modes": [chapter["mode"]], "band": "expert"})
-				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": slots})
+				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": _mode_island(chapter["mode"], rng)})
 			ChapterPlan.COMBO_CHAPTER:
 				main.append_array(_combo_chapter(chapter, rng))
 	return {"main": main, "islands": islands}
@@ -269,41 +305,185 @@ static func _classic_island() -> Array[Dictionary]:
 	return slots
 
 
+## A mode chapter in waves (chapter waves v1): the mode's levels wave by wave
+## (wave_items()), one classic level for every `ratio` of them right after a
+## hard one, and in the second half one earlier chapter's mode in every
+## REPEAT_EVERY levels (newest chapter first). Every mode and repeat level gets
+## its own move window; classic levels keep their bands.
 static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var length: int = ChapterPlan.length_of(chapter)
 	var first: int = chapter["first"]
-	var kinds: Array[String] = []
-	kinds.resize(length)
-	kinds.fill("mode")
 	var classic_count: int = roundi(length / (float(chapter["ratio"]) + 1.0))
-	for index: int in _strata(range(1, length), classic_count, rng):
-		kinds[index] = CLASSIC
-	# Section 3.3b: one earlier mode in every REPEAT_EVERY levels of the second half.
 	var earlier: Array[String] = ChapterPlan.modes_before(first)
-	if not earlier.is_empty():
-		for block: int in range(length / 2, length, ChapterPlan.REPEAT_EVERY):
-			var free: Array = []
-			for index: int in range(block, mini(block + ChapterPlan.REPEAT_EVERY, length)):
-				if kinds[index] == "mode":
-					free.append(index)
-			if not free.is_empty():
-				kinds[free[rng.randi_range(0, free.size() - 1)]] = "repeat"
+	var repeat_count: int = 0 if earlier.is_empty() else ceili((length - length / 2) / float(ChapterPlan.REPEAT_EVERY))
+	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count, rng)
+	var last: int = items.size() - 1
+	# Repeats spread over the second half of the mode levels (never after the last).
+	var repeats: Dictionary = {}
+	for r: int in repeat_count:
+		var at: int = items.size() / 2 + int((last - items.size() / 2) * (r + 0.5) / repeat_count)
+		var mode: String = earlier[earlier.size() - 1 - r % earlier.size()]
+		repeats[at] = _repeat_item(mode, items[at], rng)
+	# Classic levels right after a hard level (the end of a wave's climb), spaced evenly.
+	var classics: Dictionary = {}
+	var spacing: float = float(last) / classic_count
+	var previous: int = -2
+	for c: int in classic_count:
+		var ideal: float = (c + 0.6) * spacing
+		var best: int = -1
+		for at: int in range(maxi(int(ideal - spacing * 0.5), previous + 2), mini(int(ideal + spacing * 0.5) + 1, last)):
+			if best == -1 or float(items[at]["t"]) >= float(items[best]["t"]):
+				best = at
+		if best == -1:
+			best = mini(previous + 2, last - 1)
+		while classics.has(best):
+			best += 1
+		classics[best] = true
+		previous = best
 	var slots: Array[Dictionary] = []
 	var classic_index: int = 0
-	var repeat_index: int = 0
-	for index: int in length:
-		match kinds[index]:
-			CLASSIC:
-				slots.append({"modes": [], "band": _classic_band(first + index, classic_index)})
-				classic_index += 1
-			"repeat":
-				# The most recent chapters first, then back in turn.
-				var mode: String = earlier[earlier.size() - 1 - repeat_index % earlier.size()]
-				slots.append({"modes": [mode], "band": ChapterPlan.band_for(index, length)})
-				repeat_index += 1
-			_:
-				slots.append({"modes": [chapter["mode"]], "band": ChapterPlan.band_for(index, length)})
+	for at: int in items.size():
+		slots.append(items[at])
+		if repeats.has(at):
+			slots.append(repeats[at])
+		if classics.has(at):
+			slots.append({"modes": [], "band": _classic_band(first + slots.size(), classic_index)})
+			classic_index += 1
 	return slots
+
+
+## A chapter's `count` levels of `mode` in waves (ChapterPlan.WAVES): wave 1
+## the base form, each later wave one new sub-element, then (if the mode has
+## one) a mixed wave of MIXED_WAVE levels, and last the chapter's closing level
+## (the Böyük Sınaq's slot: every sub-element at once, the hardest). Inside a
+## wave: an intro with only the new sub-element on an easier board, a few
+## levels of it alone, then mixed with the earlier ones, up to the wave's
+## hardest. Each level: {modes, variants, extra (board settings), low, high,
+## band, t (its place in its wave, 0-1)}. The windows climb in a sawtooth:
+## each wave starts a little below where the last one ended.
+static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
+	var plan: Dictionary = ChapterPlan.WAVES.get(mode, {"waves": [ChapterPlan.BASE], "mixed": false})
+	var waves: Array = plan["waves"]
+	var mixed_size: int = MIXED_WAVE if plan["mixed"] else 0
+	var body: int = count - 1 - mixed_size
+	var sections: int = waves.size() + (1 if plan["mixed"] else 0)
+	var floor_moves: int = MODE_FLOOR.get(mode, ChapterPlan.BANDS["easy_medium"][0])
+	var items: Array[Dictionary] = []
+	var taught: Array[String] = []
+	for k: int in waves.size():
+		var variant: String = waves[k]
+		var size: int = body / waves.size() + (1 if k < body % waves.size() else 0)
+		for j: int in size:
+			var t: float = float(j) / maxf(size - 1, 1.0)
+			var variants: Array[String] = []
+			if variant != ChapterPlan.BASE:
+				variants.append(variant)
+				# Mixed with what came before once the new sub-element is known.
+				if j > DEV_LEVELS:
+					variants.append_array(_pick_variants(taught, 1 if j < size - 1 else 2, variants, rng))
+			var extra: Dictionary = _wave_extra(mode, variants, t, rng)
+			if variant == ChapterPlan.BASE and mode == ChapterPlan.COVERED:
+				extra["covered"] = 1 if j < size / 2 else 2  # one box first, two by the wave's end
+			var span: Array[int] = _wave_window(k, sections, t, j == 0, floor_moves)
+			items.append({"modes": [mode], "variants": variants, "extra": extra, "low": span[0], "high": span[1], "t": t,
+					"wave": variant})
+		if variant != ChapterPlan.BASE:
+			taught.append(variant)
+	for j: int in mixed_size:
+		var t: float = float(j) / maxf(mixed_size - 1, 1.0)
+		var variants: Array[String] = _pick_variants(taught, 2 + (1 if j >= mixed_size / 2 and taught.size() > 2 else 0), [], rng)
+		var span: Array[int] = _wave_window(sections - 1, sections, t, false, floor_moves)
+		items.append({"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, t, rng),
+				"low": span[0], "high": span[1], "t": t, "wave": "mixed"})
+	var closing: Array[String] = _pick_variants(taught, 3, [], rng)
+	items.append({"modes": [mode], "variants": closing, "extra": _wave_extra(mode, closing, 1.0, rng),
+			"low": CLOSING_LOW, "high": ChapterPlan.BANDS["hard"][1], "t": 1.0, "wave": "closing"})
+	for item: Dictionary in items:
+		item["band"] = band_of_moves((int(item["low"]) + int(item["high"])) / 2)
+	return items
+
+
+## Move window of a level at `t` (0-1) through wave `k` of `sections`, the
+## waves climbing from `floor_moves` to the hard band's top; an intro sits a
+## step lower, on an easier board.
+static func _wave_window(k: int, sections: int, t: float, intro: bool, floor_moves: int) -> Array[int]:
+	var low: float = floor_moves
+	var high: float = ChapterPlan.BANDS["hard"][1]
+	var step: float = (high - low) / (sections + 0.5)
+	var end: float = low + step * (k + 1)
+	var begin: float = low if k == 0 else end - step * 1.5
+	var target: int = roundi(begin + (end - begin) * t)
+	if intro:
+		return [maxi(floor_moves - 2, roundi(begin) - 4), maxi(roundi(begin), floor_moves + 1)]
+	return [maxi(floor_moves - 2, target - WINDOW), mini(target + WINDOW, roundi(high))]
+
+
+## Board settings a level's sub-elements need: boxes for the karakuri, how
+## many locks a chain has.
+static func _wave_extra(mode: String, variants: Array[String], t: float, rng: RandomNumberGenerator) -> Dictionary:
+	var extra: Dictionary = {"variants": variants}
+	if mode == ChapterPlan.COVERED:
+		extra["covered"] = 1 if variants.has("count_board") or variants.has("sealed") or rng.randf() < 0.5 else 2
+	if variants.has("chain_lock"):
+		extra["stages"] = 3 if t >= 0.75 and variants.size() > 1 else 2
+	return extra
+
+
+## Up to `count` sub-elements from `pool` that do not clash with `with` or
+## each other (ChapterPlan.CLASHES), drawn at random.
+static func _pick_variants(pool: Array, count: int, with: Array, rng: RandomNumberGenerator) -> Array[String]:
+	var picked: Array[String] = []
+	for variant: String in LevelForge._shuffled(pool, rng):
+		if picked.size() >= count or with.has(variant):
+			continue
+		var clash: bool = false
+		for pair: Array in ChapterPlan.CLASHES:
+			for other: String in picked + with:
+				clash = clash or (pair.has(variant) and pair.has(other) and variant != other)
+		if not clash:
+			picked.append(variant)
+	return picked
+
+
+## An earlier chapter's mode coming back (section 3.3b) at the place of
+## `item`: its window, with up to two of that mode's sub-elements.
+static func _repeat_item(mode: String, item: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
+	var pool: Array = []
+	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
+		if variant != ChapterPlan.BASE:
+			pool.append(variant)
+	var variants: Array[String] = _pick_variants(pool, rng.randi_range(0, 2), [], rng)
+	return {"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, item["t"], rng),
+			"low": item["low"], "high": item["high"], "t": item["t"], "band": item["band"]}
+
+
+## The island of a mode chapter: ISLAND_LEVELS expert levels, each with the
+## island's own sub-element (if the mode has one) and one or two of the
+## chapter's, longer and longer.
+static func _mode_island(mode: String, rng: RandomNumberGenerator) -> Array[Dictionary]:
+	var pool: Array = []
+	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
+		if variant != ChapterPlan.BASE:
+			pool.append(variant)
+	var slots: Array[Dictionary] = []
+	for i: int in ChapterPlan.ISLAND_LEVELS:
+		var variants: Array[String] = []
+		if ChapterPlan.ISLAND_VARIANTS.has(mode):
+			variants.append(ChapterPlan.ISLAND_VARIANTS[mode])
+		variants.append_array(_pick_variants(pool, rng.randi_range(1, 2), variants, rng))
+		var extra: Dictionary = _wave_extra(mode, variants, float(i) / ChapterPlan.ISLAND_LEVELS, rng)
+		var low: int = ChapterPlan.BANDS["expert"][0] + i
+		slots.append({"modes": [mode], "variants": variants, "extra": extra, "low": low, "high": low + 10 + i,
+				"t": 1.0, "band": "expert"})
+	return slots
+
+
+## The band whose move range holds `moves`.
+static func band_of_moves(moves: int) -> String:
+	for band: String in ["easy_medium", "medium", "medium_hard", "hard", "expert"]:
+		if moves <= ChapterPlan.BANDS[band][1]:
+			return band
+	return "expert"
 
 
 static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Array[Dictionary]:
@@ -435,6 +615,32 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 	return drafts
 
 
+## One wave level for `slot` ({modes, variants, extra, low, high, band}): the
+## recipe boards of its band first, then of the bands next to it, each board
+## with the slot's settings on top; {} if none gives one.
+static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dictionary:
+	var recipe: Dictionary = RECIPES.get(stream_of(slot["modes"]), {})
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var order: Array[String] = ["easy_medium", "medium", "medium_hard", "hard", "expert"]
+	var at: int = order.find(slot["band"])
+	var bands: Array[String] = [slot["band"]]
+	for near: int in [at - 1, at + 1]:
+		if near >= 0 and near < order.size():
+			bands.append(order[near])
+	for band: String in bands:
+		var boards: Array = recipe.get(band, [])
+		var offset: int = rng.randi_range(0, maxi(boards.size() - 1, 0))
+		for turn: int in boards.size():
+			var board: Dictionary = (boards[(offset + turn) % boards.size()] as Dictionary).duplicate()
+			board.merge(slot.get("extra", {}), true)
+			for attempt: int in ATTEMPTS_PER_LEVEL / 2:
+				var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
+				if not draft.is_empty():
+					return draft
+	return {}
+
+
 static func _tutorial_draft(index: int) -> Dictionary:
 	var start: PuzzleState = PuzzleState.from_array(TUTORIAL_LEVELS[index]["start"])
 	var goal: PuzzleState = PuzzleState.from_array(TUTORIAL_LEVELS[index]["goal"])
@@ -467,6 +673,8 @@ static func _number(plan: Dictionary) -> Dictionary:
 		var level: Level = Level.create(id, tier, draft["start"], draft["goal"], draft["rule_ids"], draft["path"],
 				draft["params"])
 		level.covered_pegs.assign(draft["covered"])
+		level.variants.assign(draft.get("variants", []))
+		level.glass_disks.assign(draft.get("glass", []))
 		files[id] = file
 		return level
 	var main: Array[Level] = []

@@ -171,6 +171,13 @@ const MARK_COLORS: Dictionary = {
 	"chain_faded": Color(0.55, 0.55, 0.6, 0.45),
 	"beam_level": Color("3f9f6b"),
 	"beam_limit": Color("e0a020"),
+	# Chapter waves: the sealed box's wax, the key on a key disk and its place,
+	# the thread from a key to the lock it opens, a stone arch, a hole.
+	"seal": Color("a8322d"),
+	"key": Color("d4a017"),
+	"key_link": Color(0.83, 0.63, 0.09, 0.6),
+	"arch": Color("8a7f72"),
+	"hole": Color("2b2622"),
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",

@@ -235,6 +235,96 @@ msgstr "Təməl: %d/%d kiçik disk yerindədir"
 msgid "FOUNDATION_OPEN"
 msgstr "Təməl qoyuldu: qıfıllar açıldı."
 
+msgid "LOCK_KEYS"
+msgstr "Açar: %d/%d yerindədir"
+
+msgid "LOCK_NEXT"
+msgstr "Bir kilid açıldı: azad olan disk növbəti kilidin açarıdır."
+
+msgid "RULE_LOCK_KEY"
+msgstr "Bu disk kilidlidir: əvvəl açar diski açar yerinə apar."
+
+msgid "RULE_ARCH"
+msgstr "Bu disk tağdan keçmir: tağın rəqəmindən böyükdür."
+
+msgid "RULE_HOLE"
+msgstr "Bu disk deşikdən düşər: boş qülləyə rəqəmdən kiçik disk qoyulmur."
+
+msgid "RULE_SEALED"
+msgstr "Möhürlü qutu: yalnız ən kiçik disk qapağa qoyula bilər, sonra qutu açılır."
+
+msgid "SEALED_OPEN"
+msgstr "Möhür qırıldı: qutu açıldı."
+
+msgid "INTRO_VARIANT"
+msgstr "Yeni: %s — %s"
+
+msgid "VARIANT_NARROW_NAME"
+msgstr "Dar keçid"
+
+msgid "VARIANT_NARROW_RULE"
+msgstr "bu alçaq qüllə yalnız 1 disk tutur."
+
+msgid "VARIANT_ARCH_NAME"
+msgstr "Tağ"
+
+msgid "VARIANT_ARCH_RULE"
+msgstr "tağdan yalnız rəqəmindən böyük olmayan disklər keçir."
+
+msgid "VARIANT_HOLED_NAME"
+msgstr "Deşikli qüllə"
+
+msgid "VARIANT_HOLED_RULE"
+msgstr "boş qüllədə yalnız rəqəmindən kiçik olmayan disk dayanır."
+
+msgid "VARIANT_COUNT_BOARD_NAME"
+msgstr "Say lövhəsi"
+
+msgid "VARIANT_COUNT_BOARD_RULE"
+msgstr "hər qutunun qapağında içindəki disklərin sayı yazılıb."
+
+msgid "VARIANT_GLASS_NAME"
+msgstr "Şüşə disk"
+
+msgid "VARIANT_GLASS_RULE"
+msgstr "qutu bağlı olsa da görünür."
+
+msgid "VARIANT_EMPTY_BOX_NAME"
+msgstr "Boş qutu"
+
+msgid "VARIANT_EMPTY_BOX_RULE"
+msgstr "bəzi qutular boşdur, amma eyni görünür."
+
+msgid "VARIANT_SEALED_NAME"
+msgstr "Möhürlü qutu"
+
+msgid "VARIANT_SEALED_RULE"
+msgstr "ən kiçik diski qapağına qoy, qutu həmişəlik açılsın."
+
+msgid "VARIANT_RECLOSING_NAME"
+msgstr "Yenidən bağlanan qutu"
+
+msgid "VARIANT_RECLOSING_RULE"
+msgstr "açıq qutuya 3 gediş toxunulmasa, yenidən bağlanır."
+
+msgid "VARIANT_KEY_DISK_NAME"
+msgstr "Açar disk"
+
+msgid "VARIANT_KEY_DISK_RULE"
+msgstr "açar işarəli disk açar yerinə çatanda kilid açılır."
+
+msgid "VARIANT_MIDDLE_LOCK_NAME"
+msgstr "Ortadakı kilid"
+
+msgid "VARIANT_MIDDLE_LOCK_RULE"
+msgstr "kilidli disk yığının ortasındadır: o və altındakılar açılana qədər qalır."
+
+msgid "VARIANT_CHAIN_LOCK_NAME"
+msgstr "Zəncirvari kilid"
+
+msgid "VARIANT_CHAIN_LOCK_RULE"
+msgstr "kilidlər ardıcıl açılır: açılan disk növbəti kilidin açarıdır."
+
 msgid "CHAIN_SECOND_TARGET"
 msgstr "İndi zəncirin o biri diskinin qülləsini seç."
 

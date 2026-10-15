@@ -41,7 +41,8 @@ func test_every_mode_in_the_game_is_registered() -> void:
 		var rule: RuleBase = RuleSet.create_rule(id)
 		assert_not_null(rule, "%s is in create_rule()" % id)
 		assert_eq(rule.get_id(), id)
-		lessons[Level.CLASSIC if id == ClassicHanoiRule.ID else id] = true
+		# A sub-element's rule (the sealed box) speaks through its mode.
+		lessons[Level.CLASSIC if id == ClassicHanoiRule.ID else ChapterPlan.mode_of_rule(id)] = true
 	lessons[Level.COLOR_SWAP_MIXED] = true
 	# Every mode and combination of the chapter plan.
 	for mode: String in ChapterPlan.MODES:

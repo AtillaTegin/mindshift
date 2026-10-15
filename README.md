@@ -132,12 +132,30 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 | 2 | 301–350 | Kombinasiya I: Tutum+Karakuri, Tutum+Kilid, Karakuri+Kilid (25 kombinasiya, 15 tək mod, 10 klassik) |
 
 - **Pillələr** (istifadəçi qərarı: əsas yolda 33 gediş həddi qalır): fəslin ilk 15%-i asan-orta 7–12, 45%-ə qədər orta 12–18, 75%-ə qədər orta-çətin 18–25, son 25% çətin 25–33. Klassik 1–100 öz cədvəli ilə (1–5 asan 5–7, 6–20, 21–45, 46–75, 76–100). Adalar ekspert 34–70. Daxili çətinlik (Hint qiyməti) yenə gediş sayından gəlir: 5–11, 12–20, 21–33, 34+.
-- **Mod fəsli:** mod ilə açılır (bələdçi), hər 3 mod səviyyəsinə 1 klassik (Dünya 1-də 2,5:1), klassiklər təbəqə-təbəqə seçilir. İkinci yarıda hər 10 səviyyədən biri əvvəlki fəsillərin modudur (ən yenisindən geriyə növbə ilə). 100-dən sonrakı klassiklər orta-çətin və çətin arasında növbələşir, hərdən 7 disk / 3 qüllə "böyük sınaq" gəlir.
+- **Mod fəsli:** mod ilə açılır (bələdçi), hər 3 mod səviyyəsinə 1 klassik (Dünya 1-də 2,5:1). Klassiklər bərabər aralıqla, çətin səviyyədən sonra gəlir (dalğalar aşağıda). İkinci yarıda hər 10 səviyyədən biri əvvəlki fəsillərin modudur (ən yenisindən geriyə növbə ilə). 100-dən sonrakı klassiklər orta-çətin və çətin arasında növbələşir, hərdən 7 disk / 3 qüllə "böyük sınaq" gəlir.
 - **Kombinasiya fəsli:** 50% kombinasiya, 30% həmin dünyanın tək modları, 20% klassik. Birinci kombinasiya fəsli açır, digərləri ilk yarıda bir-bir qoşulur. Hər kombinasiyanın ilk səviyyəsində mini-bələdçi (iki qayda birlikdə). Xəritədə "Tutum + Kilid", paneldə iki qayda. Kombinasiya hər iki moddan ayrı-ayrılıqda uzun olmalıdır (`LevelForge.matters`). Yalnız siyahıdakı (whitelist) cütlər; kateqoriya qaydaları `ChapterPlan.is_combo_allowed`-dadır, siyahıdan kənar kombinasiya validator-da xəta verir.
 - **Adalar** (istifadəçi qərarı: hər fəslin sonunda öz adası): klassik ada 50-dən sonra (28 ekspert, 8 çətin, 4 orta), hər mod fəslinin adası öz fəsli bitəndə açılır, 10 ekspert səviyyə. Xəritədə hər açıq adanın öz markeri var; başlıq "Gizli ada · Tutum".
 - **Hər qrup** (bir axın: klassik, mod və ya kombinasiya, bir pillə) birlikdə çəkilir, gediş sayları pillənin aralığına yayılır, slotlara asandan çətinə paylanır.
 - **Fayllar və id-lər:** klassik `data/levels/<çətinlik>/<çətinlik>_NNN.json`, id-lər çətinliyə görə (1001+, 2001+, 3001+, 4001+). Mod və kombinasiyalar `data/levels/mechanics/<ad>_NNN.json` (`capacity`, `fog`, `foundation`, kombinasiya: `capacity_foundation` və s.), hər modun və kombinasiyanın 10001-dən başlayan 1000-lik öz id bloku var.
 - Builder sonda hər fəsil və ada üçün status çap edir.
+
+### Fəsil daxilində dalğalar
+
+[Dalğalar v1](../MindShift_Fesil_Daxili_Dalgalar_v1.md) (2026-10-16): mod fəsli dalğalarla gedir (`ChapterPlan.WAVES`).
+- **Ardıcıllıq:** əvvəl modun əsas forması, sonra hər dalğa bir yeni alt-element gətirir. Ardınca qarışıq dalğa (10 səviyyə) gəlir, ən sonda bağlanış səviyyəsi (30-33 gediş). Bağlanış səviyyəsi Böyük Sınağın yerini tutur, Fəsil Sistemi v1.2 gələndə əvəz olunacaq.
+- **Dalğanın içi:** tanıtma səviyyəsi yeni elementi təkbaşına verir, aşağı gediş pəncərəsində, öz bələdçisi ilə: "Yeni: Tağ — ...". Sonra 3 səviyyə yalnız o element, sonra əvvəlki alt-elementlərlə qarışıq gəlir.
+- **Dişli xətt:** hər səviyyənin öz gediş pəncərəsi var. Dalğa qalxır, növbəti dalğa bir az aşağıdan başlayır, ümumi xətt yuxarı gedir. Klassik səviyyələr çətin səviyyədən sonra gəlir.
+
+| Mod | Alt-elementlər | Ada |
+|---|---|---|
+| Tutum | Dar keçid (tutum 1), Tağ (yalnız ≤ N keçir) | Deşikli qüllə (boş qülləyə yalnız ≥ N) |
+| Karakuri | Say lövhəsi, Şüşə disk, Boş qutu, Möhürlü qutu (yalnız ən kiçik disk qapağa qoyulur və möhürü qırır) | Yenidən bağlanan qutu (3 gediş toxunulmasa bağlanır) |
+| Kilid | Açar disk, Ortadakı kilid, Zəncirvari kilid (2-3 kilid ardıcıl) | — |
+
+- **Panel:** üçüncü sətirdə alt-elementin qaydası yazılır.
+- **Şans qaydası:** Say lövhəsi və Boş qutuda yumşaldılıb (istifadəçi qərarı). Möhürlü qutu "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
+- **Validator:** səviyyənin adını çəkdiyi alt-elementlərin həqiqətən olduğunu yoxlayır. Qaydanı dəyişən hər alt-element həlli öz-özlüyündə uzatmalıdır.
+- **İpucu sürəti:** əsas yolda ≤0,7 s, Karakuri adasında 1,6 s.
 - Dünya 3-7 hələ qurulmayıb: Karvan, Zolaqlı, Dairə, Doqquz Halqa, Tərəzi, Mübadilə, Cığır, Zəncir, Güzgü, Maqnit onlar qurulana qədər yolda yoxdur (qaydaları və testləri qalır). Bağlı Qüllələr hələ yoxdur.
 
 ### Mexanika səviyyələri
@@ -259,6 +277,7 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 | M-5 | Birləşmə arxivə; 8 yeni mexanika, hər birinin 4 pilotu; Maqnit yalnız ölçülüb ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md)) | ✅ pilotlar sınaqda |
 | UI-1 | Rejim etiketləri: xəritədə hər dayanacağın yanında rejim adı, lövhənin altında ad + qayda, tək registr ([sənəd](../MindShift_Rejim_Etiketleri_Xerite_ve_Qayda_Paneli.md)) | ✅ |
 | F-1 | Fəsil sistemi: skelet + Dünya 1-2 (420 səviyyə), kombinasiyalar, hər fəslin adası ([sənəd](../MindShift_Fesil_Sistemi_v1.md)) | ✅ sınaqda |
+| F-1.1 | Fəsil daxilində dalğalar: Dünya 1-2-də 11 alt-element, dişli çətinlik ([sənəd](../MindShift_Fesil_Daxili_Dalgalar_v1.md)) | ✅ sınaqda |
 | F-2 | Tərəzi vizualı, Güzgü "Əks-səda" pilotları + raport | — |
 | F-3 | Dünya 3-7 (Bağlı Qüllələr gözləyir) | — |
 | 7 | Android build | — |

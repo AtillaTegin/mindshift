@@ -38,38 +38,50 @@ func _open(position: int) -> void:
 	(_board.get_node("%Board") as Control).size = Vector2(672.0, 700.0)
 
 
-## Taps a peg until the tap does more than open a karakuri box.
+## Taps a peg until the tap does more than open a karakuri box (a sealed box
+## never opens on a tap).
 func _tap(peg: int) -> void:
-	while _board.session.is_covered(peg):
+	while _board.session.is_covered(peg) and not _board.session.is_sealed(peg):
 		_board.on_peg_pressed(peg)
 	_board.on_peg_pressed(peg)
 
 
-## Every lesson on the built road that gets an introduction: each mode with
-## INTRO_TEXTS and each combination (chapter plan section 3.4).
-func _lessons_on_road() -> Array[String]:
-	var found: Array[String] = []
+## Every introduction on the built road, by main position: each mode with
+## INTRO_TEXTS, each combination (chapter plan section 3.4) and each
+## sub-element (chapter waves v1).
+func _intros_on_road() -> Dictionary:
+	var found: Dictionary = {}
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
 		var lesson: String = LevelCatalog.lesson_at(MAIN, position)
-		if not found.has(lesson) and (TutorialDirector.INTRO_TEXTS.has(lesson) or lesson.contains("+")):
-			found.append(lesson)
+		if lesson == Level.CLASSIC:
+			continue
+		var intro: String = TutorialDirector.intro_lesson(LevelCatalog.load_at(MAIN, position))
+		if not intro.is_empty():
+			found[intro] = position
 	return found
 
 
 func test_every_mechanic_is_introduced_on_its_first_level() -> void:
-	var lessons: Array[String] = _lessons_on_road()
-	for mode: String in ["peg_capacity", "covered_pegs", "foundation", "peg_capacity+covered_pegs",
-			"peg_capacity+foundation", "covered_pegs+foundation"]:
-		assert_true(lessons.has(mode), "world 1-2 teaches %s" % mode)
-	for mechanic: String in lessons:
-		var first: int = LevelCatalog.first_main_position(mechanic)
-		_open(first)
+	var intros: Dictionary = _intros_on_road()
+	for lesson: String in ["peg_capacity", "covered_pegs", "foundation", "peg_capacity+covered_pegs",
+			"peg_capacity+foundation", "covered_pegs+foundation", "variant:narrow", "variant:arch", "variant:count_board",
+			"variant:glass", "variant:empty_box", "variant:sealed", "variant:key_disk", "variant:middle_lock",
+			"variant:chain_lock"]:
+		assert_true(intros.has(lesson), "world 1-2 introduces %s" % lesson)
+	for mechanic: String in intros:
+		_open(intros[mechanic])
 		var tutorial: TutorialDirector = _board.tutorial
 		var session: GameSession = _board.session
 		assert_eq(tutorial.mode, TutorialDirector.Mode.GUIDED, mechanic)
 		assert_eq(tutorial.intro_mechanic, mechanic)
-		var words: String = tr(TutorialDirector.INTRO_TEXTS[mechanic]) if TutorialDirector.INTRO_TEXTS.has(mechanic) \
-				else tr("INTRO_COMBO") % [ModeTexts.name_of(session.level), ModeTexts.rule_of(session.level)]
+		var words: String = TutorialDirector.intro_text(session.level)
+		if TutorialDirector.INTRO_TEXTS.has(mechanic):
+			assert_eq(words, tr(TutorialDirector.INTRO_TEXTS[mechanic]))
+		elif mechanic.begins_with(TutorialDirector.VARIANT_PREFIX):
+			assert_eq(words, tr("INTRO_VARIANT") % [ModeTexts.variant_name(mechanic.trim_prefix(TutorialDirector.VARIANT_PREFIX)),
+					ModeTexts.variant_rule(mechanic.trim_prefix(TutorialDirector.VARIANT_PREFIX))])
+		else:
+			assert_eq(words, tr("INTRO_COMBO") % [ModeTexts.name_of(session.level), ModeTexts.rule_of(session.level)])
 		assert_eq(_board.coaching.toast.get_text(), words, "%s explains itself" % mechanic)
 		var path: Array[Move] = session.level.solution_path
 		for k: int in TutorialDirector.INTRO_STEPS:

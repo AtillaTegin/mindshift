@@ -47,6 +47,14 @@ var ring_color: Color = Color.WHITE:
 	set(value):
 		ring_color = value
 		queue_redraw()
+## A glass disk (karakuri wave "Şüşə disk"): see-through with a light glint,
+## and drawn above the boxes, so it shows even inside a closed one.
+var glass: bool = false:
+	set(value):
+		glass = value
+		z_index = 1 if glass else 0
+		queue_redraw()
+const GLASS_ALPHA: float = 0.55
 const WOBBLE_SECONDS: float = 0.32
 const WOBBLE_PIXELS: float = 7.0
 
@@ -64,6 +72,7 @@ var _flash: float = 0.0:
 func _ready() -> void:
 	_shadow.color = ThemeManager.color("shadow")
 	_shadow.position = SHADOW_OFFSET
+	_shadow.visible = not glass
 	resized.connect(_update_shadow)
 	_update_shadow()
 
@@ -135,11 +144,20 @@ func _update_shadow() -> void:
 func _draw() -> void:
 	var box: StyleBoxFlat = StyleBoxFlat.new()
 	box.bg_color = color.lightened(0.15) if selected else color
+	if glass:
+		box.bg_color.a = GLASS_ALPHA
+		box.set_border_width_all(2)
+		box.border_color = color.lightened(0.5)
 	box.set_corner_radius_all(int(_corner_radius()))
 	if selected:
 		box.set_border_width_all(4)
 		box.border_color = ThemeManager.color("text_primary")
 	draw_style_box(box, Rect2(Vector2.ZERO, size))
+	if glass:
+		# A glint across the top, as on glass.
+		var glint: Color = color.lightened(0.8)
+		glint.a = 0.7
+		draw_line(Vector2(_corner_radius(), size.y * 0.25), Vector2(size.x * 0.45, size.y * 0.25), glint, 2.0, true)
 	if outline_color != null:
 		_draw_rim(outline_color, 2.0)
 	if movable_ring:
