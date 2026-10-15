@@ -265,6 +265,9 @@ msgstr "Məbəd qüllələri: hər qüllənin öz hündürlüyü var. Qısa qül
 msgid "INTRO_FOUNDATION"
 msgstr "Təməl Daşı: qıfıllı böyük disklər əvvəlcə tərpənmir. Kiçik diskləri öz yerinə yığ: təməl qoyulanda qıfıllar açılır."
 
+msgid "INTRO_COMBO"
+msgstr "İki qayda birlikdə: %s. %s"
+
 msgid "INTRO_BALANCE"
 msgstr "Qədim Tərəzi: yanaşı iki qüllə bir tərəzidir. Gözlərdəki disklərin ölçü cəmi həddən çox fərqlənsə, tərəzi pozulur."
 

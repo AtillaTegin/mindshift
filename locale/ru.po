@@ -349,6 +349,10 @@ msgstr ""
 msgid "INTRO_FOUNDATION"
 msgstr ""
 
+#. [TODO: RU] az: İki qayda birlikdə: %s. %s
+msgid "INTRO_COMBO"
+msgstr ""
+
 #. [TODO: RU] az: Qədim Tərəzi: yanaşı iki qüllə bir tərəzidir. Gözlərdəki disklərin ölçü cəmi həddən çox fərqlənsə, tərəzi pozulur.
 msgid "INTRO_BALANCE"
 msgstr ""

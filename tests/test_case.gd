@@ -55,6 +55,32 @@ func assert_not_null(value: Variant, message: String = "") -> void:
 		_record("expected non-null value", message)
 
 
+## A level of `rule_ids` (and `params`) from `start` to `goal` (peg lists),
+## solved by the Solver: for tests of modes whose chapter is not built yet.
+static func make_level(id: int, rule_ids: Array[String], start: Array, goal: Array, params: Dictionary = {}) -> Level:
+	var from: PuzzleState = PuzzleState.new(start)
+	var to: PuzzleState = PuzzleState.new(goal)
+	var result: Dictionary = Solver.solve(from, to, RuleSet.from_ids(rule_ids, params), LevelValidator.SOLVER_MAX_STATES)
+	var tier: String = Difficulty.tier_for_moves(result["min_moves"])
+	return Level.create(id, tier if not tier.is_empty() else "easy", from, to, rule_ids, result["path"], params)
+
+
+## A level of `modes` on a LevelForge recipe `board` with `low`-`high` moves,
+## drawn like the road builder does (seeded), or null.
+static func forge_level(id: int, modes: Array, board: Dictionary, low: int, high: int, seed_value: int = 1) -> Level:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	for attempt: int in 2000:
+		var draft: Dictionary = LevelForge.attempt(modes, board, low, high, {}, rng)
+		if draft.is_empty():
+			continue
+		var level: Level = Level.create(id, Difficulty.tier_for_moves(draft["moves"]), draft["start"], draft["goal"],
+				draft["rule_ids"], draft["path"], draft["params"])
+		level.covered_pegs.assign(draft["covered"])
+		return level
+	return null
+
+
 func _record(reason: String, message: String) -> void:
 	_failures.append(reason if message.is_empty() else "%s: %s" % [message, reason])
 

@@ -110,49 +110,39 @@ Test zamanı loq edilən istənilən engine/script xətası da testi uğursuz ed
 ## Səviyyələr
 
 ```powershell
-# generasiya (hər çətinliyin köhnə fayllarını əvəz edir; seed sabitdir, nəticə təkrarlanır)
-godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=all
-godot --headless --path . --script res://tools/level_generator.gd -- --difficulty=medium --count=76 --seed=7
-# mexanika səviyyələri və yol (generasiyadan sonra həmişə path_builder-i yenidən işə salın)
-godot --headless --path . --script res://tools/mechanic_level_builder.gd
-godot --headless --path . --script res://tools/path_builder.gd
+# bütün yol: hər səviyyə faylını və path.json-u əvəz edir, sonda hamısını yoxlayır (seed sabitdir, nəticə təkrarlanır)
+godot --headless --path . --script res://tools/road_builder.gd                 # BUILT_WORLDS (indi 1-2)
+godot --headless --path . --script res://tools/road_builder.gd -- --worlds=1-2
 # yoxlama (hər faylı Solver ilə yenidən həll edir, yolu da yoxlayır; --require=N hər çətinlikdə ən azı N klassik səviyyə tələb edir)
 godot --headless --path . --script res://tools/level_validator.gd -- --require=16
 ```
 
-Fayllar `data/levels/<çətinlik>/<çətinlik>_NNN.json` adlanır (asandan çətinə sıralanıb).
-ID-lər: easy 1001+, medium 2001+, hard 3001+, expert 4001+. Çətinlik cədvəli [core/difficulty.gd](core/difficulty.gd)-dədir.
+### Fəsil sistemi
 
-| Çətinlik | Gediş | Qüllə | Disk | Say |
-|---|---|---|---|---|
-| Easy | 5–11 | 3 | 3–4 | 16 |
-| Medium | 12–20 | 3–4 | 5–6 | 76 |
-| Hard | 21–33 | 4 | 7–8 | 74 |
-| Expert | 34+ | 4 | 9–10 | 28 |
+[Fəsil Sistemi v1](../MindShift_Fesil_Sistemi_v1.md) (2026-10-15) səviyyə quruluşunu əvəz edir: 7 dünya, ~2020 səviyyə. Hər mod öz fəslində öyrədilir, fəsillər arasında klassik Hanoi nəfəs kimi gəlir, 2-3 moddan sonra 50 səviyyəlik kombinasiya fəsli gəlir. Plan [core/chapter_plan.gd](core/chapter_plan.gd)-dədir (`ChapterPlan`), səviyyələri [tools/road_builder.gd](tools/road_builder.gd) slot-slot qurur ([tools/level_forge.gd](tools/level_forge.gd) bir səviyyəni çəkib yoxlayır).
 
-Asan: generator əvvəlki kimi 22 səviyyə çəkir, 3 disklilərdən yalnız ilk 4-ü qalır (səviyyə strukturu v4: 3 diskli asan yalnız yolun ilk 4 səviyyəsidir). Tutorial səviyyələri və 4 disklilər dəyişmir.
+İndi qurulub: **Dünya 1-2**, 350 əsas yol + 4 adada 70 = 420 səviyyə (1260 ulduz).
 
-Üstəgəl 138 mexanika səviyyəsi (22 Doqquz Halqa, 24 karakuri, 30 Karvan Yolu, 30 Böyük Mübadilə, 8 yeni mexanikanın 32 pilotu): cəmi 332 səviyyə (996 ulduz).
+| Dünya | Səviyyələr | Fəsil |
+|---|---|---|
+| 1 | 1–50 | Klassik (yalnız klassik; 1-2 tutorial dəyişmir) |
+| 1 | 51–100 | Tutum (36 mod + 14 klassik) |
+| 2 | 101–200 | Karakuri (70 + 25 klassik + 5 təkrar) |
+| 2 | 201–300 | Kilid (70 + 25 klassik + 5 təkrar) |
+| 2 | 301–350 | Kombinasiya I: Tutum+Karakuri, Tutum+Kilid, Karakuri+Kilid (25 kombinasiya, 15 tək mod, 10 klassik) |
 
-Hard və Expert sətirləri sənəddəki ilkin cədvəldən fərqlənir: 4q/6d ilə maksimum 17, 4q/8d ilə 33, 5q/10d ilə 31 gediş mümkündür.
-Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənzimlənib (köhnə: 3–8, 9–18, 19–35, 36+).
-
-### Yol necə qurulur
-
-[tools/path_builder.gd](tools/path_builder.gd) səviyyələri yola düzür (sabit seed, nəticə təkrarlanır), [səviyyə strukturu v4](../MindShift_Level_Structure_v4_ve_Birlesme_Tapmacasi.md)-ə görə:
-
-- İlk 4 səviyyə 3 diskli klassik Asan-dır (öyrənmə), tutorial (1001, 1002) birinci gəlir. Sonra 4 diskli asanlar Orta-ya keçid olur. 50-ci səviyyədən sonra heç bir asan səviyyə yoxdur (nə klassik, nə mexanika).
-- Fəsillər sabit yerdə başlayır (`PathBuilder.CHAPTER_STARTS`): karakuri 12, Karvan Yolu 17, Doqquz Halqa 20, Qeyri-Bərabər Tutum 25, Təməl Daşı 30, Dövrəvi 35, Böyük Mübadilə 40, Zolaqlı Qüllə 45, Tərəzi 55, Zəncir 65, Güzgü 75, Qumlu Cığır 85. Köhnə nadir boss-lar yoxdur.
-- 50-yə qədər yalnız fəsillərin asan giriş səviyyələri gəlir. 51–200 arasında klassik və mexanika təxminən 1:1 növbələşir: təxminən hər iki yerdən birində mexanika olur, yeri seed ilə seçilir (nə sərt ritm, nə uzun blok). 200-dən sonra qalan mexanikalar yolun sonuna qədər paylanır, hər fəsil sona çatır. Sondakı mexanika payı 0,46-dır, yəni ortadakı 1:1-dən yalnız bir az azdır.
-- Hər mexanika yeri öz bərabər paylanmasından ən çox geri qalan fəslə verilir. Fəslin içində səviyyələr asandan çətinə gedir.
-- Klassik yerlərdə çətinliklər çəki əyriləri ilə qarışdırılır: Asan yalnız əvvəldə, sonra Orta üstünlük təşkil edir, sonra Orta və Çətin qarışır, sona doğru Çətin artır. Hər addımda öz əyrisindən ən çox geri qalan çətinlik seçilir (az təsadüfi əlavə ilə).
-- Builder sonda yolun çətinlik xəritəsini çap edir (E/M/H/X, mexanika kiçik hərflə).
+- **Pillələr** (istifadəçi qərarı: əsas yolda 33 gediş həddi qalır): fəslin ilk 15%-i asan-orta 7–12, 45%-ə qədər orta 12–18, 75%-ə qədər orta-çətin 18–25, son 25% çətin 25–33. Klassik 1–100 öz cədvəli ilə (1–5 asan 5–7, 6–20, 21–45, 46–75, 76–100). Adalar ekspert 34–70. Daxili çətinlik (Hint qiyməti) yenə gediş sayından gəlir: 5–11, 12–20, 21–33, 34+.
+- **Mod fəsli:** mod ilə açılır (bələdçi), hər 3 mod səviyyəsinə 1 klassik (Dünya 1-də 2,5:1), klassiklər təbəqə-təbəqə seçilir. İkinci yarıda hər 10 səviyyədən biri əvvəlki fəsillərin modudur (ən yenisindən geriyə növbə ilə). 100-dən sonrakı klassiklər orta-çətin və çətin arasında növbələşir, hərdən 7 disk / 3 qüllə "böyük sınaq" gəlir.
+- **Kombinasiya fəsli:** 50% kombinasiya, 30% həmin dünyanın tək modları, 20% klassik. Birinci kombinasiya fəsli açır, digərləri ilk yarıda bir-bir qoşulur. Hər kombinasiyanın ilk səviyyəsində mini-bələdçi (iki qayda birlikdə). Xəritədə "Tutum + Kilid", paneldə iki qayda. Kombinasiya hər iki moddan ayrı-ayrılıqda uzun olmalıdır (`LevelForge.matters`). Yalnız siyahıdakı (whitelist) cütlər; kateqoriya qaydaları `ChapterPlan.is_combo_allowed`-dadır, siyahıdan kənar kombinasiya validator-da xəta verir.
+- **Adalar** (istifadəçi qərarı: hər fəslin sonunda öz adası): klassik ada 50-dən sonra (28 ekspert, 8 çətin, 4 orta), hər mod fəslinin adası öz fəsli bitəndə açılır, 10 ekspert səviyyə. Xəritədə hər açıq adanın öz markeri var; başlıq "Gizli ada · Tutum".
+- **Hər qrup** (bir axın: klassik, mod və ya kombinasiya, bir pillə) birlikdə çəkilir, gediş sayları pillənin aralığına yayılır, slotlara asandan çətinə paylanır.
+- **Fayllar və id-lər:** klassik `data/levels/<çətinlik>/<çətinlik>_NNN.json`, id-lər çətinliyə görə (1001+, 2001+, 3001+, 4001+). Mod və kombinasiyalar `data/levels/mechanics/<ad>_NNN.json` (`capacity`, `fog`, `foundation`, kombinasiya: `capacity_foundation` və s.), hər modun və kombinasiyanın 10001-dən başlayan 1000-lik öz id bloku var.
+- Builder sonda hər fəsil və ada üçün status çap edir.
+- Dünya 3-7 hələ qurulmayıb: Karvan, Zolaqlı, Dairə, Doqquz Halqa, Tərəzi, Mübadilə, Cığır, Zəncir, Güzgü, Maqnit onlar qurulana qədər yolda yoxdur (qaydaları və testləri qalır). Bağlı Qüllələr hələ yoxdur.
 
 ### Mexanika səviyyələri
 
-138 səviyyə [data/levels/mechanics/](data/levels/mechanics/)-dadır (22 Doqquz Halqa, 24 örtülü qüllə / karakuri, 30 Karvan Yolu, 30 Böyük Mübadilə, 8 yeni mexanikanın hər birindən 4 pilot). Onlar adi yol səviyyələridir: ardıcıl açılır, ulduz və jeton verir.
-
-- **Faylların quruluşu:** ID-lər 9001-dən başlayır. `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
+- **Faylların quruluşu:** `difficulty` gediş sayının düşdüyü çətinlikdir. Ölçü klassik cədvəldən fərqlənə bilər (Doqquz Halqa yalnız 4 qüllədə həlli etibarlı uzadır).
 - **Doqquz Halqa (alternasiya qaydası, D variantı):** `"rules": ["classic_hanoi", "alternation"]` ([mədəni inteqrasiya əlavəsi](../MindShift_Kulturoloji_Inteqrasiya_Addendum.md), bölmə 1).
   - 1-ci disk həmişə gedə bilər; 1-ci diskdən sonra istənilən disk; başqa diskdən sonra yalnız 1-ci disk və ya ±1 qonşu. Başlanğıcda yalnız 1-ci disk.
   - İndi gedə bilən üst disklər lövhədə jadeit halqası ilə işarələnir. Qadağan diskə toxunanda disk titrəyir və qayda yazılır, cəza yoxdur.
@@ -169,24 +159,24 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - **Təmiz Dəyişmə** (`colour: false`): ağlar solda, qaralar sağda başlayır, yalnız ölçü qaydası var. Yığınlar yer dəyişir.
   - **Qarışıq-Ayırma** (`colour: true`): hər ucda hər ölçüdən bir disk var, rənglər qarışıqdır. Ölçü qaydası və "fərqli rəngli disklər toxunmur" qaydası birlikdə işləyir. Ən böyük cüt həmişə səhv ucda başlayır, yoxsa bu, sabit bazalı daha kiçik tapmaca olardı. Həlli olmayan başlanğıclar atılır.
   - Eyni ölçülü disklər üst-üstə qoyulmur. Qadağan gediş həmişə səbəbini status sətrində yazır: "böyük kiçiyin üstünə", "eyni ölçü" və ya "fərqli rənglər toxuna bilməz" (boz, cəza yoxdur).
-  - 30 səviyyə, 7–31 gediş: 6 təmiz, 24 qarışıq. Lövhələr 2026-10-14-də ölçülüb. Bir bufer heç vaxt həll olunmur. Ən çox 8 disk saxlanılıb, çünki yoldan kənar Hint 6 qüllə / 8 diskdə kompüterdə 3,2 s-ə qədər çəkir, 5 qüllə / 10 diskdə 4,6 s, 6 qüllə / 10 diskdə 22 s. Təmiz növün hər lövhədə yalnız bir tapmacası var, ona görə 50/50 əvəzinə 6/24 alındı.
-  - Fəsil 40-da təmiz növlə başlayır, qarışıq növ 43-də gəlir. Hər alt-tipin öz bələdçisi var (`Level.lesson()`). Pillə gediş sayından gəlir. 6 qüllə də bir cərgədə qalır, disklərdə ölçü rəqəmi yazılır.
-- **Yeni mexanikalar** ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md), istifadəçi cavabları 2026-10-15): hər birinin 3–4 pilot səviyyəsi əsas yoldadır, Birləşmədən boşalan yerlərdə ([tools/mechanic_level_builder.gd](tools/mechanic_level_builder.gd), `PILOT_SPECS`, id 9152-dən). Hamısı klassik Hanoi + öz qaydasıdır. Qayda həlli uzatmalıdır, yoxsa səviyyə alınmır. Qadağan gediş səbəbini status sətrində yazır.
-  - **Qeyri-Bərabər Tutum** (`peg_capacity`, `{"capacities": [5, 2, 2, 5]}`): hər qüllə öz sayı qədər disk tutur, dirək də o qədər hündürdür. 3 qüllədə tutum heç vaxt həlli dəyişmir (ən böyük diski köçürmək üçün qalanların hamısı onsuz da üçüncü qüllədə olmalıdır), ona görə 4 qüllə. Fəsil 25-də başlayır.
-  - **Addımlı Kilidlənmə / Təməl Daşı** (`foundation`, `{"locked": [7, 6], "keys": [1, 2, 3], "targets": [1, 1, 1]}`): ən böyük 1–2 disk qıfıllıdır, ən kiçik 2–3 disk hədəf qüllələrinə çatana qədər. İstifadəçi qərarı: bir dəfə açılır, açıq qalır (qaydanın yaddaşında bir bit). Qıfıl disklərin üstündə çəkilir, status "Təməl: 2/3 kiçik disk yerindədir" yazır. Fəsil 30.
-  - **Dövrəvi Hanoi / Saat Qülləsi** (`cyclic`): disk yalnız saat əqrəbi istiqamətində növbəti qülləyə gedir. Qüllələr siferblatın üstündə dairəvi düzülür, mərkəzdə ox var. Tanınmış dəyərlər yoxlanır: 3 disk qonşuya 15, o birinə 21 gediş. Fəsil 35.
-  - **İkirəngli Hanoi / Zolaqlı Qüllə** (`stripes`): tək və cüt ölçülər iki rəngdədir, eyni rəng eyni rəngin üstünə qoyulmur. 3 qüllədə qüllədən qülləyə klassik həll onsuz da belədir, ona görə pilotlar əsasən 4 qüllədədir. Fəsil 45.
-  - **Tərəzi Hanoi / Qədim Tərəzi** (`balance`, `{"tolerance": 6}`): qüllələr cüt-cütdür (0–1, 2–3). İstifadəçi qərarı: hər mövqedə, başlanğıc və hədəf də daxil, cütün iki qülləsindəki ölçü cəmlərinin fərqi tolerantlığı keçmir. Təsadüfi mövqelər demək olar ki, heç vaxt taraz olmur, ona görə pilotlar bütün taraz mövqelərin arasından seçilir. Cütlər yaxın durur, altında ağır tərəfə əyilən qol var. Fəsil 55.
-  - **Zəncirlənmiş Disklər** (`chain`, `{"disks": [2, 5]}`): iki disk yalnız birlikdə, bir gedişdə, iki fərqli hədəfə gedir. Ikisi də üstdə olmalıdır. Toxunuş ikisini də qaldırır, sonra əvvəl toxunulan diskin, sonra yoldaşının qülləsi seçilir. Faylda belə gediş dörd rəqəmdir: `[from, to, from_2, to_2]`. 3 qüllədə cüt demək olar ki, həmişə ilişir, ona görə 4 qüllə. Fəsil 65.
-  - **Güzgü Hanoi** (`mirror`): iki müstəqil 3 qüllə lövhəsi, biri o birinin üstündə. Disk öz lövhəsindən çıxmır. Gedişlər cəmlənir, Solver hər lövhəni ayrıca həll edir. Fəsil 75.
-  - **İz Qadağası / Qumlu Cığır** (`trail`, `{"disk": 1, "recent": 2}`): izli disk son iki dayandığı qülləyə qayıda bilməz, qumda iz qalır. Sənədin öz sözü ilə (bütün tarixçə) qayda 100 təsadüfi lövhədən yalnız 0–6-sında həlli dəyişirdi, həm də az. Sənəd "son N qüllə" seçimini builder-ə buraxıb. 3 qüllə, çünki 4 qüllədə yaddaş axtarışı dəqiqələrlə uzadırdı. Fəsil 85.
-  - **Maqnit Hanoi** (`magnet`): qayda yazılıb və ölçülüb, amma səviyyəsi yoxdur. Əsas yol, yoxsa ada qərarı istifadəçinindir. Ölçmə (kompüter, qüllədən qülləyə, 2026-10-15):
+  - Lövhələr 2026-10-14-də ölçülüb. Bir bufer heç vaxt həll olunmur. Ən çox 8 disk saxlanılır, çünki yoldan kənar Hint 6 qüllə / 8 diskdə kompüterdə 3,2 s-ə qədər çəkir, 5 qüllə / 10 diskdə 4,6 s, 6 qüllə / 10 diskdə 22 s. Uclardan başlayanda cəmi ~40 fərqli tapmaca var (təmiz növün hər lövhədə biri), ona görə Dünya 5-in 150 səviyyəlik fəsli üçün istifadəçi yarı yoldan başlanğıcları seçdi.
+  - Hər alt-tipin öz bələdçisi var (`Level.lesson()`). Pillə gediş sayından gəlir. 6 qüllə də bir cərgədə qalır, disklərdə ölçü rəqəmi yazılır.
+- **Yeni mexanikalar** ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md), istifadəçi cavabları 2026-10-15): hamısı klassik Hanoi + öz qaydasıdır, qayda həlli uzatmalıdır, yoxsa səviyyə alınmır. Qadağan gediş səbəbini status sətrində yazır. Pilotları fəsil sistemi ilə öz fəsillərinə çevrildi.
+  - **Qeyri-Bərabər Tutum** (`peg_capacity`, `{"capacities": [5, 2, 2, 5]}`): hər qüllə öz sayı qədər disk tutur, dirək də o qədər hündürdür. 3 qüllədə tutum heç vaxt həlli dəyişmir (ən böyük diski köçürmək üçün qalanların hamısı onsuz da üçüncü qüllədə olmalıdır), ona görə 4 qüllə; 5 qüllə yavaş axtarılır və qısa qalır, ona görə yalnız 6 disklə. Tutum hər qüllədə başlanğıc və hədəfin tələbi + 0..slack-dır. Fəsil 51–100.
+  - **Addımlı Kilidlənmə / Təməl Daşı** (`foundation`, `{"locked": [7, 6], "keys": [1, 2, 3], "targets": [1, 1, 1]}`): ən böyük 1–2 disk qıfıllıdır, ən kiçik 1–3 disk hədəf qüllələrinə çatana qədər. İstifadəçi qərarı: bir dəfə açılır, açıq qalır (qaydanın yaddaşında bir bit). Qıfıl disklərin üstündə çəkilir, status "Təməl: 2/3 kiçik disk yerindədir" yazır. Fəsil 201–300.
+  - **Dövrəvi Hanoi / Saat Qülləsi** (`cyclic`): disk yalnız saat əqrəbi istiqamətində növbəti qülləyə gedir. Qüllələr siferblatın üstündə dairəvi düzülür, mərkəzdə ox var. Tanınmış dəyərlər yoxlanır: 3 disk qonşuya 15, o birinə 21 gediş. Fəsil 551–650 (Dünya 3).
+  - **İkirəngli Hanoi / Zolaqlı Qüllə** (`stripes`): tək və cüt ölçülər iki rəngdədir, eyni rəng eyni rəngin üstünə qoyulmur. 3 qüllədə qüllədən qülləyə klassik həll onsuz da belədir. Fəsil 451–550.
+  - **Tərəzi Hanoi / Qədim Tərəzi** (`balance`, `{"tolerance": 6}`): qüllələr cüt-cütdür (0–1, 2–3). İstifadəçi qərarı: hər mövqedə, başlanğıc və hədəf də daxil, cütün iki qülləsindəki ölçü cəmlərinin fərqi tolerantlığı keçmir. Təsadüfi mövqelər demək olar ki, heç vaxt taraz olmur, ona görə səviyyələr bütün taraz mövqelərin arasından seçilir. T 1–2-də heç vaxt maraqlı səviyyə alınmır (ölçülüb), istifadəçi qərarı: T fəsil boyu lövhənin işlək aralığında azalır. Fəsil 821–970.
+  - **Zəncirlənmiş Disklər** (`chain`, `{"disks": [2, 5]}`): iki disk yalnız birlikdə, bir gedişdə, iki fərqli hədəfə gedir. Ikisi də üstdə olmalıdır. Toxunuş ikisini də qaldırır, sonra əvvəl toxunulan diskin, sonra yoldaşının qülləsi seçilir. Faylda belə gediş dörd rəqəmdir: `[from, to, from_2, to_2]`. 3 qüllədə cüt demək olar ki, həmişə ilişir, ona görə 4 qüllə. Fəsil 1321–1470.
+  - **Güzgü Hanoi** (`mirror`): indiki qayda iki müstəqil 3 qüllə lövhəsidir. Fəsil sistemi onu "Əks-səda" qaydası ilə əvəz edir (yuxarıdakı gediş aşağıda güzgü kimi təkrarlanır); əvvəl 4-5 pilot və raport. Fəsil 1471–1570.
+  - **İz Qadağası / Qumlu Cığır** (`trail`, `{"disk": 1, "recent": 2}`): izli disk son iki dayandığı qülləyə qayıda bilməz, qumda iz qalır. Sənədin öz sözü ilə (bütün tarixçə) qayda 100 təsadüfi lövhədən yalnız 0–6-sında həlli dəyişirdi, həm də az. Sənəd "son N qüllə" seçimini builder-ə buraxıb. 3 qüllə, çünki 4 qüllədə yaddaş axtarışı dəqiqələrlə uzadırdı. Fəsil 1171–1270.
+  - **Maqnit Hanoi** (`magnet`): qayda yazılıb və ölçülüb, fəsli 1771–1920-dir (Dünya 7). Ölçmə (kompüter, qüllədən qülləyə, 2026-10-15):
     - 3 qüllə, 3–7 disk: 11 / 30 / 83 / 236 / 687 gediş (klassik 7 / 15 / 31 / 63 / 127), hamısı 0,1 s-dən az. Təsadüfi mövqelər: 4 diskdə 9–30, 5 diskdə median 53.
     - 4 qüllə, 4–7 disk: 12 / 19 / 26 / 37 gediş, 0,03 / 0,14 / 0,7 / 11 s. Təsadüfi mövqelər 5 diskdə 3–11, 6 diskdə 8–18 (ən pis 0,4 s), 7 diskdə 12–24 (ən pis 3,2 s).
     - 5 qüllə, 5–6 disk: 15 / 20 gediş, 3,2 / 22 s.
     - Nəticə: əsas yol üçün (33 gedişə qədər, sürətli Hint) 3 qüllə / 3–4 disk və 4 qüllə / 4–6 disk uyğundur. 4 qüllə / 7 disk və 5 qüllə Hint üçün çox yavaşdır. 3 qüllə / 5+ disk isə əsas yol üçün çox uzundur (83+).
   - Yoldan kənar Hint kompüterdə ən çox 1,4 s çəkir (Təməl, 4 qüllə / 7 disk). Ən ağır ekspert səviyyəsi 1,6 s-dir.
-- **Birləşmə Tapmacası (Water Sort)** 2026-10-15-də arxivə köçdü ([archive/water_sort/](archive/water_sort/README.md), `.gdignore`: Godot onu görmür). Kodu, testləri və 30 səviyyəsi orada durur, oyuna bağlı son commit `c376864`-dür. İd-ləri (9082–9111) boş qalır.
+- **Birləşmə Tapmacası (Water Sort)** 2026-10-15-də arxivə köçdü ([archive/water_sort/](archive/water_sort/README.md), `.gdignore`: Godot onu görmür). Kodu, testləri və 30 səviyyəsi orada durur, oyuna bağlı son commit `c376864`-dür.
 - **Mədəni don** ([scripts/board_skin.gd](scripts/board_skin.gd), rənglər `ThemeManager.SKINS`-də): kodla çəkilir, şəkil faylı yoxdur.
   - Doqquz Halqa: jadeit yaşılı, damarlar və çubuqdan asılan doqquz halqa (Çin Doqquz Halqa).
   - Örtülü qüllə: ağac damarı və yosegi romb zolağı, qutunun özü də ağacdır (Yapon karakuri qutusu).
@@ -195,13 +185,10 @@ Gediş aralıqları əlavə sənəd 3-ün 1.1 bölməsinə görə yenidən tənz
   - Tərəzi: bazar piştaxtasının taxtaları, hər cütün altında tərəzi qolu. Qumlu Cığır: qum ləpələri, izlər.
   - Dövrəvi: gecə mavisi siferblat, 12 bölgü, saat əqrəbi istiqamətində ox. Zolaqlı Qüllə: bərbərxana sütunu kimi çəp zolaqlar. Zəncir: polad, yuxarıda zəncir halqaları. Güzgü: ağ mərmər, iki lövhə arasında güzgü xətti.
   - Lövhənin arxası, qüllələr, hədəf önizləməsi və xəritədəki dayanacağın halqası bu rəngdədir. Klassik səviyyələrin donu yoxdur.
-- **Yenidən qurmaq** (sabit seed ilə, hər faylı validator yoxlayır):
-
-  ```powershell
-  godot --headless --path . --script res://tools/mechanic_level_builder.gd
-  ```
+- **Yenidən qurmaq:** `tools/road_builder.gd` (yuxarıda), sabit seed ilə, hər faylı validator yoxlayır.
 - **Validator-un dizayn qaydaları:**
-  - klassikdən əlavə qayda (Doqquz Halqa, Karvan Yolu) ən qısa həlli uzatmalıdır;
+  - klassikdən əlavə hər qayda ən qısa həlli uzatmalıdır: onlardan hər hansı biri olmadan həll qısalır (kombinasiya hər iki moddan ayrı-ayrılıqda uzundur);
+  - yolda hər səviyyə öz fəslinə uyğundur, kombinasiyalar plandakı siyahıdadır, ekspert yalnız adalarda, hər ada öz modunun ekspert səviyyələridir;
   - Böyük Mübadilə: `color_swap` tək qaydadır, uclar arasında ən azı 2 boş qüllə var, hər ucda hər ölçüdən bir disk (cütün o biri qarşı ucda), hədəf qaralar solda, ağlar sağda; təmiz növ ağlarla solda başlayır, qarışıq növün hər iki ucu qarışıqdır və ən böyük ağ disk soldadır;
   - örtülü qüllədə ən azı 2 disk olmalıdır;
   - örtülü qüllə həllin ilk 3 gedişində istifadə olunmalıdır;
@@ -271,6 +258,9 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 | M-4 | Böyük Mübadilə v2: iki alt-tip, 30 səviyyəlik fəsil, boss-lar ləğv; Birləşmədə Water Sort qaydası və qrup köçürmə ([əlavə](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md)) | ✅ |
 | M-5 | Birləşmə arxivə; 8 yeni mexanika, hər birinin 4 pilotu; Maqnit yalnız ölçülüb ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md)) | ✅ pilotlar sınaqda |
 | UI-1 | Rejim etiketləri: xəritədə hər dayanacağın yanında rejim adı, lövhənin altında ad + qayda, tək registr ([sənəd](../MindShift_Rejim_Etiketleri_Xerite_ve_Qayda_Paneli.md)) | ✅ |
+| F-1 | Fəsil sistemi: skelet + Dünya 1-2 (420 səviyyə), kombinasiyalar, hər fəslin adası ([sənəd](../MindShift_Fesil_Sistemi_v1.md)) | ✅ sınaqda |
+| F-2 | Tərəzi vizualı, Güzgü "Əks-səda" pilotları + raport | — |
+| F-3 | Dünya 3-7 (Bağlı Qüllələr gözləyir) | — |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
@@ -294,7 +284,7 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 ### Rejim etiketləri
 
 - **Mənbə:** bütün rejim mətnləri bir registrdədir ([scripts/mode_texts.gd](scripts/mode_texts.gd), `ModeTexts`). Hər rejim (`Level.lesson()`) üçün qısa xəritə etiketi, ad və bir cümləlik qayda var. Mətnlərin özü `locale/az.po`-dadır, hələ qurulmamış rejimlərinki də (Bağlı Qüllələr).
-- **Xəritə:** hər dayanacağın yanında rejimin qısa adı yazılır (22 şrift, boz). Etiket dayanacağın hündürlüyündə, xəritənin ortasına baxan tərəfdə durur. Ada markeri olan dayanacaqda etiket o biri tərəfə keçir, heç bir tərəfdə yer yoxdursa dayanacağın altına düşür. Gizli adada ekspert pilləli səviyyələrə "· Ekspert" əlavə olunur (istifadəçi qərarı: yalnız onlara).
+- **Xəritə:** hər dayanacağın yanında rejimin qısa adı yazılır (22 şrift, boz). Etiket dayanacağın hündürlüyündə, xəritənin ortasına baxan tərəfdə durur. Ada markeri olan dayanacaqda etiket o biri tərəfə keçir, heç bir tərəfdə yer yoxdursa dayanacağın altına düşür. Gizli adalarda ekspert pilləli səviyyələrə "· Ekspert" əlavə olunur (istifadəçi qərarı: yalnız onlara). Kombinasiya "Tutum + Kilid" kimi yazılır, paneldə də bu ad və iki qayda (3 sətrə qədər) görünür.
 - **Lövhə:** status sətrinin altında iki hissə var: rejimin adı (qalın) və qaydası (540 px enində, ən çox 2 sətir). Tərəzinin qaydası səviyyənin həddini də göstərir. Status sətri müvəqqəti mesajlar üçün qalır: rədd səbəbi, irəliləyiş, Hint.
 - **Testlər:**
   - yoldakı hər səviyyənin və `RuleSet.RULE_IDS`-dəki hər qaydanın registrdə qeydi olmalıdır;

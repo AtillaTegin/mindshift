@@ -3,15 +3,16 @@ extends Control
 ## The level path drawn as a winding road of numbered stops (level structure
 ## addendum v3), Candy Crush style: level 1 at the bottom, the road climbs.
 ## It shows every level up to the furthest one reached plus LOCKED_AHEAD locked
-## stops; the rest of the road stays out of sight. On the main road the island
-## (the side branch) appears as a marker beside the stop that opened it.
+## stops; the rest of the road stays out of sight. On the main road each open
+## island (one at the end of each chapter, chapter system v1) appears as a
+## marker beside the stop that opened it.
 ## Every stop carries its mode's short label beside it (mode labels
-## specification v1, section 1: ModeTexts), on the island with "· Ekspert" for
+## specification v1, section 1: ModeTexts), on an island with "· Ekspert" for
 ## an expert level (user decision 2026-10-15: only those).
 ## Lives inside a vertical ScrollContainer; its height grows with the road.
 
 signal level_pressed(track: String, position: int)
-signal island_pressed
+signal island_pressed(island: String)
 
 ## Vertical distance between two stops.
 const STEP: float = 150.0
@@ -35,7 +36,8 @@ var track: String = LevelCatalog.MAIN
 var _cells: Array[LevelCell] = []
 ## The mode label of each shown stop.
 var _labels: Array[Label] = []
-var _island: Button
+## Main road position -> the marker of the island it opened.
+var _islands: Dictionary = {}
 ## Next level to play on this track (0: none) and the last completed stop in a row from 1.
 var _current: int = 0
 var _done_in_a_row: int = 0
@@ -49,7 +51,7 @@ func setup(p_track: String, save: SaveSystem) -> void:
 		child.queue_free()
 	_cells.clear()
 	_labels.clear()
-	_island = null
+	_islands.clear()
 	var length: int = LevelCatalog.track_length(track)
 	var furthest: int = 0
 	_current = 0
@@ -83,14 +85,19 @@ func setup(p_track: String, save: SaveSystem) -> void:
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(label)
 		_labels.append(label)
-	if track == LevelCatalog.MAIN and LevelCatalog.is_branch_open(save) and LevelCatalog.branch_after() <= shown:
-		_island = PolishedButton.new()
-		_island.text = "MAP_ISLAND"
-		_island.theme_type_variation = &"AccentButton"
-		_island.size = ISLAND_SIZE
-		_island.add_theme_font_size_override("font_size", 28)
-		_island.pressed.connect(func() -> void: island_pressed.emit())
-		add_child(_island)
+	if track == LevelCatalog.MAIN:
+		for island: String in LevelCatalog.open_islands(save):
+			var after: int = LevelCatalog.island_after(island)
+			if after > shown:
+				continue
+			var marker: Button = PolishedButton.new()
+			marker.text = "MAP_ISLAND"
+			marker.theme_type_variation = &"AccentButton"
+			marker.size = ISLAND_SIZE
+			marker.add_theme_font_size_override("font_size", 28)
+			marker.pressed.connect(func() -> void: island_pressed.emit(island))
+			add_child(marker)
+			_islands[after] = marker
 	_place_children()
 	queue_redraw()
 
@@ -101,12 +108,23 @@ func shown_count() -> int:
 
 
 ## The mode label of the stop at `position` on `p_track`: its mode's short
-## name, plus "· Ekspert" for an expert level on the island.
+## name ("Tutum + Kilid" for a combination), plus "· Ekspert" for an expert
+## level on an island.
 static func stop_label(p_track: String, position: int) -> String:
 	var text: String = ModeTexts.label(LevelCatalog.lesson_at(p_track, position))
-	if p_track == LevelCatalog.BRANCH and Difficulty.tier_of_id(LevelCatalog.level_id_at(p_track, position)) == "expert":
+	if LevelCatalog.is_island(p_track) and _is_expert(p_track, position):
 		text += " " + Languages.text("MAP_EXPERT_SUFFIX")
 	return text
+
+
+## Whether the level at a path position is of the expert tier: a classic one
+## by its id, a mechanic one by its file.
+static func _is_expert(p_track: String, position: int) -> bool:
+	var level_id: int = LevelCatalog.level_id_at(p_track, position)
+	if not Difficulty.is_mechanic_id(level_id):
+		return Difficulty.tier_of_id(level_id) == "expert"
+	var level: Level = LevelCatalog.load_at(p_track, position)
+	return level != null and level.difficulty == "expert"
 
 
 ## The label beside the stop of `position` (1-based), or null if not shown.
@@ -119,9 +137,17 @@ func get_cell(position: int) -> LevelCell:
 	return _cells[position - 1] if position >= 1 and position <= _cells.size() else null
 
 
-## The island marker, or null while the island is closed (or on the island itself).
-func get_island_button() -> Button:
-	return _island
+## The marker of `island` (the first shown one when ""), or null while it is
+## closed, out of sight or on an island track itself.
+func get_island_button(island: String = "") -> Button:
+	if island.is_empty():
+		return _islands[_islands.keys().min()] if not _islands.is_empty() else null
+	return _islands.get(LevelCatalog.island_after(island))
+
+
+## How many island markers the road shows.
+func island_marker_count() -> int:
+	return _islands.size()
 
 
 ## Next level to play on this track, 0 if every shown level is completed.
@@ -145,8 +171,8 @@ func _notification(what: int) -> void:
 func _place_children() -> void:
 	for i: int in _cells.size():
 		_cells[i].position = stop_center(i + 1) - _cells[i].size * 0.5
-	if _island != null:
-		_island.position = _island_center() - ISLAND_SIZE * 0.5
+	for after: int in _islands:
+		(_islands[after] as Button).position = _island_center(after) - ISLAND_SIZE * 0.5
 	for i: int in _labels.size():
 		_labels[i].size = _labels[i].get_combined_minimum_size()
 		_labels[i].position = _label_position(i + 1, _labels[i].size)
@@ -161,8 +187,8 @@ func _label_position(position: int, label_size: Vector2) -> Vector2:
 	var center: Vector2 = stop_center(position)
 	var middle: float = size.x * 0.5
 	var right_side: bool = center.x < middle - 1.0 or (absf(center.x - middle) <= 1.0 and position % 2 == 1)
-	if _island != null and position == LevelCatalog.branch_after():
-		right_side = _island_center().x < center.x
+	if _islands.has(position):
+		right_side = _island_center(position).x < center.x
 	var top: float = center.y - label_size.y * 0.5
 	var right: Vector2 = Vector2(center.x + LABEL_GAP, top)
 	var left: Vector2 = Vector2(center.x - LABEL_GAP - label_size.x, top)
@@ -175,9 +201,10 @@ func _label_position(position: int, label_size: Vector2) -> Vector2:
 	return Vector2(center.x - label_size.x * 0.5, center.y + STOP_SIZE * 0.5 + LABEL_MARGIN)
 
 
-## Beside the stop that opens the island, on the side the road swings away from.
-func _island_center() -> Vector2:
-	var stop: Vector2 = stop_center(LevelCatalog.branch_after())
+## Beside the stop `after` that opens an island, on the side the road swings
+## away from.
+func _island_center(after: int) -> Vector2:
+	var stop: Vector2 = stop_center(after)
 	var x: float = size.x * (0.84 if stop.x < size.x * 0.5 else 0.16)
 	return Vector2(x, stop.y)
 
@@ -202,8 +229,8 @@ func _draw() -> void:
 		var travelled: Color = ThemeManager.color("accent")
 		travelled.a = 0.55
 		draw_polyline(done, travelled, ROAD_WIDTH, true)
-	if _island != null:
-		_draw_dashes(stop_center(LevelCatalog.branch_after()), _island_center(), ThemeManager.color("accent"))
+	for after: int in _islands:
+		_draw_dashes(stop_center(after), _island_center(after), ThemeManager.color("accent"))
 	if _current > 0 and _current <= _cells.size():
 		draw_arc(stop_center(_current), STOP_SIZE * 0.62, 0.0, TAU, 48, ThemeManager.color("accent"), 6.0, true)
 

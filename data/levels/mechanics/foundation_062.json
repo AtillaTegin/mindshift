@@ -1,0 +1,14 @@
+{
+  "id": 12062,
+  "difficulty": "hard",
+  "pegs": 3,
+  "disks": 7,
+  "start": [[6,3,1],[4,2],[7,5]],
+  "goal": [[4],[6,3,2,1],[7,5]],
+  "rules": ["classic_hanoi","foundation"],
+  "min_moves": 27,
+  "solution_path": [[0,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[0,1],[2,0],[2,1],[0,1],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[0,1],[2,1],[2,0],[1,0],[2,1],[0,2],[0,1],[2,1],[2,0]],
+  "star_thresholds": {"three":27,"two":34},
+  "time_limit_seconds": null,
+  "rule_params": {"foundation":{"keys":[1,2,3],"locked":[7,6],"targets":[1,1,1]}}
+}

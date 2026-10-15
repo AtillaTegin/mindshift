@@ -1,10 +1,11 @@
 extends "res://tests/test_case.gd"
-## The new mechanics of specification v1 (2026-10-15): their rules, their pilot
-## levels on the main road (3-4 each), and how the board shows them.
+## The new mechanics of specification v1 (2026-10-15): their rules, hints off
+## the stored path, and how the board shows them. Their chapters are checked
+## with the road in test_chapter_plan.gd.
 
 const SAVE_PATH: String = "res://.test_saves/test_new_mechanics_save.json"
 const MAIN: String = LevelCatalog.MAIN
-const PILOTS: Array[String] = ["peg_capacity", "foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail"]
+const MECHANICS: Array[String] = ["peg_capacity", "foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail"]
 
 var _board: GameBoard
 
@@ -33,13 +34,27 @@ func _rules(id: String, params: Dictionary = {}) -> RuleSet:
 	return RuleSet.from_ids(["classic_hanoi", id], {id: params} if not params.is_empty() else {})
 
 
-## The pilot levels of `mechanic` on the main road, in road order.
-func _pilots(mechanic: String) -> Array[Dictionary]:
-	var found: Array[Dictionary] = []
-	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == mechanic:
-			found.append({"position": position, "level": LevelCatalog.load_at(MAIN, position)})
-	return found
+## A level of `mechanic`: its chapter's first one where the road has it,
+## otherwise a small one of its own (chapters not built yet).
+func _sample(mechanic: String) -> Level:
+	var position: int = LevelCatalog.first_main_position(mechanic)
+	if position > 0:
+		return LevelCatalog.load_at(MAIN, position)
+	var rule_ids: Array[String] = ["classic_hanoi", mechanic]
+	match mechanic:
+		CyclicRule.ID:
+			return make_level(15001, rule_ids, [[2, 1], [], [], []], [[], [], [2, 1], []])
+		StripesRule.ID:
+			return make_level(15001, rule_ids, [[4, 3, 2, 1], [], []], [[], [], [4, 3, 2, 1]])
+		ChainRule.ID:
+			return make_level(15001, rule_ids, [[4, 3], [2, 1], [], []], [[2, 1], [4, 3], [], []], {mechanic: {"disks": [1, 3]}})
+		MirrorRule.ID:
+			return make_level(15001, rule_ids, [[2, 1], [], [], [4, 3], [], []], [[], [], [2, 1], [], [4, 3], []])
+		BalanceRule.ID:
+			return make_level(15001, rule_ids, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {mechanic: {"tolerance": 4}})
+		TrailRule.ID:
+			return make_level(15001, rule_ids, [[3, 2, 1], [], []], [[], [], [3, 2, 1]], {mechanic: {"disk": 1, "recent": 2}})
+	return null
 
 
 func test_capacity_rule() -> void:
@@ -168,49 +183,31 @@ func test_magnet_faces_turn_and_repel() -> void:
 	assert_true(MagnetRule.blue_up(state.memory, 2))
 	assert_true(rules.is_move_legal(state, Move.new(1, 2)), "1 shows red, 2 blue: they attract")
 	assert_eq(Solver.solve(PuzzleState.new([[3, 2, 1], [], []]), PuzzleState.new([[], [], [3, 2, 1]]), rules)["min_moves"], 11)
-	assert_true(_pilots(MagnetRule.ID).is_empty(), "no magnet level until the user decides where they go")
-
-
-func test_each_pilot_chapter_is_on_the_road() -> void:
-	for mechanic: String in PILOTS:
-		var road: Array[Dictionary] = _pilots(mechanic)
-		assert_true(road.size() >= 3 and road.size() <= 4, "%s: 3-4 pilots (%d)" % [mechanic, road.size()])
-		assert_eq(road[0]["position"], PathBuilder.CHAPTER_STARTS[mechanic], "%s starts at its slot" % mechanic)
-		var previous: int = 0
-		for entry: Dictionary in road:
-			var level: Level = entry["level"]
-			assert_true(level.min_moves >= previous, "%s: easiest first" % mechanic)
-			previous = level.min_moves
-			assert_true(level.min_moves <= 33, "on the main road")
-			var errors: Array[String] = []
-			LevelValidator.validate_mechanic_design(level, errors)
-			assert_eq(errors, [] as Array[String], "%s main %d" % [mechanic, entry["position"]])
-		assert_true(TutorialDirector.is_mechanic_intro(road[0]["level"]), "%s is introduced" % mechanic)
 
 
 func test_hints_off_the_path_are_found() -> void:
-	for mechanic: String in PILOTS:
-		for entry: Dictionary in _pilots(mechanic):
-			var level: Level = entry["level"]
-			var session: GameSession = GameSession.new(level)
-			var off: Move = null
-			for move: Move in session.rules.get_legal_moves(session.state):
-				if not move.equals(level.solution_path[0]):
-					off = move
-					break
-			if off == null:
-				continue
-			session.try_move(off)
-			var hint: Move = GameSession.solve_hint(level, session.state.duplicate_state(), session.rules)
-			if hint == null:
-				assert_not_null(session.return_to_path_move(), "%s main %d: a hint or a way back" % [mechanic, entry["position"]])
-			else:
-				assert_true(session.rules.is_move_legal(session.state, hint), "%s main %d: a legal hint" % [mechanic, entry["position"]])
+	for mechanic: String in MECHANICS:
+		var level: Level = _sample(mechanic)
+		assert_true(level.min_moves > 0, "%s: the sample solves" % mechanic)
+		var session: GameSession = GameSession.new(level)
+		var off: Move = null
+		for move: Move in session.rules.get_legal_moves(session.state):
+			if not move.equals(level.solution_path[0]):
+				off = move
+				break
+		if off == null:
+			continue
+		session.try_move(off)
+		var hint: Move = GameSession.solve_hint(level, session.state.duplicate_state(), session.rules)
+		if hint == null:
+			assert_not_null(session.return_to_path_move(), "%s: a hint or a way back" % mechanic)
+		else:
+			assert_true(session.rules.is_move_legal(session.state, hint), "%s: a legal hint" % mechanic)
 
 
 func test_board_shows_each_mechanic() -> void:
 	# Unequal capacity: each rod as tall as its capacity.
-	var capacity: Level = _pilots(PegCapacityRule.ID)[0]["level"]
+	var capacity: Level = _sample(PegCapacityRule.ID)
 	_start_board(capacity)
 	var rods: Array[float] = []
 	for peg: PegView in _board.get_node("%PegLayer").get_children():
@@ -224,7 +221,7 @@ func test_board_shows_each_mechanic() -> void:
 	_board.free()
 	_board = null
 	# Cyclic: pegs around a circle, clockwise from the top.
-	var cyclic: Level = _pilots(CyclicRule.ID)[0]["level"]
+	var cyclic: Level = _sample(CyclicRule.ID)
 	_start_board(cyclic)
 	var pegs: Array[Node] = _board.get_node("%PegLayer").get_children()
 	var top: PegView = pegs[0]
@@ -234,7 +231,7 @@ func test_board_shows_each_mechanic() -> void:
 	_board.free()
 	_board = null
 	# Twin boards: two rows, each board numbering its own disks from 1.
-	var mirror: Level = _pilots(MirrorRule.ID)[0]["level"]
+	var mirror: Level = _sample(MirrorRule.ID)
 	_start_board(mirror)
 	var rows: Dictionary = {}
 	for peg: PegView in _board.get_node("%PegLayer").get_children():
@@ -246,14 +243,14 @@ func test_board_shows_each_mechanic() -> void:
 	_board.free()
 	_board = null
 	# Stripes: two colours by parity.
-	var stripes: Level = _pilots(StripesRule.ID)[0]["level"]
+	var stripes: Level = _sample(StripesRule.ID)
 	_start_board(stripes)
 	for view: DiskView in _board.get_node("%DiskLayer").get_children():
 		assert_eq(view.color, ThemeManager.STRIPE_DISKS["odd" if view.disk_size % 2 == 1 else "even"]["fill"])
 
 
 func test_a_refused_move_says_why_and_a_chain_takes_two_targets() -> void:
-	var chain: Level = _pilots(ChainRule.ID)[0]["level"]
+	var chain: Level = _sample(ChainRule.ID)
 	_start_board(chain)
 	var status: Label = _board.get_node("%StatusLabel")
 	var move: Move = chain.solution_path.filter(func(m: Move) -> bool: return m.is_compound())[0]
@@ -274,7 +271,7 @@ func test_a_refused_move_says_why_and_a_chain_takes_two_targets() -> void:
 	_board.free()
 	_board = null
 	# Cyclic: a move the size rule allows but not clockwise to the next peg.
-	var cyclic: Level = _pilots(CyclicRule.ID)[0]["level"]
+	var cyclic: Level = _sample(CyclicRule.ID)
 	_start_board(cyclic)
 	status = _board.get_node("%StatusLabel")
 	var pegs: int = cyclic.get_peg_count()

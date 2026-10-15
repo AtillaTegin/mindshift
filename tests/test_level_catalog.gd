@@ -1,10 +1,10 @@
 extends "res://tests/test_case.gd"
-## LevelCatalog: the shipped levels, the level path (level structure addendum
-## v3: one road plus the island branch), unlocking, next level and stars.
+## LevelCatalog: the shipped levels, the level path (one road plus an island
+## at the end of each chapter, chapter system v1), unlocking, next level and
+## stars. The road's makeup is tested in test_chapter_plan.gd.
 
 const PATH: String = "res://.test_saves/test_level_catalog.json"
 const MAIN: String = LevelCatalog.MAIN
-const BRANCH: String = LevelCatalog.BRANCH
 
 
 func after_each() -> void:
@@ -21,179 +21,64 @@ func _level_at(track: String, position: int) -> Level:
 	return LevelCatalog.load_at(track, position)
 
 
+func _first_island() -> String:
+	return LevelCatalog.island_tracks()[0]
+
+
 func test_counts_and_loading() -> void:
 	for tier: String in Difficulty.ORDER:
-		assert_eq(LevelCatalog.level_count(tier), Difficulty.default_count(tier), tier)
+		assert_true(LevelCatalog.level_count(tier) > 0, tier)
 	assert_eq(LevelCatalog.level_count("nope"), 0)
 	var level: Level = LevelCatalog.load_level("hard", 7)
 	assert_not_null(level)
 	assert_eq(level.id, 3007)
 	assert_eq(level.difficulty, "hard")
 	assert_null(LevelCatalog.load_level("hard", 0))
-	assert_null(LevelCatalog.load_level("hard", Difficulty.default_count("hard") + 1))
+	assert_null(LevelCatalog.load_level("hard", LevelCatalog.level_count("hard") + 1))
 
 
 func test_every_level_is_on_the_path_once() -> void:
-	var classic: int = 0
-	for tier: String in Difficulty.ORDER:
-		classic += LevelCatalog.level_count(tier)
-	var mechanic_files: int = 0
-	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
-		if file_name.ends_with(".json"):
-			mechanic_files += 1
-	assert_eq(mechanic_files, 138, "22 Nine Rings, 24 karakuri, 30 caravan road, 30 great exchange and 32 pilot levels")
-	assert_eq(LevelCatalog.total_levels(), classic + mechanic_files)
+	var files: int = 0
+	for folder: String in DirAccess.get_directories_at(Difficulty.LEVELS_DIR):
+		for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + folder):
+			files += 1 if file_name.ends_with(".json") else 0
+	assert_eq(LevelCatalog.total_levels(), files)
 	assert_eq(LevelValidator.validate_path(Difficulty.LEVELS_DIR), [] as Array[String])
 
 
-func test_path_starts_with_the_tutorial_and_easy_levels() -> void:
+func test_path_starts_with_the_tutorial() -> void:
 	assert_eq(LevelCatalog.level_id_at(MAIN, 1), TutorialDirector.GUIDED_LEVEL_ID)
 	assert_eq(LevelCatalog.level_id_at(MAIN, 2), TutorialDirector.FREE_LEVEL_ID)
 	assert_eq(LevelValidator.TUTORIAL_LEVEL_IDS, [TutorialDirector.GUIDED_LEVEL_ID, TutorialDirector.FREE_LEVEL_ID] as Array[int])
-	assert_eq(PathBuilder.FIRST_EASY, 4, "level structure v4: the first 3-4 levels")
-	for position: int in range(1, PathBuilder.FIRST_EASY + 1):
-		var level: Level = _level_at(MAIN, position)
-		assert_eq(level.difficulty, "easy", "main %d" % position)
-		assert_eq(level.mechanic(), Level.CLASSIC, "main %d" % position)
-		assert_eq(level.get_disk_count(), 3, "main %d: 3 disks on 3 pegs" % position)
-		assert_eq(level.get_peg_count(), 3)
+	assert_eq(_level_at(MAIN, 1).start.to_array(), [[1], [2], [3]], "the tutorial levels never change")
+	assert_eq(_level_at(MAIN, 2).goal.to_array(), [[], [], [3, 2, 1]])
 
 
-func test_difficulty_mix_follows_the_addendum() -> void:
-	# Level structure v4: easy only for learning at the start (3-disk levels
-	# first, then 4-disk ones) and none after main 50; medium and hard as the
-	# body; expert only on the island.
-	var counts: Dictionary = {}
-	var main_length: int = LevelCatalog.track_length(MAIN)
-	var last_easy: int = 0
-	var first_hard: int = 0
-	var moves_by_third: Array[int] = [0, 0, 0]
-	for position: int in range(1, main_length + 1):
-		var level: Level = _level_at(MAIN, position)
-		counts[level.difficulty] = counts.get(level.difficulty, 0) + 1
-		if level.difficulty == "easy":
-			last_easy = position
-			if position > PathBuilder.FIRST_EASY and level.mechanic() == Level.CLASSIC:
-				assert_eq(level.get_disk_count(), 4, "main %d: past the first levels easy means 4 disks" % position)
-		if level.difficulty == "hard" and first_hard == 0:
-			first_hard = position
-		moves_by_third[mini(3 * (position - 1) / main_length, 2)] += level.min_moves
-	assert_false(counts.has("expert"), "expert levels live on the island")
-	assert_true(last_easy <= 50, "no easy level after main 50 (last at %d)" % last_easy)
-	assert_true(counts["medium"] + counts["hard"] >= 0.85 * main_length, "medium and hard dominate: %s" % str(counts))
-	assert_true(first_hard > PathBuilder.FIRST_EASY + 5, "hard levels wait a little (first at %d)" % first_hard)
-	assert_true(moves_by_third[0] < moves_by_third[1] and moves_by_third[1] < moves_by_third[2],
-			"it gets harder along the road: %s" % str(moves_by_third))
-	var island: Dictionary = {}
-	for position: int in range(1, LevelCatalog.track_length(BRANCH) + 1):
-		var level: Level = _level_at(BRANCH, position)
-		island[level.difficulty] = island.get(level.difficulty, 0) + 1
-	assert_eq(island.get("expert", 0), LevelCatalog.level_count("expert"), "every expert level is on the island")
-	assert_true(island.get("medium", 0) >= 1, "with a few medium breathers: %s" % str(island))
-	assert_eq(_level_at(BRANCH, 1).difficulty, "hard", "the island opens gently")
-	assert_eq(LevelCatalog.branch_after(), PathBuilder.BRANCH_AFTER)
-
-
-func test_mechanic_levels_are_ordinary_path_levels() -> void:
-	var found: Array[String] = []
+func test_expert_levels_only_on_islands() -> void:
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		var mechanic: String = LevelCatalog.mechanic_at(MAIN, position)
-		if mechanic != Level.CLASSIC:
-			assert_true(position >= PathBuilder.CHAPTER_STARTS.values().min(), "not before the first chapter")
-			assert_eq(mechanic, _level_at(MAIN, position).mechanic())
-			assert_true(Difficulty.is_known(_level_at(MAIN, position).difficulty), "a real tier")
-			found.append(mechanic)
-	assert_eq(found.count("alternation"), 22)
-	assert_eq(found.count("covered_pegs"), 24)
-	assert_eq(found.count("adjacent_pegs"), 30)
-	assert_eq(found.count(ColorSwapRule.ID), 30)
+		assert_ne(_level_at(MAIN, position).difficulty, "expert", "main %d" % position)
+	var experts: int = 0
+	for island: String in LevelCatalog.island_tracks():
+		for position: int in range(1, LevelCatalog.track_length(island) + 1):
+			experts += 1 if _level_at(island, position).difficulty == "expert" else 0
+	assert_true(experts > 0)
 
 
-func test_classic_and_mechanic_levels_take_turns_after_50() -> void:
-	# Level structure v4, section 3 (user decisions 2026-10-13): about 1:1 from
-	# main 51 to 200, weighted at random (no long runs, no strict rhythm); after
-	# that the rest thin out, and every chapter still reaches the end of the road.
-	var mechanic_count: int = 0
-	var run: int = 0
-	var longest: int = 0
-	var was_mechanic: bool = false
-	var strict: bool = true
-	for position: int in range(PathBuilder.MIX_FROM, PathBuilder.MIX_UNTIL + 1):
-		var is_mechanic: bool = LevelCatalog.mechanic_at(MAIN, position) != Level.CLASSIC
-		mechanic_count += 1 if is_mechanic else 0
-		run = run + 1 if is_mechanic == was_mechanic and position > PathBuilder.MIX_FROM else 1
-		longest = maxi(longest, run)
-		strict = strict and (run == 1 or position == PathBuilder.MIX_FROM)
-		was_mechanic = is_mechanic
-	var mixed: int = PathBuilder.MIX_UNTIL - PathBuilder.MIX_FROM + 1
-	assert_true(absf(float(mechanic_count) / mixed - 0.5) <= 0.03, "about 1:1 (%d of %d)" % [mechanic_count, mixed])
-	assert_true(longest <= 3, "no long runs of one kind (%d)" % longest)
-	assert_false(strict, "not a strict rhythm either")
-	var main_length: int = LevelCatalog.track_length(MAIN)
-	var tail: int = 0
-	var last: Dictionary = {}
-	for position: int in range(1, main_length + 1):
-		var mechanic: String = LevelCatalog.mechanic_at(MAIN, position)
-		if mechanic == Level.CLASSIC:
-			continue
-		last[mechanic] = position
-		tail += 1 if position > PathBuilder.MIX_UNTIL else 0
-	# Since the great exchange became a 30-level chapter (v2 addendum) and the
-	# pilots joined, the end of the road is only a little thinner than the 1:1
-	# middle (0.46 of its slots).
-	var share: float = float(tail) / (main_length - PathBuilder.MIX_UNTIL)
-	assert_true(share > 0.15 and share < PathBuilder.MIX_SHARE, "the end of the road has fewer but some (%.2f)" % share)
-	for mechanic: String in PathBuilder.CHAPTER_STARTS:
-		assert_eq(LevelCatalog.mechanic_at(MAIN, PathBuilder.CHAPTER_STARTS[mechanic]), mechanic, "%s starts on time" % mechanic)
-		assert_true(last[mechanic] > PathBuilder.MIX_UNTIL, "%s runs to the end of the road (%d)" % [mechanic, last[mechanic]])
-
-
-func test_karakuri_levels_come_early_and_get_harder() -> void:
-	# User requests 2026-10-12: 22-24 karakuri levels, the first one soon after
-	# the tutorial, up to the end of the road, from small and easy to large and
-	# hard (spacing: level structure v4's 1:1 mix).
-	var positions: Array[int] = []
-	var levels: Array[Level] = []
-	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == "covered_pegs":
-			positions.append(position)
-			levels.append(_level_at(MAIN, position))
-	assert_true(positions.size() >= 22 and positions.size() <= 24, "%d karakuri levels" % positions.size())
-	assert_true(positions[-1] > PathBuilder.MIX_UNTIL, "the end of the road has them too")
-	assert_eq(positions[0], 12, "the first one at %d" % positions[0])
-	for i: int in range(1, positions.size()):
-		assert_true(levels[i].min_moves >= levels[i - 1].min_moves, "never easier than the one before (%d)" % positions[i])
-	assert_eq(levels[0].get_disk_count(), 3, "the first one is small")
-	assert_eq(levels[0].covered_pegs.size(), 1, "with a single box")
-	assert_eq(levels[0].difficulty, "easy")
-	assert_eq(levels[-1].get_disk_count(), 8, "the last ones are large")
-	assert_true(levels[-1].covered_pegs.size() >= 2, "with two or three boxes")
-
-
-func test_nine_rings_run_the_whole_road_easy_to_hard() -> void:
-	# User request 2026-10-12: ~20-25 Nine Rings levels, the first one at about
-	# main 15-20, then every ~10-15 levels into the last fifth of the road, from
-	# short to long like the karakuri.
-	var positions: Array[int] = []
-	var tiers: Dictionary = {}
-	var previous: int = 0
-	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == "alternation":
-			positions.append(position)
-			var level: Level = _level_at(MAIN, position)
-			assert_true(level.min_moves >= previous, "never easier than the one before (%d)" % position)
-			previous = level.min_moves
-			tiers[level.difficulty] = tiers.get(level.difficulty, 0) + 1
-	assert_true(positions.size() >= 20 and positions.size() <= 25, "%d Nine Rings levels" % positions.size())
-	assert_eq(positions[0], 20, "the first one at %d" % positions[0])
-	assert_true(positions[-1] >= 0.8 * LevelCatalog.track_length(MAIN), "into the last fifth of the road (%d)" % positions[-1])
-	for tier: String in ["easy", "medium", "hard"]:
-		assert_true(tiers.get(tier, 0) >= 3, "%s ones too: %s" % [tier, str(tiers)])
+func test_it_gets_harder_along_each_chapter() -> void:
+	var first_half: int = 0
+	var second_half: int = 0
+	for position: int in range(1, 101):
+		var moves: int = _level_at(MAIN, position).min_moves
+		if position <= 50:
+			first_half += moves
+		else:
+			second_half += moves
+	assert_true(first_half < second_half, "the first world climbs (%d < %d)" % [first_half, second_half])
 
 
 func test_no_shipped_level_has_a_time_limit() -> void:
 	# Decision 2026-10-09: v1 has no timed levels; the field stays for a later mode.
-	for track: String in LevelCatalog.TRACKS:
+	for track: String in LevelCatalog.tracks():
 		for position: int in range(1, LevelCatalog.track_length(track) + 1):
 			assert_null(_level_at(track, position).time_limit_seconds, "%s %d" % [track, position])
 
@@ -212,8 +97,22 @@ func test_next_after_stays_on_the_track() -> void:
 	assert_eq(LevelCatalog.next_after(MAIN, 1), {"track": MAIN, "position": 2})
 	var main_length: int = LevelCatalog.track_length(MAIN)
 	assert_eq(LevelCatalog.next_after(MAIN, main_length), {}, "the road ends")
-	assert_eq(LevelCatalog.next_after(BRANCH, 3), {"track": BRANCH, "position": 4})
-	assert_eq(LevelCatalog.next_after(BRANCH, LevelCatalog.track_length(BRANCH)), {})
+	var island: String = _first_island()
+	assert_eq(LevelCatalog.next_after(island, 3), {"track": island, "position": 4})
+	assert_eq(LevelCatalog.next_after(island, LevelCatalog.track_length(island)), {})
+
+
+func test_tracks_and_islands() -> void:
+	var islands: Array[String] = LevelCatalog.island_tracks()
+	assert_eq(islands[0], "island_1")
+	assert_eq(LevelCatalog.tracks()[0], MAIN)
+	assert_eq(LevelCatalog.tracks().size(), islands.size() + 1)
+	assert_true(LevelCatalog.is_island(islands[0]))
+	assert_false(LevelCatalog.is_island(MAIN))
+	assert_eq(LevelCatalog.island_after(islands[0]), 50, "the classic island after main 50, as before")
+	assert_eq(LevelCatalog.island_at(50), islands[0])
+	assert_eq(LevelCatalog.island_at(49), "")
+	assert_eq(LevelCatalog.island_after(MAIN), 0)
 
 
 func test_levels_open_one_by_one_with_no_tier_counter() -> void:
@@ -229,16 +128,24 @@ func test_levels_open_one_by_one_with_no_tier_counter() -> void:
 	assert_true(LevelCatalog.is_unlocked(MAIN, 31, save), "%s level opens like any other" % thirty_one.difficulty)
 
 
-func test_island_opens_after_its_main_level() -> void:
+func test_islands_open_after_their_main_level() -> void:
 	var save: SaveSystem = SaveSystem.new(PATH)
-	var after: int = LevelCatalog.branch_after()
+	var islands: Array[String] = LevelCatalog.island_tracks()
+	var first: String = islands[0]
+	var second: String = islands[1]
+	var after: int = LevelCatalog.island_after(first)
 	_complete(save, MAIN, after - 1)
-	assert_false(LevelCatalog.is_branch_open(save))
-	assert_false(LevelCatalog.is_unlocked(BRANCH, 1, save), "hidden until main %d" % after)
+	assert_false(LevelCatalog.is_island_open(first, save))
+	assert_false(LevelCatalog.is_unlocked(first, 1, save), "hidden until main %d" % after)
 	save.record_completion(LevelCatalog.level_id_at(MAIN, after), 2, 99, 5.0)
-	assert_true(LevelCatalog.is_branch_open(save))
-	assert_true(LevelCatalog.is_unlocked(BRANCH, 1, save))
-	assert_false(LevelCatalog.is_unlocked(BRANCH, 2, save), "one by one on the island too")
+	assert_true(LevelCatalog.is_island_open(first, save))
+	assert_true(LevelCatalog.is_unlocked(first, 1, save))
+	assert_false(LevelCatalog.is_unlocked(first, 2, save), "one by one on the island too")
+	assert_false(LevelCatalog.is_island_open(second, save), "each island waits for its own chapter")
+	assert_eq(LevelCatalog.open_islands(save), [first] as Array[String])
+	_complete(save, MAIN, LevelCatalog.island_after(second))
+	assert_true(LevelCatalog.is_unlocked(second, 1, save), "without playing the first island")
+	assert_eq(LevelCatalog.open_islands(save), [first, second] as Array[String])
 
 
 func test_completed_levels_stay_open() -> void:
@@ -254,18 +161,21 @@ func test_next_to_play_follows_progress() -> void:
 	assert_eq(LevelCatalog.next_to_play(save), {"track": MAIN, "position": 1})
 	_complete(save, MAIN, 2)
 	assert_eq(LevelCatalog.next_to_play(save), {"track": MAIN, "position": 3})
-	_complete(save, MAIN, LevelCatalog.branch_after())
-	assert_eq(LevelCatalog.next_to_play(save), {"track": MAIN, "position": LevelCatalog.branch_after() + 1},
-			"the road comes first, the island is optional")
+	_complete(save, MAIN, 50)
+	assert_eq(LevelCatalog.next_to_play(save), {"track": MAIN, "position": 51}, "the road comes first, islands are optional")
 	_complete(save, MAIN, LevelCatalog.track_length(MAIN))
-	assert_eq(LevelCatalog.next_to_play(save), {"track": BRANCH, "position": 1}, "then the island")
+	assert_eq(LevelCatalog.next_to_play(save), {"track": _first_island(), "position": 1}, "then the islands")
+	_complete(save, _first_island(), LevelCatalog.track_length(_first_island()))
+	assert_eq(LevelCatalog.next_to_play(save), {"track": LevelCatalog.island_tracks()[1], "position": 1})
+	assert_eq(LevelCatalog.next_on(_first_island(), save), 0, "nothing left there")
 
 
 func test_place_and_title() -> void:
 	assert_eq(LevelCatalog.place_of(1001), {"track": MAIN, "position": 1})
 	assert_eq(LevelCatalog.place_of(12345), {})
 	assert_eq(LevelCatalog.level_title(_level_at(MAIN, 7)), "Səviyyə 7")
-	assert_eq(LevelCatalog.level_title(_level_at(BRANCH, 3)), "Ada · 3")
+	assert_eq(LevelCatalog.level_title(_level_at(_first_island(), 3)), "Ada · 3")
+	assert_eq(LevelCatalog.level_title(_level_at(LevelCatalog.island_tracks()[1], 2)), "Ada · 2")
 	var loose: Level = LevelCatalog.load_level("easy", 1)
 	loose.id = 1999
 	assert_eq(LevelCatalog.level_title(loose), "Səviyyə", "not on the path")

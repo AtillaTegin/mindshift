@@ -1,11 +1,11 @@
 extends "res://tests/test_case.gd"
 ## Nine Rings alternation (cultural integration addendum 1, variant D): the
-## rule, the last moved disk in positions, the Solver's history search, the
-## board feedback and the level files.
+## rule, the last moved disk in positions, the Solver's history search and the
+## board feedback (its chapter, world 4, is checked with the road in
+## test_chapter_plan.gd once built).
 
 const SAVE_PATH: String = "res://.test_saves/test_alternation_save.json"
 const RULES: Array[String] = ["classic_hanoi", "alternation"]
-const RINGS_FILES: Array[String] = ["rings_01.json", "rings_02.json", "rings_03.json", "rings_04.json"]
 
 var _board: GameBoard
 
@@ -111,8 +111,8 @@ func test_solver_history_search_matches_the_oracle() -> void:
 	for i: int in 12:
 		var pegs: int = 4
 		var disks: int = 4 + i % 2
-		var start: PuzzleState = LevelGenerator.random_state(rng, pegs, disks)
-		var goal: PuzzleState = LevelGenerator.tower_state(pegs, disks, rng.randi_range(0, pegs - 1))
+		var start: PuzzleState = LevelForge.random_state(rng, pegs, disks)
+		var goal: PuzzleState = LevelForge.tower_state(pegs, disks, rng.randi_range(0, pegs - 1))
 		if start.equals(goal):
 			continue
 		var result: Dictionary = Solver.solve(start, goal, rules)
@@ -141,8 +141,13 @@ func test_solver_starts_from_the_last_moved_disk() -> void:
 	assert_true(Solver.solve(state, goal, rules)["min_moves"] > 1, "at the start disk 1 must go first")
 
 
+## A Nine Rings level of its own (the chapter is not built yet).
+static func _rings_level(low: int, high: int) -> Level:
+	return forge_level(16001, ["alternation"], {"pegs": 4, "disks": 5}, low, high)
+
+
 func test_session_hints_and_undo_keep_the_last_move() -> void:
-	var level: Level = LevelCatalog.load_mechanic(RINGS_FILES[0])
+	var level: Level = _rings_level(8, 11)
 	var session: GameSession = GameSession.new(level)
 	for i: int in level.solution_path.size():
 		var hint: Dictionary = session.get_hint()
@@ -163,8 +168,9 @@ func test_board_rings_the_disks_that_may_go_and_refuses_the_others() -> void:
 	_board.save_system = SaveSystem.new(SAVE_PATH)
 	_board.tutorials_enabled = false
 	_board.background_hints = false
-	_board.level_path = LevelCatalog.mechanic_path(RINGS_FILES[1])
+	_board.level_path = ""
 	(Engine.get_main_loop() as SceneTree).root.add_child(_board)
+	_board.start_level(_rings_level(12, 13))
 	var state: PuzzleState = _board.session.state
 	var disks: Node = _board.get_node("%DiskLayer")
 	var ringed: Array[int] = []
@@ -199,39 +205,8 @@ func test_board_rings_the_disks_that_may_go_and_refuses_the_others() -> void:
 	assert_ne(after, ringed, "the rings follow the last move")
 
 
-func test_rings_levels() -> void:
-	var previous: int = 0
-	for file_name: String in RINGS_FILES:
-		var level: Level = LevelCatalog.load_mechanic(file_name)
-		assert_eq(level.mechanic(), "alternation", file_name)
-		assert_eq(level.get_peg_count(), 4, "%s: 4 pegs, where the rule matters" % file_name)
-		assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), file_name)
-		assert_true(level.min_moves >= previous, "%s: easy to hard" % file_name)
-		previous = level.min_moves
-		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic())["min_moves"]
-		assert_true(plain < level.min_moves, "%s: the rule adds moves (%d < %d)" % [file_name, plain, level.min_moves])
-		assert_eq(LevelCatalog.place_of(level.id).get("track"), LevelCatalog.MAIN, "%s is on the road" % file_name)
-		assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path(file_name)), level.to_json(), "round trip")
-		var errors: Array[String] = []
-		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), errors)
-		assert_eq(errors, [] as Array[String], file_name)
-	assert_false(FileAccess.file_exists(LevelCatalog.mechanic_path("frozen_01.json")), "the frozen disk is gone")
+func test_frozen_disk_is_gone() -> void:
 	assert_null(RuleSet.create_rule("frozen_disk"))
-
-
-func test_every_nine_rings_level() -> void:
-	var count: int = 0
-	for file_name: String in DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS):
-		if not file_name.begins_with("rings_") or not file_name.ends_with(".json"):
-			continue
-		count += 1
-		var level: Level = LevelCatalog.load_mechanic(file_name)
-		assert_eq(level.get_peg_count(), 4, file_name)
-		assert_true(level.get_disk_count() <= 7, "%s: hints stay quick" % file_name)
-		var errors: Array[String] = []
-		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), errors)
-		assert_eq(errors, [] as Array[String], file_name)
-	assert_eq(count, 22)
 
 
 func test_validator_rejects_an_alternation_that_changes_nothing() -> void:

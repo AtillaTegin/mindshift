@@ -56,7 +56,7 @@ func test_main_menu_builds() -> void:
 	(Engine.get_main_loop() as SceneTree).root.add_child(menu)
 	_nodes.append(menu)
 	assert_true((menu.get_node("%ProgressLabel") as Label).text.ends_with("/ %d" % (LevelCatalog.total_levels() * 3)), "every level on the path, 3 stars each")
-	assert_eq(LevelCatalog.total_levels(), 332, "194 classic + 138 mechanic levels")
+	assert_eq(LevelCatalog.total_levels(), 420, "world 1-2: 350 on the road, 70 on four islands")
 	assert_false((menu.get_node("%SettingsPanel") as Control).visible)
 	(menu.get_node("%SettingsButton") as Button).pressed.emit()
 	assert_true((menu.get_node("%SettingsPanel") as Control).visible)

@@ -99,10 +99,29 @@ func mechanic() -> String:
 	return CLASSIC
 
 
+## Every mode the level combines (chapter plan): its rules beyond classic
+## Hanoi, then "covered_pegs" for karakuri boxes, in ChapterPlan.MODES order.
+## Empty for a classic level, two for a combination.
+func modes() -> Array[String]:
+	var found: Array[String] = []
+	for mode: String in ChapterPlan.MODES:
+		if rule_ids.has(mode) or (mode == ChapterPlan.COVERED and not covered_pegs.is_empty()):
+			found.append(mode)
+	return found
+
+
+## Whether the level combines two or more modes (chapter plan section 4).
+func is_combo() -> bool:
+	return modes().size() > 1
+
+
 ## What is new to a player on the first level that has it (TutorialDirector):
 ## mechanic(), except that the great exchange's two kinds are two lessons (the
-## mixed kind adds the colour rule, COLOR_SWAP_MIXED).
+## mixed kind adds the colour rule, COLOR_SWAP_MIXED), and a combination is a
+## lesson of its own: its modes joined by "+" (ChapterPlan.combo_key()).
 func lesson() -> String:
+	if is_combo():
+		return ChapterPlan.combo_key(modes())
 	var kind: String = mechanic()
 	if kind == ColorSwapRule.ID and (rule_params.get(ColorSwapRule.ID, {}) as Dictionary).get("colour", false):
 		return COLOR_SWAP_MIXED
@@ -251,8 +270,8 @@ func check(errors: Array[String]) -> void:
 	if mechanic() == CLASSIC:
 		if not Difficulty.accepts_id(difficulty, id):
 			errors.append("id %d is outside the %s range" % [id, difficulty])
-		if not Difficulty.accepts_size(difficulty, get_peg_count(), get_disk_count()):
-			errors.append("%d pegs / %d disks is not a %s size" % [get_peg_count(), get_disk_count(), difficulty])
+		if not Difficulty.accepts_classic_size(get_peg_count(), get_disk_count()):
+			errors.append("%d pegs / %d disks is not a classic level size" % [get_peg_count(), get_disk_count()])
 	else:
 		# A mechanic may need another size than the classic tier (the Nine Rings
 		# only matter on 4 pegs); it has its own id range.

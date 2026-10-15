@@ -6,7 +6,6 @@ extends "res://tests/test_case.gd"
 
 const SAVE_PATH: String = "res://.test_saves/test_mode_texts_save.json"
 const MAIN: String = LevelCatalog.MAIN
-const BRANCH: String = LevelCatalog.BRANCH
 const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")
 ## The rule panel's width and font sizes (scenes/game_board.tscn).
 const PANEL_WIDTH: float = 540.0
@@ -32,9 +31,9 @@ func _add(node: Node) -> Node:
 
 
 func test_every_mode_in_the_game_is_registered() -> void:
-	# Every level on the path, both tracks.
+	# Every level on the path, every track (combinations included).
 	var lessons: Dictionary = {}
-	for track: String in LevelCatalog.TRACKS:
+	for track: String in LevelCatalog.tracks():
 		for position: int in range(1, LevelCatalog.track_length(track) + 1):
 			lessons[LevelCatalog.lesson_at(track, position)] = true
 	# Every rule the registry can create (the mixed great exchange is a mode of its own).
@@ -44,9 +43,15 @@ func test_every_mode_in_the_game_is_registered() -> void:
 		assert_eq(rule.get_id(), id)
 		lessons[Level.CLASSIC if id == ClassicHanoiRule.ID else id] = true
 	lessons[Level.COLOR_SWAP_MIXED] = true
+	# Every mode and combination of the chapter plan.
+	for mode: String in ChapterPlan.MODES:
+		lessons[mode] = true
+	for key: String in ChapterPlan.whitelist():
+		lessons[key] = true
 	assert_null(RuleSet.create_rule("no_such_rule"))
 	for lesson: String in lessons:
 		assert_true(ModeTexts.has(lesson), "%s has its label, name and rule" % lesson)
+	assert_false(ModeTexts.has("peg_capacity+no_such_mode"))
 
 
 func test_every_register_entry_has_its_three_texts() -> void:
@@ -89,21 +94,51 @@ func test_every_stop_on_the_map_carries_its_mode() -> void:
 		for stop: Rect2 in stops:
 			assert_false(rect.intersects(stop), "main %d: clear of every stop" % position)
 	var island: Button = map.get_island_button()
-	if island != null:
-		assert_false(Rect2(map.get_label(LevelCatalog.branch_after()).position, map.get_label(LevelCatalog.branch_after()).size)
-				.intersects(Rect2(island.position, island.size)), "clear of the island marker")
+	assert_not_null(island)
+	var after: int = LevelCatalog.island_after(LevelCatalog.island_tracks()[0])
+	assert_false(Rect2(map.get_label(after).position, map.get_label(after).size)
+			.intersects(Rect2(island.position, island.size)), "clear of the island marker")
 
 
 func test_island_labels_name_expert_levels_only() -> void:
-	var experts: int = 0
-	for position: int in range(1, LevelCatalog.track_length(BRANCH) + 1):
-		var text: String = PathMap.stop_label(BRANCH, position)
-		var expert: bool = Difficulty.tier_of_id(LevelCatalog.level_id_at(BRANCH, position)) == "expert"
-		assert_eq(text.ends_with(Languages.text("MAP_EXPERT_SUFFIX")), expert, "island %d: %s" % [position, text])
-		experts += 1 if expert else 0
-	assert_true(experts > 0 and experts < LevelCatalog.track_length(BRANCH), "the island mixes expert and other levels")
+	for island: String in LevelCatalog.island_tracks():
+		var experts: int = 0
+		for position: int in range(1, LevelCatalog.track_length(island) + 1):
+			var text: String = PathMap.stop_label(island, position)
+			var expert: bool = LevelCatalog.load_at(island, position).difficulty == "expert"
+			assert_eq(text.ends_with(Languages.text("MAP_EXPERT_SUFFIX")), expert, "%s %d: %s" % [island, position, text])
+			experts += 1 if expert else 0
+		if LevelCatalog.island_mode(island) == Level.CLASSIC:
+			assert_true(experts > 0 and experts < LevelCatalog.track_length(island), "the classic island mixes in breathers")
+		else:
+			assert_eq(experts, LevelCatalog.track_length(island), "a mode's island is all expert")
 	for position: int in range(1, 30):
 		assert_false(PathMap.stop_label(MAIN, position).contains(Languages.text("MAP_EXPERT_SUFFIX")), "never on the main road")
+
+
+func test_combinations_join_their_modes() -> void:
+	# Chapter plan section 4.4: "Tutum + Kilid" on the map, both rules under the board.
+	var combo: Level = null
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		if LevelCatalog.lesson_at(MAIN, position) == "peg_capacity+foundation":
+			combo = LevelCatalog.load_at(MAIN, position)
+			assert_eq(PathMap.stop_label(MAIN, position), "%s + %s" % [tr("MODE_CAPACITY_LABEL"), tr("MODE_FOUNDATION_LABEL")])
+			break
+	assert_not_null(combo, "world 2 has it")
+	assert_eq(ModeTexts.name_of(combo), "%s + %s" % [tr("MODE_CAPACITY_LABEL"), tr("MODE_FOUNDATION_LABEL")],
+			"named like its map label")
+	assert_eq(ModeTexts.rule_of(combo), "%s %s" % [tr("MODE_CAPACITY_RULE"), tr("MODE_FOUNDATION_RULE")])
+	# Up to three lines for two rules (section 4.4), the name on one.
+	var font: Font = ThemeDB.fallback_font
+	for key: String in ChapterPlan.whitelist():
+		var parts: PackedStringArray = PackedStringArray()
+		for mode: String in key.split("+"):
+			parts.append(Languages.text(ModeTexts.rule_key(mode)).replace("%d", "10"))
+		var lines: float = font.get_multiline_string_size(" ".join(parts), HORIZONTAL_ALIGNMENT_CENTER, PANEL_WIDTH,
+				RULE_FONT_SIZE).y / font.get_height(RULE_FONT_SIZE)
+		assert_true(lines <= 3.01, "%s: the rules take %.1f lines" % [key, lines])
+		var name_width: float = font.get_string_size(ModeTexts.label(key), HORIZONTAL_ALIGNMENT_CENTER, -1, NAME_FONT_SIZE).x
+		assert_true(name_width <= PANEL_WIDTH, "%s: the name fits one line (%.0f)" % [key, name_width])
 
 
 func test_rule_panel_shows_the_mode_under_the_board() -> void:
@@ -116,7 +151,13 @@ func test_rule_panel_shows_the_mode_under_the_board() -> void:
 	board.start_level(LevelCatalog.load_at(MAIN, 5))
 	assert_eq((board.get_node("%RuleName") as Label).text, tr("MODE_CLASSIC_NAME"))
 	assert_eq((board.get_node("%RuleText") as Label).text, tr("MODE_CLASSIC_RULE"))
-	var balance: Level = LevelCatalog.load_at(MAIN, PathBuilder.CHAPTER_STARTS[BalanceRule.ID])
+	# The balance's chapter is not built yet (world 4): a small one of its own.
+	var rule_ids: Array[String] = ["classic_hanoi", "balance"]
+	var params: Dictionary = {"balance": {"tolerance": 3}}
+	var start: PuzzleState = PuzzleState.new([[1], [], [2], []])
+	var goal: PuzzleState = PuzzleState.new([[], [1], [], [2]])
+	var path: Array[Move] = Solver.solve(start, goal, RuleSet.from_ids(rule_ids, params))["path"]
+	var balance: Level = Level.create(17001, "easy", start, goal, rule_ids, path, params)
 	board.start_level(balance)
 	var tolerance: int = (balance.get_rule_set().active_rules[1] as BalanceRule).tolerance
 	assert_eq((board.get_node("%RuleText") as Label).text, tr("MODE_BALANCE_RULE") % tolerance, "the balance names its limit")

@@ -45,16 +45,32 @@ func _tap(peg: int) -> void:
 	_board.on_peg_pressed(peg)
 
 
+## Every lesson on the built road that gets an introduction: each mode with
+## INTRO_TEXTS and each combination (chapter plan section 3.4).
+func _lessons_on_road() -> Array[String]:
+	var found: Array[String] = []
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		var lesson: String = LevelCatalog.lesson_at(MAIN, position)
+		if not found.has(lesson) and (TutorialDirector.INTRO_TEXTS.has(lesson) or lesson.contains("+")):
+			found.append(lesson)
+	return found
+
+
 func test_every_mechanic_is_introduced_on_its_first_level() -> void:
-	for mechanic: String in TutorialDirector.INTRO_TEXTS:
+	var lessons: Array[String] = _lessons_on_road()
+	for mode: String in ["peg_capacity", "covered_pegs", "foundation", "peg_capacity+covered_pegs",
+			"peg_capacity+foundation", "covered_pegs+foundation"]:
+		assert_true(lessons.has(mode), "world 1-2 teaches %s" % mode)
+	for mechanic: String in lessons:
 		var first: int = LevelCatalog.first_main_position(mechanic)
-		assert_true(first > 0, "%s is on the road" % mechanic)
 		_open(first)
 		var tutorial: TutorialDirector = _board.tutorial
 		var session: GameSession = _board.session
 		assert_eq(tutorial.mode, TutorialDirector.Mode.GUIDED, mechanic)
 		assert_eq(tutorial.intro_mechanic, mechanic)
-		assert_eq(_board.coaching.toast.get_text(), tr(TutorialDirector.INTRO_TEXTS[mechanic]), "%s explains itself" % mechanic)
+		var words: String = tr(TutorialDirector.INTRO_TEXTS[mechanic]) if TutorialDirector.INTRO_TEXTS.has(mechanic) \
+				else tr("INTRO_COMBO") % [ModeTexts.name_of(session.level), ModeTexts.rule_of(session.level)]
+		assert_eq(_board.coaching.toast.get_text(), words, "%s explains itself" % mechanic)
 		var path: Array[Move] = session.level.solution_path
 		for k: int in TutorialDirector.INTRO_STEPS:
 			assert_eq(tutorial.mode, TutorialDirector.Mode.GUIDED, "%s step %d" % [mechanic, k])
@@ -75,14 +91,14 @@ func test_every_mechanic_is_introduced_on_its_first_level() -> void:
 
 
 func test_only_the_first_level_of_a_mechanic_and_only_until_completed() -> void:
-	var first: int = LevelCatalog.first_main_position("adjacent_pegs")
+	var first: int = LevelCatalog.first_main_position(FoundationRule.ID)
 	var second: int = 0
 	for position: int in range(first + 1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == "adjacent_pegs":
+		if LevelCatalog.lesson_at(MAIN, position) == FoundationRule.ID:
 			second = position
 			break
 	_open(second)
-	assert_eq(_board.tutorial.mode, TutorialDirector.Mode.OFF, "the second caravan level plays on its own")
+	assert_eq(_board.tutorial.mode, TutorialDirector.Mode.OFF, "the second foundation level plays on its own")
 	_open(10)
 	assert_eq(_board.tutorial.mode, TutorialDirector.Mode.OFF, "no introduction on a classic level")
 	_save.record_completion(LevelCatalog.level_id_at(MAIN, first), 2, 99, 9.0)
@@ -91,23 +107,32 @@ func test_only_the_first_level_of_a_mechanic_and_only_until_completed() -> void:
 
 
 func test_free_play_after_the_guide_names_the_broken_rule() -> void:
-	var first: int = LevelCatalog.first_main_position("adjacent_pegs")
+	var first: int = LevelCatalog.first_main_position(PegCapacityRule.ID)
 	_open(first)
 	var session: GameSession = _board.session
 	for k: int in TutorialDirector.INTRO_STEPS:
 		_tap(session.level.solution_path[k].from_peg)
 		_tap(session.level.solution_path[k].to_peg)
-	# A jump over a stop: from an end peg to the far end.
-	var last: int = session.state.get_peg_count() - 1
-	var from: int = 0 if not session.state.pegs[0].is_empty() else last
-	var to: int = last if from == 0 else 0
-	_board.on_peg_pressed(from)
-	_board.on_peg_pressed(to)
-	assert_eq(_board.coaching.toast.get_text(), tr("RULE_ADJACENT_PEGS"))
+	# A move the rules refuse: a full peg first, else larger onto smaller.
+	var refused: Move = null
+	var message: String = ""
+	for from: int in session.state.get_peg_count():
+		for to: int in session.state.get_peg_count():
+			var move: Move = Move.new(from, to)
+			if from == to or session.state.pegs[from].is_empty() or session.rules.is_move_legal(session.state, move):
+				continue
+			var why: String = session.rules.get_violation_message(session.state, move)
+			if refused == null or why == "RULE_PEG_FULL":
+				refused = move
+				message = why
+	assert_not_null(refused)
+	_board.on_peg_pressed(refused.from_peg)
+	_board.on_peg_pressed(refused.to_peg)
+	assert_eq(_board.coaching.toast.get_text(), tr(message))
 
 
 func test_restart_runs_the_introduction_again() -> void:
-	var first: int = LevelCatalog.first_main_position(ColorSwapRule.ID)
+	var first: int = LevelCatalog.first_main_position(FoundationRule.ID)
 	_open(first)
 	var move: Move = _board.session.level.solution_path[0]
 	_tap(move.from_peg)

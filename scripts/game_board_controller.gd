@@ -400,7 +400,7 @@ func _on_solved() -> void:
 	var level: Level = session.level
 	var stars: int = level.stars_for_moves(session.move_count)
 	var previous_stars: int = save_system.get_stars(level.id)
-	var island_was_open: bool = LevelCatalog.is_branch_open(save_system)
+	var islands_open: int = LevelCatalog.open_islands(save_system).size()
 	var improved: bool = save_system.record_completion(level.id, stars, session.move_count, session.elapsed_seconds)
 	var chest: Dictionary = economy.add_tokens(EconomySystem.level_tokens(stars, previous_stars))
 	last_result = {"stars": stars, "improved": improved, "tokens": chest["tokens"], "keys": chest["keys"],
@@ -417,8 +417,9 @@ func _on_solved() -> void:
 	var notes: PackedStringArray = PackedStringArray()
 	if chest["keys"] > 0 and chests.is_empty():
 		notes.append(tr("POPUP_KEY") % [economy.keys(), EconomySystem.KEYS_PER_CHEST])
-	# The island appears as a surprise (level structure addendum v3): say so once.
-	if not island_was_open and LevelCatalog.is_branch_open(save_system):
+	# An island appears as a surprise (level structure addendum v3, one at the
+	# end of each chapter since the chapter system): say so once.
+	if LevelCatalog.open_islands(save_system).size() > islands_open:
 		notes.append(tr("POPUP_ISLAND_OPENED"))
 	_popup.set_note("\n".join(notes))
 	level_completed.emit(level, session.move_count, session.elapsed_seconds)

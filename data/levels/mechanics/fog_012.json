@@ -1,0 +1,14 @@
+{
+  "id": 11012,
+  "difficulty": "medium",
+  "pegs": 4,
+  "disks": 6,
+  "start": [[4],[],[3,2],[6,5,1]],
+  "goal": [[3,1],[6,5,4,2],[],[]],
+  "rules": ["classic_hanoi"],
+  "min_moves": 12,
+  "solution_path": [[0,1],[3,2],[3,0],[1,0],[3,1],[0,3],[0,1],[3,1],[2,3],[2,1],[2,0],[3,0]],
+  "star_thresholds": {"three":12,"two":15},
+  "time_limit_seconds": null,
+  "covered_pegs": [2,3]
+}

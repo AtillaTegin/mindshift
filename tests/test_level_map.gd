@@ -1,13 +1,13 @@
 extends "res://tests/test_case.gd"
 ## The level map (level structure addendum v3): one winding road of numbered
-## stops, no tier tabs or labels, the island branch as a surprise, and boards
-## that follow the road.
+## stops, no tier tabs or labels, the islands as surprises (one at the end of
+## each chapter, chapter system v1), and boards that follow the road.
 
 const SAVE_PATH: String = "res://.test_saves/test_level_map_save.json"
 const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
 const MAIN: String = LevelCatalog.MAIN
-const BRANCH: String = LevelCatalog.BRANCH
+const FIRST_ISLAND: String = "island_1"
 
 var _nodes: Array[Node] = []
 var _save: SaveSystem
@@ -146,31 +146,50 @@ func test_mechanic_stops_wear_their_dress() -> void:
 	_complete(MAIN, mechanic_position)
 	var screen: Control = _map_screen()
 	var expected: String = ThemeManager.skin_for(LevelCatalog.mechanic_at(MAIN, mechanic_position))
-	assert_true(expected in ["jade", "wood"], expected)
+	assert_eq(expected, "temple", "unequal capacity opens world 1's second chapter")
 	assert_eq(screen.get_cell(mechanic_position).skin, expected)
 	assert_eq(screen.get_cell(1).skin, "", "classic levels wear none")
 	assert_false(screen.get_cell(mechanic_position).locked, "a mechanic level opens like any other")
 
 
 func test_island_appears_after_its_level_and_switches_tracks() -> void:
-	_complete(MAIN, LevelCatalog.branch_after())
+	var after: int = LevelCatalog.island_after(FIRST_ISLAND)
+	_complete(MAIN, after)
 	var screen: Control = _map_screen()
 	var map: PathMap = screen.get_map()
 	var island: Button = map.get_island_button()
 	assert_not_null(island, "the island marker sits on the road")
+	assert_eq(map.island_marker_count(), 1, "only the open island")
 	var track_button: Button = screen.get_node("%TrackButton")
 	assert_true(track_button.visible)
 	assert_eq(track_button.text, "Gizli adaya keç")
 	island.pressed.emit()
-	assert_eq(screen.track, BRANCH)
-	assert_eq((screen.get_node("%Title") as Label).text, "Gizli ada")
+	assert_eq(screen.track, FIRST_ISLAND)
+	assert_eq((screen.get_node("%Title") as Label).text, "Gizli ada · Klassik")
 	assert_eq(map.current_position(), 1)
 	assert_true(screen.get_cell(2).locked)
 	assert_null(map.get_island_button(), "no marker on the island itself")
 	assert_eq(track_button.text, "Əsas yola qayıt")
 	track_button.pressed.emit()
 	assert_eq(screen.track, MAIN)
-	assert_eq(map.current_position(), LevelCatalog.branch_after() + 1)
+	assert_eq(map.current_position(), after + 1)
+
+
+func test_every_chapter_end_gets_its_island() -> void:
+	var second: String = LevelCatalog.island_tracks()[1]
+	_complete(MAIN, LevelCatalog.island_after(second))
+	var screen: Control = _map_screen()
+	var map: PathMap = screen.get_map()
+	assert_eq(map.island_marker_count(), 2)
+	assert_not_null(map.get_island_button(second))
+	map.get_island_button(second).pressed.emit()
+	assert_eq(screen.track, second)
+	assert_eq((screen.get_node("%Title") as Label).text, "Gizli ada · %s" % ModeTexts.label(LevelCatalog.island_mode(second)))
+	# The road's button leads to the first island with something left to play.
+	(screen.get_node("%TrackButton") as Button).pressed.emit()
+	assert_eq(screen.island_to_visit(), FIRST_ISLAND)
+	_complete(FIRST_ISLAND, LevelCatalog.track_length(FIRST_ISLAND))
+	assert_eq(screen.island_to_visit(), second)
 
 
 func test_board_follows_the_road() -> void:
@@ -183,7 +202,7 @@ func test_board_follows_the_road() -> void:
 	board.play_next_level()
 	assert_eq(board.session.level.id, LevelCatalog.level_id_at(MAIN, 4))
 	assert_eq((board.get_node("%LevelLabel") as Label).text, "Səviyyə 4")
-	board.start_level(LevelCatalog.load_at(BRANCH, 2))
+	board.start_level(LevelCatalog.load_at(FIRST_ISLAND, 2))
 	assert_eq((board.get_node("%LevelLabel") as Label).text, "Ada · 2")
 
 
@@ -197,7 +216,7 @@ func test_last_road_level_has_no_next() -> void:
 
 
 func test_popup_announces_the_island_once() -> void:
-	var after: int = LevelCatalog.branch_after()
+	var after: int = LevelCatalog.island_after(FIRST_ISLAND)
 	_complete(MAIN, after - 1)
 	var board: GameBoard = _board()
 	board.start_level(LevelCatalog.load_at(MAIN, after))
@@ -213,10 +232,10 @@ func test_popup_announces_the_island_once() -> void:
 
 func test_mechanic_boards_wear_their_dress_and_classic_ones_do_not() -> void:
 	var board: GameBoard = _board()
-	board.start_level(LevelCatalog.load_mechanic("rings_01.json"))
-	assert_eq(board.get_board_skin().skin, "jade")
-	assert_eq(board.get_node("%GoalPreview").skin, "jade")
-	board.start_level(LevelCatalog.load_mechanic("fog_01.json"))
+	board.start_level(LevelCatalog.load_mechanic("capacity_001.json"))
+	assert_eq(board.get_board_skin().skin, "temple")
+	assert_eq(board.get_node("%GoalPreview").skin, "temple")
+	board.start_level(LevelCatalog.load_mechanic("fog_001.json"))
 	assert_eq(board.get_board_skin().skin, "wood")
 	board.start_level(LevelCatalog.load_at(MAIN, 1))
 	assert_eq(board.get_board_skin().skin, "")
@@ -225,7 +244,7 @@ func test_mechanic_boards_wear_their_dress_and_classic_ones_do_not() -> void:
 
 func test_mechanic_levels_reward_and_save_like_any_level() -> void:
 	var board: GameBoard = _board()
-	board.start_level(LevelCatalog.load_mechanic("fog_02.json"))
+	board.start_level(LevelCatalog.load_mechanic("fog_002.json"))
 	assert_eq(board.session.level.difficulty, Difficulty.tier_for_moves(board.session.level.min_moves), "its own tier")
 	_solve(board)
 	assert_eq(board.last_result["stars"], 3)

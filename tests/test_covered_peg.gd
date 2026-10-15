@@ -5,10 +5,18 @@ extends "res://tests/test_case.gd"
 ## until the box opens. Rules, Solver and generator know nothing about it.
 
 const SAVE_PATH: String = "res://.test_saves/test_covered_peg_save.json"
-## A shipped karakuri level with two boxes (file format checks).
-const FOG_LEVEL: String = "fog_20.json"
 
 var _board: GameBoard
+
+
+## A shipped karakuri level with two boxes (file format checks).
+static func _two_box_file() -> String:
+	var names: Array = Array(DirAccess.get_files_at(Difficulty.LEVELS_DIR + "/" + Difficulty.MECHANICS))
+	names.sort()
+	for file_name: String in names:
+		if file_name.begins_with("fog_") and LevelCatalog.load_mechanic(file_name).covered_pegs.size() == 2:
+			return file_name
+	return ""
 
 
 func after_each() -> void:
@@ -57,10 +65,11 @@ func _disk_rect(disk: int) -> Rect2:
 
 
 func test_level_format() -> void:
-	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
-	assert_eq(level.covered_pegs.size(), 2, "the last karakuri level has two boxes")
+	var file_name: String = _two_box_file()
+	var level: Level = LevelCatalog.load_mechanic(file_name)
+	assert_eq(level.covered_pegs.size(), 2, "a karakuri level with two boxes")
 	assert_eq(level.rule_ids, ["classic_hanoi"] as Array[String], "no rule involved")
-	assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path(FOG_LEVEL)), level.to_json(), "round trip")
+	assert_eq(FileAccess.get_file_as_string(LevelCatalog.mechanic_path(file_name)), level.to_json(), "round trip")
 	var data: Dictionary = JSON.parse_string(level.to_json())
 	for bad: Variant in [[7], [1, 1], [-1], "1", [1.5]]:
 		data["covered_pegs"] = bad
@@ -72,7 +81,7 @@ func test_level_format() -> void:
 
 
 func test_solver_ignores_the_fog() -> void:
-	var level: Level = LevelCatalog.load_mechanic(FOG_LEVEL)
+	var level: Level = LevelCatalog.load_mechanic(_two_box_file())
 	var result: Dictionary = Solver.solve(level.start, level.goal, level.get_rule_set())
 	assert_eq(result["min_moves"], level.min_moves, "the fog changes nothing for the Solver")
 
@@ -203,4 +212,4 @@ func test_validator_rules_for_covered_pegs() -> void:
 		var file_errors: Array[String] = []
 		LevelValidator.load_and_validate(LevelCatalog.mechanic_path(file_name), file_errors)
 		assert_eq(file_errors, [] as Array[String], file_name)
-	assert_eq(karakuri, 24)
+	assert_true(karakuri >= 70, "a whole chapter of them (%d)" % karakuri)

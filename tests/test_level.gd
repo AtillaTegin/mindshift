@@ -103,7 +103,8 @@ func test_rejects_tampered_fields() -> void:
 		["min_moves", 6, "three must equal min_moves"],
 		["star_thresholds", {"three": 7, "two": 10}, "star_thresholds.two"],
 		["star_thresholds", {"three": 6, "two": 9}, "three must equal min_moves"],
-		["difficulty", "hard", "is not a hard size"],
+		["difficulty", "hard", "is outside hard (21-33)"],
+		["pegs", 6, "do not match start"],
 		["difficulty", "legendary", "unknown difficulty"],
 		["id", 2001, "outside the easy range"],
 		["id", 1001.5, "must be an integer"],
@@ -203,9 +204,11 @@ func test_difficulty_table() -> void:
 	assert_true(Difficulty.accepts_moves("expert", 49))
 	assert_false(Difficulty.accepts_moves("expert", 33))
 	assert_false(Difficulty.accepts_moves("nope", 5))
-	assert_true(Difficulty.accepts_size("hard", 4, 7))
-	assert_false(Difficulty.accepts_size("hard", 4, 6), "4p/6d can never reach 21 moves")
-	assert_false(Difficulty.accepts_size("expert", 5, 10), "5 pegs dropped")
+	# Chapter system: a classic board fits any tier; its moves decide the tier.
+	assert_true(Difficulty.accepts_classic_size(3, 7), "the big test: 7 disks on 3 pegs")
+	assert_true(Difficulty.accepts_classic_size(4, 10))
+	assert_false(Difficulty.accepts_classic_size(6, 5))
+	assert_false(Difficulty.accepts_classic_size(3, 11))
 	assert_true(Difficulty.accepts_id("medium", 2001))
 	assert_false(Difficulty.accepts_id("medium", 3001))
 	assert_eq(Difficulty.describe_moves("easy"), "5-11")

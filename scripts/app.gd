@@ -40,7 +40,7 @@ func _ready() -> void:
 	economy.claim_daily_bonus(Time.get_date_string_from_system())
 
 
-## Opens the level at `position` on `track` (LevelCatalog.MAIN or BRANCH).
+## Opens the level at `position` on `track` (LevelCatalog.MAIN or an island).
 func play_level(track: String, position: int) -> void:
 	map_track = track
 	map_focus = position

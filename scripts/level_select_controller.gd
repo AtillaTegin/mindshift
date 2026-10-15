@@ -1,8 +1,10 @@
 extends Control
 ## Level map (level structure addendum v3): one winding road of numbered
 ## levels, no difficulty tabs, with the chest meter on top (economy formulas
-## v3). Completed levels can be replayed to improve their stars. Once the island (the side branch) is open, its marker on the
-## road and the button under the title switch between the road and the island.
+## v3). Completed levels can be replayed to improve their stars. Each chapter
+## ends at an island (chapter system v1); once one is open, its marker on the
+## road leads to it, and the button under the title switches between the road
+## and the island where play goes on.
 
 signal level_chosen(track: String, position: int)
 
@@ -40,19 +42,29 @@ func _ready() -> void:
 		if app != null:
 			app.show_main_menu())
 	_map.level_pressed.connect(_on_level_pressed)
-	_map.island_pressed.connect(show_track.bind(LevelCatalog.BRANCH, 0))
+	_map.island_pressed.connect(func(island: String) -> void: show_track(island))
 	_track_button.pressed.connect(func() -> void:
-		show_track(LevelCatalog.MAIN if track == LevelCatalog.BRANCH else LevelCatalog.BRANCH))
+		show_track(LevelCatalog.MAIN if LevelCatalog.is_island(track) else island_to_visit()))
 	_scroll.get_v_scroll_bar().changed.connect(_apply_scroll)
 	_map.resized.connect(_apply_scroll)
 	var start_track: String = app.map_track if app != null else LevelCatalog.MAIN
-	if start_track == LevelCatalog.BRANCH and not LevelCatalog.is_branch_open(save_system):
+	if start_track != LevelCatalog.MAIN and not LevelCatalog.is_island_open(start_track, save_system):
 		start_track = LevelCatalog.MAIN
 	show_track(start_track, app.map_focus if app != null else 0)
 
 
-## Shows the road (MAIN) or the island (BRANCH), scrolled to stop `focus`
-## (0: the next level to play there).
+## The island the road's button leads to: the first open one with a level
+## still to play, else the last open one ("" while none is open).
+func island_to_visit() -> String:
+	var open: Array[String] = LevelCatalog.open_islands(save_system)
+	for island: String in open:
+		if LevelCatalog.next_on(island, save_system) > 0:
+			return island
+	return open[-1] if not open.is_empty() else ""
+
+
+## Shows the road (MAIN) or an island track, scrolled to stop `focus` (0: the
+## next level to play there).
 func show_track(p_track: String, focus: int = 0) -> void:
 	track = p_track
 	var app: Node = get_node_or_null("/root/App")
@@ -63,14 +75,19 @@ func show_track(p_track: String, focus: int = 0) -> void:
 	# The map's height changed: sort again once its new minimum size is known, so
 	# the scroll range never keeps the old track's length.
 	_scroll.queue_sort.call_deferred()
-	_title.text = tr("MAP_ISLAND") if track == LevelCatalog.BRANCH else tr("MENU_LEVELS")
+	_title.text = island_title(track) if LevelCatalog.is_island(track) else tr("MENU_LEVELS")
 	_stars_label.text = tr("SELECT_STARS") % save_system.get_total_stars()
-	_track_button.visible = LevelCatalog.is_branch_open(save_system)
-	_track_button.text = tr("MAP_TO_MAIN") if track == LevelCatalog.BRANCH else tr("MAP_TO_ISLAND")
+	_track_button.visible = not LevelCatalog.open_islands(save_system).is_empty()
+	_track_button.text = tr("MAP_TO_MAIN") if LevelCatalog.is_island(track) else tr("MAP_TO_ISLAND")
 	if focus < 1 or focus > _map.shown_count():
 		focus = _map.current_position() if _map.current_position() > 0 else _map.shown_count()
 	_scroll_target = focus
 	_apply_scroll()
+
+
+## "Gizli ada · Tutum": the island and the mode it belongs to.
+static func island_title(island: String) -> String:
+	return "%s · %s" % [Languages.text("MAP_ISLAND"), ModeTexts.label(LevelCatalog.island_mode(island))]
 
 
 func get_map() -> PathMap:

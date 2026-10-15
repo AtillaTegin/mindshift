@@ -29,8 +29,13 @@ const MODES: Dictionary = {
 }
 
 
+## Whether `lesson` is registered; a combination ("peg_capacity+foundation",
+## chapter plan section 4) when each of its modes is.
 static func has(lesson: String) -> bool:
-	return MODES.has(lesson)
+	for part: String in lesson.split("+"):
+		if not MODES.has(part):
+			return false
+	return true
 
 
 ## The translation keys of `lesson`'s label, name and rule.
@@ -46,22 +51,34 @@ static func rule_key(lesson: String) -> String:
 	return MODES[lesson][2]
 
 
-## The short label on the level map (translated).
+## The short label on the level map (translated); a combination joins its
+## modes' labels: "Tutum + Kilid" (chapter plan section 4.4).
 static func label(lesson: String) -> String:
-	return Languages.text(label_key(lesson))
+	var parts: PackedStringArray = PackedStringArray()
+	for part: String in lesson.split("+"):
+		parts.append(Languages.text(label_key(part)))
+	return " + ".join(parts)
 
 
-## The mode's name (translated), the first line of the rule panel.
+## The mode's name (translated), the first line of the rule panel; a
+## combination is named by its map label, "Tutum + Kilid" (two full names do
+## not fit one line).
 static func name_of(level: Level) -> String:
+	if level.is_combo():
+		return label(level.lesson())
 	return Languages.text(name_key(level.lesson()))
 
 
-## The mode's rule for `level` (translated), the second line of the rule
-## panel; the balance names its level's tolerance.
+## The mode's rule for `level` (translated), under its name in the rule panel;
+## a combination gives both rules, one after the other (up to 3 lines). The
+## balance names its level's tolerance.
 static func rule_of(level: Level) -> String:
-	var text: String = Languages.text(rule_key(level.lesson()))
-	if level.mechanic() == BalanceRule.ID:
-		for rule: RuleBase in level.get_rule_set().active_rules:
-			if rule is BalanceRule:
-				return text % (rule as BalanceRule).tolerance
-	return text
+	var parts: PackedStringArray = PackedStringArray()
+	for part: String in level.lesson().split("+"):
+		var text: String = Languages.text(rule_key(part))
+		if part == BalanceRule.ID:
+			for rule: RuleBase in level.get_rule_set().active_rules:
+				if rule is BalanceRule:
+					text = text % (rule as BalanceRule).tolerance
+		parts.append(text)
+	return " ".join(parts)

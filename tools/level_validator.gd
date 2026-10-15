@@ -7,7 +7,8 @@ extends SceneTree
 ##   godot --headless --path . --script res://tools/level_validator.gd -- --dir=res://data/levels
 ## --require=N also fails unless every difficulty has at least N valid classic levels.
 ## The level path (data/levels/path.json) is checked too: every level on it
-## exactly once, the tutorial first, expert levels only on the branch.
+## exactly once, the tutorial first, each level in a chapter that may hold it,
+## expert levels only on the islands (validate_path()).
 ## Exits with code 0 only when everything is valid.
 
 const LEVELS_DIR: String = "res://data/levels"
@@ -42,7 +43,7 @@ func _run() -> bool:
 			print("     - %s" % error)
 	var ok: bool = failures.is_empty() and report["files"] > 0
 	if not FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]):
-		print("FAIL %s/%s is missing (run tools/path_builder.gd)" % [levels_dir, LevelCatalog.PATH_FILE])
+		print("FAIL %s/%s is missing (run tools/road_builder.gd)" % [levels_dir, LevelCatalog.PATH_FILE])
 		ok = false
 	var counts: Dictionary = report["valid_counts"]
 	if counts.has(Difficulty.MECHANICS):
@@ -102,16 +103,28 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 
 
 ## The level path lists every level file under `levels_dir` exactly once, with
-## the file's own id. The two tutorial levels open it, then classic easy levels
-## up to PathBuilder.FIRST_EASY (the only small easy ones); no easy level after
-## PathBuilder.EASY_UNTIL; expert levels only appear on the branch, and the
-## branch opens after a level that exists.
+## the file's own id. The two tutorial levels open it; every main level fits
+## its chapter (ChapterPlan: classic, the chapter's mode, an earlier mode as a
+## repeat, a combination chapter's combinations and single modes), every
+## combination is on the plan's whitelist and obeys its rules (section 4);
+## expert levels only appear on the islands; each island opens after a main
+## level that exists and holds levels of its own mode.
 static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
 	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
 	var listed: Dictionary = {}
-	for track: String in LevelCatalog.TRACKS:
-		var entries: Array = path[track]
+	var main: Array = path[LevelCatalog.MAIN]
+	var tracks: Array[Dictionary] = [{"name": LevelCatalog.MAIN, "entries": main, "mode": ""}]
+	var after: int = 0
+	for island: Dictionary in path["islands"]:
+		tracks.append({"name": "island after main %d" % island["after"], "entries": island["levels"], "mode": island["mode"]})
+		if island["after"] <= after or island["after"] > main.size():
+			errors.append("an island after main %d is out of order or off the road" % island["after"])
+		after = island["after"]
+	var whitelist: Array[String] = ChapterPlan.whitelist()
+	for track: Dictionary in tracks:
+		var entries: Array = track["entries"]
+		var on_main: bool = track["name"] == LevelCatalog.MAIN
 		for i: int in entries.size():
 			var file: String = entries[i]["file"]
 			if listed.has(file):
@@ -120,45 +133,70 @@ static func validate_path(levels_dir: String) -> Array[String]:
 			var level_errors: Array[String] = []
 			var level: Level = Level.load_file("%s/%s" % [levels_dir, file], level_errors)
 			if level == null:
-				errors.append("%s %d: %s cannot be read" % [track, i + 1, file])
+				errors.append("%s %d: %s cannot be read" % [track["name"], i + 1, file])
 				continue
 			if level.id != entries[i]["id"]:
 				errors.append("%s has id %d, the path says %d" % [file, level.id, entries[i]["id"]])
-			if track == LevelCatalog.MAIN and level.difficulty == "expert":
-				errors.append("main %d: expert level %s belongs on the branch" % [i + 1, file])
-			if track == LevelCatalog.MAIN and i < PathBuilder.FIRST_EASY \
-					and (level.difficulty != "easy" or level.mechanic() != Level.CLASSIC):
-				errors.append("main %d: %s is not a classic easy level" % [i + 1, file])
-			# Level structure v4, section 1: easy levels are for learning only.
-			if track == LevelCatalog.MAIN and i >= PathBuilder.EASY_UNTIL and level.difficulty == "easy":
-				errors.append("main %d: easy level %s after main %d" % [i + 1, file, PathBuilder.EASY_UNTIL])
-			if i >= PathBuilder.FIRST_EASY and level.mechanic() == Level.CLASSIC and level.difficulty == "easy" \
-					and level.get_disk_count() == Difficulty.get_tier("easy").get("small_disks", 0):
-				errors.append("%s %d: a %d-disk easy level only opens the road" % [track, i + 1, level.get_disk_count()])
-	var main: Array = path[LevelCatalog.MAIN]
+			var modes: Array[String] = level.modes()
+			if modes.size() > 1 and (not ChapterPlan.is_combo_allowed(modes) or (modes.size() == 2 \
+					and not whitelist.has(ChapterPlan.combo_key(modes)))):
+				errors.append("%s: the combination %s is not on the plan's whitelist" % [file, ChapterPlan.combo_key(modes)])
+			if on_main:
+				if level.difficulty == "expert":
+					errors.append("main %d: expert level %s belongs on an island" % [i + 1, file])
+				var fit: String = fits_chapter(modes, i + 1)
+				if not fit.is_empty():
+					errors.append("main %d: %s %s" % [i + 1, file, fit])
+			elif track["mode"] == Level.CLASSIC and not modes.is_empty():
+				errors.append("%s: the classic island holds classic levels only" % file)
+			elif track["mode"] != Level.CLASSIC and (modes.size() != 1 or modes[0] != track["mode"] \
+					or level.difficulty != "expert"):
+				errors.append("%s: the %s island holds expert %s levels only" % [file, track["mode"], track["mode"]])
 	for i: int in TUTORIAL_LEVEL_IDS.size():
 		if main.size() <= i or main[i]["id"] != TUTORIAL_LEVEL_IDS[i]:
 			errors.append("main %d must be tutorial level %d" % [i + 1, TUTORIAL_LEVEL_IDS[i]])
-	if path["branch_after"] < 1 or path["branch_after"] > main.size():
-		errors.append("branch_after %d is not a main path position" % path["branch_after"])
 	for folder: String in DirAccess.get_directories_at(levels_dir):
 		for file_name: String in DirAccess.get_files_at("%s/%s" % [levels_dir, folder]):
 			if file_name.ends_with(".json") and not listed.has("%s/%s" % [folder, file_name]):
 				errors.append("%s/%s is not on the path" % [folder, file_name])
 	return errors
 
-## Design rules of the mechanic levels, on top of the normal checks. A rule
-## beyond classic Hanoi (Nine Rings alternation, caravan road) must make the
-## level longer than plain Hanoi, or it changes nothing; a great exchange must
-## have its board shape.
+
+## "" if a main road level with `modes` fits the chapter at `position`, else
+## why not: a classic chapter holds classic levels; a mode chapter its mode,
+## classic levels and earlier chapters' modes; a combination chapter its
+## combinations, its single modes and classic levels.
+static func fits_chapter(modes: Array[String], position: int) -> String:
+	var chapter: Dictionary = ChapterPlan.chapter_at(position)
+	if chapter.is_empty():
+		return "lies past the chapter plan"
+	if modes.is_empty():
+		return ""
+	match chapter["kind"]:
+		ChapterPlan.MODE_CHAPTER:
+			if modes.size() == 1 and (modes[0] == chapter["mode"] or ChapterPlan.modes_before(position).has(modes[0])):
+				return ""
+		ChapterPlan.COMBO_CHAPTER:
+			if modes.size() == 1 and (chapter["singles"] as Array).has(modes[0]):
+				return ""
+			if modes.size() == 2 and (chapter.get("with_earlier_combos", false) \
+					or (chapter["combos"] as Array).any(func(combo: Array) -> bool:
+						return ChapterPlan.combo_key(combo) == ChapterPlan.combo_key(modes))):
+				return ""
+	return "does not belong in the chapter at main %d-%d (%s)" % [chapter["first"], chapter["last"], ChapterPlan.combo_key(modes)]
+
+
+## Design rules of the mechanic levels, on top of the normal checks. Each rule
+## beyond classic Hanoi must make the level longer: without any one of them
+## the same start and goal take fewer moves (a combination is longer than
+## either of its modes alone); a great exchange must have its board shape.
 static func validate_mechanic_design(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
 	if rules == null:
 		return
-	if level.rule_ids.size() > 1:
-		var plain: int = Solver.solve(level.start, level.goal, RuleSet.classic(), SOLVER_MAX_STATES)["min_moves"]
-		if plain >= level.min_moves:
-			errors.append("the %s rule changes nothing (%d moves without it)" % [level.mechanic(), plain])
+	if level.rule_ids.size() > 1 \
+			and not LevelForge.matters(level.start, level.goal, level.rule_ids, level.rule_params, level.min_moves):
+		errors.append("a rule of %s changes nothing (as short without it)" % ChapterPlan.combo_key(level.modes()))
 	if level.mechanic() == Difficulty.COLOR_SWAP:
 		validate_color_swap_shape(level, errors)
 	# The foundation's lock must be closed at the start, and a chain must move.
@@ -270,10 +308,9 @@ static func pair_key(start: PuzzleState, goal: PuzzleState) -> String:
 	return "%s => %s" % [start.hash_key(), goal.hash_key()]
 
 
-## pair_key() plus, for a level with a special mechanic, its rules and their
-## settings: the same start and goal under another rule (a narrower balance, a
-## different capacity) is another puzzle.
+## pair_key() plus, for a level with rules beyond classic Hanoi, its rules and
+## their settings: the same start and goal under another rule (a narrower
+## balance, a different capacity) is another puzzle. Karakuri boxes do not
+## count (LevelForge.puzzle_key()).
 static func puzzle_key(level: Level) -> String:
-	if level.mechanic() == Level.CLASSIC:
-		return pair_key(level.start, level.goal)
-	return "%s %s %s" % [pair_key(level.start, level.goal), str(level.rule_ids), JSON.stringify(level.rule_params)]
+	return LevelForge.puzzle_key(level.start, level.goal, level.rule_ids, level.rule_params)

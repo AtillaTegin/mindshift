@@ -16,6 +16,9 @@ extends Node
 ##   then FREE as on level 2. Karakuri boxes need no extra step: the first
 ##   moves use a box, and a tap on the shown box opens it. The great exchange's
 ##   two kinds are two lessons (Level.lesson()): each one's first level.
+## - The first level of each combination (chapter plan section 3.4: a
+##   mini-tutorial, both rules together): the same, with both modes' names
+##   and rules (COMBO_TEXT) as its words.
 ## - Other levels: off. A tutorial only runs until its level was completed once.
 
 enum Mode { OFF, GUIDED, FREE }
@@ -41,6 +44,8 @@ const INTRO_TEXTS: Dictionary = {
 	"mirror": "INTRO_MIRROR",
 	"trail": "INTRO_TRAIL",
 }
+## A combination's words: its name ("Tutum + Kilid") and both rules.
+const COMBO_TEXT: String = "INTRO_COMBO"
 const INTRO_STEPS: int = 3
 const INTRO_SECONDS: float = 5.0
 
@@ -88,14 +93,21 @@ func _on_level_started() -> void:
 		_intro_steps_left = INTRO_STEPS
 		mode = Mode.GUIDED
 		# At the top: the words stay readable while the ghost finger works below.
-		_coaching.toast.show_message(tr(INTRO_TEXTS[intro_mechanic]), INTRO_SECONDS, true)
+		_coaching.toast.show_message(intro_text(level), INTRO_SECONDS, true)
 		_show_next_step()
+
+
+## The words that introduce `level`'s lesson (translated).
+static func intro_text(level: Level) -> String:
+	if level.is_combo():
+		return Languages.text(COMBO_TEXT) % [ModeTexts.name_of(level), ModeTexts.rule_of(level)]
+	return Languages.text(INTRO_TEXTS[level.lesson()])
 
 
 ## Whether `level` is the first level of its lesson on the main path.
 static func is_mechanic_intro(level: Level) -> bool:
 	var lesson: String = level.lesson()
-	if not INTRO_TEXTS.has(lesson):
+	if not INTRO_TEXTS.has(lesson) and not (level.is_combo() and ModeTexts.has(lesson)):
 		return false
 	var place: Dictionary = LevelCatalog.place_of(level.id)
 	return place.get("track", "") == LevelCatalog.MAIN and place["position"] == LevelCatalog.first_main_position(lesson)

@@ -3,12 +3,15 @@ extends "res://tests/test_case.gd"
 ## decision on its two kinds): white and black disks, one of each size per
 ## colour, on the two end pegs. "Təmiz Dəyişmə" (pure) swaps the two stacks
 ## under the size rule; "Qarışıq-Ayırma" (mixed) sorts mixed ends under the
-## size rule plus "colours never touch". A chapter of 30-40 levels on the main
-## road (the old rare bosses are gone), and a refused move always says why.
+## size rule plus "colours never touch". A refused move always says why. Its
+## chapter (world 5, chapter system v1) is checked with the road in
+## test_chapter_plan.gd once built; until then the boards here are their own.
 
 const SAVE_PATH: String = "res://.test_saves/test_color_swap_save.json"
-const MAIN: String = LevelCatalog.MAIN
-const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")
+## Pure: whites (ids 5, 3, 1) on the left, blacks on the right, 4 buffers.
+const PURE: Array = [[5, 3, 1], [], [], [], [], [6, 4, 2]]
+## Mixed: colours alternate on both ends, the largest white on the left.
+const MIXED: Array = [[5, 4, 1], [], [], [], [6, 3, 2]]
 
 var _nodes: Array[Node] = []
 
@@ -32,13 +35,18 @@ func _rules(colour: bool) -> RuleSet:
 	return RuleSet.from_ids([ColorSwapRule.ID], {ColorSwapRule.ID: {"colour": colour}})
 
 
-## The great exchange levels with their main path positions, in road order.
-func _on_road() -> Array[Dictionary]:
-	var found: Array[Dictionary] = []
-	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		if LevelCatalog.mechanic_at(MAIN, position) == ColorSwapRule.ID:
-			found.append({"position": position, "level": LevelCatalog.load_at(MAIN, position)})
-	return found
+## A great exchange level from `start`: every black disk to the left end,
+## every white one to the right.
+static func _swap_level(start: Array, colour: bool) -> Level:
+	var goal: Array = []
+	for peg: Array in start:
+		goal.append([])
+	var k: int = (start[0] as Array).size()
+	for size: int in range(k, 0, -1):
+		goal[0].append(ColorSwapRule.disk_of(size, false))
+		goal[-1].append(ColorSwapRule.disk_of(size, true))
+	var rule_ids: Array[String] = [ColorSwapRule.ID]
+	return make_level(19001, rule_ids, start, goal, {ColorSwapRule.ID: {"colour": colour}})
 
 
 func _board_for(level: Level) -> GameBoard:
@@ -90,33 +98,17 @@ func test_colour_rule_only_for_the_mixed_kind() -> void:
 	assert_true(_rules(true).is_move_legal(state, Move.new(0, 2)), "white onto a larger white")
 
 
-func test_chapter_is_dense_and_mixes_both_kinds() -> void:
-	var road: Array[Dictionary] = _on_road()
-	assert_true(road.size() >= 30 and road.size() <= 40, "30-40 levels, no longer rare bosses (%d)" % road.size())
-	assert_eq(road[0]["position"], PathBuilder.CHAPTER_STARTS[ColorSwapRule.ID], "starts at the first boss's old slot")
-	assert_eq((road[0]["level"] as Level).lesson(), ColorSwapRule.ID, "the pure swap comes first")
-	assert_true(road[-1]["position"] > PathBuilder.MIX_UNTIL, "to the end of the road (%d)" % road[-1]["position"])
-	var kinds: Dictionary = {}
-	var first_mixed: int = 0
-	var previous: int = 0
-	for entry: Dictionary in road:
-		var level: Level = entry["level"]
-		var position: int = entry["position"]
-		kinds[level.lesson()] = kinds.get(level.lesson(), 0) + 1
-		if first_mixed == 0 and level.lesson() == Level.COLOR_SWAP_MIXED:
-			first_mixed = position
-		assert_true(level.min_moves >= previous, "easiest first (main %d)" % position)
-		previous = level.min_moves
-		assert_true(level.min_moves <= 33, "on the main road")
-		assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), "tier by length")
-		if level.difficulty == "easy":
-			assert_true(position <= PathBuilder.EASY_UNTIL, "easy only while learning (%d)" % position)
+func test_both_kinds_are_lessons_of_their_own() -> void:
+	var pure: Level = _swap_level(PURE, false)
+	var mixed: Level = _swap_level(MIXED, true)
+	assert_true(pure.min_moves > 0 and mixed.min_moves > 0, "both boards solve")
+	assert_eq(pure.lesson(), ColorSwapRule.ID)
+	assert_eq(mixed.lesson(), Level.COLOR_SWAP_MIXED)
+	for level: Level in [pure, mixed]:
 		var errors: Array[String] = []
 		LevelValidator.validate_mechanic_design(level, errors)
-		assert_eq(errors, [] as Array[String], "main %d" % position)
-	assert_true(kinds.get(ColorSwapRule.ID, 0) >= 5, "pure swaps: %s" % str(kinds))
-	assert_true(kinds.get(Level.COLOR_SWAP_MIXED, 0) >= 5, "mixed ones: %s" % str(kinds))
-	assert_true(first_mixed > 0 and first_mixed <= PathBuilder.EASY_UNTIL, "the colour rule is met while learning (%d)" % first_mixed)
+		assert_eq(errors, [] as Array[String], level.lesson())
+	assert_true(TutorialDirector.INTRO_TEXTS.has(Level.COLOR_SWAP_MIXED))
 
 
 func test_validator_knows_the_board() -> void:
@@ -144,26 +136,9 @@ func test_validator_knows_the_board() -> void:
 	assert_true(" ".join(errors).contains("empty pegs between"), str(errors))
 
 
-func test_each_kind_is_introduced_once() -> void:
-	var pure: int = LevelCatalog.first_main_position(ColorSwapRule.ID)
-	var mixed: int = LevelCatalog.first_main_position(Level.COLOR_SWAP_MIXED)
-	assert_true(pure > 0 and mixed > pure, "pure %d, then mixed %d" % [pure, mixed])
-	assert_true(TutorialDirector.is_mechanic_intro(LevelCatalog.load_at(MAIN, pure)))
-	assert_true(TutorialDirector.is_mechanic_intro(LevelCatalog.load_at(MAIN, mixed)))
-	for entry: Dictionary in _on_road():
-		if entry["position"] != pure and entry["position"] != mixed:
-			assert_false(TutorialDirector.is_mechanic_intro(entry["level"]), "main %d" % entry["position"])
-	assert_true(TutorialDirector.INTRO_TEXTS.has(Level.COLOR_SWAP_MIXED))
-
-
 func test_board_shows_sizes_and_two_colours() -> void:
-	var road: Array[Dictionary] = _on_road()
-	var level: Level = null
-	for entry: Dictionary in road:
-		if (entry["level"] as Level).get_peg_count() == Difficulty.MECHANIC_SIZES[Difficulty.COLOR_SWAP]["max_pegs"]:
-			level = entry["level"]
-			break
-	assert_not_null(level, "a board with 4 buffers")
+	var level: Level = _swap_level(PURE, false)
+	assert_eq(level.get_peg_count(), Difficulty.MECHANIC_SIZES[Difficulty.COLOR_SWAP]["max_pegs"], "a board with 4 buffers")
 	var board: GameBoard = _board_for(level)
 	var white: Dictionary = ThemeManager.EXCHANGE_DISKS["white"]
 	var black: Dictionary = ThemeManager.EXCHANGE_DISKS["black"]
@@ -198,11 +173,7 @@ func test_board_shows_sizes_and_two_colours() -> void:
 
 
 func test_a_refused_move_says_why() -> void:
-	var level: Level = null
-	for entry: Dictionary in _on_road():
-		if (entry["level"] as Level).lesson() == Level.COLOR_SWAP_MIXED:
-			level = entry["level"]
-			break
+	var level: Level = _swap_level(MIXED, true)
 	var board: GameBoard = _board_for(level)
 	var status: Label = board.get_node("%StatusLabel")
 	var last: int = level.get_peg_count() - 1
@@ -224,11 +195,7 @@ func test_a_refused_move_says_why() -> void:
 
 func test_dead_end_gets_an_honest_hint() -> void:
 	# A mixed level: a disk lifted off the other colour cannot go back.
-	var level: Level = null
-	for entry: Dictionary in _on_road():
-		if (entry["level"] as Level).lesson() == Level.COLOR_SWAP_MIXED:
-			level = entry["level"]
-			break
+	var level: Level = _swap_level(MIXED, true)
 	var session: GameSession = GameSession.new(level)
 	var off: Move = null
 	for move: Move in session.rules.get_legal_moves(session.state):
@@ -240,17 +207,3 @@ func test_dead_end_gets_an_honest_hint() -> void:
 	if back != null:
 		assert_true(session.rules.apply_move(session.state, back).equals(level.start), "a way back is a real one")
 	assert_not_null(GameSession.solve_hint(level, session.state.duplicate_state(), session.rules), "the Solver still finds a way")
-
-
-func test_map_shows_the_chapter_as_ordinary_stops() -> void:
-	var save: SaveSystem = SaveSystem.new(SAVE_PATH)
-	var first: int = LevelCatalog.first_main_position(ColorSwapRule.ID)
-	for position: int in range(1, first):
-		save.completed_levels[str(LevelCatalog.level_id_at(MAIN, position))] = {"stars": 1, "best_moves": 99, "best_time_seconds": 9}
-	var screen: Control = SELECT_SCENE.instantiate()
-	screen.save_system = save
-	_add(screen)
-	var stop: LevelCell = screen.get_cell(first)
-	var plain: LevelCell = screen.get_cell(first - 1)
-	assert_eq(stop.size, plain.size, "no larger boss stop any more")
-	assert_eq(stop.skin, "caravan")
