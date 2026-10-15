@@ -61,6 +61,12 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 	return RuleSet.new(rules)
 
 
+## Every id create_rule() knows (a test keeps the two in step, and checks that
+## each mode has its texts in ModeTexts).
+const RULE_IDS: Array[String] = ["classic_hanoi", "alternation", "adjacent_pegs", "color_swap", "peg_capacity",
+		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet"]
+
+
 ## Rule registry: a fresh rule for a level JSON id, or null if the id is unknown.
 static func create_rule(id: String) -> RuleBase:
 	match id:

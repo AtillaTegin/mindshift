@@ -199,12 +199,6 @@ msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 msgid "RULE_ADJACENT_PEGS"
 msgstr "Karvan yalnız qonşu dayanacağa gedə bilər."
 
-msgid "COLOR_SWAP_GOAL"
-msgstr "Böyük Mübadilə: ağ karvan sağ uca, qara karvan sol uca keçsin."
-
-msgid "COLOR_SWAP_MIXED_GOAL"
-msgstr "Qarışıq karvan: qaraları sol uca, ağları sağ uca yığ."
-
 msgid "RULE_SAME_SIZE"
 msgstr "Eyni ölçülü disklər üst-üstə qoyula bilməz."
 
@@ -240,9 +234,6 @@ msgstr "Təməl: %d/%d kiçik disk yerindədir"
 
 msgid "FOUNDATION_OPEN"
 msgstr "Təməl qoyuldu: qıfıllar açıldı."
-
-msgid "BALANCE_LIMIT"
-msgstr "Tərəzinin iki gözü arasında fərq ən çox %d ola bilər."
 
 msgid "CHAIN_SECOND_TARGET"
 msgstr "İndi zəncirin o biri diskinin qülləsini seç."
@@ -291,6 +282,153 @@ msgstr "Güzgü Qoşa Məbəd: iki ayrı lövhə var, ikisi də öz hədəfinə 
 
 msgid "INTRO_TRAIL"
 msgstr "Qumlu Cığır: izli disk son iki dayandığı qülləyə qayıda bilməz. Qumdakı izlər bağlı yolları göstərir."
+
+msgid "MAP_EXPERT_SUFFIX"
+msgstr "· Ekspert"
+
+msgid "MODE_CLASSIC_LABEL"
+msgstr "Klassik"
+
+msgid "MODE_CLASSIC_NAME"
+msgstr "Klassik Hanoi"
+
+msgid "MODE_CLASSIC_RULE"
+msgstr "Diskləri hədəfdəki kimi düz. Böyük disk kiçiyin üstünə qoyulmaz."
+
+msgid "MODE_KARAKURI_LABEL"
+msgstr "Karakuri"
+
+msgid "MODE_KARAKURI_NAME"
+msgstr "Karakuri"
+
+msgid "MODE_KARAKURI_RULE"
+msgstr "Qüllələr gizlidir — toxunanda yalnız üst disk görünür."
+
+msgid "MODE_NINE_RINGS_LABEL"
+msgstr "Doqquz Halqa"
+
+msgid "MODE_NINE_RINGS_NAME"
+msgstr "Doqquz Halqa"
+
+msgid "MODE_NINE_RINGS_RULE"
+msgstr "1-ci disk həmişə gedir, ondan sonra istənilən disk. Başqa diskdən sonra yalnız ±1 qonşu və ya 1-ci."
+
+msgid "MODE_CARAVAN_LABEL"
+msgstr "Karvan"
+
+msgid "MODE_CARAVAN_NAME"
+msgstr "Karvan Yolu"
+
+msgid "MODE_CARAVAN_RULE"
+msgstr "Disk yalnız yanındakı qülləyə köçə bilər."
+
+msgid "MODE_LINKED_LABEL"
+msgstr "Bağlı"
+
+msgid "MODE_LINKED_NAME"
+msgstr "Bağlı Qüllələr"
+
+msgid "MODE_LINKED_RULE"
+msgstr "Disk yalnız bağlı qüllələr arasında gedir. Bağlantını dəyişmək də 1 gediş sayılır."
+
+msgid "MODE_SWAP_LABEL"
+msgstr "Mübadilə"
+
+msgid "MODE_SWAP_NAME"
+msgstr "Böyük Mübadilə — Təmiz Dəyişmə"
+
+msgid "MODE_SWAP_RULE"
+msgstr "Ağ və qara yığının yerini dəyiş."
+
+msgid "MODE_SWAP_MIXED_LABEL"
+msgstr "Ayır və Dəyiş"
+
+msgid "MODE_SWAP_MIXED_NAME"
+msgstr "Böyük Mübadilə — Qarışıq-Ayırma"
+
+msgid "MODE_SWAP_MIXED_RULE"
+msgstr "Ağları və qaraları ayır, yerlərini dəyiş. Fərqli rənglər üst-üstə qoyulmaz."
+
+msgid "MODE_CAPACITY_LABEL"
+msgstr "Tutum"
+
+msgid "MODE_CAPACITY_NAME"
+msgstr "Qeyri-Bərabər Tutum"
+
+msgid "MODE_CAPACITY_RULE"
+msgstr "Hər qüllə yalnız öz hündürlüyü qədər disk tutur."
+
+msgid "MODE_FOUNDATION_LABEL"
+msgstr "Kilid"
+
+msgid "MODE_FOUNDATION_NAME"
+msgstr "Addımlı Kilidlənmə"
+
+msgid "MODE_FOUNDATION_RULE"
+msgstr "Kiçik diskləri yerinə qoy — böyüklərin kilidi açılsın."
+
+msgid "MODE_STRIPES_LABEL"
+msgstr "Zolaqlı"
+
+msgid "MODE_STRIPES_NAME"
+msgstr "İkirəngli Hanoi"
+
+msgid "MODE_STRIPES_RULE"
+msgstr "Eyni rəngli disklər bir-birinin üstünə qoyulmaz."
+
+msgid "MODE_BALANCE_LABEL"
+msgstr "Tərəzi"
+
+msgid "MODE_BALANCE_NAME"
+msgstr "Tərəzi Hanoi"
+
+msgid "MODE_BALANCE_RULE"
+msgstr "Cüt qüllələrin ağırlıq fərqi həddi (%d) keçməməlidir."
+
+msgid "MODE_CHAIN_LABEL"
+msgstr "Zəncir"
+
+msgid "MODE_CHAIN_NAME"
+msgstr "Zəncirlənmiş Disklər"
+
+msgid "MODE_CHAIN_RULE"
+msgstr "Zəncirli iki disk yalnız birlikdə hərəkət edir."
+
+msgid "MODE_CYCLIC_LABEL"
+msgstr "Dairə"
+
+msgid "MODE_CYCLIC_NAME"
+msgstr "Dövrəvi Hanoi"
+
+msgid "MODE_CYCLIC_RULE"
+msgstr "Disk yalnız saat əqrəbi istiqamətində növbəti qülləyə gedir."
+
+msgid "MODE_MIRROR_LABEL"
+msgstr "Güzgü"
+
+msgid "MODE_MIRROR_NAME"
+msgstr "Güzgü Hanoi"
+
+msgid "MODE_MIRROR_RULE"
+msgstr "Hər iki lövhəni həll et."
+
+msgid "MODE_TRAIL_LABEL"
+msgstr "Cığır"
+
+msgid "MODE_TRAIL_NAME"
+msgstr "İz Qadağası"
+
+msgid "MODE_TRAIL_RULE"
+msgstr "İşarəli disk son iki dayandığı qülləyə qayıda bilməz."
+
+msgid "MODE_MAGNET_LABEL"
+msgstr "Maqnit"
+
+msgid "MODE_MAGNET_NAME"
+msgstr "Maqnit Hanoi"
+
+msgid "MODE_MAGNET_RULE"
+msgstr "Disk hər gedişdə çevrilir. Toxunan üzlər fərqli rəngdə olmalıdır."
 
 msgid "POPUP_TITLE"
 msgstr "Səviyyə tamamlandı!"

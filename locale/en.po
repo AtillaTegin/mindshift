@@ -261,14 +261,6 @@ msgstr ""
 msgid "RULE_ADJACENT_PEGS"
 msgstr ""
 
-#. [TODO: EN] az: Böyük Mübadilə: ağ karvan sağ uca, qara karvan sol uca keçsin.
-msgid "COLOR_SWAP_GOAL"
-msgstr ""
-
-#. [TODO: EN] az: Qarışıq karvan: qaraları sol uca, ağları sağ uca yığ.
-msgid "COLOR_SWAP_MIXED_GOAL"
-msgstr ""
-
 #. [TODO: EN] az: Eyni ölçülü disklər üst-üstə qoyula bilməz.
 msgid "RULE_SAME_SIZE"
 msgstr ""
@@ -315,10 +307,6 @@ msgstr ""
 
 #. [TODO: EN] az: Təməl qoyuldu: qıfıllar açıldı.
 msgid "FOUNDATION_OPEN"
-msgstr ""
-
-#. [TODO: EN] az: Tərəzinin iki gözü arasında fərq ən çox %d ola bilər.
-msgid "BALANCE_LIMIT"
 msgstr ""
 
 #. [TODO: EN] az: İndi zəncirin o biri diskinin qülləsini seç.
@@ -383,6 +371,202 @@ msgstr ""
 
 #. [TODO: EN] az: Qumlu Cığır: izli disk son iki dayandığı qülləyə qayıda bilməz. Qumdakı izlər bağlı yolları göstərir.
 msgid "INTRO_TRAIL"
+msgstr ""
+
+#. [TODO: EN] az: · Ekspert
+msgid "MAP_EXPERT_SUFFIX"
+msgstr ""
+
+#. [TODO: EN] az: Klassik
+msgid "MODE_CLASSIC_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Klassik Hanoi
+msgid "MODE_CLASSIC_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Diskləri hədəfdəki kimi düz. Böyük disk kiçiyin üstünə qoyulmaz.
+msgid "MODE_CLASSIC_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Karakuri
+msgid "MODE_KARAKURI_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Karakuri
+msgid "MODE_KARAKURI_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Qüllələr gizlidir — toxunanda yalnız üst disk görünür.
+msgid "MODE_KARAKURI_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Doqquz Halqa
+msgid "MODE_NINE_RINGS_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Doqquz Halqa
+msgid "MODE_NINE_RINGS_NAME"
+msgstr ""
+
+#. [TODO: EN] az: 1-ci disk həmişə gedir, ondan sonra istənilən disk. Başqa diskdən sonra yalnız ±1 qonşu və ya 1-ci.
+msgid "MODE_NINE_RINGS_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Karvan
+msgid "MODE_CARAVAN_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Karvan Yolu
+msgid "MODE_CARAVAN_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Disk yalnız yanındakı qülləyə köçə bilər.
+msgid "MODE_CARAVAN_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Bağlı
+msgid "MODE_LINKED_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Bağlı Qüllələr
+msgid "MODE_LINKED_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Disk yalnız bağlı qüllələr arasında gedir. Bağlantını dəyişmək də 1 gediş sayılır.
+msgid "MODE_LINKED_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Mübadilə
+msgid "MODE_SWAP_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Böyük Mübadilə — Təmiz Dəyişmə
+msgid "MODE_SWAP_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Ağ və qara yığının yerini dəyiş.
+msgid "MODE_SWAP_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Ayır və Dəyiş
+msgid "MODE_SWAP_MIXED_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Böyük Mübadilə — Qarışıq-Ayırma
+msgid "MODE_SWAP_MIXED_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Ağları və qaraları ayır, yerlərini dəyiş. Fərqli rənglər üst-üstə qoyulmaz.
+msgid "MODE_SWAP_MIXED_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tutum
+msgid "MODE_CAPACITY_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Qeyri-Bərabər Tutum
+msgid "MODE_CAPACITY_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Hər qüllə yalnız öz hündürlüyü qədər disk tutur.
+msgid "MODE_CAPACITY_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Kilid
+msgid "MODE_FOUNDATION_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Addımlı Kilidlənmə
+msgid "MODE_FOUNDATION_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Kiçik diskləri yerinə qoy — böyüklərin kilidi açılsın.
+msgid "MODE_FOUNDATION_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Zolaqlı
+msgid "MODE_STRIPES_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: İkirəngli Hanoi
+msgid "MODE_STRIPES_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Eyni rəngli disklər bir-birinin üstünə qoyulmaz.
+msgid "MODE_STRIPES_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tərəzi
+msgid "MODE_BALANCE_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Tərəzi Hanoi
+msgid "MODE_BALANCE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Cüt qüllələrin ağırlıq fərqi həddi (%d) keçməməlidir.
+msgid "MODE_BALANCE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Zəncir
+msgid "MODE_CHAIN_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Zəncirlənmiş Disklər
+msgid "MODE_CHAIN_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Zəncirli iki disk yalnız birlikdə hərəkət edir.
+msgid "MODE_CHAIN_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Dairə
+msgid "MODE_CYCLIC_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Dövrəvi Hanoi
+msgid "MODE_CYCLIC_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Disk yalnız saat əqrəbi istiqamətində növbəti qülləyə gedir.
+msgid "MODE_CYCLIC_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Güzgü
+msgid "MODE_MIRROR_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Güzgü Hanoi
+msgid "MODE_MIRROR_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Hər iki lövhəni həll et.
+msgid "MODE_MIRROR_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Cığır
+msgid "MODE_TRAIL_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: İz Qadağası
+msgid "MODE_TRAIL_NAME"
+msgstr ""
+
+#. [TODO: EN] az: İşarəli disk son iki dayandığı qülləyə qayıda bilməz.
+msgid "MODE_TRAIL_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Maqnit
+msgid "MODE_MAGNET_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Maqnit Hanoi
+msgid "MODE_MAGNET_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Disk hər gedişdə çevrilir. Toxunan üzlər fərqli rəngdə olmalıdır.
+msgid "MODE_MAGNET_RULE"
 msgstr ""
 
 #. [TODO: EN] az: Səviyyə tamamlandı!

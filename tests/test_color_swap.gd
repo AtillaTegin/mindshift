@@ -186,9 +186,10 @@ func test_board_shows_sizes_and_two_colours() -> void:
 	assert_eq(board.get_board_skin().skin, "caravan")
 	var preview: BoardPreview = board.get_node("%GoalPreview")
 	assert_eq(preview.disk_palette.size(), level.get_disk_count(), "the goal shows the same disks")
-	var status: Label = board.get_node("%StatusLabel")
-	assert_eq(status.text, tr("COLOR_SWAP_MIXED_GOAL" if level.lesson() == Level.COLOR_SWAP_MIXED else "COLOR_SWAP_GOAL"))
-	assert_eq(status.theme_type_variation, &"SecondaryLabel", "a calm explanation")
+	# The goal is told by the rule panel under the board (mode labels v1).
+	var mixed: bool = level.lesson() == Level.COLOR_SWAP_MIXED
+	assert_eq((board.get_node("%RuleName") as Label).text, tr("MODE_SWAP_MIXED_NAME" if mixed else "MODE_SWAP_NAME"))
+	assert_eq((board.get_node("%RuleText") as Label).text, tr("MODE_SWAP_MIXED_RULE" if mixed else "MODE_SWAP_RULE"))
 	for move: Move in level.solution_path:
 		board.on_peg_pressed(move.from_peg)
 		board.on_peg_pressed(move.to_peg)

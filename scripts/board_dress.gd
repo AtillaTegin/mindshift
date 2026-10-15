@@ -91,17 +91,13 @@ static func says_why(level: Level) -> bool:
 			CyclicRule.ID, StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID]
 
 
-## The words that explain the goal before the first move (translated), or ""
-## when the preview says it all.
+## A note in the status line before the first move (translated), or "": the
+## foundation's keys in place. The mode's name and rule stand in the rule
+## panel below (ModeTexts).
 static func goal_text(level: Level) -> String:
-	match level.mechanic():
-		Difficulty.COLOR_SWAP:
-			return Languages.text("COLOR_SWAP_MIXED_GOAL" if level.lesson() == Level.COLOR_SWAP_MIXED else "COLOR_SWAP_GOAL")
-		BalanceRule.ID:
-			return Languages.text("BALANCE_LIMIT") % (_rule(level, BalanceRule.ID) as BalanceRule).tolerance
-		FoundationRule.ID:
-			var rule: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
-			return Languages.text("FOUNDATION_PROGRESS") % [rule.keys_in_place(level.start), rule.keys.size()]
+	if level.mechanic() == FoundationRule.ID:
+		var rule: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
+		return Languages.text("FOUNDATION_PROGRESS") % [rule.keys_in_place(level.start), rule.keys.size()]
 	return ""
 
 

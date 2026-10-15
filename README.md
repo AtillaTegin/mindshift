@@ -270,6 +270,7 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 | L-4.2 | Hər mexanikanın ilk səviyyəsində animasiyalı bələdçi (Dəyirman hələ yoxdur) | ✅ |
 | M-4 | Böyük Mübadilə v2: iki alt-tip, 30 səviyyəlik fəsil, boss-lar ləğv; Birləşmədə Water Sort qaydası və qrup köçürmə ([əlavə](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md)) | ✅ |
 | M-5 | Birləşmə arxivə; 8 yeni mexanika, hər birinin 4 pilotu; Maqnit yalnız ölçülüb ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md)) | ✅ pilotlar sınaqda |
+| UI-1 | Rejim etiketləri: xəritədə hər dayanacağın yanında rejim adı, lövhənin altında ad + qayda, tək registr ([sənəd](../MindShift_Rejim_Etiketleri_Xerite_ve_Qayda_Paneli.md)) | ✅ |
 | 7 | Android build | — |
 
 ### Rənglər və dillər
@@ -289,6 +290,21 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
   - Bu əmr açarı `tr/ru/en.po`-ya boş `msgstr` və `#. [TODO: XX] az: ...` qeydi ilə köçürür.
   - Tərcümə edilməmiş mətn Azərbaycanca görünür (`locale/fallback="az"`).
   - Real tərcümə ayrıca işdir: `msgstr`-ləri doldurmaq kifayətdir.
+
+### Rejim etiketləri
+
+- **Mənbə:** bütün rejim mətnləri bir registrdədir ([scripts/mode_texts.gd](scripts/mode_texts.gd), `ModeTexts`). Hər rejim (`Level.lesson()`) üçün qısa xəritə etiketi, ad və bir cümləlik qayda var. Mətnlərin özü `locale/az.po`-dadır, hələ qurulmamış rejimlərinki də (Bağlı Qüllələr).
+- **Xəritə:** hər dayanacağın yanında rejimin qısa adı yazılır (22 şrift, boz). Etiket dayanacağın hündürlüyündə, xəritənin ortasına baxan tərəfdə durur. Ada markeri olan dayanacaqda etiket o biri tərəfə keçir, heç bir tərəfdə yer yoxdursa dayanacağın altına düşür. Gizli adada ekspert pilləli səviyyələrə "· Ekspert" əlavə olunur (istifadəçi qərarı: yalnız onlara).
+- **Lövhə:** status sətrinin altında iki hissə var: rejimin adı (qalın) və qaydası (540 px enində, ən çox 2 sətir). Tərəzinin qaydası səviyyənin həddini də göstərir. Status sətri müvəqqəti mesajlar üçün qalır: rədd səbəbi, irəliləyiş, Hint.
+- **Testlər:**
+  - yoldakı hər səviyyənin və `RuleSet.RULE_IDS`-dəki hər qaydanın registrdə qeydi olmalıdır;
+  - hər qeydin üç mətni az.po-da olmalıdır;
+  - adlar bir, qaydalar ən çox iki sətrə sığmalıdır;
+  - etiketlər dayanacağa, ada markerinə toxunmamalı və xəritədən çıxmamalıdır.
+- **Sənəddən fərqli mətnlər** (istifadəçi təsdiqləyib):
+  - Klassik: "Diskləri hədəfdəki kimi düz…", çünki hədəf həmişə tək qüllə deyil.
+  - Doqquz Halqa: "ondan sonra istənilən disk" hissəsi əlavə olundu (D variantı).
+  - Cığır: "son iki dayandığı qülləyə", çünki qayda budur.
 
 ### 6B qeydləri
 

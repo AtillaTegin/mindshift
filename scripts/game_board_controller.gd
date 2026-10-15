@@ -93,6 +93,10 @@ var _cells: Array[Rect2] = []
 @onready var _time_label: Label = %TimeLabel
 @onready var _min_label: Label = %MinLabel
 @onready var _status_label: Label = %StatusLabel
+## The mode's name (bold) and one-sentence rule under the board (mode labels
+## specification v1, section 2; texts from ModeTexts).
+@onready var _rule_name: Label = %RuleName
+@onready var _rule_text: Label = %RuleText
 @onready var _goal_preview: BoardPreview = %GoalPreview
 @onready var _board: Control = %Board
 @onready var _peg_layer: Control = %PegLayer
@@ -131,6 +135,10 @@ func _ready() -> void:
 	tutorial.enabled = tutorials_enabled
 	tutorial.setup(self, coaching, save_system)
 	add_child(tutorial)
+	var bold: FontVariation = FontVariation.new()
+	bold.base_font = _rule_name.get_theme_default_font()
+	bold.variation_embolden = 0.8
+	_rule_name.add_theme_font_override("font", bold)
 	_hint_button.pressed.connect(request_hint)
 	_undo_button.pressed.connect(request_undo)
 	_restart_button.pressed.connect(restart)
@@ -209,6 +217,8 @@ func start_level(level: Level) -> void:
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
+	_rule_name.text = ModeTexts.name_of(level)
+	_rule_text.text = ModeTexts.rule_of(level)
 	_show_goal_words()
 	_refresh(false)
 	level_started.emit()
@@ -231,9 +241,9 @@ func restart() -> void:
 	position_changed.emit()
 
 
-## A goal the preview alone does not tell is said in words before the first
-## move, on every attempt (BoardDress.goal_text; e.g. a great exchange is a
-## swap or a sorting of the two colours, not one tower). The caller refreshes.
+## A note before the first move, on every attempt (BoardDress.goal_text, e.g.
+## the foundation's keys in place); the mode's rule itself stands in the rule
+## panel. The caller refreshes.
 func _show_goal_words() -> void:
 	var words: String = BoardDress.goal_text(session.level)
 	if words.is_empty():
