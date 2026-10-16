@@ -142,7 +142,8 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 ### Fəsil daxilində dalğalar
 
 [Dalğalar v1](../MindShift_Fesil_Daxili_Dalgalar_v1.md) (2026-10-16): mod fəsli dalğalarla gedir (`ChapterPlan.WAVES`).
-- **Ardıcıllıq:** əvvəl modun əsas forması, sonra hər dalğa bir yeni alt-element gətirir. Ardınca qarışıq dalğa (10 səviyyə) gəlir, ən sonda bağlanış səviyyəsi (30-33 gediş). Bağlanış səviyyəsi Böyük Sınağın yerini tutur, Fəsil Sistemi v1.2 gələndə əvəz olunacaq.
+- **Ardıcıllıq:** əvvəl modun əsas forması, sonra hər dalğa bir yeni alt-element gətirir. Ardınca qarışıq dalğa (10 səviyyə) gəlir, ən sonda fəslin **Böyük Sınağı** ([Fəsil Sistemi v1.2](../MindShift_Fesil_Sistemi_v1.2.md), 3.2a).
+- **Böyük Sınaq:** hər mod və kombinasiya fəslinin son səviyyəsi (Dünya 1-2-də 100, 200, 300, 350), 34-65 gediş. Mod fəslində birlikdə ola bilən bütün alt-elementləri daşıyır, kombinasiya fəslində ən yeni kombinasiyadır. Xəritədə böyük dairə və tacla görünür, ipucusu 5 sikkədir (ekspert). 1-50 klassik fəslində yoxdur. 65 gedişdən uzun səviyyələr yalnız adalardadır.
 - **Dalğanın içi:** tanıtma səviyyəsi yeni elementi təkbaşına verir, aşağı gediş pəncərəsində, öz bələdçisi ilə: "Yeni: Tağ — ...". Sonra 3 səviyyə yalnız o element, sonra əvvəlki alt-elementlərlə qarışıq gəlir.
 - **Dişli xətt:** hər səviyyənin öz gediş pəncərəsi var. Dalğa qalxır, növbəti dalğa bir az aşağıdan başlayır, ümumi xətt yuxarı gedir. Klassik səviyyələr çətin səviyyədən sonra gəlir.
 
@@ -153,7 +154,7 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 | Kilid | Açar disk, Ortadakı kilid, Zəncirvari kilid (2-3 kilid ardıcıl) | — |
 
 - **Panel:** üçüncü sətirdə alt-elementin qaydası yazılır.
-- **Şans qaydası:** Say lövhəsi və Boş qutuda yumşaldılıb (istifadəçi qərarı). Möhürlü qutu "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
+- **Şans qaydası:** Say lövhəsi və Boş qutu səviyyələrində söndürülüb (istifadəçi qərarı): qutuda 0-1 disk ola bilər, ilk gedişlərdə açılmaya bilər. Möhürlü qutu yalnız "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
 - **Validator:** səviyyənin adını çəkdiyi alt-elementlərin həqiqətən olduğunu yoxlayır. Qaydanı dəyişən hər alt-element həlli öz-özlüyündə uzatmalıdır.
 - **İpucu sürəti:** əsas yolda ≤0,7 s, Karakuri adasında 1,6 s.
 - Dünya 3-7 hələ qurulmayıb: Karvan, Zolaqlı, Dairə, Doqquz Halqa, Tərəzi, Mübadilə, Cığır, Zəncir, Güzgü, Maqnit onlar qurulana qədər yolda yoxdur (qaydaları və testləri qalır). Bağlı Qüllələr hələ yoxdur.
@@ -185,8 +186,14 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
   - **Dövrəvi Hanoi / Saat Qülləsi** (`cyclic`): disk yalnız saat əqrəbi istiqamətində növbəti qülləyə gedir. Qüllələr siferblatın üstündə dairəvi düzülür, mərkəzdə ox var. Tanınmış dəyərlər yoxlanır: 3 disk qonşuya 15, o birinə 21 gediş. Fəsil 551–650 (Dünya 3).
   - **İkirəngli Hanoi / Zolaqlı Qüllə** (`stripes`): tək və cüt ölçülər iki rəngdədir, eyni rəng eyni rəngin üstünə qoyulmur. 3 qüllədə qüllədən qülləyə klassik həll onsuz da belədir. Fəsil 451–550.
   - **Tərəzi Hanoi / Qədim Tərəzi** (`balance`, `{"tolerance": 6}`): qüllələr cüt-cütdür (0–1, 2–3). İstifadəçi qərarı: hər mövqedə, başlanğıc və hədəf də daxil, cütün iki qülləsindəki ölçü cəmlərinin fərqi tolerantlığı keçmir. Təsadüfi mövqelər demək olar ki, heç vaxt taraz olmur, ona görə səviyyələr bütün taraz mövqelərin arasından seçilir. T 1–2-də heç vaxt maraqlı səviyyə alınmır (ölçülüb), istifadəçi qərarı: T fəsil boyu lövhənin işlək aralığında azalır. Fəsil 821–970.
+    - **Tərəzi vizualı** ([v1.2](../MindShift_Fesil_Sistemi_v1.2.md), bölmə 5; [scripts/balance_scale.gd](scripts/balance_scale.gd)): hər cütün altında Roberval tipli tərəzi var. Platformalar üfüqi qalır, ağır tərəf aşağı enir, qüllə və disklər onunla birlikdə şaquli hərəkət edir.
+      - Hərəkət yaylıdır: ~0,4 s-də sakitləşir, mərkəzdəki əqrəb də yellənir.
+      - Altdakı 7-seqmentli LCD "FƏRQ x · HƏDD T" yazır: həddən aşağı yaşıl, həddə sarı, qadağan gedişdə iki dəfə qırmızı.
+      - Qadağan gedişdə qol titrəyir və qısa "tık" səsi gəlir. Səviyyə bitəndə yumşaq zəng çalınır. Hər iki səs kodla sintez olunur (`SoundFx`).
+      - Disk götürüləndə hər mümkün hədəfin üstündə yeni fərq ("→ 6") və ya həddi aşanlarda qırmızı "✕" görünür.
+      - Rənglər `ThemeManager.MARK_COLORS`-dadır. 3 nümunə səviyyə pilot menyusundadır.
   - **Zəncirlənmiş Disklər** (`chain`, `{"disks": [2, 5]}`): iki disk yalnız birlikdə, bir gedişdə, iki fərqli hədəfə gedir. Ikisi də üstdə olmalıdır. Toxunuş ikisini də qaldırır, sonra əvvəl toxunulan diskin, sonra yoldaşının qülləsi seçilir. Faylda belə gediş dörd rəqəmdir: `[from, to, from_2, to_2]`. 3 qüllədə cüt demək olar ki, həmişə ilişir, ona görə 4 qüllə. Fəsil 1321–1470.
-  - **Güzgü Hanoi** (`mirror`): indiki qayda iki müstəqil 3 qüllə lövhəsidir. Fəsil sistemi onu "Əks-səda" qaydası ilə əvəz edir (yuxarıdakı gediş aşağıda güzgü kimi təkrarlanır); əvvəl 4-5 pilot və raport. Fəsil 1471–1570.
+  - **Güzgü Hanoi, "Əks-səda"** (`mirror`, [v1.2](../MindShift_Fesil_Sistemi_v1.2.md), bölmə 6): iki lövhə var, oyunçu yalnız yuxarıda oynayır. Hər gediş aşağıda güzgüdəki kimi təkrarlanır (qüllə i ↔ n−1−i; 3 qüllədə 1↔3, 2↔2). Mümkün olmasa, aşağı lövhə yerində qalır. Hədəf: yuxarı öz hədəfinə çatır, aşağı onun əksi olur. Mühərrikdə bu, ümumi `echo_of` imkanıdır, Solver belə qaydaları generic axtarışla həll edir. Aşağı lövhə solğun və mavimtıldır, əks-səda 0,15 s gecikir, bloklanan əks-səda güzgü xəttini qırmızı yandırır və aşağı qüllənin üstündə "✕" göstərir. 5 pilot `prototype/pilots/`-dadır (`oyun.ps1 -Pilot`), hamısı "birləşmiş həll ≥ 1,3 × yuxarının tək həlli" filtrindən keçir. Fəsil (1471–1570) istifadəçinin pilot qərarından sonra qurulacaq.
   - **İz Qadağası / Qumlu Cığır** (`trail`, `{"disk": 1, "recent": 2}`): izli disk son iki dayandığı qülləyə qayıda bilməz, qumda iz qalır. Sənədin öz sözü ilə (bütün tarixçə) qayda 100 təsadüfi lövhədən yalnız 0–6-sında həlli dəyişirdi, həm də az. Sənəd "son N qüllə" seçimini builder-ə buraxıb. 3 qüllə, çünki 4 qüllədə yaddaş axtarışı dəqiqələrlə uzadırdı. Fəsil 1171–1270.
   - **Maqnit Hanoi** (`magnet`): qayda yazılıb və ölçülüb, fəsli 1771–1920-dir (Dünya 7). Ölçmə (kompüter, qüllədən qülləyə, 2026-10-15):
     - 3 qüllə, 3–7 disk: 11 / 30 / 83 / 236 / 687 gediş (klassik 7 / 15 / 31 / 63 / 127), hamısı 0,1 s-dən az. Təsadüfi mövqelər: 4 diskdə 9–30, 5 diskdə median 53.
@@ -278,7 +285,8 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 | UI-1 | Rejim etiketləri: xəritədə hər dayanacağın yanında rejim adı, lövhənin altında ad + qayda, tək registr ([sənəd](../MindShift_Rejim_Etiketleri_Xerite_ve_Qayda_Paneli.md)) | ✅ |
 | F-1 | Fəsil sistemi: skelet + Dünya 1-2 (420 səviyyə), kombinasiyalar, hər fəslin adası ([sənəd](../MindShift_Fesil_Sistemi_v1.md)) | ✅ sınaqda |
 | F-1.1 | Fəsil daxilində dalğalar: Dünya 1-2-də 11 alt-element, dişli çətinlik ([sənəd](../MindShift_Fesil_Daxili_Dalgalar_v1.md)) | ✅ sınaqda |
-| F-2 | Tərəzi vizualı, Güzgü "Əks-səda" pilotları + raport | — |
+| F-1.2 | Fəsil Sistemi v1.2: Böyük Sınaq (34-65, tac), Boş qutuda şans qaydası söndürülüb ([sənəd](../MindShift_Fesil_Sistemi_v1.2.md)) | ✅ sınaqda |
+| F-2 | Tərəzi vizualı (Roberval, LCD, önizləmə, səslər), Güzgü "Əks-səda" qaydası + 5 pilot | ✅ pilotlar sınaqda |
 | F-3 | Dünya 3-7 (Bağlı Qüllələr gözləyir) | — |
 | 7 | Android build | — |
 

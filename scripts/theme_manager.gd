@@ -169,8 +169,6 @@ const MARK_COLORS: Dictionary = {
 	"footprint": Color(0.45, 0.32, 0.18, 0.55),
 	"chain": Color("c9a227"),
 	"chain_faded": Color(0.55, 0.55, 0.6, 0.45),
-	"beam_level": Color("3f9f6b"),
-	"beam_limit": Color("e0a020"),
 	# Chapter waves: the sealed box's wax, the key on a key disk and its place,
 	# the thread from a key to the lock it opens, a stone arch, a hole.
 	"seal": Color("a8322d"),
@@ -178,6 +176,17 @@ const MARK_COLORS: Dictionary = {
 	"key_link": Color(0.83, 0.63, 0.09, 0.6),
 	"arch": Color("8a7f72"),
 	"hole": Color("2b2622"),
+	# The balance scale (Tərəzi): dark metal and brass, its needle, and its LCD.
+	"scale_metal": Color("4a4d55"),
+	"scale_brass": Color("b8892f"),
+	"scale_needle": Color("c0392b"),
+	"lcd_back": Color("1d2321"),
+	"lcd_green": Color("5ee08a"),
+	"lcd_yellow": Color("f2c94c"),
+	"lcd_red": Color("ff5a4f"),
+	# Güzgü's echo: the tint of the bottom (mirrored) board and a blocked echo.
+	"mirror_tint": Color("9db8d8"),
+	"echo_blocked": Color(0.85, 0.25, 0.25, 0.9),
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",

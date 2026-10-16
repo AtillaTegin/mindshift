@@ -145,6 +145,20 @@ func peg_groups(_peg_count: int) -> Array[Array]:
 	return [] as Array[Array]
 
 
+## A move that follows the player's `move` by itself (Güzgü's echo on the
+## other board), or null. RuleSet applies it right after `move` on the
+## position `after` when it is possible there (a top disk onto an empty peg
+## or a larger one); otherwise nothing follows. The Solver then searches
+## generically.
+func echo_of(_after: PuzzleState, _move: Move) -> Move:
+	return null
+
+
+## True for a rule whose moves echo (echo_of).
+func echoes() -> bool:
+	return false
+
+
 ## True if is_disk_move_allowed_after() fully decides this rule's moves. Rules that
 ## override is_move_allowed() to look at more of the position must return false.
 func supports_disk_move_check() -> bool:

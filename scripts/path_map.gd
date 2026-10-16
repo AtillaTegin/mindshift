@@ -17,6 +17,8 @@ signal island_pressed(island: String)
 ## Vertical distance between two stops.
 const STEP: float = 150.0
 const STOP_SIZE: float = 112.0
+## A chapter's Böyük Sınaq (Fəsil Sistemi v1.2, 3.2a): a larger stop with a crown.
+const BIG_STOP_SIZE: float = 140.0
 ## Sideways swing of the road, as a share of the width, and its turn per stop (radians).
 const SWING: float = 0.3
 const TURN: float = 0.85
@@ -69,7 +71,8 @@ func setup(p_track: String, save: SaveSystem) -> void:
 	for position: int in range(1, shown + 1):
 		var cell: LevelCell = LevelCell.new()
 		var mechanic: String = LevelCatalog.mechanic_at(track, position)
-		cell.size = Vector2(STOP_SIZE, STOP_SIZE)
+		cell.crown = track == LevelCatalog.MAIN and ChapterPlan.is_big_test(position)
+		cell.size = Vector2.ONE * (BIG_STOP_SIZE if cell.crown else STOP_SIZE)
 		cell.add_theme_font_size_override("font_size", 36)
 		var level_id: int = LevelCatalog.level_id_at(track, position)
 		cell.setup(position, save.get_stars(level_id), not LevelCatalog.is_unlocked(track, position, save))
@@ -190,8 +193,10 @@ func _label_position(position: int, label_size: Vector2) -> Vector2:
 	if _islands.has(position):
 		right_side = _island_center(position).x < center.x
 	var top: float = center.y - label_size.y * 0.5
-	var right: Vector2 = Vector2(center.x + LABEL_GAP, top)
-	var left: Vector2 = Vector2(center.x - LABEL_GAP - label_size.x, top)
+	# A larger stop (Böyük Sınaq) keeps its label as far from its rim.
+	var gap: float = LABEL_GAP + (_cells[position - 1].size.x - STOP_SIZE) * 0.5 if position <= _cells.size() else LABEL_GAP
+	var right: Vector2 = Vector2(center.x + gap, top)
+	var left: Vector2 = Vector2(center.x - gap - label_size.x, top)
 	var fits_right: bool = right.x + label_size.x <= size.x - LABEL_MARGIN
 	var fits_left: bool = left.x >= LABEL_MARGIN
 	if (right_side and fits_right) or (fits_right and not fits_left):
@@ -232,7 +237,7 @@ func _draw() -> void:
 	for after: int in _islands:
 		_draw_dashes(stop_center(after), _island_center(after), ThemeManager.color("accent"))
 	if _current > 0 and _current <= _cells.size():
-		draw_arc(stop_center(_current), STOP_SIZE * 0.62, 0.0, TAU, 48, ThemeManager.color("accent"), 6.0, true)
+		draw_arc(stop_center(_current), _cells[_current - 1].size.x * 0.62, 0.0, TAU, 48, ThemeManager.color("accent"), 6.0, true)
 
 
 func _draw_dashes(from: Vector2, to: Vector2, color: Color) -> void:

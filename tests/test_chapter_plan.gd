@@ -95,10 +95,19 @@ func test_road_follows_the_plan() -> void:
 			"a combination the chapter does not list is refused")
 	assert_eq(LevelValidator.fits_chapter(["covered_pegs"] as Array[String], 60).is_empty(), false,
 			"a mode before its chapter is refused")
-	var level: Level = _level_at(MAIN, 1)
+	# v1.2, 3.2a: up to 33 moves, but each mode and combination chapter ends
+	# with one Böyük Sınaq of 34-65 (not the classic chapter).
+	var big_tests: Array[int] = []
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		level = _level_at(MAIN, position)
-		assert_true(level.min_moves <= 33, "main %d stays within 33 moves" % position)
+		var level: Level = _level_at(MAIN, position)
+		if ChapterPlan.is_big_test(position):
+			big_tests.append(position)
+			assert_true(level.min_moves >= 34 and level.min_moves <= 65, "main %d: a Böyük Sınaq of %d moves" % [position, level.min_moves])
+			assert_eq(level.difficulty, "expert", "its hint costs what an expert one does")
+		else:
+			assert_true(level.min_moves <= 33, "main %d stays within 33 moves" % position)
+	assert_eq(big_tests, [100, 200, 300, 350] as Array[int])
+	assert_false(ChapterPlan.is_big_test(50), "the classic chapter has none")
 
 
 func test_world_one_is_classic_then_capacity() -> void:

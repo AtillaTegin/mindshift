@@ -289,7 +289,7 @@ msgstr ""
 msgid "RULE_CHAIN"
 msgstr ""
 
-#. [TODO: RU] az: Disk öz lövhəsindən o biri lövhəyə keçə bilməz.
+#. [TODO: RU] az: Yalnız yuxarı lövhədə oyna: aşağı lövhə özü əks olunur.
 msgid "RULE_MIRROR"
 msgstr ""
 
@@ -489,7 +489,19 @@ msgstr ""
 msgid "INTRO_CHAIN"
 msgstr ""
 
-#. [TODO: RU] az: Güzgü Qoşa Məbəd: iki ayrı lövhə var, ikisi də öz hədəfinə çatmalıdır. Disk öz lövhəsindən çıxmır.
+#. [TODO: RU] az: FƏRQ
+msgid "SCALE_DIFFERENCE"
+msgstr ""
+
+#. [TODO: RU] az: HƏDD
+msgid "SCALE_LIMIT"
+msgstr ""
+
+#. [TODO: RU] az: Aşağı lövhə = yuxarının əksi
+msgid "MIRROR_GOAL"
+msgstr ""
+
+#. [TODO: RU] az: Güzgü: yalnız yuxarıda oyna. Hər gedişin aşağıda güzgüdəki kimi təkrarlanır, mümkün olmasa aşağı yerində qalır. Sonda aşağı lövhə yuxarının əksi olmalıdır.
 msgid "INTRO_MIRROR"
 msgstr ""
 
@@ -665,7 +677,7 @@ msgstr ""
 msgid "MODE_MIRROR_NAME"
 msgstr ""
 
-#. [TODO: RU] az: Hər iki lövhəni həll et.
+#. [TODO: RU] az: Hər gedişin aşağıda əks olunur (mümkünsə). Sonda iki lövhə bir-birinin əksi olmalıdır.
 msgid "MODE_MIRROR_RULE"
 msgstr ""
 

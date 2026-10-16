@@ -13,5 +13,5 @@
   "rule_params": {"sealed_box":{"pegs":[2]}},
   "covered_pegs": [1,2],
   "variants": ["empty_box","sealed","glass"],
-  "glass_disks": [8]
+  "glass_disks": [7,8]
 }

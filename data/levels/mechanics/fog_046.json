@@ -12,5 +12,5 @@
   "time_limit_seconds": null,
   "covered_pegs": [1,2],
   "variants": ["empty_box","glass"],
-  "glass_disks": [4,5]
+  "glass_disks": [5]
 }

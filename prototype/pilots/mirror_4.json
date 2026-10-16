@@ -1,0 +1,13 @@
+{
+  "id": 90004,
+  "difficulty": "medium",
+  "pegs": 6,
+  "disks": 8,
+  "start": [[4,3,2],[],[1],[5],[7],[8,6]],
+  "goal": [[],[4,3,1],[2],[6],[8,7,5],[]],
+  "rules": ["classic_hanoi","mirror"],
+  "min_moves": 18,
+  "solution_path": [[2,1],[0,2],[1,2],[0,1],[2,1],[2,0],[1,0],[1,2],[0,1],[0,2],[1,2],[0,1],[2,1],[2,0],[1,0],[2,1],[0,1],[0,2]],
+  "star_thresholds": {"three":18,"two":23},
+  "time_limit_seconds": null
+}

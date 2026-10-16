@@ -152,6 +152,17 @@ func test_mechanic_stops_wear_their_dress() -> void:
 	assert_false(screen.get_cell(mechanic_position).locked, "a mechanic level opens like any other")
 
 
+func test_big_tests_wear_a_crown() -> void:
+	# Fəsil Sistemi v1.2, 3.2a: each chapter's last level is a larger stop with a crown.
+	_complete(MAIN, 101)
+	var map: PathMap = _map_screen().get_map()
+	assert_true(map.get_cell(100).crown)
+	assert_eq(map.get_cell(100).size.x, PathMap.BIG_STOP_SIZE)
+	assert_false(map.get_cell(99).crown)
+	assert_false(map.get_cell(50).crown, "the classic chapter has no Böyük Sınaq")
+	assert_eq(map.get_cell(50).size.x, PathMap.STOP_SIZE)
+
+
 func test_island_appears_after_its_level_and_switches_tracks() -> void:
 	var after: int = LevelCatalog.island_after(FIRST_ISLAND)
 	_complete(MAIN, after)

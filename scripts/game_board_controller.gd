@@ -24,6 +24,8 @@ const POPUP_SCENE: PackedScene = preload("res://scenes/level_complete_popup.tscn
 const COACHING_SCENE: PackedScene = preload("res://scenes/components/coaching/coaching_layer.tscn")
 const PEG_FOG_SCENE: PackedScene = preload("res://scenes/components/peg_fog.tscn")
 const MAX_DISK_HEIGHT: float = 52.0
+## How long Güzgü's echo on the bottom board waits after the player's move.
+const ECHO_DELAY: float = 0.15
 
 ## Level loaded in _ready() unless the App autoload asks for another one.
 @export_file("*.json") var level_path: String = "res://data/levels/easy/easy_001.json"
@@ -69,6 +71,8 @@ var _peg_areas: Array[Rect2] = []
 ## layer above the disks.
 var _fogs: Dictionary[int, PegFog] = {}
 var _fog_layer: Control
+## The balance scales of a Tərəzi level (hidden on other levels).
+var _scale: BalanceScale
 ## Dress of a level with a special mechanic, behind the pegs.
 var _board_skin: BoardSkin
 ## A mechanic's marks over the disks (a chain, locks), above them.
@@ -150,6 +154,13 @@ func _ready() -> void:
 	_board_skin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_board.add_child(_board_skin)
 	_board.move_child(_board_skin, 0)
+	# Tərəzi levels: the balance scales under the pegs (behind them).
+	_scale = BalanceScale.new()
+	_scale.name = "BalanceScale"
+	_scale.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_scale.visible = false
+	_board.add_child(_scale)
+	_board.move_child(_scale, 1)
 	_fog_layer = Control.new()
 	_fog_layer.name = "FogLayer"
 	_fog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -209,6 +220,12 @@ func start_level(level: Level) -> void:
 	_board_skin.skin = ThemeManager.skin_for(level.mechanic())
 	_board_skin.peg_count = level.get_peg_count()
 	_build_views()
+	_scale.visible = level.rule_ids.has(BalanceRule.ID)
+	if _scale.visible:
+		_scale.sound_on = save_system.sound_enabled
+		_scale.peg_views = _peg_views
+		_scale.disk_views = _disk_views
+		_scale.show_position(level.start, _tolerance(level), true)
 	_goal_preview.skin = _board_skin.skin
 	_goal_preview.layout_kind = BoardDress.layout_kind(level)
 	_goal_preview.stack_room = BoardDress.stack_room(level)
@@ -353,6 +370,8 @@ func on_peg_pressed(peg_index: int) -> void:
 	match result:
 		GameSession.TapResult.ILLEGAL:
 			_peg_views[peg_index].flash_invalid()
+			if _scale.visible:
+				_scale.refuse(peg_index)
 			var reason: String = tr(BoardDress.refusal_key(session.level, session.rules.get_violation_message(session.state, target_move)))
 			# Some mechanics say which condition the move broke (e.g. the great
 			# exchange v2: never a silent refusal); soft, nothing is punished.
@@ -364,6 +383,10 @@ func on_peg_pressed(peg_index: int) -> void:
 			show_message(tr("CHAIN_SECOND_TARGET"), true)
 			selection_changed.emit(session.selected_peg)
 		GameSession.TapResult.MOVED:
+			# Güzgü: an echo that could not happen shows over its bottom peg.
+			if session.echo_blocked:
+				var half: int = session.state.get_peg_count() / 2
+				_marks.flash_cross(MirrorRule.mirror_peg(session.history[-1].to_peg, half))
 			# A mechanic's progress note (e.g. the foundation's keys in place).
 			var note: String = BoardDress.progress_text(session)
 			if not note.is_empty() and not session.is_solved():
@@ -379,6 +402,14 @@ func on_peg_pressed(peg_index: int) -> void:
 			pick_up_refused.emit(peg_index, message)
 	if session.selected_peg != selected_before:
 		selection_changed.emit(session.selected_peg)
+
+
+## The limit of a Tərəzi level (its BalanceRule's tolerance), 0 for others.
+static func _tolerance(level: Level) -> int:
+	for rule: RuleBase in level.get_rule_set().active_rules:
+		if rule is BalanceRule:
+			return (rule as BalanceRule).tolerance
+	return 0
 
 
 ## The level after this one on its track: {track, position}, or {} after the
@@ -405,6 +436,8 @@ func _on_solved() -> void:
 	var stars: int = level.stars_for_moves(session.move_count)
 	var previous_stars: int = save_system.get_stars(level.id)
 	var islands_open: int = LevelCatalog.open_islands(save_system).size()
+	if _scale.visible:
+		_scale.ring()
 	var improved: bool = save_system.record_completion(level.id, stars, session.move_count, session.elapsed_seconds)
 	var chest: Dictionary = economy.add_tokens(EconomySystem.level_tokens(stars, previous_stars))
 	last_result = {"stars": stars, "improved": improved, "tokens": chest["tokens"], "keys": chest["keys"],
@@ -537,6 +570,9 @@ func _refresh(animated: bool) -> void:
 		peg.highlighted = peg.peg_index == session.selected_peg
 	_board_skin.marks = BoardDress.skin_marks(session)
 	_marks.marks = BoardDress.overlay_marks(session)
+	if _scale.visible:
+		_scale.show_position(session.state, _tolerance(session.level))
+		_scale.show_preview(session.selected_peg, session.get_selected_disk())
 	_update_rings()
 	_update_buttons()
 	_layout(animated)
@@ -579,6 +615,13 @@ func _layout(animated: bool) -> void:
 		rods.append(Rect2(cell.position.x + column * 0.02, cell.position.y + own_top, column * 0.96,
 				base_top + base_height - own_top))
 	_marks.peg_rects = rods
+	_scale.cells = _cells
+	_scale.base_bottom = base_top + base_height
+	var rod_tops: Array[float] = []
+	for rod: Rect2 in rods:
+		rod_tops.append(rod.position.y - _cells[rod_tops.size()].position.y)
+	_scale.rod_tops = rod_tops
+	_scale.queue_redraw()
 	_board_skin.set_cells(_cells, base_top + base_height)
 	# The picked-up disks hover above their pegs (a linked pair both); once its
 	# first target is chosen, the tapped disk hovers above that peg instead.
@@ -601,7 +644,10 @@ func _layout(animated: bool) -> void:
 			view.size = Vector2(width, disk_height - 4.0)
 			var target: Vector2 = cell.position + Vector2(column * 0.5 - width * 0.5, y + 2.0)
 			_disk_targets[disk_size] = Rect2(target, view.size)
-			view.move_to(target, animated)
+			# Güzgü: the echoed disk on the bottom board follows a moment later.
+			var echo: Move = session.last_echo
+			var late: bool = echo != null and peg_index == echo.to_peg and disk_size == session.state.get_top_disk(echo.to_peg)
+			view.move_to(target, animated, ECHO_DELAY if late else 0.0)
 	_sync_fogs(disk_height, base_top, base_top + base_height, rod_top, animated)
 	layout_changed.emit()
 

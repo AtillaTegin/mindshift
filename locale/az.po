@@ -221,7 +221,7 @@ msgid "RULE_CHAIN"
 msgstr "Zəncirli disklər yalnız birlikdə gedə bilər: ikisi də üstdə olmalıdır."
 
 msgid "RULE_MIRROR"
-msgstr "Disk öz lövhəsindən o biri lövhəyə keçə bilməz."
+msgstr "Yalnız yuxarı lövhədə oyna: aşağı lövhə özü əks olunur."
 
 msgid "RULE_TRAIL"
 msgstr "İzli disk son iki dayandığı qülləyə qayıda bilməz."
@@ -370,8 +370,17 @@ msgstr "Zolaqlı Qüllə: tək və cüt ölçülər iki rəngdədir. Eyni rəngl
 msgid "INTRO_CHAIN"
 msgstr "Zəncir: iki disk bir-birinə bağlıdır və yalnız birlikdə gedir. Birinə toxun, əvvəl onun, sonra yoldaşının qülləsini seç."
 
+msgid "SCALE_DIFFERENCE"
+msgstr "FƏRQ"
+
+msgid "SCALE_LIMIT"
+msgstr "HƏDD"
+
+msgid "MIRROR_GOAL"
+msgstr "Aşağı lövhə = yuxarının əksi"
+
 msgid "INTRO_MIRROR"
-msgstr "Güzgü Qoşa Məbəd: iki ayrı lövhə var, ikisi də öz hədəfinə çatmalıdır. Disk öz lövhəsindən çıxmır."
+msgstr "Güzgü: yalnız yuxarıda oyna. Hər gedişin aşağıda güzgüdəki kimi təkrarlanır, mümkün olmasa aşağı yerində qalır. Sonda aşağı lövhə yuxarının əksi olmalıdır."
 
 msgid "INTRO_TRAIL"
 msgstr "Qumlu Cığır: izli disk son iki dayandığı qülləyə qayıda bilməz. Qumdakı izlər bağlı yolları göstərir."
@@ -503,7 +512,7 @@ msgid "MODE_MIRROR_NAME"
 msgstr "Güzgü Hanoi"
 
 msgid "MODE_MIRROR_RULE"
-msgstr "Hər iki lövhəni həll et."
+msgstr "Hər gedişin aşağıda əks olunur (mümkünsə). Sonda iki lövhə bir-birinin əksi olmalıdır."
 
 msgid "MODE_TRAIL_LABEL"
 msgstr "Cığır"

@@ -343,9 +343,9 @@ static func _sealed_peg(start: PuzzleState, rng: RandomNumberGenerator) -> int:
 ## The karakuri boxes of a level: `board.covered` boxes that hide at least two
 ## disks each and that `path` uses within its first moves (the luck rule, user
 ## decision 2026-10-09), the sealed one among them (exempt from the early use:
-## a tap never opens it), every peg for a count board, and one empty box more
-## for "empty_box" (user decision 2026-10-16: those two show enough). Empty
-## when the draw does not allow them.
+## a tap never opens it), every peg for a count board, and for "empty_box" any
+## pegs that hold a disk plus one empty box (user decision 2026-10-16: in
+## those two the luck rule is off). Empty when the draw does not allow them.
 static func _boxes(start: PuzzleState, path: Array[Move], board: Dictionary, variants: Array, sealed: int,
 		rng: RandomNumberGenerator) -> Array[int]:
 	var none: Array[int] = []
@@ -357,6 +357,19 @@ static func _boxes(start: PuzzleState, path: Array[Move], board: Dictionary, var
 	if sealed != -1:
 		boxes.append(sealed)
 	var wanted: int = int(board.get("covered", 1))
+	if variants.has("empty_box"):
+		# Relaxed luck rule (user decision 2026-10-16, chapter waves 5a): any peg
+		# with a disk may be a box, used early or not, and one empty peg more.
+		for peg_index: int in _shuffled(range(start.get_peg_count()), rng):
+			if boxes.size() < wanted and not boxes.has(peg_index) and not start.pegs[peg_index].is_empty():
+				boxes.append(peg_index)
+		var empty: Array = range(start.get_peg_count()).filter(func(p: int) -> bool:
+			return start.pegs[p].is_empty() and not boxes.has(p))
+		if boxes.size() < wanted or empty.is_empty():
+			return none
+		boxes.append(empty[rng.randi_range(0, empty.size() - 1)])
+		boxes.sort()
+		return boxes
 	if wanted == 0:
 		var every: Array[int] = _covered(start, path, start.get_peg_count(), true, rng)
 		if every.is_empty():
@@ -370,12 +383,6 @@ static func _boxes(start: PuzzleState, path: Array[Move], board: Dictionary, var
 				boxes.append(peg_index)
 		if boxes.size() < wanted:
 			return none
-	if variants.has("empty_box"):
-		var empty: Array = range(start.get_peg_count()).filter(func(p: int) -> bool:
-			return start.pegs[p].is_empty() and not boxes.has(p))
-		if empty.is_empty():
-			return none
-		boxes.append(empty[rng.randi_range(0, empty.size() - 1)])
 	boxes.sort()
 	return boxes
 

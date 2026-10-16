@@ -14,9 +14,8 @@ extends Control
 ##   temple: sandstone courses with a gold band (unequal capacity, the Brahma
 ##         temple's towers of different heights)
 ##   stone: large ashlar blocks on a foundation course (the foundation stone)
-##   scales: a market stall's planks; under every pair of pegs a brass beam on
-##         its post that tips toward the heavier pan (marks "beams"), amber
-##         at the limit
+##   scales: a market stall's planks; the balance scales themselves are their
+##         own component (BalanceScale) in the room kept under the pegs
 ##   zodiac: a night dial of twelve marks around the circle of pegs, with a
 ##         clockwise arrow in the middle (the cyclic rule)
 ##   stripes: soft diagonal barber-pole stripes
@@ -31,11 +30,9 @@ const RADIUS: int = 24
 
 ## Height kept free under the pegs for the caravanserais.
 const CARAVAN_ROOM: float = 44.0
-## Height kept free under the pegs for the scale beams and the footprints.
-const SCALES_ROOM: float = 40.0
+## Height kept free under the pegs for the footprints (the scales keep
+## BalanceScale.ROOM).
 const TRAIL_ROOM: float = 30.0
-## How far a beam tips at most (radians).
-const BEAM_TILT: float = 0.2
 
 ## Pegs on the board (the caravan road draws a stop under each).
 var peg_count: int = 3:
@@ -75,7 +72,7 @@ func bottom_room() -> float:
 		"caravan":
 			return CARAVAN_ROOM
 		"scales":
-			return SCALES_ROOM
+			return BalanceScale.ROOM
 		"trail":
 			return TRAIL_ROOM
 	return 0.0
@@ -123,7 +120,6 @@ func _draw() -> void:
 			_draw_courses(inner, 48.0, 0.38)
 		"scales":
 			_draw_planks(inner)
-			_draw_beams()
 		"zodiac":
 			_draw_dial()
 		"stripes":
@@ -170,27 +166,6 @@ func _draw_planks(area: Rect2) -> void:
 	while y < area.end.y:
 		draw_line(Vector2(area.position.x, y), Vector2(area.end.x, y), line, 3.0, true)
 		y += 34.0
-
-
-## Under every pair a beam on a post, tipped toward the heavier pan.
-func _draw_beams() -> void:
-	var beams: Array = marks.get("beams", [])
-	var tolerance: float = maxf(marks.get("tolerance", 1), 1.0)
-	var post: Color = ThemeManager.skin_color(skin, "peg")
-	for pair: int in beams.size():
-		if pair * 2 + 1 >= cells.size():
-			break
-		var left: float = peg_x(pair * 2)
-		var right: float = peg_x(pair * 2 + 1)
-		var middle: Vector2 = Vector2((left + right) * 0.5, size.y - SCALES_ROOM * 0.55)
-		var half: float = (right - left) * 0.5
-		var tilt: float = clampf(float(beams[pair][0]) / tolerance, -1.0, 1.0) * BEAM_TILT
-		var drop: float = half * tan(tilt)
-		var color: Color = ThemeManager.mark_color("beam_limit" if beams[pair][1] else "beam_level")
-		draw_line(middle + Vector2(-half, drop), middle + Vector2(half, -drop), color, 6.0, true)
-		draw_colored_polygon(PackedVector2Array([middle, middle + Vector2(-10.0, 16.0), middle + Vector2(10.0, 16.0)]), post)
-		draw_circle(middle + Vector2(-half, drop), 6.0, color, true, -1.0, true)
-		draw_circle(middle + Vector2(half, -drop), 6.0, color, true, -1.0, true)
 
 
 ## Twelve marks on a circle through the pegs, and a clockwise arrow in the

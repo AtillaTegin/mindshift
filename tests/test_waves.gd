@@ -115,6 +115,13 @@ func test_validator_matches_names_and_contents() -> void:
 	errors.clear()
 	LevelValidator.validate_mechanic_design(boxes, errors)
 	assert_true(" ".join(errors).contains("hides nothing"), "without the count board the rule holds")
+	# An empty-box level (section 5a): a box may hold one disk and stay closed early.
+	var one: Level = make_level(11996, ["classic_hanoi"] as Array[String], [[3, 2], [1], [], []], [[], [], [], [3, 2, 1]])
+	one.covered_pegs = [1, 3]
+	one.variants = ["empty_box"]
+	errors.clear()
+	LevelValidator.validate_mechanic_design(one, errors)
+	assert_eq(errors, [] as Array[String], "a one-disk box and an empty one")
 
 
 func test_every_sub_element_has_its_texts() -> void:
@@ -174,9 +181,14 @@ func test_world_two_rides_in_waves() -> void:
 				assert_true(int(moves_by_wave[k + 1][0]) < int(list.max()), "%s wave %d starts below wave %d's top" % [mode, k + 1, k])
 			means.append(list.reduce(func(a: int, b: int) -> int: return a + b, 0) / float(list.size()))
 		assert_true(means[-1] > means[0], "%s: the chapter climbs overall %s" % [mode, str(means)])
-		var closing: Level = LevelCatalog.load_at(MAIN, chapter["last"])
-		assert_eq(closing.lesson(), mode, "%s: the chapter ends with its hardest level" % mode)
-		assert_true(closing.min_moves >= 30, "%s: %d moves" % [mode, closing.min_moves])
+		# The Böyük Sınaq (Fəsil Sistemi v1.2, 3.2a): every sub-element that can share a level.
+		var big_test: Level = LevelCatalog.load_at(MAIN, chapter["last"])
+		assert_eq(big_test.lesson(), mode, "%s: the chapter ends with its Böyük Sınaq" % mode)
+		assert_true(big_test.min_moves >= 34 and big_test.min_moves <= 65, "%s: %d moves" % [mode, big_test.min_moves])
+		var room: int = waves.size() - 1
+		for pair: Array in ChapterPlan.CLASHES:
+			room -= 1 if waves.has(pair[0]) and waves.has(pair[1]) else 0
+		assert_eq(big_test.variants.size(), room, "%s: %s" % [mode, str(big_test.variants)])
 
 
 func test_islands_use_their_sub_elements() -> void:

@@ -55,6 +55,13 @@ var glass: bool = false:
 		z_index = 1 if glass else 0
 		queue_redraw()
 const GLASS_ALPHA: float = 0.55
+## How far the disk is drawn below its place (it rides a balance scale's pan).
+var lift: float = 0.0:
+	set(value):
+		lift = value
+		if is_node_ready():
+			_shadow.position = SHADOW_OFFSET + Vector2(0.0, lift)
+		queue_redraw()
 const WOBBLE_SECONDS: float = 0.32
 const WOBBLE_PIXELS: float = 7.0
 
@@ -78,8 +85,9 @@ func _ready() -> void:
 
 
 ## Moves the disk to `target` (top-left corner); with `animated` it glides there
-## and settles with a small bounce (TRANS_BACK, EASE_OUT).
-func move_to(target: Vector2, animated: bool) -> void:
+## and settles with a small bounce (TRANS_BACK, EASE_OUT), after `delay`
+## seconds (Güzgü's echo follows the player's move a moment later).
+func move_to(target: Vector2, animated: bool, delay: float = 0.0) -> void:
 	if _move != null:
 		_move.kill()
 		_move = null
@@ -87,6 +95,8 @@ func move_to(target: Vector2, animated: bool) -> void:
 		position = target
 		return
 	_move = create_tween()
+	if delay > 0.0:
+		_move.tween_interval(delay)
 	_move.tween_property(self, "position", target, MOVE_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
@@ -142,6 +152,7 @@ func _update_shadow() -> void:
 
 
 func _draw() -> void:
+	draw_set_transform(Vector2(0.0, lift))
 	var box: StyleBoxFlat = StyleBoxFlat.new()
 	box.bg_color = color.lightened(0.15) if selected else color
 	if glass:

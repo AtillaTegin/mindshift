@@ -90,6 +90,20 @@ const CLASSIC_TABLE: Array[Array] = [[5, "easy"], [20, "easy_medium"], [45, "med
 ## Classic levels inside later chapters take turns between these bands.
 const LATER_CLASSIC_BANDS: Array[String] = ["medium_hard", "hard"]
 
+## "Böyük Sınaq" (Fəsil Sistemi v1.2, 3.2a): the last level of every mode and
+## combination chapter (not the classic one) may be long, 34-65 moves (expert
+## tier, so its hint costs 5); one per chapter, a crowned stop on the map;
+## longer levels only on the islands. A mode chapter's holds every
+## sub-element of the chapter that can share a level.
+const BIG_TEST: Array[int] = [34, 65]
+
+
+## Whether main road `position` is a chapter's Böyük Sınaq.
+static func is_big_test(position: int) -> bool:
+	var chapter: Dictionary = chapter_at(position)
+	return not chapter.is_empty() and chapter["kind"] != CLASSIC_CHAPTER and int(chapter["last"]) == position
+
+
 ## Islands (section 7): each mode chapter ends at an island of
 ## ISLAND_LEVELS expert levels of its mode; the classic chapter's island keeps
 ## its old mix (expert levels with a few hard and medium breathers, opening
@@ -102,8 +116,7 @@ const CLASSIC_ISLAND: Dictionary = {"expert": 28, "hard": 8, "medium": 4}
 ## first wave is the mode's base form ("base", no sub-element); each later
 ## wave brings one new sub-element; `mixed` adds a closing wave with several
 ## of them at once. Modes not listed keep one wave (their chapters are not
-## built yet). The chapter's last level is the "Böyük Sınaq" of Fəsil Sistemi
-## v1.2, which has not arrived yet: until then it is the hardest mixed level.
+## built yet). The chapter's last level is its Böyük Sınaq (BIG_TEST).
 const BASE: String = "base"
 const WAVES: Dictionary = {
 	"peg_capacity": {"waves": ["base", "narrow", "arch"], "mixed": false},

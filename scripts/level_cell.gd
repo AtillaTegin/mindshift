@@ -19,6 +19,12 @@ var skin: String = "":
 	set(value):
 		skin = value
 		queue_redraw()
+## A chapter's "Böyük Sınaq" (Fəsil Sistemi v1.2, 3.2a): drawn larger by the
+## map, with a crown on top.
+var crown: bool = false:
+	set(value):
+		crown = value
+		queue_redraw()
 
 
 func _init() -> void:
@@ -37,6 +43,8 @@ func setup(p_level_index: int, p_stars: int, p_locked: bool) -> void:
 func _draw() -> void:
 	if not skin.is_empty():
 		draw_arc(size * 0.5, size.x * 0.5 - 4.0, 0.0, TAU, 48, ThemeManager.skin_color(skin, "mark"), 8.0, true)
+	if crown:
+		_draw_crown(Vector2(size.x * 0.5, size.y * 0.16), size.x * 0.2)
 	if locked:
 		_draw_padlock(size * Vector2(0.5, 0.5), size.y * 0.16)
 		return
@@ -47,6 +55,19 @@ func _draw() -> void:
 	for i: int in 3:
 		var center: Vector2 = Vector2(size.x * 0.5 + (i - 1) * radius * 2.4, y)
 		draw_colored_polygon(StarView.star_points(center, radius), ThemeManager.color("star_filled" if i < stars else "star_empty"))
+
+
+## A three-pointed crown sitting on the stop's rim.
+func _draw_crown(center: Vector2, half: float) -> void:
+	var gold: Color = ThemeManager.color("star_filled")
+	var base: float = center.y + half * 0.45
+	var points: PackedVector2Array = PackedVector2Array([
+		Vector2(center.x - half, base), Vector2(center.x - half, center.y - half * 0.35),
+		Vector2(center.x - half * 0.5, center.y + half * 0.05), Vector2(center.x, center.y - half * 0.7),
+		Vector2(center.x + half * 0.5, center.y + half * 0.05), Vector2(center.x + half, center.y - half * 0.35),
+		Vector2(center.x + half, base)])
+	draw_colored_polygon(points, gold)
+	draw_polyline(points + PackedVector2Array([points[0]]), gold.darkened(0.35), 2.0, true)
 
 
 func _draw_padlock(center: Vector2, unit: float) -> void:

@@ -49,7 +49,7 @@ func _sample(mechanic: String) -> Level:
 		ChainRule.ID:
 			return make_level(15001, rule_ids, [[4, 3], [2, 1], [], []], [[2, 1], [4, 3], [], []], {mechanic: {"disks": [1, 3]}})
 		MirrorRule.ID:
-			return make_level(15001, rule_ids, [[2, 1], [], [], [4, 3], [], []], [[], [], [2, 1], [], [4, 3], []])
+			return make_level(15001, rule_ids, [[2, 1], [], [], [], [3], [4]], [[], [], [2, 1], [4, 3], [], []])
 		BalanceRule.ID:
 			return make_level(15001, rule_ids, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {mechanic: {"tolerance": 4}})
 		TrailRule.ID:
@@ -146,16 +146,61 @@ func test_chained_disks_move_only_together() -> void:
 			"1 sits on its own partner: the chain can never move")
 
 
-func test_mirror_boards_are_separate() -> void:
+func test_mirror_echoes_on_the_bottom_board() -> void:
+	# Güzgü "Əks-səda" (Fəsil Sistemi v1.2, section 6): only the top board is
+	# played; each move repeats mirrored below (peg i <-> n-1-i) when it can.
 	var rules: RuleSet = _rules(MirrorRule.ID)
-	var state: PuzzleState = PuzzleState.new([[2, 1], [], [], [4, 3], [], []])
+	var state: PuzzleState = PuzzleState.new([[2, 1], [], [], [], [], [4, 3]])
+	assert_false(rules.is_move_legal(state, Move.new(5, 4)), "the bottom board is not played")
+	assert_eq(rules.get_violation_message(state, Move.new(5, 4)), "RULE_MIRROR")
 	assert_false(rules.is_move_legal(state, Move.new(0, 4)), "never to the other board")
-	assert_eq(rules.get_violation_message(state, Move.new(0, 4)), "RULE_MIRROR")
-	assert_true(rules.is_move_legal(state, Move.new(3, 5)))
-	var goal: PuzzleState = PuzzleState.new([[], [], [2, 1], [], [4, 3], []])
-	var result: Dictionary = Solver.solve(state, goal, rules)
-	assert_eq(result["strategy"], "split", "each board solved on its own")
-	assert_eq(result["min_moves"], 6, "3 + 3")
+	var echoed: PuzzleState = rules.apply_move(state, Move.new(0, 1))
+	assert_true(echoed.equals(PuzzleState.new([[2], [1], [], [], [3], [4]])), "0 -> 1 echoes 5 -> 4")
+	assert_eq(rules.echo_for(state, Move.new(0, 1)).to_array(), [5, 4])
+	var blocked: PuzzleState = PuzzleState.new([[2, 1], [], [], [4, 3], [], []])
+	var stayed: PuzzleState = rules.apply_move(blocked, Move.new(0, 1))
+	assert_true(stayed.equals(PuzzleState.new([[2], [1], [], [4, 3], [], []])), "peg 5 is empty: the bottom stays")
+	assert_null(rules.echo_for(blocked, Move.new(0, 1)))
+	assert_eq(MirrorRule.mirror_peg(0, 3), 5)
+	assert_eq(MirrorRule.mirror_peg(1, 3), 4)
+	assert_eq(MirrorRule.mirrored([[2, 1], [], []], 2), [[], [], [4, 3]])
+	# The Solver searches the two boards together, generically.
+	var start: PuzzleState = PuzzleState.new([[2, 1], [], [], [], [3], [4]])
+	var goal: PuzzleState = PuzzleState.new([[], [], [2, 1], [4, 3], [], []])
+	var result: Dictionary = Solver.solve(start, goal, rules)
+	assert_eq(result["strategy"], "generic")
+	assert_true(result["solvable"], "the bottom can be brought into line")
+	var replay: PuzzleState = start
+	for move: Move in result["path"]:
+		replay = rules.apply_move(replay, move)
+	assert_true(replay.equals(goal))
+	# A session knows whether the last move echoed.
+	var level: Level = make_level(21999, ["classic_hanoi", "mirror"] as Array[String], [[2, 1], [], [], [4, 3], [], []],
+			[[], [], [2, 1], [4, 3], [], []])
+	var session: GameSession = GameSession.new(level)
+	session.try_move(Move.new(0, 1))
+	assert_true(session.echo_blocked)
+	assert_null(session.last_echo)
+
+
+func test_mirror_pilots() -> void:
+	# The pilots (section 6: 4-5 before the chapter), off the road for now.
+	var count: int = 0
+	for file_name: String in DirAccess.get_files_at("res://prototype/pilots"):
+		if not file_name.begins_with("mirror_") or not file_name.ends_with(".json"):
+			continue
+		count += 1
+		var errors: Array[String] = []
+		var level: Level = Level.load_file("res://prototype/pilots/" + file_name, errors)
+		LevelValidator.validate_level(level, errors)
+		assert_eq(errors, [] as Array[String], file_name)
+		var half: int = level.get_peg_count() / 2
+		var alone: int = Solver.solve(PuzzleState.new(level.start.pegs.slice(0, half)), PuzzleState.new(level.goal.pegs.slice(0, half)),
+				RuleSet.classic())["min_moves"]
+		assert_true(level.min_moves >= 1.3 * alone, "%s: the echo makes it %d vs %d" % [file_name, level.min_moves, alone])
+		var bottom: Array = level.goal.pegs.slice(half)
+		assert_eq(bottom, MirrorRule.mirrored(level.goal.pegs.slice(0, half), level.get_disk_count() / 2), "the goal mirrors")
+	assert_true(count >= 4 and count <= 5, "4-5 pilots (%d)" % count)
 
 
 func test_trail_remembers_its_last_two_pegs() -> void:

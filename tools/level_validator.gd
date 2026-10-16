@@ -107,8 +107,9 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 ## its chapter (ChapterPlan: classic, the chapter's mode, an earlier mode as a
 ## repeat, a combination chapter's combinations and single modes), every
 ## combination is on the plan's whitelist and obeys its rules (section 4);
-## expert levels only appear on the islands; each island opens after a main
-## level that exists and holds levels of its own mode.
+## expert levels only appear on the islands and as a chapter's Böyük Sınaq
+## (34-65 moves, v1.2 3.2a); each island opens after a main level that exists
+## and holds levels of its own mode.
 static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
 	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
@@ -142,8 +143,13 @@ static func validate_path(levels_dir: String) -> Array[String]:
 					and not whitelist.has(ChapterPlan.combo_key(modes)))):
 				errors.append("%s: the combination %s is not on the plan's whitelist" % [file, ChapterPlan.combo_key(modes)])
 			if on_main:
-				if level.difficulty == "expert":
+				# Fəsil Sistemi v1.2, 3.2a: up to 33 moves, but a chapter's Böyük Sınaq 34-65.
+				var big_test: bool = ChapterPlan.is_big_test(i + 1)
+				if level.difficulty == "expert" and not big_test:
 					errors.append("main %d: expert level %s belongs on an island" % [i + 1, file])
+				if big_test and (level.min_moves < ChapterPlan.BIG_TEST[0] or level.min_moves > ChapterPlan.BIG_TEST[1]):
+					errors.append("main %d: the Böyük Sınaq %s takes %d moves, not %d-%d" % [i + 1, file, level.min_moves,
+							ChapterPlan.BIG_TEST[0], ChapterPlan.BIG_TEST[1]])
 				var fit: String = fits_chapter(modes, i + 1)
 				if not fit.is_empty():
 					errors.append("main %d: %s %s" % [i + 1, file, fit])
@@ -207,15 +213,15 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
 	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves). User decision
-	# 2026-10-16: a count board (each box shows its count) and an empty box
-	# show enough, so they are exempt; a sealed box only from the early use (a
-	# tap never opens it, the smallest disk does).
+	# 2026-10-16 (chapter waves 5a): on a count board (each box shows its count)
+	# and in an empty-box level the rule is off, a box may hold 0-1 disks and
+	# stay closed in the first moves; a sealed box is exempt from the early use
+	# only (a tap never opens it, the smallest disk does).
 	var sealed: Array = level.rule_params.get(SealedBoxRule.ID, {}).get("pegs", [])
+	var relaxed: bool = level.variants.has("count_board") or level.variants.has("empty_box")
 	for peg_index: int in level.covered_pegs:
-		if peg_index < 0 or peg_index >= level.get_peg_count() or level.variants.has("count_board"):
+		if peg_index < 0 or peg_index >= level.get_peg_count() or relaxed:
 			continue  # bad indices are reported by Level.check()
-		if level.variants.has("empty_box") and level.start.pegs[peg_index].is_empty():
-			continue
 		if level.start.pegs[peg_index].size() < 2:
 			errors.append("covered peg %d hides nothing (fewer than 2 disks)" % peg_index)
 		var used: bool = sealed.has(peg_index)

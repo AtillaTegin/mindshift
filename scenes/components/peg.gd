@@ -29,6 +29,12 @@ var flash_amount: float = 0.0:
 	set(value):
 		flash_amount = value
 		queue_redraw()
+## How far the peg is drawn below its place (a balance scale's pan, Tərəzi);
+## the tap area stays where it is.
+var lift: float = 0.0:
+	set(value):
+		lift = value
+		queue_redraw()
 
 var _flash_tween: Tween
 
@@ -55,6 +61,7 @@ func _draw() -> void:
 	var base_color: Color = ThemeManager.color("accent") if highlighted else ThemeManager.skin_color(skin, "peg")
 	var peg_color: Color = base_color.lerp(ThemeManager.color("danger"), flash_amount)
 	var center_x: float = size.x * 0.5
+	draw_set_transform(Vector2(0.0, lift))
 	var rod: StyleBoxFlat = StyleBoxFlat.new()
 	rod.bg_color = peg_color
 	rod.set_corner_radius_all(int(rod_width * 0.5))

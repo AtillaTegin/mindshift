@@ -23,6 +23,17 @@ var peg_rects: Array[Rect2] = []:
 	set(value):
 		peg_rects = value
 		queue_redraw()
+## Güzgü: a blocked echo flashes the mirror line and a "✕" over its peg.
+const FLASH_SECONDS: float = 0.6
+var _flash_peg: int = -1
+var _flash_left: float = 0.0
+
+
+## Shows that the echo on `peg` (a bottom board peg) could not happen.
+func flash_cross(peg: int) -> void:
+	_flash_peg = peg
+	_flash_left = FLASH_SECONDS
+	queue_redraw()
 var marks: Dictionary = {}:
 	set(value):
 		marks = value
@@ -33,9 +44,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Disks glide after every move; keep the marks on them.
-	if not marks.is_empty():
+	if not marks.is_empty() or _flash_left > 0.0:
+		_flash_left = maxf(_flash_left - delta, 0.0)
 		queue_redraw()
 
 
@@ -63,6 +75,8 @@ func _draw() -> void:
 	for peg: int in holes:
 		if peg < peg_rects.size():
 			_draw_hole(peg_rects[peg], holes[peg])
+	if _flash_left > 0.0 and _flash_peg >= 0 and _flash_peg < peg_rects.size():
+		_draw_blocked_echo(peg_rects[_flash_peg], _flash_left / FLASH_SECONDS)
 
 
 func _rect_of(disk: int) -> Rect2:
@@ -149,6 +163,20 @@ func _draw_number(text: String, center: Vector2, color: Color) -> void:
 	var text_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE)
 	draw_string(font, center + Vector2(-text_size.x * 0.5, font.get_ascent(NUMBER_SIZE) * 0.35), text,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE, color)
+
+
+## Güzgü's blocked echo: the mirror line (half way between the boards) lights
+## up and a "✕" ripples over the bottom peg, both fading with `strength`.
+func _draw_blocked_echo(rod: Rect2, strength: float) -> void:
+	var color: Color = ThemeManager.mark_color("echo_blocked")
+	color.a *= strength
+	var half: int = peg_rects.size() / 2
+	var line_y: float = (peg_rects[0].end.y + peg_rects[half].position.y) * 0.5 if peg_rects.size() > half else rod.position.y
+	draw_line(Vector2(0.0, line_y), Vector2(size.x, line_y), color, 4.0, true)
+	var center: Vector2 = Vector2(rod.get_center().x, rod.position.y - 8.0)
+	var arm: float = 12.0 + 8.0 * (1.0 - strength)
+	draw_line(center + Vector2(-arm, -arm), center + Vector2(arm, arm), color, 5.0, true)
+	draw_line(center + Vector2(-arm, arm), center + Vector2(arm, -arm), color, 5.0, true)
 
 
 ## Small dots around the disk that leaves the trail.

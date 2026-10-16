@@ -11,5 +11,5 @@
   "star_thresholds": {"three":45,"two":56},
   "time_limit_seconds": null,
   "rule_params": {"peg_capacity":{"arches":[0,0,6,0],"capacities":[7,6,3,1],"holes":[6,0,0,0]}},
-  "variants": ["holed","arch","narrow"]
+  "variants": ["holed","narrow","arch"]
 }

@@ -55,8 +55,10 @@ func test_path_starts_with_the_tutorial() -> void:
 
 
 func test_expert_levels_only_on_islands() -> void:
+	# ...and as each chapter's Böyük Sınaq (Fəsil Sistemi v1.2, 3.2a).
 	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
-		assert_ne(_level_at(MAIN, position).difficulty, "expert", "main %d" % position)
+		if not ChapterPlan.is_big_test(position):
+			assert_ne(_level_at(MAIN, position).difficulty, "expert", "main %d" % position)
 	var experts: int = 0
 	for island: String in LevelCatalog.island_tracks():
 		for position: int in range(1, LevelCatalog.track_length(island) + 1):

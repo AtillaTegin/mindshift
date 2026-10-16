@@ -52,8 +52,8 @@ const COLOR_SWAP: String = "color_swap"
 ## mechanic -> {max_pegs, max_disks}.
 const MECHANIC_SIZES: Dictionary = {
 	COLOR_SWAP: {"max_pegs": 6, "max_disks": 8},
-	# Two 3-peg boards (MirrorRule).
-	"mirror": {"max_pegs": 6, "max_disks": 10},
+	# Two boards of 3-4 pegs (MirrorRule).
+	"mirror": {"max_pegs": 8, "max_disks": 10},
 }
 
 

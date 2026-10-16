@@ -38,11 +38,10 @@ const ATTEMPTS_PER_LEVEL: int = 600
 const CANDIDATES: int = 3
 ## Waves (chapter waves v1): the closing mixed wave's length, how many levels
 ## of a new sub-element alone follow its intro, how far a level's window
-## reaches around its target, and the chapter's closing level's lowest count.
+## reaches around its target.
 const MIXED_WAVE: int = 10
 const DEV_LEVELS: int = 3
 const WINDOW: int = 2
-const CLOSING_LOW: int = 30
 ## Lowest move count a mode's waves start from where the band's (7) is too
 ## low: an unequal capacity of at least two per peg rarely matters below 9
 ## (measured 2026-10-16).
@@ -99,8 +98,9 @@ const RECIPES: Dictionary = {
 			{"pegs": 4, "disks": 8, "covered": 2}],
 		"hard": [{"pegs": 4, "disks": 8, "covered": 3}, {"pegs": 3, "disks": 6, "covered": 2},
 			{"pegs": 4, "disks": 8, "covered": 2}],
-		"expert": [{"pegs": 3, "disks": 6, "covered": 2}, {"pegs": 3, "disks": 7, "covered": 2},
-			{"pegs": 4, "disks": 9, "covered": 2}],
+		# 3 pegs only: a sealed box's memory on 4 pegs / 9 disks made an off-path
+		# hint take ~5 s on a desktop (measured 2026-10-16).
+		"expert": [{"pegs": 3, "disks": 6, "covered": 2}, {"pegs": 3, "disks": 7, "covered": 2}],
 	},
 	"foundation": {
 		"easy_medium": [{"pegs": 3, "disks": 4, "locked": 1, "keys": 2}, {"pegs": 4, "disks": 5, "locked": 1, "keys": 2},
@@ -119,6 +119,7 @@ const RECIPES: Dictionary = {
 		"medium": [{"pegs": 4, "disks": 6, "slack": 1, "covered": 1}, {"pegs": 4, "disks": 5, "slack": 1, "covered": 2}],
 		"medium_hard": [{"pegs": 4, "disks": 6, "slack": 1, "covered": 2}, {"pegs": 4, "disks": 7, "slack": 1, "covered": 2}],
 		"hard": [{"pegs": 4, "disks": 7, "slack": 1, "covered": 2}, {"pegs": 4, "disks": 8, "slack": 1, "covered": 2}],
+		"expert": [{"pegs": 4, "disks": 8, "slack": 1, "covered": 2}, {"pegs": 4, "disks": 8, "slack": 2, "covered": 2}],
 	},
 	"peg_capacity+foundation": {
 		"easy_medium": [{"pegs": 4, "disks": 5, "slack": 1, "locked": 1, "keys": 2}],
@@ -127,6 +128,8 @@ const RECIPES: Dictionary = {
 		"medium_hard": [{"pegs": 4, "disks": 6, "slack": 1, "locked": 2, "keys": 2},
 			{"pegs": 4, "disks": 7, "slack": 1, "locked": 2, "keys": 3}],
 		"hard": [{"pegs": 4, "disks": 7, "slack": 1, "locked": 2, "keys": 3}],
+		"expert": [{"pegs": 4, "disks": 8, "slack": 1, "locked": 2, "keys": 3},
+			{"pegs": 4, "disks": 7, "slack": 1, "locked": 2, "keys": 3}],
 	},
 	"covered_pegs+foundation": {
 		"easy_medium": [{"pegs": 3, "disks": 4, "locked": 1, "keys": 2, "covered": 1},
@@ -137,6 +140,8 @@ const RECIPES: Dictionary = {
 			{"pegs": 3, "disks": 5, "locked": 1, "keys": 2, "covered": 1}],
 		"hard": [{"pegs": 4, "disks": 8, "locked": 2, "keys": 3, "covered": 2},
 			{"pegs": 4, "disks": 7, "locked": 2, "keys": 3, "covered": 3}],
+		"expert": [{"pegs": 3, "disks": 6, "locked": 2, "keys": 2, "covered": 2},
+			{"pegs": 3, "disks": 7, "locked": 2, "keys": 3, "covered": 2}],
 	},
 }
 
@@ -224,6 +229,14 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 						slot["high"], str(fewer)])
 				slot["variants"] = fewer
 				slot["extra"]["variants"] = fewer
+				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
+			# A combination chapter's Böyük Sınaq tries its other combinations.
+			for other: Array in slot.get("fallback_modes", []):
+				if not draft.is_empty():
+					break
+				print("  track %d slot %d: no %s level with %d-%d moves, trying %s" % [t, i + 1, stream_of(slot["modes"]),
+						slot["low"], slot["high"], stream_of(other)])
+				slot["modes"].assign(other)
 				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
 			if draft.is_empty():
 				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
@@ -354,8 +367,8 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 
 ## A chapter's `count` levels of `mode` in waves (ChapterPlan.WAVES): wave 1
 ## the base form, each later wave one new sub-element, then (if the mode has
-## one) a mixed wave of MIXED_WAVE levels, and last the chapter's closing level
-## (the Böyük Sınaq's slot: every sub-element at once, the hardest). Inside a
+## one) a mixed wave of MIXED_WAVE levels, and last the chapter's Böyük Sınaq
+## (ChapterPlan.BIG_TEST moves, every sub-element that can share a level). Inside a
 ## wave: an intro with only the new sub-element on an easier board, a few
 ## levels of it alone, then mixed with the earlier ones, up to the wave's
 ## hardest. Each level: {modes, variants, extra (board settings), low, high,
@@ -395,9 +408,13 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> 
 		var span: Array[int] = _wave_window(sections - 1, sections, t, false, floor_moves)
 		items.append({"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, t, rng),
 				"low": span[0], "high": span[1], "t": t, "wave": "mixed"})
-	var closing: Array[String] = _pick_variants(taught, 3, [], rng)
-	items.append({"modes": [mode], "variants": closing, "extra": _wave_extra(mode, closing, 1.0, rng),
-			"low": CLOSING_LOW, "high": ChapterPlan.BANDS["hard"][1], "t": 1.0, "wave": "closing"})
+	# The Böyük Sınaq: every sub-element that can share a level, in wave order.
+	var all: Array[String] = []
+	for variant: String in waves:
+		if variant != ChapterPlan.BASE and _pick_variants([variant], 1, all, rng).size() == 1:
+			all.append(variant)
+	items.append({"modes": [mode], "variants": all, "extra": _wave_extra(mode, all, 1.0, rng),
+			"low": ChapterPlan.BIG_TEST[0], "high": ChapterPlan.BIG_TEST[1], "t": 1.0, "wave": "big_test"})
 	for item: Dictionary in items:
 		item["band"] = band_of_moves((int(item["low"]) + int(item["high"])) / 2)
 	return items
@@ -500,10 +517,11 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 	var kinds: Array[String] = []
 	kinds.resize(length)
 	kinds.fill("combo")
-	for index: int in _strata(range(1, length), classic_count, rng):
+	# The first and the last slot are combinations (the last its Böyük Sınaq).
+	for index: int in _strata(range(1, length - 1), classic_count, rng):
 		kinds[index] = CLASSIC
 	var rest: Array = []
-	for index: int in range(1, length):
+	for index: int in range(1, length - 1):
 		if kinds[index] == "combo":
 			rest.append(index)
 	for index: int in _strata(rest, single_count, rng):
@@ -521,6 +539,15 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 	var counters: Dictionary = {CLASSIC: 0, "single": 0, "combo": 0}
 	for index: int in length:
 		var band: String = ChapterPlan.band_for(index, length)
+		if index == length - 1:
+			# The Böyük Sınaq: the newest combination, the others if it cannot reach the range.
+			var order: Array = combos.duplicate()
+			order.reverse()
+			var modes: Array[String] = []
+			modes.assign(order.pop_front())
+			slots.append({"modes": modes, "variants": [] as Array[String], "extra": {}, "low": ChapterPlan.BIG_TEST[0],
+					"high": ChapterPlan.BIG_TEST[1], "t": 1.0, "band": "expert", "wave": "big_test", "fallback_modes": order})
+			break
 		match kinds[index]:
 			CLASSIC:
 				slots.append({"modes": [], "band": _classic_band(first + index, counters[CLASSIC])})

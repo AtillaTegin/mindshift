@@ -49,6 +49,11 @@ var _hidden: Dictionary[int, int] = {}
 ## Opened box peg -> move count when a move last used it (reclosing levels).
 var _touched: Dictionary[int, int] = {}
 var _sealed_rule: SealedBoxRule
+## Güzgü's echo (RuleBase.echo_of): the move the last move made happen on the
+## other board, or null; `echo_blocked` when the last move should have echoed
+## but could not.
+var last_echo: Move
+var echo_blocked: bool = false
 ## Positions before each move in `history`, for undo.
 var _previous_states: Array[PuzzleState] = []
 ## _path_key of each position along level.solution_path -> index of the next
@@ -84,6 +89,8 @@ func restart() -> void:
 	covered_pegs = level.covered_pegs.duplicate()
 	_hidden.clear()
 	_touched.clear()
+	last_echo = null
+	echo_blocked = false
 
 
 func is_solved() -> bool:
@@ -163,6 +170,8 @@ func try_move(move: Move) -> bool:
 	var next: PuzzleState = rules.apply_move(state, move)
 	if next == null:
 		return false
+	last_echo = rules.echo_for(state, move) if rules.has_echo() else null
+	echo_blocked = rules.has_echo() and last_echo == null
 	# A move by code (hint, tests) through a closed box opens it first.
 	open_box(move.from_peg)
 	open_box(move.to_peg)
@@ -249,6 +258,8 @@ func undo() -> bool:
 	history.pop_back()
 	move_count -= 1
 	undo_count += 1
+	last_echo = null
+	echo_blocked = false
 	selected_peg = -1
 	pending_target = -1
 	_reveal_tops()

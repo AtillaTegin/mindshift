@@ -191,6 +191,35 @@ func peg_groups(peg_count: int) -> Array[Array]:
 	return [] as Array[Array]
 
 
+## Whether a rule makes moves echo (RuleBase.echo_of).
+func has_echo() -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.echoes():
+			return true
+	return false
+
+
+## The move that echoes `move` made from `state` (RuleBase.echo_of), or null
+## when no rule echoes or the echo is not possible on the position after it.
+func echo_for(state: PuzzleState, move: Move) -> Move:
+	if move.is_compound():
+		return null
+	var after: PuzzleState = state.duplicate_state()
+	after.pegs[move.to_peg].append(after.pegs[move.from_peg].pop_back())
+	for rule: RuleBase in active_rules:
+		var echo: Move = rule.echo_of(after, move)
+		if echo != null:
+			return echo if _echo_possible(after, echo) else null
+	return null
+
+
+## The echo's own check: a top disk onto an empty peg or a larger top.
+static func _echo_possible(state: PuzzleState, echo: Move) -> bool:
+	var disk: int = state.get_top_disk(echo.from_peg)
+	var top: int = state.get_top_disk(echo.to_peg)
+	return echo.from_peg != echo.to_peg and disk != -1 and (top == -1 or top > disk)
+
+
 ## These rules without the ones that split the board, for solving one group.
 func without_groups(peg_count: int) -> RuleSet:
 	var rules: Array[RuleBase] = []
@@ -304,6 +333,14 @@ func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 		if move.is_compound():
 			facts.memory = next.memory
 			next.memory = memory.memory_after(facts, disk_2, move.from_peg_2, move.to_peg_2)
+	# An echoing rule's follow-up move, when it is possible (RuleBase.echo_of).
+	if not move.is_compound():
+		for rule: RuleBase in active_rules:
+			if rule.echoes():
+				var echo: Move = rule.echo_of(next, move)
+				if echo != null and _echo_possible(next, echo):
+					next.pegs[echo.to_peg].append(next.pegs[echo.from_peg].pop_back())
+				break
 	return next
 
 

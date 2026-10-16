@@ -49,7 +49,11 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		return _result(false, [], 1, false)
 	var result: Dictionary
 	var groups: Array[Array] = rules.peg_groups(start.pegs.size())
-	if not groups.is_empty():
+	if rules.has_echo():
+		# A move with an echo changes two disks the packed codes do not follow.
+		result = _solve_generic(start, goal, rules, max_states)
+		result["strategy"] = "generic"
+	elif not groups.is_empty():
 		result = _solve_split(start, goal, rules, groups, max_states)
 		result["strategy"] = "split"
 	elif _can_pack(start, goal, rules) and (rules.uses_last_move() or rules.uses_memory() or rules.needs_facts()

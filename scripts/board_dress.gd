@@ -44,13 +44,18 @@ static func disk_palette(level: Level) -> Dictionary:
 		for disk: int in range(1, level.get_disk_count() + 1):
 			palette[disk] = ThemeManager.STRIPE_DISKS["odd" if disk % 2 == 1 else "even"].duplicate()
 	elif _has(level, MirrorRule.ID):
+		# Each board numbers its disks from 1; the bottom one, the echo, is paler
+		# and bluish (Güzgü "Əks-səda").
 		var first: int = first_board_disks(level)
 		var second: int = level.get_disk_count() - first
 		for disk: int in range(1, level.get_disk_count() + 1):
 			var size: int = disk if disk <= first else disk - first
 			var sizes: int = first if disk <= first else second
-			palette[disk] = {"fill": ThemeManager.disk_color(size, sizes), "text": ThemeManager.color("text_on_disk"),
-					"label": size, "size": size, "sizes": sizes}
+			var fill: Color = ThemeManager.disk_color(size, sizes)
+			if disk > first:
+				fill = fill.lerp(ThemeManager.mark_color("mirror_tint"), 0.45)
+			palette[disk] = {"fill": fill, "text": ThemeManager.color("text_on_disk"), "label": size, "size": size,
+					"sizes": sizes}
 	return palette
 
 
@@ -97,6 +102,8 @@ static func says_why(level: Level) -> bool:
 ## foundation's keys in place. The mode's name and rule stand in the rule
 ## panel below (ModeTexts).
 static func goal_text(level: Level) -> String:
+	if _has(level, MirrorRule.ID):
+		return Languages.text("MIRROR_GOAL")
 	if _has(level, FoundationRule.ID):
 		var rule: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
 		return Languages.text(_keys_text(level)) % [rule.keys_in_place(level.start), rule.keys_needed()]
@@ -139,21 +146,11 @@ static func refusal_key(level: Level, key: String) -> String:
 
 
 ## What the dress draws under the pegs for this position (BoardSkin.marks):
-## - scales: "beams", one [left sum - right sum, at the limit] per pair, and
-##   "tolerance";
-## - sandy path: "visited", the pegs on the trail disk's trail (it may not go
-##   back there).
+## the sandy path's "visited", the pegs on the trail disk's trail (it may not
+## go back there). The balance scales draw themselves (BalanceScale).
 static func skin_marks(session: GameSession) -> Dictionary:
 	var level: Level = session.level
 	var marks: Dictionary = {}
-	if _has(level, BalanceRule.ID):
-		var tolerance: int = (_rule(level, BalanceRule.ID) as BalanceRule).tolerance
-		var beams: Array = []
-		for peg: int in range(0, session.state.get_peg_count(), 2):
-			var difference: int = BalanceRule.sum_of(session.state.pegs[peg]) - BalanceRule.sum_of(session.state.pegs[peg + 1])
-			beams.append([difference, absi(difference) >= tolerance])
-		marks["beams"] = beams
-		marks["tolerance"] = tolerance
 	if _has(level, TrailRule.ID):
 		var rule: TrailRule = _rule(level, TrailRule.ID) as TrailRule
 		var memory: int = session.rules.memory_of(session.state)
