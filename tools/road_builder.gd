@@ -202,6 +202,9 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 			if slot.has("fixed") or slot.has("low"):
 				continue
 			var group: String = "%s/%s" % [stream_of(slot["modes"]), slot["band"]]
+			# A band lifted to its world's floor is a group of its own.
+			if ChapterPlan.band_range(slot["band"], slot["floor"])[0] != int(ChapterPlan.BANDS[slot["band"]][0]):
+				group += "@%d" % slot["floor"]
 			if not groups.has(group):
 				groups[group] = []
 				order.append(group)
@@ -252,7 +255,7 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 		var first: Dictionary = slots[0]
 		var started: int = Time.get_ticks_msec()
 		var drafts: Array[Dictionary] = draw_group(first["modes"], first["band"], slots.size(),
-				BASE_SEED + group.hash() % 100000, used, errors)
+				BASE_SEED + group.hash() % 100000, used, errors, first["floor"])
 		print("  %s: %d levels in %.1f s" % [group, drafts.size(), (Time.get_ticks_msec() - started) / 1000.0])
 		if drafts.size() < slots.size():
 			errors.append("%s: only %d of %d levels found" % [group, drafts.size(), slots.size()])
@@ -273,6 +276,8 @@ static func layout(worlds: Array[int]) -> Dictionary:
 	for chapter: Dictionary in ChapterPlan.chapters_of(worlds):
 		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 		rng.seed = BASE_SEED + int(chapter["first"])
+		var first_new: int = main.size()
+		var islands_before: int = islands.size()
 		match chapter["kind"]:
 			ChapterPlan.CLASSIC_CHAPTER:
 				main.append_array(_classic_chapter(chapter))
@@ -282,6 +287,12 @@ static func layout(worlds: Array[int]) -> Dictionary:
 				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": _mode_island(chapter["mode"], rng)})
 			ChapterPlan.COMBO_CHAPTER:
 				main.append_array(_combo_chapter(chapter, rng))
+		# Band slots learn their world's floor (wave slots have their windows).
+		var slots: Array = main.slice(first_new)
+		for island: Dictionary in islands.slice(islands_before):
+			slots.append_array(island["slots"])
+		for slot: Dictionary in slots:
+			slot["floor"] = ChapterPlan.world_floor(chapter["world"])
 	return {"main": main, "islands": islands}
 
 
@@ -329,14 +340,15 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 	var classic_count: int = roundi(length / (float(chapter["ratio"]) + 1.0))
 	var earlier: Array[String] = ChapterPlan.modes_before(first)
 	var repeat_count: int = 0 if earlier.is_empty() else ceili((length - length / 2) / float(ChapterPlan.REPEAT_EVERY))
-	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count, rng)
+	var least: int = ChapterPlan.world_floor(chapter["world"])
+	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count, rng, least)
 	var last: int = items.size() - 1
 	# Repeats spread over the second half of the mode levels (never after the last).
 	var repeats: Dictionary = {}
 	for r: int in repeat_count:
 		var at: int = items.size() / 2 + int((last - items.size() / 2) * (r + 0.5) / repeat_count)
 		var mode: String = earlier[earlier.size() - 1 - r % earlier.size()]
-		repeats[at] = _repeat_item(mode, items[at], rng)
+		repeats[at] = _repeat_item(mode, items[at], rng, least)
 	# Classic levels right after a hard level (the end of a wave's climb), spaced evenly.
 	var classics: Dictionary = {}
 	var spacing: float = float(last) / classic_count
@@ -373,14 +385,17 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 ## levels of it alone, then mixed with the earlier ones, up to the wave's
 ## hardest. Each level: {modes, variants, extra (board settings), low, high,
 ## band, t (its place in its wave, 0-1)}. The windows climb in a sawtooth:
-## each wave starts a little below where the last one ended.
-static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
+## each wave starts a little below where the last one ended. They start at the
+## mode's floor or the world's (`least`, ChapterPlan.world_floor), and only
+## the intros, exempt from the world's, may reach below it.
+static func wave_items(mode: String, count: int, rng: RandomNumberGenerator, least: int = 0) -> Array[Dictionary]:
 	var plan: Dictionary = ChapterPlan.WAVES.get(mode, {"waves": [ChapterPlan.BASE], "mixed": false})
 	var waves: Array = plan["waves"]
 	var mixed_size: int = MIXED_WAVE if plan["mixed"] else 0
 	var body: int = count - 1 - mixed_size
 	var sections: int = waves.size() + (1 if plan["mixed"] else 0)
-	var floor_moves: int = MODE_FLOOR.get(mode, ChapterPlan.BANDS["easy_medium"][0])
+	var mode_floor: int = MODE_FLOOR.get(mode, ChapterPlan.BANDS["easy_medium"][0])
+	var floors: Array[int] = [maxi(mode_floor, least), maxi(mode_floor - 2, least), mode_floor]
 	var items: Array[Dictionary] = []
 	var taught: Array[String] = []
 	for k: int in waves.size():
@@ -397,7 +412,7 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> 
 			var extra: Dictionary = _wave_extra(mode, variants, t, rng)
 			if variant == ChapterPlan.BASE and mode == ChapterPlan.COVERED:
 				extra["covered"] = 1 if j < size / 2 else 2  # one box first, two by the wave's end
-			var span: Array[int] = _wave_window(k, sections, t, j == 0, floor_moves)
+			var span: Array[int] = _wave_window(k, sections, t, j == 0, floors)
 			items.append({"modes": [mode], "variants": variants, "extra": extra, "low": span[0], "high": span[1], "t": t,
 					"wave": variant})
 		if variant != ChapterPlan.BASE:
@@ -405,7 +420,7 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> 
 	for j: int in mixed_size:
 		var t: float = float(j) / maxf(mixed_size - 1, 1.0)
 		var variants: Array[String] = _pick_variants(taught, 2 + (1 if j >= mixed_size / 2 and taught.size() > 2 else 0), [], rng)
-		var span: Array[int] = _wave_window(sections - 1, sections, t, false, floor_moves)
+		var span: Array[int] = _wave_window(sections - 1, sections, t, false, floors)
 		items.append({"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, t, rng),
 				"low": span[0], "high": span[1], "t": t, "wave": "mixed"})
 	# The Böyük Sınaq: every sub-element that can share a level, in wave order.
@@ -421,18 +436,19 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator) -> 
 
 
 ## Move window of a level at `t` (0-1) through wave `k` of `sections`, the
-## waves climbing from `floor_moves` to the hard band's top; an intro sits a
-## step lower, on an easier board.
-static func _wave_window(k: int, sections: int, t: float, intro: bool, floor_moves: int) -> Array[int]:
-	var low: float = floor_moves
+## waves climbing from floors[0] to the hard band's top, no window below
+## floors[1]; an intro sits a step lower, on an easier board, down to the
+## mode's own floor (floors[2]) less two.
+static func _wave_window(k: int, sections: int, t: float, intro: bool, floors: Array[int]) -> Array[int]:
+	var low: float = floors[0]
 	var high: float = ChapterPlan.BANDS["hard"][1]
 	var step: float = (high - low) / (sections + 0.5)
 	var end: float = low + step * (k + 1)
 	var begin: float = low if k == 0 else end - step * 1.5
 	var target: int = roundi(begin + (end - begin) * t)
 	if intro:
-		return [maxi(floor_moves - 2, roundi(begin) - 4), maxi(roundi(begin), floor_moves + 1)]
-	return [maxi(floor_moves - 2, target - WINDOW), mini(target + WINDOW, roundi(high))]
+		return [maxi(floors[2] - 2, roundi(begin) - 4), maxi(roundi(begin), floors[2] + 1)]
+	return [maxi(floors[1], target - WINDOW), mini(target + WINDOW, roundi(high))]
 
 
 ## Board settings a level's sub-elements need: boxes for the karakuri, how
@@ -463,15 +479,17 @@ static func _pick_variants(pool: Array, count: int, with: Array, rng: RandomNumb
 
 
 ## An earlier chapter's mode coming back (section 3.3b) at the place of
-## `item`: its window, with up to two of that mode's sub-elements.
-static func _repeat_item(mode: String, item: Dictionary, rng: RandomNumberGenerator) -> Dictionary:
+## `item`: its window (never below the world's floor `least`: a repeat is no
+## intro), with up to two of that mode's sub-elements.
+static func _repeat_item(mode: String, item: Dictionary, rng: RandomNumberGenerator, least: int = 0) -> Dictionary:
 	var pool: Array = []
 	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
 		if variant != ChapterPlan.BASE:
 			pool.append(variant)
 	var variants: Array[String] = _pick_variants(pool, rng.randi_range(0, 2), [], rng)
+	var low: int = maxi(item["low"], least)
 	return {"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, item["t"], rng),
-			"low": item["low"], "high": item["high"], "t": item["t"], "band": item["band"]}
+			"low": low, "high": maxi(item["high"], low + WINDOW), "t": item["t"], "band": item["band"]}
 
 
 ## The island of a mode chapter: ISLAND_LEVELS expert levels, each with the
@@ -597,27 +615,34 @@ static func stream_of(modes: Array) -> String:
 
 
 ## `count` levels of `modes` in `band`, easiest first, their move counts
-## spread over the band: for each level up to CANDIDATES fitting draws, and
-## the one whose move count the group has least so far wins (ties: the
-## longer). Fewer if the recipe boards run dry (with an error).
+## spread over the band (lifted to `floor_moves`, ChapterPlan.band_range):
+## for each level up to CANDIDATES fitting draws, and the one whose move count
+## the group has least so far wins (ties: the longer). A lifted band falls
+## back on the next band's boards when its own give nothing. Fewer if the
+## recipe boards run dry (with an error).
 static func draw_group(modes: Array, band: String, count: int, seed_value: int, used: Dictionary,
-		errors: Array[String]) -> Array[Dictionary]:
+		errors: Array[String], floor_moves: int = 0) -> Array[Dictionary]:
 	var stream: String = stream_of(modes)
-	var boards: Array = (RECIPES.get(stream, {}) as Dictionary).get(band, [])
+	var recipe: Dictionary = RECIPES.get(stream, {})
+	var boards: Array = recipe.get(band, []).duplicate()
+	var own: int = boards.size()
 	var drafts: Array[Dictionary] = []
 	if boards.is_empty():
 		errors.append("no recipe for %s in band %s" % [stream, band])
 		return drafts
-	var span: Array = ChapterPlan.BANDS[band]
+	var span: Array[int] = ChapterPlan.band_range(band, floor_moves)
 	var low: int = span[0]
 	var high: int = span[1]
+	var order: Array[String] = ["easy", "easy_medium", "medium", "medium_hard", "hard", "expert"]
+	if low != int(ChapterPlan.BANDS[band][0]) and order.find(band) + 1 < order.size():
+		boards.append_array(recipe.get(order[order.find(band) + 1], []))
 	var per_moves: Dictionary = {}
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed_value
 	for i: int in count:
 		var found: Dictionary = {}
 		for turn: int in boards.size():
-			var board: Dictionary = boards[(i + turn) % boards.size()]
+			var board: Dictionary = boards[(i + turn) % own] if turn < own else boards[turn]
 			var candidates: int = 0
 			for attempt: int in ATTEMPTS_PER_LEVEL:
 				var draft: Dictionary = LevelForge.attempt(modes, board, low, high, used, rng)

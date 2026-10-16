@@ -1,16 +1,16 @@
 {
   "id": 11042,
-  "difficulty": "medium",
+  "difficulty": "hard",
   "pegs": 4,
   "disks": 7,
-  "start": [[],[1],[7,5,4,3],[6,2]],
+  "start": [[1],[7,6,5,4],[],[3,2]],
   "goal": [[7,6,5,4,3,2,1],[],[],[]],
   "rules": ["classic_hanoi"],
-  "min_moves": 20,
-  "solution_path": [[1,0],[2,1],[3,1],[0,1],[2,0],[2,3],[0,3],[2,0],[3,0],[3,2],[0,2],[3,0],[2,3],[2,0],[1,2],[3,0],[1,3],[1,0],[3,0],[2,0]],
-  "star_thresholds": {"three":20,"two":25},
+  "min_moves": 21,
+  "solution_path": [[0,3],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[1,0],[2,0],[2,1],[0,1],[2,0],[1,2],[1,0],[3,1],[2,0],[3,2],[3,0],[2,0],[1,0]],
+  "star_thresholds": {"three":21,"two":26},
   "time_limit_seconds": null,
-  "covered_pegs": [0,2],
+  "covered_pegs": [2,3],
   "variants": ["empty_box","glass"],
-  "glass_disks": [4,5]
+  "glass_disks": [3]
 }

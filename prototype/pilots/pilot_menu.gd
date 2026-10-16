@@ -1,14 +1,15 @@
 extends Control
 ## Pilot levels that are not on the road yet (Fəsil Sistemi v1.2: Güzgü
 ## "Əks-səda" pilots before its chapter; the new balance scale to look at
-## before its chapter). One button per level file in this folder; a level
+## before its chapter; the mixed exchange's dead-end rule, Mod Kataloqu v1.1
+## D.3). One button per level file in this folder; a level
 ## opens on the ordinary game board. Not part of the game: no path, and its
 ## texts stay here (the prototype folder is outside the text scans).
 
 const BOARD_SCENE: PackedScene = preload("res://scenes/game_board.tscn")
 const DIR: String = "res://prototype/pilots"
 const TITLE: String = "Pilot səviyyələr"
-const NAMES: Dictionary = {"mirror": "Güzgü (Əks-səda)", "balance": "Tərəzi"}
+const NAMES: Dictionary = {"mirror": "Güzgü (Əks-səda)", "balance": "Tərəzi", "swap": "Qarışıq-Ayırma (dalan)"}
 const BACK: String = "Oyuna qayıt"
 
 

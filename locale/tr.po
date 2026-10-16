@@ -237,6 +237,14 @@ msgstr ""
 msgid "HINT_TAKE_BACK"
 msgstr ""
 
+#. [TODO: TR] az: Bu yoldan çıxış yoxdur.
+msgid "DEAD_END"
+msgstr ""
+
+#. [TODO: TR] az: Geri qayıt
+msgid "DEAD_END_BACK"
+msgstr ""
+
 #. [TODO: TR] az: Fikrin yoxdursa, Hint sənə kömək edə bilər.
 msgid "NUDGE_MISTAKES"
 msgstr ""

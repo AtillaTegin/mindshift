@@ -12,6 +12,11 @@ enum TapResult { SELECTED, DESELECTED, MOVED, ILLEGAL, IGNORED, BLOCKED, OPENED,
 ## Search budget for hints off the stored solution path. The packed solver
 ## stays far below it for every shipped level size.
 const HINT_MAX_STATES: int = 2000000
+## Search budget of the dead-end check (DeadEndWatcher). A dead end is proved
+## when the search runs dry without reaching the goal; the dead regions of the
+## mixed exchange hold ~10 positions (measured 2026-10-16), so a search still
+## going at this size counts as alive, and the check stays quick on any board.
+const DEAD_END_MAX_STATES: int = 20000
 
 var level: Level
 var rules: RuleSet
@@ -264,6 +269,55 @@ func undo() -> bool:
 	pending_target = -1
 	_reveal_tops()
 	return true
+
+
+## The position after the first `moves` moves of the history (0: the start).
+func position_after(moves: int) -> PuzzleState:
+	return state if moves >= history.size() else _previous_states[moves]
+
+
+## The dead-end rule's free way back: takes moves back until `moves` are left.
+## Not an undo (nothing counted, nothing paid). False if there is nothing to
+## take back or the level is solved.
+func rewind_to(moves: int) -> bool:
+	if moves < 0 or moves >= history.size() or is_solved():
+		return false
+	state = _previous_states[moves]
+	_previous_states.resize(moves)
+	history.resize(moves)
+	move_count = moves
+	last_echo = null
+	echo_blocked = false
+	selected_peg = -1
+	pending_target = -1
+	_reveal_tops()
+	return true
+
+
+## Whether `from_state` is a dead end of `level`: the goal is out of reach for
+## good. Proved only when the search runs dry (DEAD_END_MAX_STATES); a search
+## that stops at its budget counts as alive. Only reads its arguments (worker
+## thread safe).
+static func is_dead_end(level: Level, from_state: PuzzleState, rule_set: RuleSet) -> bool:
+	var result: Dictionary = Solver.solve(from_state, level.goal, rule_set, DEAD_END_MAX_STATES)
+	return not result["solvable"] and not result["limit_reached"]
+
+
+## The index of the first dead end in `line`, positions one move apart in play
+## order, or -1. Once a position is a dead end every later one is too, so the
+## last is checked first and the first one found by halving.
+static func first_dead_end(level: Level, line: Array[PuzzleState], rule_set: RuleSet) -> int:
+	if line.is_empty() or not is_dead_end(level, line[-1], rule_set):
+		return -1
+	var low: int = 0
+	var high: int = line.size() - 1
+	while low < high:
+		var middle: int = (low + high) / 2
+		if is_dead_end(level, line[middle], rule_set):
+			high = middle
+		else:
+			low = middle + 1
+	return high
 
 
 ## Spec 4.7: the next move of a shortest solution from the current position.

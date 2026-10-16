@@ -199,6 +199,14 @@ func has_echo() -> bool:
 	return false
 
 
+## Whether a rule can leave the goal out of reach for good (RuleBase.can_dead_end).
+func can_dead_end() -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.can_dead_end():
+			return true
+	return false
+
+
 ## The move that echoes `move` made from `state` (RuleBase.echo_of), or null
 ## when no rule echoes or the echo is not possible on the position after it.
 func echo_for(state: PuzzleState, move: Move) -> Move:

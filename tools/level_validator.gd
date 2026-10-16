@@ -109,20 +109,25 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 ## combination is on the plan's whitelist and obeys its rules (section 4);
 ## expert levels only appear on the islands and as a chapter's Böyük Sınaq
 ## (34-65 moves, v1.2 3.2a); each island opens after a main level that exists
-## and holds levels of its own mode.
+## and holds levels of its own mode. No level takes fewer moves than its
+## world's floor (ChapterPlan.world_floor) but the guided intros: the tutorial
+## levels and the first main level of each lesson and of each sub-element.
 static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
 	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
 	var listed: Dictionary = {}
 	var main: Array = path[LevelCatalog.MAIN]
-	var tracks: Array[Dictionary] = [{"name": LevelCatalog.MAIN, "entries": main, "mode": ""}]
+	var tracks: Array[Dictionary] = [{"name": LevelCatalog.MAIN, "entries": main, "mode": "", "after": 0}]
 	var after: int = 0
 	for island: Dictionary in path["islands"]:
-		tracks.append({"name": "island after main %d" % island["after"], "entries": island["levels"], "mode": island["mode"]})
+		tracks.append({"name": "island after main %d" % island["after"], "entries": island["levels"], "mode": island["mode"],
+				"after": island["after"]})
 		if island["after"] <= after or island["after"] > main.size():
 			errors.append("an island after main %d is out of order or off the road" % island["after"])
 		after = island["after"]
 	var whitelist: Array[String] = ChapterPlan.whitelist()
+	# Lessons and lesson/sub-element pairs met on the main road so far.
+	var taught: Dictionary = {}
 	for track: Dictionary in tracks:
 		var entries: Array = track["entries"]
 		var on_main: bool = track["name"] == LevelCatalog.MAIN
@@ -139,6 +144,17 @@ static func validate_path(levels_dir: String) -> Array[String]:
 			if level.id != entries[i]["id"]:
 				errors.append("%s has id %d, the path says %d" % [file, level.id, entries[i]["id"]])
 			var modes: Array[String] = level.modes()
+			# The world's floor; the first level of a lesson or sub-element is its intro.
+			var intro: bool = on_main and (i < TUTORIAL_LEVEL_IDS.size() or not taught.has(level.lesson()))
+			if on_main:
+				taught[level.lesson()] = true
+				for variant: String in level.variants:
+					intro = intro or not taught.has(level.lesson() + "/" + variant)
+					taught[level.lesson() + "/" + variant] = true
+			var least: int = ChapterPlan.world_floor(ChapterPlan.world_at(i + 1 if on_main else track["after"]))
+			if not intro and level.min_moves < least:
+				errors.append("%s %d: %s takes %d moves, below the world's floor of %d" % [track["name"], i + 1, file,
+						level.min_moves, least])
 			if modes.size() > 1 and (not ChapterPlan.is_combo_allowed(modes) or (modes.size() == 2 \
 					and not whitelist.has(ChapterPlan.combo_key(modes)))):
 				errors.append("%s: the combination %s is not on the plan's whitelist" % [file, ChapterPlan.combo_key(modes)])

@@ -89,6 +89,14 @@ const CLASSIC_TABLE: Array[Array] = [[5, "easy"], [20, "easy_medium"], [45, "med
 		[100, "hard"]]
 ## Classic levels inside later chapters take turns between these bands.
 const LATER_CLASSIC_BANDS: Array[String] = ["medium_hard", "hard"]
+## Each world's floor (chapter waves v1.2, 5b; the user's decision of
+## 2026-10-16): no level of world n takes fewer than WORLD_FLOORS[n - 1] moves
+## (world 4 and later the last one), except the guided intros: the two
+## tutorial levels and the first main road level of each lesson and of each
+## sub-element. A band below the floor is lifted to it (band_range()).
+const WORLD_FLOORS: Array[int] = [7, 14, 16, 18]
+## A lifted band keeps at least this many moves between its ends.
+const FLOOR_BAND_WIDTH: int = 2
 
 ## "Böyük Sınaq" (Fəsil Sistemi v1.2, 3.2a): the last level of every mode and
 ## combination chapter (not the classic one) may be long, 34-65 moves (expert
@@ -170,6 +178,23 @@ static func chapter_at(position: int) -> Dictionary:
 		if position >= chapter["first"] and position <= chapter["last"]:
 			return chapter
 	return {}
+
+
+## The world of main road `position`, or 0 past the plan.
+static func world_at(position: int) -> int:
+	return int(chapter_at(position).get("world", 0))
+
+
+## The fewest moves a level of `world` may take (WORLD_FLOORS; intros aside).
+static func world_floor(world: int) -> int:
+	return WORLD_FLOORS[clampi(world, 1, WORLD_FLOORS.size()) - 1]
+
+
+## The move range of `band` in a world whose floor is `floor_moves`: lifted
+## to the floor where it lies lower, at least FLOOR_BAND_WIDTH wide.
+static func band_range(band: String, floor_moves: int) -> Array[int]:
+	var low: int = maxi(int(BANDS[band][0]), floor_moves)
+	return [low, maxi(int(BANDS[band][1]), low + FLOOR_BAND_WIDTH)]
 
 
 ## The chapters of `worlds` (world numbers), in road order.

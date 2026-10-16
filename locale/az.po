@@ -181,6 +181,12 @@ msgstr "Hint tapılmadı"
 msgid "HINT_TAKE_BACK"
 msgstr "Buradan yol tapılmadı. Bir neçə gediş geri al və yenidən sına."
 
+msgid "DEAD_END"
+msgstr "Bu yoldan çıxış yoxdur."
+
+msgid "DEAD_END_BACK"
+msgstr "Geri qayıt"
+
 msgid "NUDGE_MISTAKES"
 msgstr "Fikrin yoxdursa, Hint sənə kömək edə bilər."
 

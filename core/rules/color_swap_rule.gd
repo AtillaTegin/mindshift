@@ -79,6 +79,14 @@ func is_state_valid(state: PuzzleState) -> bool:
 	return true
 
 
+## The mixed kind: a disk lifted off the other colour never goes back onto
+## it, so a few moves can leave the goal out of reach (on 4 pegs about half of
+## a dozen random games did; the dead region then holds ~10 positions,
+## measured 2026-10-16). The pure kind can always take a move back.
+func can_dead_end() -> bool:
+	return colour_bound
+
+
 func supports_disk_move_check() -> bool:
 	return true
 

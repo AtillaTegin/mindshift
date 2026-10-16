@@ -62,6 +62,32 @@ func test_bands_climb_through_a_chapter() -> void:
 	assert_eq(ChapterPlan.BANDS["expert"][0], 34, "34+ only on the islands")
 
 
+func test_world_floors() -> void:
+	# Chapter waves v1.2, 5b (the user's decision): 7, 14, 16, then 18.
+	assert_eq([1, 2, 3, 4, 7].map(func(world: int) -> int: return ChapterPlan.world_floor(world)), [7, 14, 16, 18, 18])
+	assert_eq(ChapterPlan.world_at(50), 1)
+	assert_eq(ChapterPlan.world_at(101), 2)
+	assert_eq(ChapterPlan.world_at(351), 3)
+	assert_eq(ChapterPlan.band_range("easy_medium", 14), [14, 16] as Array[int], "lifted, a little room kept")
+	assert_eq(ChapterPlan.band_range("medium", 14), [14, 18] as Array[int])
+	assert_eq(ChapterPlan.band_range("hard", 18), [25, 33] as Array[int], "above the floor: unchanged")
+	assert_eq(ChapterPlan.band_range("easy", 7), [7, 9] as Array[int])
+
+
+## No main road level below its world's floor but the guided intros (the
+## tutorial levels and the first level of each lesson and of each sub-element).
+func test_no_level_below_its_world_floor_but_intros() -> void:
+	var intros: int = 0
+	for position: int in range(1, LevelCatalog.track_length(MAIN) + 1):
+		var level: Level = LevelCatalog.load_at(MAIN, position)
+		var least: int = ChapterPlan.world_floor(ChapterPlan.world_at(position))
+		if position <= LevelValidator.TUTORIAL_LEVEL_IDS.size() or TutorialDirector.is_mechanic_intro(level):
+			intros += 1 if level.min_moves < least else 0
+			continue
+		assert_true(level.min_moves >= least, "main %d: %d moves, world floor %d" % [position, level.min_moves, least])
+	assert_true(intros > 0, "intros may stay below it")
+
+
 func test_combination_rules() -> void:
 	# Section 4.2: one mode per category, karakuri never with a history mode or
 	# the chain, the mirror only with unequal capacity.

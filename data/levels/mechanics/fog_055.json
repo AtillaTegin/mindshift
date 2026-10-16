@@ -3,15 +3,15 @@
   "difficulty": "hard",
   "pegs": 3,
   "disks": 6,
-  "start": [[6,3,1],[5,4],[2]],
-  "goal": [[5],[1],[6,4,3,2]],
+  "start": [[5,4,3],[],[6,2,1]],
+  "goal": [[1],[5,4,2],[6,3]],
   "rules": ["classic_hanoi","sealed_box"],
-  "min_moves": 24,
-  "solution_path": [[0,1],[1,2],[0,1],[2,0],[2,1],[0,1],[0,2],[1,0],[1,2],[0,2],[1,0],[2,1],[2,0],[1,0],[1,2],[0,2],[0,1],[2,1],[0,2],[1,0],[1,2],[0,2],[1,0],[2,1]],
-  "star_thresholds": {"three":24,"two":30},
+  "min_moves": 28,
+  "solution_path": [[2,0],[0,2],[0,1],[2,0],[2,1],[0,1],[0,2],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[0,1],[2,0],[2,1],[0,1],[2,0],[1,2],[1,0],[2,0],[2,1],[0,2],[0,1],[2,1],[0,2],[1,0]],
+  "star_thresholds": {"three":28,"two":35},
   "time_limit_seconds": null,
-  "rule_params": {"sealed_box":{"pegs":[1]}},
-  "covered_pegs": [1],
+  "rule_params": {"sealed_box":{"pegs":[0]}},
+  "covered_pegs": [0],
   "variants": ["sealed","glass"],
-  "glass_disks": [5]
+  "glass_disks": [4,5]
 }

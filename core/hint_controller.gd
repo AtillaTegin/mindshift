@@ -59,6 +59,11 @@ func request() -> void:
 	if hint_move != null and key == _hint_key:
 		_present()
 		return
+	# A dead end has no next move: free, the status line keeps saying so (any
+	# other note gives way to it) with the way back beside it.
+	if _board.dead_ends != null and _board.dead_ends.is_dead():
+		message_changed.emit("")
+		return
 	if not _economy.can_afford(_economy.hint_cost(session.level.difficulty)):
 		message_changed.emit(tr("HINT_NO_COINS"))
 		return

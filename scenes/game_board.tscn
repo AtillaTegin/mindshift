@@ -178,14 +178,29 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="StatusLabel" type="Label" parent="Margin/Layout"]
+[node name="StatusRow" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StatusLabel" type="Label" parent="Margin/Layout/StatusRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
+
+[node name="WayBackButton" type="Button" parent="Margin/Layout/StatusRow"]
+script = ExtResource("pb_polished")
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(220, 72)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 26
+text = "DEAD_END_BACK"
 
 [node name="RulePanel" type="VBoxContainer" parent="Margin/Layout"]
 unique_name_in_owner = true

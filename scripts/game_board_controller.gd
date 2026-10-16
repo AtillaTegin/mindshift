@@ -54,6 +54,8 @@ var last_result: Dictionary = {}
 var coaching: CoachingLayer
 var hints: HintController
 var tutorial: TutorialDirector
+## The dead-end rule (Mod Kataloqu v1.1, D.3): on levels that can dead-end.
+var dead_ends: DeadEndWatcher
 
 var _popup: LevelCompletePopup
 ## Short notice in the status line (e.g. not enough coins), cleared by the next action.
@@ -112,6 +114,8 @@ var _cells: Array[Rect2] = []
 @onready var _coin_icon: Control = %CoinIcon
 @onready var _hint_button: Button = %HintButton
 @onready var _undo_button: Button = %UndoButton
+## Beside the status line, only in a dead end: the free way back.
+@onready var _way_back_button: Button = %WayBackButton
 
 
 func _ready() -> void:
@@ -140,6 +144,13 @@ func _ready() -> void:
 	tutorial.enabled = tutorials_enabled
 	tutorial.setup(self, coaching, save_system)
 	add_child(tutorial)
+	dead_ends = DeadEndWatcher.new()
+	dead_ends.name = "DeadEndWatcher"
+	dead_ends.background = background_hints
+	dead_ends.setup(self)
+	dead_ends.changed.connect(_on_dead_end_changed)
+	add_child(dead_ends)
+	_way_back_button.pressed.connect(request_way_back)
 	var bold: FontVariation = FontVariation.new()
 	bold.base_font = _rule_name.get_theme_default_font()
 	bold.variation_embolden = 0.8
@@ -291,6 +302,27 @@ func request_undo() -> void:
 	_message = ""
 	_refresh(true)
 	position_changed.emit()
+
+
+## The dead-end rule's free way back (no coins, not counted as an undo): to the
+## last position from which the level can still be solved.
+func request_way_back() -> void:
+	if session == null or not dead_ends.is_dead() or restricted_peg >= 0:
+		return
+	session.rewind_to(dead_ends.way_back())
+	_message = ""
+	_refresh(true)
+	position_changed.emit()
+
+
+## A dead end was found (its words replace any older note) or left.
+func _on_dead_end_changed() -> void:
+	if session == null:
+		return
+	if dead_ends.is_dead():
+		_message = ""
+	_show_status()
+	_update_buttons()
 
 
 ## Opens the level after the current one on its track of the level path.
@@ -500,6 +532,8 @@ func _update_buttons() -> void:
 	else:
 		_hint_button.text = tr("BOARD_HINT") % economy.hint_cost(session.level.difficulty)
 	_undo_button.disabled = locked or not session.can_undo()
+	_way_back_button.visible = dead_ends.is_dead() and not session.is_solved()
+	_way_back_button.disabled = locked
 	_restart_button.disabled = locked
 	var free_left: int = economy.free_undos_left()
 	if free_left > 0:
@@ -560,12 +594,7 @@ func _build_views() -> void:
 func _refresh(animated: bool) -> void:
 	_moves_label.text = tr("BOARD_MOVES") % session.move_count
 	_update_clock()
-	if session.is_solved():
-		_status_label.text = tr("BOARD_SOLVED") % [session.move_count, session.level.min_moves]
-		_status_label.theme_type_variation = &"SuccessLabel"
-	else:
-		_status_label.text = _message
-		_status_label.theme_type_variation = &"SecondaryLabel" if _message_soft else &"DangerLabel"
+	_show_status()
 	for peg: PegView in _peg_views:
 		peg.highlighted = peg.peg_index == session.selected_peg
 	_board_skin.marks = BoardDress.skin_marks(session)
@@ -576,6 +605,20 @@ func _refresh(animated: bool) -> void:
 	_update_rings()
 	_update_buttons()
 	_layout(animated)
+
+
+## The status line: solved, the current note, else in a dead end its kind
+## words (a gentle grey, nobody loses).
+func _show_status() -> void:
+	if session.is_solved():
+		_status_label.text = tr("BOARD_SOLVED") % [session.move_count, session.level.min_moves]
+		_status_label.theme_type_variation = &"SuccessLabel"
+	elif _message.is_empty() and dead_ends.is_dead():
+		_status_label.text = tr("DEAD_END")
+		_status_label.theme_type_variation = &"SecondaryLabel"
+	else:
+		_status_label.text = _message
+		_status_label.theme_type_variation = &"SecondaryLabel" if _message_soft else &"DangerLabel"
 
 
 ## Places pegs and disks for the current board size and position.

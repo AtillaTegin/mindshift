@@ -159,6 +159,14 @@ func echoes() -> bool:
 	return false
 
 
+## True for a rule under which a move may leave the goal out of reach for good
+## (a move that cannot be taken back, e.g. a disk lifted off the other colour).
+## Only then the board checks each new position (DeadEndWatcher) and offers a
+## free way back from a dead end (Mod Kataloqu v1.1, D.3: nobody loses).
+func can_dead_end() -> bool:
+	return false
+
+
 ## True if is_disk_move_allowed_after() fully decides this rule's moves. Rules that
 ## override is_move_allowed() to look at more of the position must return false.
 func supports_disk_move_check() -> bool:

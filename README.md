@@ -156,7 +156,10 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 - **Panel:** üçüncü sətirdə alt-elementin qaydası yazılır.
 - **Şans qaydası:** Say lövhəsi və Boş qutu səviyyələrində söndürülüb (istifadəçi qərarı): qutuda 0-1 disk ola bilər, ilk gedişlərdə açılmaya bilər. Möhürlü qutu yalnız "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
 - **Validator:** səviyyənin adını çəkdiyi alt-elementlərin həqiqətən olduğunu yoxlayır. Qaydanı dəyişən hər alt-element həlli öz-özlüyündə uzatmalıdır.
-- **İpucu sürəti:** əsas yolda ≤0,7 s, Karakuri adasında 1,6 s.
+- **Alt hədd** (istifadəçi qərarı 2026-10-16): Dünya 1: 7, Dünya 2: 14, Dünya 3: 16, Dünya 4+: 18 gediş (`ChapterPlan.WORLD_FLOORS`).
+  - İstisna yalnız bələdçili tanıtma səviyyələridir: iki tutorial, hər dərsin və hər alt-elementin əsas yoldakı ilk səviyyəsi. Validator bunu yoxlayır.
+  - Dalğanın dişli xətti modun və dünyanın həddindən böyük olanından başlayır. Həddən aşağı olan bant həddə qaldırılır, ən azı 2 gediş genişlikdə (`ChapterPlan.band_range`: Dünya 2-də "asan-orta" 14-16, "orta" 14-18). Təkrar səviyyələr də həddən aşağı düşmür.
+- **İpucu sürəti** (yoldan kənar, kompüterdə, alt həddlə yenidən qurulandan sonra): əsas yolda ≤0,7 s (198-ci səviyyə, 4 qüllə / 8 disk), adalarda ≤0,45 s.
 - Dünya 3-7 hələ qurulmayıb: Karvan, Zolaqlı, Dairə, Doqquz Halqa, Tərəzi, Mübadilə, Cığır, Zəncir, Güzgü, Maqnit onlar qurulana qədər yolda yoxdur (qaydaları və testləri qalır). Bağlı Qüllələr hələ yoxdur.
 
 ### Mexanika səviyyələri
@@ -178,6 +181,11 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
   - **Təmiz Dəyişmə** (`colour: false`): ağlar solda, qaralar sağda başlayır, yalnız ölçü qaydası var. Yığınlar yer dəyişir.
   - **Qarışıq-Ayırma** (`colour: true`): hər ucda hər ölçüdən bir disk var, rənglər qarışıqdır. Ölçü qaydası və "fərqli rəngli disklər toxunmur" qaydası birlikdə işləyir. Ən böyük cüt həmişə səhv ucda başlayır, yoxsa bu, sabit bazalı daha kiçik tapmaca olardı. Həlli olmayan başlanğıclar atılır.
   - Eyni ölçülü disklər üst-üstə qoyulmur. Qadağan gediş həmişə səbəbini status sətrində yazır: "böyük kiçiyin üstünə", "eyni ölçü" və ya "fərqli rənglər toxuna bilməz" (boz, cəza yoxdur).
+  - **Dalan qaydası** ([Mod Kataloqu v1.1](../MindShift_Mod_Kataloqu_v1.1.md), D.3: heç kim uduzmur). Qarışıq-Ayırmada disk başqa rəngin üstündən götürüləndə ora qayıda bilmir, ona görə bir neçə gediş hədəfi həmişəlik əlçatmaz edə bilər. 4 qüllədə 12 təsadüfi oyunun təxminən yarısı dalana düşdü, dalan bölgəsi ~10 vəziyyətdir (2026-10-16).
+    - Yalnız dalan yarada bilən qaydalarda (`RuleBase.can_dead_end()`, bu gün yalnız Qarışıq-Ayırma) hər gedişdən sonra yeni vəziyyət ayrıca axında yoxlanır ([core/dead_end_watcher.gd](core/dead_end_watcher.gd)). Digər qaydaların kiçik lövhələri test-də sonuna qədər axtarılır, heç birində dalan yoxdur.
+    - Dalan yalnız sübut olunanda deyilir: Solver 20 000 vəziyyət daxilində hədəfə çatmadan bitir (`GameSession.is_dead_end`). Axtarış hələ davam edirsə, vəziyyət canlı sayılır.
+    - Status sətrində boz "Bu yoldan çıxış yoxdur." yazılır, yanında "Geri qayıt" düyməsi çıxır (eyni sətirdə, lövhə tərpənmir). Düymə sonuncu həll oluna bilən vəziyyətə qaytarır: sikkəsiz, undo sayılmır. Dalanda ipucu pulsuzdur və eyni sözü saxlayır.
+    - Dünya 5 hələ qurulmayıb, ona görə iki Qarışıq-Ayırma lövhəsi pilot menyusundadır (`oyun.ps1 -Pilot`).
   - Lövhələr 2026-10-14-də ölçülüb. Bir bufer heç vaxt həll olunmur. Ən çox 8 disk saxlanılır, çünki yoldan kənar Hint 6 qüllə / 8 diskdə kompüterdə 3,2 s-ə qədər çəkir, 5 qüllə / 10 diskdə 4,6 s, 6 qüllə / 10 diskdə 22 s. Uclardan başlayanda cəmi ~40 fərqli tapmaca var (təmiz növün hər lövhədə biri), ona görə Dünya 5-in 150 səviyyəlik fəsli üçün istifadəçi yarı yoldan başlanğıcları seçdi.
   - Hər alt-tipin öz bələdçisi var (`Level.lesson()`). Pillə gediş sayından gəlir. 6 qüllə də bir cərgədə qalır, disklərdə ölçü rəqəmi yazılır.
 - **Yeni mexanikalar** ([spesifikasiya v1](../MindShift_Yeni_Mexanikalar_Detalli_Spesifikasiya_v1.md), istifadəçi cavabları 2026-10-15): hamısı klassik Hanoi + öz qaydasıdır, qayda həlli uzatmalıdır, yoxsa səviyyə alınmır. Qadağan gediş səbəbini status sətrində yazır. Pilotları fəsil sistemi ilə öz fəsillərinə çevrildi.
@@ -287,6 +295,8 @@ Dörd strategiya var, hamısı BFS-dir və ən qısa yolu tapır:
 | F-1.1 | Fəsil daxilində dalğalar: Dünya 1-2-də 11 alt-element, dişli çətinlik ([sənəd](../MindShift_Fesil_Daxili_Dalgalar_v1.md)) | ✅ sınaqda |
 | F-1.2 | Fəsil Sistemi v1.2: Böyük Sınaq (34-65, tac), Boş qutuda şans qaydası söndürülüb ([sənəd](../MindShift_Fesil_Sistemi_v1.2.md)) | ✅ sınaqda |
 | F-2 | Tərəzi vizualı (Roberval, LCD, önizləmə, səslər), Güzgü "Əks-səda" qaydası + 5 pilot | ✅ pilotlar sınaqda |
+| F-1.3 | Dünyaların alt həddi (7 / 14 / 16 / 18), Dünya 1-2 yenidən quruldu | ✅ sınaqda |
+| D-1 | Dalan qaydası: pulsuz "Geri qayıt" (Qarışıq-Ayırma), Mod Kataloqu v1.1 ([sənəd](../MindShift_Mod_Kataloqu_v1.1.md)) | ✅ sınaqda |
 | F-3 | Dünya 3-7 (Bağlı Qüllələr gözləyir) | — |
 | 7 | Android build | — |
 

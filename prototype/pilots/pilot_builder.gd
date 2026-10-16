@@ -29,10 +29,29 @@ const BALANCE: Array = [
 	["balance_3.json", 6, 5, 4, 5, 8],
 ]
 const BALANCE_FIRST_ID: int = 90101
+## Mixed exchange boards (World 5, not built yet) to try the dead-end rule
+## (Mod Kataloqu v1.1, D.3) on: two 4-peg boards of the old chapter where about
+## half of a dozen random games ran into a dead end. [file, start, goal]
+const SWAP: Array = [
+	["swap_1.json", [[5, 4, 2], [], [], [6, 3, 1]], [[6, 4, 2], [], [], [5, 3, 1]]],
+	["swap_2.json", [[5, 4, 1], [], [], [6, 3, 2]], [[6, 4, 2], [], [], [5, 3, 1]]],
+]
+const SWAP_FIRST_ID: int = 90201
 
 
 func _initialize() -> void:
 	var ok: bool = true
+	var swap_ids: Array[String] = ["color_swap"]
+	var swap_params: Dictionary = {"color_swap": {"colour": true}}
+	for i: int in SWAP.size():
+		var spec: Array = SWAP[i]
+		var start: PuzzleState = PuzzleState.new(spec[1])
+		var goal: PuzzleState = PuzzleState.new(spec[2])
+		var result: Dictionary = Solver.solve(start, goal, RuleSet.from_ids(swap_ids, swap_params), LevelValidator.SOLVER_MAX_STATES)
+		var swap: Level = Level.create(SWAP_FIRST_ID + i, Difficulty.tier_for_moves(result["min_moves"]), start, goal,
+				swap_ids, result["path"], swap_params)
+		swap.save_file("%s/%s" % [DIR, spec[0]])
+		print("%s: 4 pegs / 6 disks, mixed exchange, %d moves" % [spec[0], swap.min_moves])
 	for i: int in BALANCE.size():
 		var spec: Array = BALANCE[i]
 		var scale: Level = build_balance(spec[1], spec[2], spec[3], spec[4], spec[5], SEED + 100 + i, BALANCE_FIRST_ID + i)
