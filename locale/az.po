@@ -257,7 +257,7 @@ msgid "RULE_HOLE"
 msgstr "Bu disk deşikdən düşər: boş qülləyə rəqəmdən kiçik disk qoyulmur."
 
 msgid "RULE_SEALED"
-msgstr "Möhürlü qutu: yalnız ən kiçik disk qapağa qoyula bilər, sonra qutu açılır."
+msgstr "Möhürü yalnız ən kiçik disk aça bilər."
 
 msgid "SEALED_OPEN"
 msgstr "Möhür qırıldı: qutu açıldı."
@@ -283,11 +283,11 @@ msgstr "Deşikli qüllə"
 msgid "VARIANT_HOLED_RULE"
 msgstr "boş qüllədə yalnız rəqəmindən kiçik olmayan disk dayanır."
 
-msgid "VARIANT_COUNT_BOARD_NAME"
-msgstr "Say lövhəsi"
+msgid "VARIANT_FULL_HIDDEN_NAME"
+msgstr "Tam gizli"
 
-msgid "VARIANT_COUNT_BOARD_RULE"
-msgstr "hər qutunun qapağında içindəki disklərin sayı yazılıb."
+msgid "VARIANT_FULL_HIDDEN_RULE"
+msgstr "disk olan hər qüllə qutudadır, boş qüllələr açıqdır."
 
 msgid "VARIANT_GLASS_NAME"
 msgstr "Şüşə disk"
@@ -299,7 +299,7 @@ msgid "VARIANT_EMPTY_BOX_NAME"
 msgstr "Boş qutu"
 
 msgid "VARIANT_EMPTY_BOX_RULE"
-msgstr "bəzi qutular boşdur, amma eyni görünür."
+msgstr "qutulardan biri boşdur, amma o birilər kimi görünür."
 
 msgid "VARIANT_SEALED_NAME"
 msgstr "Möhürlü qutu"

@@ -21,6 +21,11 @@ func get_id() -> String:
 	return ID
 
 
+## Each scale's two pans stay together.
+func peg_symmetry() -> String:
+	return PEGS_PAIRS
+
+
 func configure(params: Dictionary) -> String:
 	var value: Variant = params.get("tolerance")
 	if params.size() != 1 or typeof(value) != TYPE_INT or value < 0:

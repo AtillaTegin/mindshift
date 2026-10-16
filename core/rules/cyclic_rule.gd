@@ -17,6 +17,11 @@ func get_id() -> String:
 	return ID
 
 
+## The dial may turn; a mirror image would run the other way round.
+func peg_symmetry() -> String:
+	return PEGS_CIRCLE
+
+
 func is_move_allowed_with(_disk: int, from_peg: int, to_peg: int, _target_top: int, facts: MoveFacts) -> bool:
 	return to_peg == (from_peg + 1) % facts.peg_count()
 

@@ -23,9 +23,11 @@ extends RefCounted
 ##   - narrow: one peg holds a single disk ("Dar keçid");
 ##   - arch: one peg lets only disks up to N through ("Tağ");
 ##   - holed: one empty peg takes only disks from N up ("Deşikli qüllə");
-##   - count_board: every peg is a box showing how many disks it holds;
+##   - full_hidden: every peg that holds a disk is a box, no number on it
+##     ("Tam gizli"; current decisions 2026-10-16, B.1);
 ##   - glass: one or two disks inside the boxes are glass and always show;
-##   - empty_box: one more box that holds nothing;
+##   - empty_box: one more box that holds nothing (the only empty box a
+##     level may have);
 ##   - sealed: one box is sealed (SealedBoxRule) until the smallest disk is put
 ##     on its lid;
 ##   - reclosing: boxes close again when left alone (presentation only);
@@ -38,7 +40,7 @@ const TOWER_GOAL_CHANCE: float = 0.5
 ## Search limit while building (offline, so far above an in-game hint's).
 const MAX_STATES: int = LevelValidator.SOLVER_MAX_STATES
 ## Sub-elements that only change what the player sees.
-const LOOKS_ONLY: Array[String] = ["count_board", "glass", "empty_box", "reclosing"]
+const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosing"]
 
 
 ## Every disk on a random peg; each peg is sorted, so the position is legal.
@@ -77,19 +79,12 @@ static func rule_ids_for(modes: Array) -> Array[String]:
 	return ids
 
 
-## Identity of a puzzle for duplicate checks: start and goal, plus the rules
-## and their settings when there are rules beyond classic Hanoi. Karakuri
+## Identity of a puzzle for duplicate checks: its canonical form
+## (PuzzleIdentity, current decisions 2026-10-16, E), the same for every
+## reordering or mirror image of the pegs and for swapped colours. Karakuri
 ## boxes do not count: a boxed board is the same puzzle as the open one.
 static func puzzle_key(start: PuzzleState, goal: PuzzleState, rule_ids: Array, params: Dictionary) -> String:
-	var key: String = LevelValidator.pair_key(start, goal)
-	if rule_ids.size() > 1:
-		var sorted: Dictionary = {}
-		var names: Array = params.keys()
-		names.sort()
-		for name: Variant in names:
-			sorted[name] = params[name]
-		key += " %s %s" % [str(rule_ids), JSON.stringify(sorted)]
-	return key
+	return PuzzleIdentity.key(start, goal, rule_ids, params)
 
 
 ## One try at a level of `modes` on `board` whose shortest solution has
@@ -343,22 +338,25 @@ static func _sealed_peg(start: PuzzleState, rng: RandomNumberGenerator) -> int:
 ## The karakuri boxes of a level: `board.covered` boxes that hide at least two
 ## disks each and that `path` uses within its first moves (the luck rule, user
 ## decision 2026-10-09), the sealed one among them (exempt from the early use:
-## a tap never opens it), every peg for a count board, and for "empty_box" any
-## pegs that hold a disk plus one empty box (user decision 2026-10-16: in
-## those two the luck rule is off). Empty when the draw does not allow them.
+## a tap never opens it). Current decisions 2026-10-16 (B.1, B.2, B.5): a
+## "full_hidden" level boxes every peg that holds a disk (one disk is enough,
+## no early use); an "empty_box" level boxes any pegs that hold a disk plus
+## its one empty box (no early use). No other box is ever empty. Empty when
+## the draw does not allow them.
 static func _boxes(start: PuzzleState, path: Array[Move], board: Dictionary, variants: Array, sealed: int,
 		rng: RandomNumberGenerator) -> Array[int]:
 	var none: Array[int] = []
 	var boxes: Array[int] = []
-	if variants.has("count_board"):
+	if variants.has("full_hidden"):
 		for peg_index: int in start.get_peg_count():
-			boxes.append(peg_index)
-		return boxes
+			if not start.pegs[peg_index].is_empty():
+				boxes.append(peg_index)
+		return boxes if boxes.size() >= 2 else none
 	if sealed != -1:
 		boxes.append(sealed)
 	var wanted: int = int(board.get("covered", 1))
 	if variants.has("empty_box"):
-		# Relaxed luck rule (user decision 2026-10-16, chapter waves 5a): any peg
+		# Relaxed luck rule (chapter waves 5a, current decisions B.5): any peg
 		# with a disk may be a box, used early or not, and one empty peg more.
 		for peg_index: int in _shuffled(range(start.get_peg_count()), rng):
 			if boxes.size() < wanted and not boxes.has(peg_index) and not start.pegs[peg_index].is_empty():

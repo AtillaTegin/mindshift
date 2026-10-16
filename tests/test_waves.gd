@@ -104,24 +104,39 @@ func test_validator_matches_names_and_contents() -> void:
 	errors.clear()
 	LevelValidator.validate_variants(level, errors)
 	assert_true(" ".join(errors).contains("names arch but has none"), str(errors))
-	# A count board and an empty box are exempt from the luck rule (user decision 2026-10-16).
-	var boxes: Level = make_level(11997, ["classic_hanoi"] as Array[String], [[3, 2, 1], [], []], [[], [], [3, 2, 1]])
-	boxes.covered_pegs = [0, 1, 2]
-	boxes.variants = ["count_board"]
+	# "Tam gizli" (current decisions 2026-10-16, B.1, B.5): every peg with a
+	# disk is a box, one disk is enough, no early use; an empty peg stays open.
+	var boxes: Level = make_level(11997, ["classic_hanoi"] as Array[String], [[3, 2], [1], [], []], [[], [], [], [3, 2, 1]])
+	boxes.covered_pegs = [0, 1]
+	boxes.variants = ["full_hidden"]
 	errors.clear()
 	LevelValidator.validate_mechanic_design(boxes, errors)
-	assert_eq(errors, [] as Array[String], "every peg a box, some empty, not all used early")
+	assert_eq(errors, [] as Array[String], "every peg with a disk a box, not all used early")
+	boxes.covered_pegs = [0]
+	errors.clear()
+	LevelValidator.validate_mechanic_design(boxes, errors)
+	assert_true(" ".join(errors).contains("names full_hidden but has none"), "a peg with a disk left open")
+	boxes.covered_pegs = [0, 1, 2]
+	errors.clear()
+	LevelValidator.validate_mechanic_design(boxes, errors)
+	assert_true(" ".join(errors).contains("empty boxes"), "an empty peg in a box: %s" % str(errors))
+	boxes.covered_pegs = [0, 1]
 	boxes.variants = []
 	errors.clear()
 	LevelValidator.validate_mechanic_design(boxes, errors)
-	assert_true(" ".join(errors).contains("hides nothing"), "without the count board the rule holds")
-	# An empty-box level (section 5a): a box may hold one disk and stay closed early.
+	assert_true(" ".join(errors).contains("hides nothing"), "without it the luck rule holds")
+	# An empty-box level (section 5a, B.5): a box may hold one disk and stay
+	# closed early, and one box, no more, is empty.
 	var one: Level = make_level(11996, ["classic_hanoi"] as Array[String], [[3, 2], [1], [], []], [[], [], [], [3, 2, 1]])
 	one.covered_pegs = [1, 3]
 	one.variants = ["empty_box"]
 	errors.clear()
 	LevelValidator.validate_mechanic_design(one, errors)
 	assert_eq(errors, [] as Array[String], "a one-disk box and an empty one")
+	one.covered_pegs = [1, 2, 3]
+	errors.clear()
+	LevelValidator.validate_mechanic_design(one, errors)
+	assert_true(" ".join(errors).contains("2 empty boxes"), "two empty boxes: %s" % str(errors))
 
 
 func test_every_sub_element_has_its_texts() -> void:

@@ -68,6 +68,15 @@ func get_params() -> Dictionary:
 	return params
 
 
+## A peg's capacity, arch and hole travel with it when pegs are reordered.
+func peg_mark(peg_index: int) -> Variant:
+	return [capacities[peg_index], arches[peg_index], holes[peg_index]] if peg_index < capacities.size() else null
+
+
+func params_without_pegs() -> Dictionary:
+	return {}
+
+
 func is_move_allowed_with(disk: int, _from_peg: int, to_peg: int, target_top: int, facts: MoveFacts) -> bool:
 	if to_peg >= capacities.size() or facts.counts[to_peg] >= capacities[to_peg]:
 		return false

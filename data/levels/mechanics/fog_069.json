@@ -11,7 +11,7 @@
   "star_thresholds": {"three":30,"two":38},
   "time_limit_seconds": null,
   "rule_params": {"sealed_box":{"pegs":[0]}},
-  "covered_pegs": [0,1,2,3],
-  "variants": ["count_board","sealed","glass"],
+  "covered_pegs": [0,2,3],
+  "variants": ["full_hidden","sealed","glass"],
   "glass_disks": [4]
 }

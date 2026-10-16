@@ -140,7 +140,12 @@ func test_closed_box_hides_the_whole_peg_then_shrinks() -> void:
 	assert_eq(first.skin, "wood", "a karakuri box in the wood dress")
 	assert_null(_board.get_peg_fog(0), "ordinary pegs have no box")
 	assert_null(_board.get_peg_fog(3))
-	assert_true(_preview().is_peg_fogged(1), "the goal is fogged too")
+	# The goal is never hidden (current decisions 2026-10-16, B.3): every goal
+	# disk is drawn, the boxed pegs' too.
+	var goal_disks: int = 0
+	for peg: Array in _board.session.level.goal.pegs:
+		goal_disks += peg.size()
+	assert_eq(_preview().get_disk_labels().size(), goal_disks, "the whole goal shows")
 	_board.on_peg_pressed(1)
 	assert_eq(_board.session.selected_peg, -1, "the tap opened the box")
 	var opened: Rect2 = first.get_target_area()
@@ -148,19 +153,6 @@ func test_closed_box_hides_the_whole_peg_then_shrinks() -> void:
 	assert_false(opened.intersects(_disk_rect(stack[-1])), "the top disk shows")
 	for i: int in stack.size() - 1:
 		assert_true(opened.encloses(_disk_rect(stack[i])), "disk %d still hidden" % stack[i])
-	assert_false(_preview().covered_pegs.has(1), "goal fog of an opened box lifts (fading)")
-	assert_true(_preview().is_peg_fogged(2))
-	# The preview fog must still hide the goal's lower disks of the closed box completely.
-	var preview: BoardPreview = _preview()
-	preview.size = Vector2(672, preview.custom_minimum_size.y)
-	var column: float = preview.size.x / state.get_peg_count()
-	for label: Dictionary in preview.get_disk_labels():
-		var peg_index: int = int(label["rect"].get_center().x / column)
-		var goal_stack: Array = _board.session.level.goal.pegs[peg_index]
-		if peg_index == 2 and label["disk"] != goal_stack[-1]:
-			var fog_left: float = column * peg_index + column * 0.01
-			assert_true(label["rect"].position.x >= fog_left and label["rect"].end.x <= fog_left + column * 0.98,
-					"goal disk %d fully under the preview fog" % label["disk"])
 
 
 func test_box_layers_open_as_disks_leave_and_restart_closes_it() -> void:
@@ -176,7 +168,7 @@ func test_box_layers_open_as_disks_leave_and_restart_closes_it() -> void:
 	_board.restart()
 	assert_true(fog.is_shown(), "restart closes the box again")
 	assert_true(_board.session.is_covered(2))
-	assert_eq(_preview().covered_pegs, [1, 2] as Array[int])
+	assert_eq(_board.session.covered_pegs, [1, 2] as Array[int])
 
 
 func test_hint_and_solve_work_with_boxes() -> void:

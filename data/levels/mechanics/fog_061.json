@@ -11,6 +11,6 @@
   "star_thresholds": {"three":26,"two":33},
   "time_limit_seconds": null,
   "covered_pegs": [0,1,2,3],
-  "variants": ["count_board","glass"],
+  "variants": ["full_hidden","glass"],
   "glass_disks": [8]
 }

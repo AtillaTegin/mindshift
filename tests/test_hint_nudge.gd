@@ -96,7 +96,7 @@ func test_any_tap_removes_the_idle_ring_at_once() -> void:
 
 
 func test_two_mistakes_in_a_row_show_ring_and_one_toast() -> void:
-	_open("easy", 3)
+	_open("easy", 4)  # its start allows a wrong move (easy 3 starts as one tower)
 	var nudge: HintNudgeWatcher = _nudge()
 	_try_illegal()
 	assert_eq(nudge.mistakes_in_a_row, 1)
@@ -114,7 +114,7 @@ func test_two_mistakes_in_a_row_show_ring_and_one_toast() -> void:
 
 
 func test_a_legal_move_resets_the_mistake_count() -> void:
-	_open("easy", 3)
+	_open("easy", 4)
 	var nudge: HintNudgeWatcher = _nudge()
 	_try_illegal()
 	_board.on_peg_pressed(_board.session.selected_peg)  # put the disk back

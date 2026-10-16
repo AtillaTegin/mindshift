@@ -79,6 +79,15 @@ func is_state_valid(state: PuzzleState) -> bool:
 	return true
 
 
+## White and black swapped make the same puzzle (with the board mirrored, the
+## goal's sides come back).
+func disk_swaps(disks: Array) -> Array[Dictionary]:
+	var swap: Dictionary = {}
+	for disk: int in disks:
+		swap[disk] = disk + 1 if is_white(disk) else disk - 1
+	return [swap] as Array[Dictionary]
+
+
 ## The mixed kind: a disk lifted off the other colour never goes back onto
 ## it, so a few moves can leave the goal out of reach (on 4 pegs about half of
 ## a dozen random games did; the dead region then holds ~10 positions,

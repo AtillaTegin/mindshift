@@ -40,7 +40,11 @@ const CHAPTERS: Array[Dictionary] = [
 	{"world": 3, "kind": MODE_CHAPTER, "mode": "cyclic", "first": 551, "last": 650, "ratio": 3.0},
 	{"world": 3, "kind": COMBO_CHAPTER, "first": 651, "last": 700, "singles": ["adjacent_pegs", "stripes", "cyclic"],
 		"combos": [["adjacent_pegs", "peg_capacity"], ["adjacent_pegs", "foundation"], ["stripes", "peg_capacity"],
-			["stripes", "adjacent_pegs"], ["cyclic", "peg_capacity"], ["cyclic", "foundation"]]},
+			["stripes", "adjacent_pegs"], ["cyclic", "peg_capacity"], ["cyclic", "foundation"],
+			# Current decisions 2026-10-16, D: karakuri comes back here (and with
+			# the balance in combination III, "Gizli Yük"), never inside its
+			# chapter before the player knows the other mode.
+			["covered_pegs", "stripes"]]},
 	{"world": 4, "kind": MODE_CHAPTER, "mode": "alternation", "first": 701, "last": 820, "ratio": 3.0},
 	{"world": 4, "kind": MODE_CHAPTER, "mode": "balance", "first": 821, "last": 970, "ratio": 3.0},
 	{"world": 4, "kind": COMBO_CHAPTER, "first": 971, "last": 1020, "singles": ["alternation", "balance"],
@@ -128,15 +132,15 @@ const CLASSIC_ISLAND: Dictionary = {"expert": 28, "hard": 8, "medium": 4}
 const BASE: String = "base"
 const WAVES: Dictionary = {
 	"peg_capacity": {"waves": ["base", "narrow", "arch"], "mixed": false},
-	"covered_pegs": {"waves": ["base", "count_board", "glass", "empty_box", "sealed"], "mixed": true},
+	"covered_pegs": {"waves": ["base", "full_hidden", "glass", "empty_box", "sealed"], "mixed": true},
 	"foundation": {"waves": ["base", "key_disk", "middle_lock", "chain_lock"], "mixed": true},
 }
 ## Sub-elements only the islands use (section 3): one per island, mixed with
 ## the chapter's own.
 const ISLAND_VARIANTS: Dictionary = {"peg_capacity": "holed", "covered_pegs": "reclosing"}
-## Sub-elements that cannot share a level: a count board tells which box is
-## empty.
-const CLASHES: Array[Array] = [["count_board", "empty_box"]]
+## Sub-elements that cannot share a level: in a fully hidden level every box
+## holds a disk, so it has no empty box (current decisions 2026-10-16, B.1).
+const CLASHES: Array[Array] = [["full_hidden", "empty_box"]]
 ## Rules that belong to a mode as one of its sub-elements (not modes).
 const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 

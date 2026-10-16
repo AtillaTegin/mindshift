@@ -52,6 +52,10 @@ const TUTORIAL_LEVELS: Array[Dictionary] = [
 	{"start": [[2], [3], [1]], "goal": [[], [], [3, 2, 1]]},
 ]
 const CLASSIC: String = "classic"
+## The RECIPES entries of a stream's boards for wave intros only and for its
+## chapter's Böyük Sınaq only (draw_one()).
+const INTRO: String = "intro"
+const BIG_TEST_BOARDS: String = "big_test"
 ## File name stem of each mode's levels (data/levels/mechanics/<stem>_NNN.json);
 ## a combination's files join its modes' stems.
 const MODE_FILES: Dictionary = {"peg_capacity": "capacity", "covered_pegs": "fog", "foundation": "foundation",
@@ -90,16 +94,26 @@ const RECIPES: Dictionary = {
 		"hard": [{"pegs": 4, "disks": 7, "slack": 1}, {"pegs": 4, "disks": 8, "slack": 1}],
 		"expert": [{"pegs": 4, "disks": 8, "slack": 1}],
 	},
+	# Current decisions 2026-10-16, B.4: karakuri levels on 4-5 pegs and 6-9
+	# disks, but each wave's intro (INTRO boards) and the island (the waves doc:
+	# "not inside the chapter"; its 34-70 moves need 3 pegs). Measured
+	# 2026-10-17: 5 pegs stay short (6 disks up to 14 moves, 7 up to 16), so 5
+	# pegs only with 8 disks; a sealed box on 4 pegs / 9 disks takes ~4 s a draw
+	# and up to 2.3 s for an off-path hint, so sealed levels try 8 disks first
+	# (draw_one()) and the Böyük Sınaq has its own boards (BIG_TEST_BOARDS).
 	"covered_pegs": {
-		"easy_medium": [{"pegs": 3, "disks": 4, "covered": 1}, {"pegs": 4, "disks": 5, "covered": 1}],
-		"medium": [{"pegs": 3, "disks": 5, "covered": 1}, {"pegs": 4, "disks": 6, "covered": 2},
-			{"pegs": 4, "disks": 6, "covered": 1}],
-		"medium_hard": [{"pegs": 4, "disks": 7, "covered": 2}, {"pegs": 3, "disks": 6, "covered": 0},
-			{"pegs": 4, "disks": 8, "covered": 2}],
-		"hard": [{"pegs": 4, "disks": 8, "covered": 3}, {"pegs": 3, "disks": 6, "covered": 2},
-			{"pegs": 4, "disks": 8, "covered": 2}],
-		# 3 pegs only: a sealed box's memory on 4 pegs / 9 disks made an off-path
-		# hint take ~5 s on a desktop (measured 2026-10-16).
+		INTRO: [{"pegs": 3, "disks": 4, "covered": 1}, {"pegs": 4, "disks": 5, "covered": 1},
+			{"pegs": 3, "disks": 5, "covered": 1}],
+		"easy_medium": [{"pegs": 4, "disks": 6, "covered": 1}, {"pegs": 4, "disks": 7, "covered": 1},
+			{"pegs": 5, "disks": 8, "covered": 1}],
+		"medium": [{"pegs": 4, "disks": 7, "covered": 2}, {"pegs": 4, "disks": 6, "covered": 2},
+			{"pegs": 5, "disks": 8, "covered": 2}],
+		"medium_hard": [{"pegs": 4, "disks": 8, "covered": 2}, {"pegs": 4, "disks": 7, "covered": 2},
+			{"pegs": 4, "disks": 9, "covered": 2}],
+		"hard": [{"pegs": 4, "disks": 8, "covered": 2}, {"pegs": 4, "disks": 9, "covered": 2}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 9, "covered": 2}],
+		# The island: 3 pegs reach its lengths, and a sealed box on 4 pegs / 9
+		# disks made an off-path hint take ~5 s (measured 2026-10-16).
 		"expert": [{"pegs": 3, "disks": 6, "covered": 2}, {"pegs": 3, "disks": 7, "covered": 2}],
 	},
 	"foundation": {
@@ -187,6 +201,9 @@ static func parse_worlds(text: String) -> Array[int]:
 
 ## Every level of `worlds`' chapters: {main: [Level], islands: [{mode, after,
 ## levels: [Level]}], files: {Level id: file}}. Problems go to `errors`.
+## World by world (the waves of its main road and islands, then its bands), so
+## a world's levels only depend on the worlds before it: building a later world
+## never changes an earlier one.
 static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 	var plan: Dictionary = layout(worlds)
 	var used: Dictionary = {}
@@ -194,33 +211,58 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 	var tracks: Array = [main]
 	for island: Dictionary in plan["islands"]:
 		tracks.append(island["slots"])
-	# Groups of one stream and band, in road order; each gets its levels at once.
-	var groups: Dictionary = {}
-	var order: Array[String] = []
-	for track: Array in tracks:
-		for slot: Dictionary in track:
-			if slot.has("fixed") or slot.has("low"):
-				continue
-			var group: String = "%s/%s" % [stream_of(slot["modes"]), slot["band"]]
-			# A band lifted to its world's floor is a group of its own.
-			if ChapterPlan.band_range(slot["band"], slot["floor"])[0] != int(ChapterPlan.BANDS[slot["band"]][0]):
-				group += "@%d" % slot["floor"]
-			if not groups.has(group):
-				groups[group] = []
-				order.append(group)
-			(groups[group] as Array).append(slot)
 	# The tutorial levels first, so nothing else repeats them.
 	for slot: Dictionary in main:
 		if slot.has("fixed"):
 			slot["draft"] = _tutorial_draft(slot["fixed"])
 			used[slot["draft"]["key"]] = true
-	# Wave levels (a window of their own each), in road order.
+	var ordered: Array[int] = worlds.duplicate()
+	ordered.sort()
+	for world: int in ordered:
+		_draw_waves(tracks, world, used, errors)
+		_draw_bands(tracks, world, used, errors)
+	if not errors.is_empty():
+		return {}
+	return _number(plan, ordered)
+
+
+## The band slots of `world`, by stream and band (one group per world), in
+## road order; each group gets its levels at once.
+static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Array[String]) -> void:
+	var groups: Dictionary = {}
+	var order: Array[String] = []
+	for track: Array in tracks:
+		for slot: Dictionary in track:
+			if slot.has("fixed") or slot.has("low") or slot["world"] != world:
+				continue
+			var group: String = "%s/%s/w%d" % [stream_of(slot["modes"]), slot["band"], world]
+			if not groups.has(group):
+				groups[group] = []
+				order.append(group)
+			(groups[group] as Array).append(slot)
+	for group: String in order:
+		var slots: Array = groups[group]
+		var first: Dictionary = slots[0]
+		var started: int = Time.get_ticks_msec()
+		var drafts: Array[Dictionary] = draw_group(first["modes"], first["band"], slots.size(),
+				BASE_SEED + group.hash() % 100000, used, errors, first["floor"])
+		print("  %s: %d levels in %.1f s" % [group, drafts.size(), (Time.get_ticks_msec() - started) / 1000.0])
+		if drafts.size() < slots.size():
+			errors.append("%s: only %d of %d levels found" % [group, drafts.size(), slots.size()])
+			continue
+		for i: int in slots.size():
+			slots[i]["draft"] = drafts[i]
+
+
+## The wave levels of `world` (a window of their own each), in road order:
+## its main road slots, then its islands'.
+static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Array[String]) -> void:
 	for t: int in tracks.size():
 		var started: int = Time.get_ticks_msec()
 		var count: int = 0
 		for i: int in (tracks[t] as Array).size():
 			var slot: Dictionary = tracks[t][i]
-			if not slot.has("low"):
+			if not slot.has("low") or slot["world"] != world:
 				continue
 			var draft: Dictionary = draw_one(slot, BASE_SEED + t * 10000 + i, used)
 			# Too many sub-elements for the window: the later ones go, one by one
@@ -249,22 +291,7 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 			slot["draft"] = draft
 			count += 1
 		if count > 0:
-			print("  track %d: %d wave levels in %.1f s" % [t, count, (Time.get_ticks_msec() - started) / 1000.0])
-	for group: String in order:
-		var slots: Array = groups[group]
-		var first: Dictionary = slots[0]
-		var started: int = Time.get_ticks_msec()
-		var drafts: Array[Dictionary] = draw_group(first["modes"], first["band"], slots.size(),
-				BASE_SEED + group.hash() % 100000, used, errors, first["floor"])
-		print("  %s: %d levels in %.1f s" % [group, drafts.size(), (Time.get_ticks_msec() - started) / 1000.0])
-		if drafts.size() < slots.size():
-			errors.append("%s: only %d of %d levels found" % [group, drafts.size(), slots.size()])
-			continue
-		for i: int in slots.size():
-			slots[i]["draft"] = drafts[i]
-	if not errors.is_empty():
-		return {}
-	return _number(plan)
+			print("  world %d track %d: %d wave levels in %.1f s" % [world, t, count, (Time.get_ticks_msec() - started) / 1000.0])
 
 
 ## The road's slots for `worlds`: {main: [slot], islands: [{mode, after,
@@ -287,11 +314,14 @@ static func layout(worlds: Array[int]) -> Dictionary:
 				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": _mode_island(chapter["mode"], rng)})
 			ChapterPlan.COMBO_CHAPTER:
 				main.append_array(_combo_chapter(chapter, rng))
-		# Band slots learn their world's floor (wave slots have their windows).
+		# Every slot learns its world (band slots its floor too; wave slots have
+		# their windows).
 		var slots: Array = main.slice(first_new)
 		for island: Dictionary in islands.slice(islands_before):
+			island["world"] = chapter["world"]
 			slots.append_array(island["slots"])
 		for slot: Dictionary in slots:
+			slot["world"] = chapter["world"]
 			slot["floor"] = ChapterPlan.world_floor(chapter["world"])
 	return {"main": main, "islands": islands}
 
@@ -414,7 +444,7 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator, lea
 				extra["covered"] = 1 if j < size / 2 else 2  # one box first, two by the wave's end
 			var span: Array[int] = _wave_window(k, sections, t, j == 0, floors)
 			items.append({"modes": [mode], "variants": variants, "extra": extra, "low": span[0], "high": span[1], "t": t,
-					"wave": variant})
+					"wave": variant, "intro": j == 0})
 		if variant != ChapterPlan.BASE:
 			taught.append(variant)
 	for j: int in mixed_size:
@@ -456,7 +486,7 @@ static func _wave_window(k: int, sections: int, t: float, intro: bool, floors: A
 static func _wave_extra(mode: String, variants: Array[String], t: float, rng: RandomNumberGenerator) -> Dictionary:
 	var extra: Dictionary = {"variants": variants}
 	if mode == ChapterPlan.COVERED:
-		extra["covered"] = 1 if variants.has("count_board") or variants.has("sealed") or rng.randf() < 0.5 else 2
+		extra["covered"] = 1 if variants.has("full_hidden") or variants.has("sealed") or rng.randf() < 0.5 else 2
 	if variants.has("chain_lock"):
 		extra["stages"] = 3 if t >= 0.75 and variants.size() > 1 else 2
 	return extra
@@ -669,7 +699,11 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 
 ## One wave level for `slot` ({modes, variants, extra, low, high, band}): the
 ## recipe boards of its band first, then of the bands next to it, each board
-## with the slot's settings on top; {} if none gives one.
+## with the slot's settings on top; {} if none gives one. A wave's intro takes
+## its stream's INTRO boards first where it has some (smaller boards that the
+## rest of the chapter does not use), a Böyük Sınaq its BIG_TEST_BOARDS
+## instead of its band's. A sealed box tries the smaller boards first (its
+## memory makes 9 disks slow to search).
 static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dictionary:
 	var recipe: Dictionary = RECIPES.get(stream_of(slot["modes"]), {})
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -677,12 +711,20 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 	var order: Array[String] = ["easy_medium", "medium", "medium_hard", "hard", "expert"]
 	var at: int = order.find(slot["band"])
 	var bands: Array[String] = [slot["band"]]
+	if slot.get("intro", false) and recipe.has(INTRO):
+		bands.push_front(INTRO)
+	if slot.get("wave", "") == "big_test" and recipe.has(BIG_TEST_BOARDS):
+		bands = [BIG_TEST_BOARDS]
 	for near: int in [at - 1, at + 1]:
 		if near >= 0 and near < order.size():
 			bands.append(order[near])
+	var sealed: bool = (slot.get("variants", []) as Array).has("sealed")
 	for band: String in bands:
-		var boards: Array = recipe.get(band, [])
+		var boards: Array = recipe.get(band, []).duplicate()
 		var offset: int = rng.randi_range(0, maxi(boards.size() - 1, 0))
+		if sealed:
+			offset = 0
+			boards.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["disks"] < b["disks"])
 		for turn: int in boards.size():
 			var board: Dictionary = (boards[(offset + turn) % boards.size()] as Dictionary).duplicate()
 			board.merge(slot.get("extra", {}), true)
@@ -702,9 +744,11 @@ static func _tutorial_draft(index: int) -> Dictionary:
 			"path": result["path"], "moves": result["min_moves"], "key": LevelForge.puzzle_key(start, goal, rule_ids, {})}
 
 
-## Levels with ids and files, in road order: classic levels number up per
-## tier, mechanic levels per stream (each in its own id block).
-static func _number(plan: Dictionary) -> Dictionary:
+## Levels with ids and files: classic levels number up per tier, mechanic
+## levels per stream (each in its own id block), world by world (its main road
+## in order, then its islands), so a later world never renumbers an earlier
+## one's levels (saves keep their ids).
+static func _number(plan: Dictionary, worlds: Array[int]) -> Dictionary:
 	var tier_counts: Dictionary = {}
 	var stream_counts: Dictionary = {}
 	var files: Dictionary = {}
@@ -729,14 +773,22 @@ static func _number(plan: Dictionary) -> Dictionary:
 		level.glass_disks.assign(draft.get("glass", []))
 		files[id] = file
 		return level
+	for world: int in worlds:
+		for slot: Dictionary in plan["main"]:
+			if slot["world"] == world:
+				slot["level"] = make.call(slot)
+		for island: Dictionary in plan["islands"]:
+			if island["world"] == world:
+				for slot: Dictionary in island["slots"]:
+					slot["level"] = make.call(slot)
 	var main: Array[Level] = []
 	for slot: Dictionary in plan["main"]:
-		main.append(make.call(slot))
+		main.append(slot["level"])
 	var islands: Array[Dictionary] = []
 	for island: Dictionary in plan["islands"]:
 		var levels: Array[Level] = []
 		for slot: Dictionary in island["slots"]:
-			levels.append(make.call(slot))
+			levels.append(slot["level"])
 		islands.append({"mode": island["mode"], "after": island["after"], "levels": levels})
 	return {"main": main, "islands": islands, "files": files}
 

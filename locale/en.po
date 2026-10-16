@@ -337,7 +337,7 @@ msgstr ""
 msgid "RULE_HOLE"
 msgstr ""
 
-#. [TODO: EN] az: Möhürlü qutu: yalnız ən kiçik disk qapağa qoyula bilər, sonra qutu açılır.
+#. [TODO: EN] az: Möhürü yalnız ən kiçik disk aça bilər.
 msgid "RULE_SEALED"
 msgstr ""
 
@@ -373,12 +373,12 @@ msgstr ""
 msgid "VARIANT_HOLED_RULE"
 msgstr ""
 
-#. [TODO: EN] az: Say lövhəsi
-msgid "VARIANT_COUNT_BOARD_NAME"
+#. [TODO: EN] az: Tam gizli
+msgid "VARIANT_FULL_HIDDEN_NAME"
 msgstr ""
 
-#. [TODO: EN] az: hər qutunun qapağında içindəki disklərin sayı yazılıb.
-msgid "VARIANT_COUNT_BOARD_RULE"
+#. [TODO: EN] az: disk olan hər qüllə qutudadır, boş qüllələr açıqdır.
+msgid "VARIANT_FULL_HIDDEN_RULE"
 msgstr ""
 
 #. [TODO: EN] az: Şüşə disk
@@ -393,7 +393,7 @@ msgstr ""
 msgid "VARIANT_EMPTY_BOX_NAME"
 msgstr ""
 
-#. [TODO: EN] az: bəzi qutular boşdur, amma eyni görünür.
+#. [TODO: EN] az: qutulardan biri boşdur, amma o birilər kimi görünür.
 msgid "VARIANT_EMPTY_BOX_RULE"
 msgstr ""
 

@@ -98,6 +98,25 @@ func get_params() -> Dictionary:
 	return {"stages": list}
 
 
+## The key places on `peg_index`: [stage, key disk] for every key that must
+## reach it (they travel with the peg when pegs are reordered).
+func peg_mark(peg_index: int) -> Variant:
+	var places: Array = []
+	for i: int in stages.size():
+		for k: int in (stages[i]["targets"] as Array).size():
+			if stages[i]["targets"][k] == peg_index:
+				places.append([i, stages[i]["keys"][k]])
+	return places
+
+
+## The stages without their key places.
+func params_without_pegs() -> Dictionary:
+	var list: Array = []
+	for stage: Dictionary in stages:
+		list.append({"locked": stage["locked"], "keys": stage["keys"]})
+	return {"stages": list}
+
+
 ## The stage that holds `disk` locked, or -1.
 func stage_of(disk: int) -> int:
 	return _lock_stage[disk] if disk < _lock_stage.size() else -1

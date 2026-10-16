@@ -184,7 +184,7 @@ func test_directory_checks_folder_duplicates_and_counts() -> void:
 	assert_false(failures.has(TEMP_DIR + "/easy/easy_001.json"), "first copy is fine")
 	var second: String = " ".join(failures.get(TEMP_DIR + "/easy/easy_002.json", []))
 	assert_true(second.contains("duplicate id 1001"), second)
-	assert_true(second.contains("same start and goal"), second)
+	assert_true(second.contains("the same puzzle as"), second)
 	var wrong_folder: String = " ".join(failures.get(TEMP_DIR + "/medium/medium_001.json", []))
 	assert_true(wrong_folder.contains("stored in the \"medium\" folder"), wrong_folder)
 	assert_eq(report["valid_counts"], {"easy": 1})

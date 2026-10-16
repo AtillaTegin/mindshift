@@ -88,7 +88,7 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 					id_owner[level.id] = path
 				var pair: String = puzzle_key(level)
 				if pair_owner.has(pair):
-					errors.append("same start and goal as %s" % pair_owner[pair])
+					errors.append("the same puzzle as %s (pegs reordered or mirrored, or colours swapped)" % pair_owner[pair])
 				else:
 					pair_owner[pair] = path
 			if errors.is_empty():
@@ -228,16 +228,21 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 		errors.append("the chained disks never move in the solution")
 	# A covered peg must hide something and be opened early by the stored
 	# optimal solution, so three stars never depend on luck (user decision
-	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves). User decision
-	# 2026-10-16 (chapter waves 5a): on a count board (each box shows its count)
-	# and in an empty-box level the rule is off, a box may hold 0-1 disks and
-	# stay closed in the first moves; a sealed box is exempt from the early use
+	# 2026-10-09: within the first COVERED_REVEAL_WITHIN moves). Current
+	# decisions 2026-10-16 (B.2, B.5): in a fully hidden level and an empty-box
+	# level a box needs one disk and no early use, and only an empty-box level
+	# has an empty box, one at most; a sealed box is exempt from the early use
 	# only (a tap never opens it, the smallest disk does).
 	var sealed: Array = level.rule_params.get(SealedBoxRule.ID, {}).get("pegs", [])
-	var relaxed: bool = level.variants.has("count_board") or level.variants.has("empty_box")
+	var relaxed: bool = level.variants.has("full_hidden") or level.variants.has("empty_box")
+	var empty_boxes: int = 0
 	for peg_index: int in level.covered_pegs:
-		if peg_index < 0 or peg_index >= level.get_peg_count() or relaxed:
+		if peg_index < 0 or peg_index >= level.get_peg_count():
 			continue  # bad indices are reported by Level.check()
+		if level.start.pegs[peg_index].is_empty():
+			empty_boxes += 1
+		if relaxed:
+			continue
 		if level.start.pegs[peg_index].size() < 2:
 			errors.append("covered peg %d hides nothing (fewer than 2 disks)" % peg_index)
 		var used: bool = sealed.has(peg_index)
@@ -246,6 +251,8 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 			used = used or move.from_peg == peg_index or move.to_peg == peg_index
 		if not used:
 			errors.append("covered peg %d is not used in the first %d moves of the solution" % [peg_index, COVERED_REVEAL_WITHIN])
+	if empty_boxes > (1 if level.variants.has("empty_box") else 0):
+		errors.append("%d empty boxes: an empty peg is never boxed, but for the one empty box" % empty_boxes)
 	for peg_index: int in sealed:
 		if not level.covered_pegs.has(peg_index):
 			errors.append("sealed peg %d is no karakuri box" % peg_index)
@@ -289,8 +296,9 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 		match variant:
 			"narrow", "arch", "holed", "chain_lock", "sealed", "glass":
 				missing = not found.has(variant)
-			"count_board":
-				missing = level.covered_pegs.size() != level.get_peg_count()
+			"full_hidden":
+				missing = range(level.get_peg_count()).any(func(peg: int) -> bool:
+					return level.covered_pegs.has(peg) == level.start.pegs[peg].is_empty())
 			"empty_box":
 				missing = not level.covered_pegs.any(func(peg: int) -> bool:
 					return peg < level.get_peg_count() and level.start.pegs[peg].is_empty())
@@ -400,9 +408,9 @@ static func pair_key(start: PuzzleState, goal: PuzzleState) -> String:
 	return "%s => %s" % [start.hash_key(), goal.hash_key()]
 
 
-## pair_key() plus, for a level with rules beyond classic Hanoi, its rules and
-## their settings: the same start and goal under another rule (a narrower
-## balance, a different capacity) is another puzzle. Karakuri boxes do not
-## count (LevelForge.puzzle_key()).
+## The level's canonical form (PuzzleIdentity): the same for its pegs
+## reordered or mirrored and for swapped colours; the same start and goal
+## under another rule (a narrower balance, a different capacity) is another
+## puzzle. Karakuri boxes do not count (LevelForge.puzzle_key()).
 static func puzzle_key(level: Level) -> String:
 	return LevelForge.puzzle_key(level.start, level.goal, level.rule_ids, level.rule_params)

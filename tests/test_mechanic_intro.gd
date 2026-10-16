@@ -64,7 +64,7 @@ func _intros_on_road() -> Dictionary:
 func test_every_mechanic_is_introduced_on_its_first_level() -> void:
 	var intros: Dictionary = _intros_on_road()
 	for lesson: String in ["peg_capacity", "covered_pegs", "foundation", "peg_capacity+covered_pegs",
-			"peg_capacity+foundation", "covered_pegs+foundation", "variant:narrow", "variant:arch", "variant:count_board",
+			"peg_capacity+foundation", "covered_pegs+foundation", "variant:narrow", "variant:arch", "variant:full_hidden",
 			"variant:glass", "variant:empty_box", "variant:sealed", "variant:key_disk", "variant:middle_lock",
 			"variant:chain_lock"]:
 		assert_true(intros.has(lesson), "world 1-2 introduces %s" % lesson)

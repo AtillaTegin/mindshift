@@ -242,7 +242,6 @@ func start_level(level: Level) -> void:
 	_goal_preview.stack_room = BoardDress.stack_room(level)
 	_goal_preview.rod_rooms = BoardDress.rod_rooms(level)
 	_goal_preview.disk_palette = _palette
-	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_goal_preview.position_state = level.goal
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
@@ -265,8 +264,6 @@ func restart() -> void:
 	_message = ""
 	_release_chest()
 	_popup.visible = false
-	# A new attempt: every covered peg is under fog again.
-	_goal_preview.covered_pegs = session.covered_pegs.duplicate()
 	_show_goal_words()
 	_refresh(true)
 	level_started.emit()
@@ -697,18 +694,14 @@ func _layout(animated: bool) -> void:
 
 ## Keeps each karakuri box over the disks the player cannot see: a closed box
 ## covers the whole peg (so not even the disk count shows), an opened one only
-## the disks still hidden at its bottom, shrinking a layer at a time. The goal
-## preview's fog of a box lifts when the box is opened; an empty box fades away.
+## the disks still hidden at its bottom, shrinking a layer at a time. An empty
+## box fades away. The goal preview is never covered.
 func _sync_fogs(disk_height: float, base_top: float, bottom: float, rod_top: float, animated: bool) -> void:
 	for peg_index: int in _fogs:
 		var fog: PegFog = _fogs[peg_index]
 		var closed: bool = session.is_covered(peg_index)
-		# A count board's lid tells how many disks the box hides; a seal stays
-		# on the lid until it breaks.
-		fog.count = session.hidden_count(peg_index) if session.level.variants.has("count_board") else -1
+		# A seal stays on the lid until it breaks.
 		fog.sealed = session.is_sealed(peg_index)
-		if not closed and _goal_preview.covered_pegs.has(peg_index):
-			_goal_preview.reveal_peg(peg_index)
 		var hidden: int = session.hidden_count(peg_index)
 		if not closed and hidden == 0:
 			if fog.is_shown():

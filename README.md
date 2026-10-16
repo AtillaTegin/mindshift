@@ -131,11 +131,15 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 | 2 | 201–300 | Kilid (70 + 25 klassik + 5 təkrar) |
 | 2 | 301–350 | Kombinasiya I: Tutum+Karakuri, Tutum+Kilid, Karakuri+Kilid (25 kombinasiya, 15 tək mod, 10 klassik) |
 
+Kombinasiya II-yə (651–700) Karakuri + Zolaqlı əlavə olunub. Dünya 3-4 alt-elementlərin spesifikasiyasını gözləyir.
+
 - **Pillələr** (istifadəçi qərarı: əsas yolda 33 gediş həddi qalır): fəslin ilk 15%-i asan-orta 7–12, 45%-ə qədər orta 12–18, 75%-ə qədər orta-çətin 18–25, son 25% çətin 25–33. Klassik 1–100 öz cədvəli ilə (1–5 asan 5–7, 6–20, 21–45, 46–75, 76–100). Adalar ekspert 34–70. Daxili çətinlik (Hint qiyməti) yenə gediş sayından gəlir: 5–11, 12–20, 21–33, 34+.
 - **Mod fəsli:** mod ilə açılır (bələdçi), hər 3 mod səviyyəsinə 1 klassik (Dünya 1-də 2,5:1). Klassiklər bərabər aralıqla, çətin səviyyədən sonra gəlir (dalğalar aşağıda). İkinci yarıda hər 10 səviyyədən biri əvvəlki fəsillərin modudur (ən yenisindən geriyə növbə ilə). 100-dən sonrakı klassiklər orta-çətin və çətin arasında növbələşir, hərdən 7 disk / 3 qüllə "böyük sınaq" gəlir.
 - **Kombinasiya fəsli:** 50% kombinasiya, 30% həmin dünyanın tək modları, 20% klassik. Birinci kombinasiya fəsli açır, digərləri ilk yarıda bir-bir qoşulur. Hər kombinasiyanın ilk səviyyəsində mini-bələdçi (iki qayda birlikdə). Xəritədə "Tutum + Kilid", paneldə iki qayda. Kombinasiya hər iki moddan ayrı-ayrılıqda uzun olmalıdır (`LevelForge.matters`). Yalnız siyahıdakı (whitelist) cütlər; kateqoriya qaydaları `ChapterPlan.is_combo_allowed`-dadır, siyahıdan kənar kombinasiya validator-da xəta verir.
 - **Adalar** (istifadəçi qərarı: hər fəslin sonunda öz adası): klassik ada 50-dən sonra (28 ekspert, 8 çətin, 4 orta), hər mod fəslinin adası öz fəsli bitəndə açılır, 10 ekspert səviyyə. Xəritədə hər açıq adanın öz markeri var; başlıq "Gizli ada · Tutum".
-- **Hər qrup** (bir axın: klassik, mod və ya kombinasiya, bir pillə) birlikdə çəkilir, gediş sayları pillənin aralığına yayılır, slotlara asandan çətinə paylanır.
+- **Hər qrup** (bir axın: klassik, mod və ya kombinasiya, bir pillə, bir dünya) birlikdə çəkilir, gediş sayları pillənin aralığına yayılır, slotlara asandan çətinə paylanır.
+- **Dünya-dünya:** builder səviyyələri dünya-dünya çəkir və nömrələyir. Sonrakı dünya qurulanda əvvəlki dünyaların səviyyələri və id-ləri dəyişmir, ona görə oyunçunun save-i yeniləmələrdə qırılmır.
+- **Oxşarlıq yoxlaması** ([Aktual Qərarlar](../MindShift_Aktual_Qerarlar_2026-10-16.md), E; [core/puzzle_identity.gd](core/puzzle_identity.gd)): hər tapmacanın kanonik forması var. Qüllələrin yerdəyişməsi, güzgü əksi və rənglərin dəyişməsi nəzərə alınır. Qaydanın quruluşu da nəzərə alınır: Tutum və Kilid qüllə parametrləri qülləylə birlikdə gəzir, Karvan yolu yalnız iki tərəfdən oxunur, Dairə yalnız fırlanır, Tərəzinin cütləri birlikdə qalır, Güzgü dəyişmir. Qutular (Karakuri) sayılmır. Eyni formalı iki səviyyə ola bilməz: builder ikincini yenidən çəkir, validator və test bunu yoxlayır.
 - **Fayllar və id-lər:** klassik `data/levels/<çətinlik>/<çətinlik>_NNN.json`, id-lər çətinliyə görə (1001+, 2001+, 3001+, 4001+). Mod və kombinasiyalar `data/levels/mechanics/<ad>_NNN.json` (`capacity`, `fog`, `foundation`, kombinasiya: `capacity_foundation` və s.), hər modun və kombinasiyanın 10001-dən başlayan 1000-lik öz id bloku var.
 - Builder sonda hər fəsil və ada üçün status çap edir.
 
@@ -150,16 +154,22 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
 | Mod | Alt-elementlər | Ada |
 |---|---|---|
 | Tutum | Dar keçid (tutum 1), Tağ (yalnız ≤ N keçir) | Deşikli qüllə (boş qülləyə yalnız ≥ N) |
-| Karakuri | Say lövhəsi, Şüşə disk, Boş qutu, Möhürlü qutu (yalnız ən kiçik disk qapağa qoyulur və möhürü qırır) | Yenidən bağlanan qutu (3 gediş toxunulmasa bağlanır) |
+| Karakuri | Tam gizli (disk olan hər qüllə qutudadır, rəqəm yoxdur), Şüşə disk, Boş qutu (səviyyədə bir dənə), Möhürlü qutu (yalnız ən kiçik disk qapağa qoyulur və möhürü qırır) | Yenidən bağlanan qutu (3 gediş toxunulmasa bağlanır) |
 | Kilid | Açar disk, Ortadakı kilid, Zəncirvari kilid (2-3 kilid ardıcıl) | — |
 
 - **Panel:** üçüncü sətirdə alt-elementin qaydası yazılır.
-- **Şans qaydası:** Say lövhəsi və Boş qutu səviyyələrində söndürülüb (istifadəçi qərarı): qutuda 0-1 disk ola bilər, ilk gedişlərdə açılmaya bilər. Möhürlü qutu yalnız "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
+- **Karakuri oyun testindən sonra** ([Aktual Qərarlar](../MindShift_Aktual_Qerarlar_2026-10-16.md), B):
+  - Say lövhəsi ləğv olunub, qutularda rəqəm yoxdur, onun yerində ikinci dalğa "Tam gizli"dir.
+  - Boş qüllə heç vaxt qutuda olmur. Yeganə istisna Boş qutu səviyyəsidir: orada bir dənə boş qutu olur.
+  - Hədəf heç vaxt gizlənmir: önizləmədə bütün disklər görünür.
+  - Karakuri səviyyələri 4-5 qüllə, 6-9 disklədir. Tanıtma səviyyələri və ada istisnadır: tanıtmalar kiçik lövhədə, ada 3 qüllədə qalır, çünki onun 34-70 gedişi 4 qüllə / 9 diskdə alınmır.
+  - 5 qüllə yalnız 8 disklə işlənir: 6-7 diskdə həll çox qısa çıxır (≤16 gediş). Möhürlü səviyyələr əvvəl 8 diski sınayır, çünki 4 qüllə / 9 diskdə ipucu 2,3 s-ə çatır.
+- **Şans qaydası:** əsas qutu və Şüşə disk dalğalarında qalır (qutuda ən azı 2 disk olur və həllin ilk 3 gedişində açılır). Tam gizli: hər qutuda ən azı 1 disk, "ilk 3 gediş" şərti yoxdur. Boş qutu: qutu boş ola bilər (ən çox 1), ilk gedişlərdə açılmaya bilər. Möhürlü qutu yalnız "ilk gedişlərdə açılmalıdır" şərtindən azaddır.
 - **Validator:** səviyyənin adını çəkdiyi alt-elementlərin həqiqətən olduğunu yoxlayır. Qaydanı dəyişən hər alt-element həlli öz-özlüyündə uzatmalıdır.
 - **Alt hədd** (istifadəçi qərarı 2026-10-16): Dünya 1: 7, Dünya 2: 14, Dünya 3: 16, Dünya 4+: 18 gediş (`ChapterPlan.WORLD_FLOORS`).
   - İstisna yalnız bələdçili tanıtma səviyyələridir: iki tutorial, hər dərsin və hər alt-elementin əsas yoldakı ilk səviyyəsi. Validator bunu yoxlayır.
   - Dalğanın dişli xətti modun və dünyanın həddindən böyük olanından başlayır. Həddən aşağı olan bant həddə qaldırılır, ən azı 2 gediş genişlikdə (`ChapterPlan.band_range`: Dünya 2-də "asan-orta" 14-16, "orta" 14-18). Təkrar səviyyələr də həddən aşağı düşmür.
-- **İpucu sürəti** (yoldan kənar, kompüterdə, alt həddlə yenidən qurulandan sonra): əsas yolda ≤0,7 s (198-ci səviyyə, 4 qüllə / 8 disk), adalarda ≤0,45 s.
+- **İpucu sürəti** (yoldan kənar, kompüterdə, 2026-10-17 regenerasiyasından sonra): Karakuri-nin Böyük Sınağı (200, 4 qüllə / 9 disk, möhürlü) 1,8 s, qalan bütün səviyyələr ≤0,6 s.
 - Dünya 3-7 hələ qurulmayıb: Karvan, Zolaqlı, Dairə, Doqquz Halqa, Tərəzi, Mübadilə, Cığır, Zəncir, Güzgü, Maqnit onlar qurulana qədər yolda yoxdur (qaydaları və testləri qalır). Bağlı Qüllələr hələ yoxdur.
 
 ### Mexanika səviyyələri
@@ -174,7 +184,7 @@ godot --headless --path . --script res://tools/level_validator.gd -- --require=1
   - Qüllə bağlı ağac qutu kimi başlayır: bütün disklər, hətta neçə disk olduğu da görünmür.
   - İlk toxunuş qutunu açır (gediş sayılmır) və yalnız üst disk görünür. Üst disk gedəndə altındakı açılır, hər dəfə bir qat.
   - Qutunun üstünə qoyulan disklər görünür qalır. Undo heç nəyi yenidən gizlətmir, "Yenidən" bütün qutuları bağlayır.
-  - Hədəf önizləməsindəki duman qutu açılanda qalxır.
+  - Hədəf önizləməsi həmişə tam görünür (Aktual Qərarlar B.3: qutu cari vəziyyəti gizlədir, məqsədi yox).
 - **Karvan Yolu (variant C, xətti qonşuluq):** `"rules": ["classic_hanoi", "adjacent_pegs"]` ([Karvan Yolu əlavəsi](../MindShift_Karvan_Yolu_ve_BossLevel_Addendum.md), bölmə 1). Disk yalnız qonşu qülləyə gedə bilər, üstündən tullanmaq olmaz. Bu, Bağlı Qüllələrin sabit xətti halıdır; Bağlı Qüllələr hələ qurulmadığı üçün ayrıca sadə qayda kimi yazılıb (`AdjacentPegsRule`), Solver-in sürətli yolu ilə işləyir. 3 qüllədə 3–4, 4–5 qüllədə 3–6 disk (3 qüllə / 5 diskdə həll artıq ~100 gedişdir).
 - **Böyük Mübadilə v2** ([əlavə](../MindShift_Boyuk_Mubadile_v2_ve_Birlesme_AutoGroup_Addendum.md), bölmə 1, və istifadəçinin iki alt-tip qərarı): `"rules": ["color_swap"]`, `"rule_params": {"color_swap": {"colour": false | true}}` (`ColorSwapRule`). Hər ölçüdən bir ağ, bir qara disk var. Disk id-si ikisini də daşıyır: 2s−1 ağ, 2s qara, ölçü s. Ölçüyə görə sıralı yığın id-yə görə də sıralıdır, ona görə Solver sürətli yolla işləyir.
   - Uclarda k-şar disk, aralarında 2–4 boş qüllə. Hədəf həmişə eynidir: bütün qaralar sol ucda, bütün ağlar sağ ucda.

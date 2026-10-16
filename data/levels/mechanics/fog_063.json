@@ -12,5 +12,5 @@
   "time_limit_seconds": null,
   "rule_params": {"sealed_box":{"pegs":[3]}},
   "covered_pegs": [0,1,2,3],
-  "variants": ["count_board","sealed"]
+  "variants": ["full_hidden","sealed"]
 }

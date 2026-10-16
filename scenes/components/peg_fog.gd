@@ -18,13 +18,8 @@ var skin: String = "":
 		skin = value
 		queue_redraw()
 
-## Karakuri waves (chapter waves v1): the number on the lid, how many disks
-## the box holds ("Say lövhəsi"; -1: no number, a question mark), and a seal
-## on the lid ("Möhürlü qutu").
-var count: int = -1:
-	set(value):
-		count = value
-		queue_redraw()
+## A seal on the lid ("Möhürlü qutu", chapter waves v1). A box never shows how
+## many disks it holds (current decisions 2026-10-16, B.1: no numbers).
 var sealed: bool = false:
 	set(value):
 		if sealed and not value and visible:
@@ -108,17 +103,12 @@ func _draw() -> void:
 		draw_circle(center, minf(size.x, size.y) * 0.18, puff, true, -1.0, true)
 	var font: Font = get_theme_default_font()
 	var font_size: int = int(clampf(minf(size.x, size.y) * 0.45, 18.0, 48.0))
-	var mark: String = _mark()
+	var mark: String = "?"
 	var text_size: Vector2 = font.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	draw_string(font, Vector2((size.x - text_size.x) * 0.5, (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5),
 			mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, ThemeManager.color("text_secondary"))
 	if sealed:
 		_draw_seal(Vector2(size.x * 0.5, size.y - 26.0))
-
-
-## "?" or the count on the lid.
-func _mark() -> String:
-	return str(count) if count >= 0 else "?"
 
 
 ## A wax seal: a round disc with a ring pressed in.
@@ -149,7 +139,7 @@ func _draw_box() -> void:
 	draw_circle(clasp, 18.0, light, true, -1.0, true)
 	var font: Font = get_theme_default_font()
 	var font_size: int = 26
-	var mark: String = _mark()
+	var mark: String = "?"
 	var text_size: Vector2 = font.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	draw_string(font, clasp + Vector2(-text_size.x * 0.5, font.get_ascent(font_size) * 0.38), mark,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, wood)

@@ -38,6 +38,14 @@ func get_params() -> Dictionary:
 	return {"pegs": pegs.duplicate()}
 
 
+func peg_mark(peg_index: int) -> Variant:
+	return pegs.has(peg_index)
+
+
+func params_without_pegs() -> Dictionary:
+	return {}
+
+
 ## Whether `peg` is still sealed under `memory`.
 func is_sealed(memory: int, peg: int) -> bool:
 	var index: int = pegs.find(peg)

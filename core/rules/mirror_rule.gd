@@ -22,6 +22,11 @@ func get_id() -> String:
 	return ID
 
 
+## The two boards echo peg by peg: only their own order.
+func peg_symmetry() -> String:
+	return PEGS_FIXED
+
+
 ## Only the top board is played.
 func is_move_allowed_with(_disk: int, from_peg: int, to_peg: int, _target_top: int, facts: MoveFacts) -> bool:
 	var half: int = facts.peg_count() / 2

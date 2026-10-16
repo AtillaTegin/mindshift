@@ -159,6 +159,39 @@ func echoes() -> bool:
 	return false
 
 
+## Peg orders that keep a puzzle under this rule the same puzzle (the
+## similarity check, PuzzleIdentity): any order (pegs are only places), a row
+## read either way, the turns of a dial, pairs kept together, or only the
+## board's own order.
+const PEGS_ANY: String = "any"
+const PEGS_LINE: String = "line"
+const PEGS_CIRCLE: String = "circle"
+const PEGS_PAIRS: String = "pairs"
+const PEGS_FIXED: String = "fixed"
+
+
+## Which peg orders keep this rule's puzzles the same (PEGS_*).
+func peg_symmetry() -> String:
+	return PEGS_ANY
+
+
+## What this rule's settings say about peg `peg_index` (a capacity, a seal, a
+## key place), compared when pegs are reordered; null when nothing.
+func peg_mark(_peg_index: int) -> Variant:
+	return null
+
+
+## This rule's settings without anything that names a peg (peg_mark() has it).
+func params_without_pegs() -> Dictionary:
+	return get_params()
+
+
+## Relabelings of `disks` that keep a puzzle the same (the exchange's two
+## colours swapped), each a map disk -> disk; none by default.
+func disk_swaps(_disks: Array) -> Array[Dictionary]:
+	return [] as Array[Dictionary]
+
+
 ## True for a rule under which a move may leave the goal out of reach for good
 ## (a move that cannot be taken back, e.g. a disk lifted off the other colour).
 ## Only then the board checks each new position (DeadEndWatcher) and offers a

@@ -26,6 +26,9 @@ var _hint_key: String = ""
 var _thread: Thread
 ## Position the running background search belongs to.
 var _pending_key: String = ""
+## When the running background search started (debug builds print how long it
+## took, for the phone performance test: adb logcat).
+var _started_ms: int = 0
 
 
 func setup(board: GameBoard, coaching: CoachingLayer, economy: EconomySystem) -> void:
@@ -78,6 +81,7 @@ func request() -> void:
 		_apply(GameSession.solve_hint(level, from_state, rules), key)
 		return
 	_pending_key = key
+	_started_ms = Time.get_ticks_msec()
 	_thread = Thread.new()
 	_thread.start(func() -> Move: return GameSession.solve_hint(level, from_state, rules))
 	message_changed.emit(tr("HINT_SEARCHING"))
@@ -97,6 +101,8 @@ func _process(_delta: float) -> void:
 		return
 	var move: Move = _thread.wait_to_finish()
 	_thread = null
+	if OS.is_debug_build() and _board.session != null:
+		print("MindShift hint search: %d ms (level %d)" % [Time.get_ticks_msec() - _started_ms, _board.session.level.id])
 	var key: String = _pending_key
 	_pending_key = ""
 	var session: GameSession = _board.session

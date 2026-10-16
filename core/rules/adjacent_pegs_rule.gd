@@ -19,6 +19,11 @@ func get_id() -> String:
 	return ID
 
 
+## The road reads the same from either end.
+func peg_symmetry() -> String:
+	return PEGS_LINE
+
+
 func is_disk_move_allowed(_disk: int, from_peg: int, to_peg: int, _target_top: int) -> bool:
 	return absi(from_peg - to_peg) == 1
 

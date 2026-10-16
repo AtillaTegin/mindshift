@@ -11,5 +11,5 @@
   "star_thresholds": {"three":44,"two":55},
   "time_limit_seconds": null,
   "covered_pegs": [0,1,2],
-  "variants": ["reclosing","count_board"]
+  "variants": ["reclosing","full_hidden"]
 }

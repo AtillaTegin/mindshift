@@ -11,6 +11,6 @@
   "star_thresholds": {"three":26,"two":33},
   "time_limit_seconds": null,
   "rule_params": {"sealed_box":{"pegs":[2]}},
-  "covered_pegs": [0,1,2,3],
-  "variants": ["sealed","count_board"]
+  "covered_pegs": [1,2],
+  "variants": ["sealed","full_hidden"]
 }

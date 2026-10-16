@@ -71,10 +71,13 @@ func test_karakuri_boxes_hide_something_used_early() -> void:
 	var start: PuzzleState = LevelForge.tower_state(3, 4, 0)
 	var goal: PuzzleState = LevelForge.tower_state(3, 4, 2)
 	var classic: Array[String] = ["classic_hanoi"]
-	assert_eq(LevelForge.puzzle_key(start, goal, classic, {}), LevelValidator.pair_key(start, goal))
+	# The canonical form (PuzzleIdentity): the same tower moved between two
+	# other pegs is the same puzzle.
+	assert_eq(LevelForge.puzzle_key(start, goal, classic, {}),
+			LevelForge.puzzle_key(LevelForge.tower_state(3, 4, 1), LevelForge.tower_state(3, 4, 0), classic, {}))
 	var capacity: Array[String] = ["classic_hanoi", "peg_capacity"]
 	assert_ne(LevelForge.puzzle_key(start, goal, capacity, {"peg_capacity": {"capacities": [4, 2, 4]}}),
-			LevelValidator.pair_key(start, goal), "a rule makes another puzzle")
+			LevelForge.puzzle_key(start, goal, classic, {}), "a rule makes another puzzle")
 
 
 func test_same_seed_gives_same_levels() -> void:
