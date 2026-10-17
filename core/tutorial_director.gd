@@ -48,6 +48,15 @@ const INTRO_TEXTS: Dictionary = {
 	"trail": "INTRO_TRAIL",
 	"king": "INTRO_KING",
 	"river": "INTRO_RIVER",
+	"carpet": "INTRO_CARPET",
+	"ko": "INTRO_KO",
+	"heavy": "INTRO_HEAVY",
+	"elements": "INTRO_ELEMENTS",
+	"sum": "INTRO_SUM",
+	"turns": "INTRO_TURNS",
+	"kintsugi": "INTRO_KINTSUGI",
+	"lamp": "INTRO_LAMP",
+	"solitaire": "INTRO_SOLITAIRE",
 }
 ## A combination's words: its name ("Tutum + Kilid") and both rules.
 const COMBO_TEXT: String = "INTRO_COMBO"
@@ -163,9 +172,10 @@ func _on_position_changed() -> void:
 func _on_selection_changed(peg_index: int) -> void:
 	if mode == Mode.GUIDED and step_move != null and peg_index == step_move.from_peg:
 		MoveCoach.present(_coaching, _board, step_move, true)
-		# A compound move: once the first target is chosen, the partner's is next.
-		var second: bool = step_move.is_compound() and _board.session.pending_target != -1
-		_board.restricted_peg = step_move.to_peg_2 if second else step_move.to_peg
+		# A compound move: once a target is chosen, the next disk's is next.
+		var parts: Array = step_move.parts()
+		var step: int = mini(_board.session.pending_targets.size(), parts.size() - 1)
+		_board.restricted_peg = parts[step][1]
 
 
 func _on_illegal_move(_move: Move, message: String) -> void:

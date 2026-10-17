@@ -2,8 +2,9 @@ class_name BoardMarks
 extends Control
 ## A mechanic's marks drawn over the disks (BoardDress.overlay_marks), so they
 ## follow the disks while they glide:
-## - "chain": [disk, disk, can move now] a chain of small links between the two
-##   linked disks, bright when both are on top and may go, faded otherwise;
+## - "chains": [[disks, can move now]] a chain of small links between each two
+##   linked disks of a group, bright when all are on top and may go, faded
+##   otherwise;
 ## - "locked": [disks] a small padlock on each disk the foundation still holds;
 ## - "trail_disk": a dotted rim on the disk that leaves the trail;
 ## - chapter waves: "keys" a key on each key disk and a key place under its
@@ -72,13 +73,18 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if marks.has("chain"):
-		_draw_chain(marks["chain"])
+	for chain: Array in marks.get("chains", []):
+		var group: Array = chain[0]
+		for i: int in range(1, group.size()):
+			_draw_chain([group[i - 1], group[i], chain[1]])
 	for disk: int in marks.get("locked", []):
 		if disk_views.has(disk):
 			_draw_lock(_rect_of(disk))
 	if marks.has("trail_disk") and disk_views.has(marks["trail_disk"]):
 		_draw_trail_rim(_rect_of(marks["trail_disk"]))
+	for disk: int in marks.get("trail_disks", []):
+		if disk_views.has(disk) and disk != marks.get("trail_disk", 0):
+			_draw_trail_rim(_rect_of(disk))
 	for link: Array in marks.get("links", []):
 		if disk_views.has(link[0]) and disk_views.has(link[1]):
 			_draw_thread(_rect_of(link[0]).get_center(), _rect_of(link[1]).get_center())
@@ -125,6 +131,163 @@ func _draw() -> void:
 		_draw_odd_even(peg_rects[sides[1]], "EVEN_PEG")
 	if marks.has("inn") and marks["inn"] < peg_rects.size():
 		_draw_inn(peg_rects[marks["inn"]])
+	# World 6.
+	for peg: int in marks.get("ko", []):
+		if peg < peg_rects.size():
+			_draw_go_stone(peg_rects[peg])
+	if marks.has("ko_free") and marks["ko_free"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["ko_free"]]
+		draw_arc(Vector2(rod.get_center().x, rod.end.y + 12.0), 10.0, 0.0, TAU, 20, ThemeManager.mark_color("ko_free"), 3.0, true)
+	if marks.has("navel_peg") and marks["navel_peg"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["navel_peg"]]
+		draw_circle(Vector2(rod.get_center().x, rod.position.y - 36.0), 9.0, ThemeManager.mark_color("navel"), true, -1.0, true)
+	# World 7.
+	var reach: Dictionary = marks.get("reach", {})
+	for disk: int in reach:
+		if disk_views.has(disk):
+			_draw_reach(_rect_of(disk), reach[disk], disk == marks.get("tired", 0))
+	var glyphs: Dictionary = marks.get("elements", {})
+	for disk: int in glyphs:
+		if disk_views.has(disk):
+			_draw_element(_rect_of(disk), glyphs[disk])
+	var element_bases: Dictionary = marks.get("element_bases", {})
+	for peg: int in element_bases:
+		if peg < peg_rects.size():
+			var colors: Dictionary = ThemeManager.ELEMENT_DISKS[int(element_bases[peg])]
+			var plate: Rect2 = Rect2(peg_rects[peg].position.x + peg_rects[peg].size.x * 0.12, peg_rects[peg].end.y - 12.0,
+					peg_rects[peg].size.x * 0.76, 9.0)
+			draw_rect(plate, colors["fill"])
+			draw_rect(plate, colors["outline"], false, 2.0)
+	if marks.has("turning") and marks["turning"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["turning"]]
+		var center: Vector2 = Vector2(rod.get_center().x, rod.position.y - 16.0)
+		for i: int in 5:
+			var angle: float = TAU * i / 5.0 - PI * 0.5
+			draw_circle(center + Vector2(cos(angle), sin(angle)) * 10.0, 4.0, ThemeManager.ELEMENT_DISKS[i]["fill"], true, -1.0, true)
+	if marks.has("clean_peg") and marks["clean_peg"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["clean_peg"]]
+		draw_arc(Vector2(rod.get_center().x, rod.end.y + 12.0), 10.0, 0.0, TAU, 20, ThemeManager.mark_color("clean_peg"), 3.0, true)
+	# World 8-9.
+	if marks.has("turn"):
+		_draw_turn(int(marks["turn"]))
+	var cracks: Dictionary = marks.get("cracks", {})
+	for disk: int in cracks:
+		if disk_views.has(disk):
+			_draw_crack(_rect_of(disk), cracks[disk], marks.get("deep", false))
+	var workshops: Dictionary = marks.get("workshops", {})
+	for peg: int in workshops:
+		if peg < peg_rects.size():
+			var rod: Rect2 = peg_rects[peg]
+			var color: Color = ThemeManager.mark_color("workshop_closed") if workshops[peg] else ThemeManager.mark_color("gold")
+			var base: Vector2 = Vector2(rod.get_center().x, rod.end.y + 12.0)
+			draw_colored_polygon(PackedVector2Array([base + Vector2(-16.0, 6.0), base + Vector2(16.0, 6.0), base + Vector2(10.0, -4.0),
+					base + Vector2(18.0, -8.0), base + Vector2(-18.0, -8.0), base + Vector2(-10.0, -4.0)]), color)
+	for peg: int in marks.get("dark", []):
+		if peg < peg_rects.size():
+			var rod: Rect2 = peg_rects[peg]
+			draw_rect(Rect2(rod.position.x - rod.size.x * 0.05, rod.position.y - 8.0, rod.size.x * 1.1, rod.size.y + 24.0),
+					ThemeManager.mark_color("dark"))
+	for peg: int in marks.get("lamps", []):
+		if peg < peg_rects.size():
+			_draw_lamp(peg_rects[peg])
+	if marks.has("lantern") and marks["lantern"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["lantern"]]
+		draw_rect(Rect2(rod.get_center().x - 7.0, rod.position.y - 30.0, 14.0, 18.0), ThemeManager.mark_color("lamp"), false, 3.0)
+	if marks.has("cell") and marks["cell"] < peg_rects.size():
+		var rod: Rect2 = peg_rects[marks["cell"]]
+		draw_rect(Rect2(rod.position.x + rod.size.x * 0.1, rod.end.y - 40.0, rod.size.x * 0.8, 46.0), ThemeManager.mark_color("cell"),
+				false, 3.0)
+	if marks.has("kings"):
+		for peg: int in peg_rects.size():
+			var rod: Rect2 = peg_rects[peg]
+			_draw_number("≥%d" % int(marks["kings"]), Vector2(rod.get_center().x, rod.end.y + 18.0), ThemeManager.mark_color("cell"))
+	var tops: Dictionary = marks.get("top_colours", {})
+	for peg: int in tops:
+		if peg < peg_rects.size():
+			var top: Vector2 = Vector2(peg_rects[peg].get_center().x, peg_rects[peg].position.y - 14.0)
+			draw_colored_polygon(PackedVector2Array([top + Vector2(0.0, -10.0), top + Vector2(10.0, 0.0), top + Vector2(0.0, 10.0),
+					top + Vector2(-10.0, 0.0)]), ThemeManager.CARPET_DISKS[int(tops[peg])]["fill"])
+
+
+## Ağır Disk: dots on the disk's right end, one per peg it may go, or ∞; a
+## tired disk's dots fade.
+func _draw_reach(rect: Rect2, far: int, tired: bool) -> void:
+	var color: Color = ThemeManager.mark_color("reach_dot")
+	if tired:
+		color.a *= 0.35
+	var y: float = rect.get_center().y
+	var x: float = rect.end.x - 10.0
+	if far == 0:
+		_draw_number("∞", Vector2(x - 4.0, y), color)
+		return
+	for i: int in far:
+		draw_circle(Vector2(x - i * 9.0, y), 3.2, color, true, -1.0, true)
+
+
+## Beş Ünsür: the element's glyph at the disk's right end (a leaf, a flame,
+## a square of earth, a ring of metal, a wave).
+func _draw_element(rect: Rect2, element: int) -> void:
+	var color: Color = ThemeManager.mark_color("element_glyph")
+	var unit: float = clampf(rect.size.y * 0.3, 5.0, 11.0)
+	var center: Vector2 = Vector2(rect.end.x - unit * 1.8, rect.get_center().y)
+	match element:
+		ElementsRule.WOOD:
+			draw_colored_polygon(PackedVector2Array([center + Vector2(0.0, -unit), center + Vector2(unit * 0.6, 0.0),
+					center + Vector2(0.0, unit), center + Vector2(-unit * 0.6, 0.0)]), color)
+		ElementsRule.FIRE:
+			draw_colored_polygon(PackedVector2Array([center + Vector2(0.0, -unit), center + Vector2(unit * 0.7, unit * 0.7),
+					center + Vector2(-unit * 0.7, unit * 0.7)]), color)
+		ElementsRule.EARTH:
+			draw_rect(Rect2(center - Vector2(unit * 0.6, unit * 0.6), Vector2(unit * 1.2, unit * 1.2)), color)
+		ElementsRule.METAL:
+			draw_arc(center, unit * 0.7, 0.0, TAU, 16, color, unit * 0.3, true)
+		ElementsRule.WATER:
+			var points: PackedVector2Array = PackedVector2Array()
+			for i: int in 9:
+				points.append(center + Vector2(-unit + i * unit * 0.25, sin(i * 0.9) * unit * 0.4))
+			draw_polyline(points, color, unit * 0.3, true)
+
+
+## Növbə: a chip at the board's top in the colour whose turn it is.
+func _draw_turn(colour: int) -> void:
+	var hue: String = ["white", "black", "red"][clampi(colour, 0, 2)]
+	var colors: Dictionary = ThemeManager.EXCHANGE_DISKS[hue]
+	var center: Vector2 = Vector2(size.x * 0.5, 18.0)
+	draw_circle(center, 14.0, colors["fill"], true, -1.0, true)
+	draw_arc(center, 14.0, 0.0, TAU, 24, colors.get("outline", colors["text"]), 2.5, true)
+
+
+## Kintsugi: a dark crack across a broken disk (a deep one twice), a gold
+## line once it is mended.
+func _draw_crack(rect: Rect2, mended: bool, deep: bool) -> void:
+	var color: Color = ThemeManager.mark_color("gold") if mended else ThemeManager.mark_color("crack")
+	var points: PackedVector2Array = PackedVector2Array()
+	var steps: int = 6
+	for i: int in steps + 1:
+		var x: float = rect.position.x + rect.size.x * (0.3 + 0.4 * i / steps)
+		points.append(Vector2(x, rect.position.y + (2.0 if i % 2 == 0 else rect.size.y - 2.0)))
+	draw_polyline(points, color, 2.5 if mended else 2.0, true)
+	if deep and not mended:
+		for i: int in points.size():
+			points[i] += Vector2(6.0, 0.0)
+		draw_polyline(points, color, 2.0, true)
+
+
+## Çıraq: a small oil lamp over the peg and a warm glow round it.
+func _draw_lamp(rod: Rect2) -> void:
+	var top: Vector2 = Vector2(rod.get_center().x, rod.position.y - 16.0)
+	draw_circle(top + Vector2(0.0, 40.0), rod.size.x * 0.55, ThemeManager.mark_color("lamp_glow"), true, -1.0, true)
+	draw_colored_polygon(PackedVector2Array([top + Vector2(-12.0, 4.0), top + Vector2(12.0, 4.0), top + Vector2(6.0, 10.0),
+			top + Vector2(-6.0, 10.0)]), ThemeManager.mark_color("lamp"))
+	draw_colored_polygon(PackedVector2Array([top + Vector2(-3.0, 3.0), top + Vector2(0.0, -10.0), top + Vector2(3.0, 3.0)]),
+			ThemeManager.mark_color("fire_core"))
+
+
+## Ko: a Go stone over a breathing peg (it rests for a move).
+func _draw_go_stone(rod: Rect2) -> void:
+	var center: Vector2 = Vector2(rod.get_center().x, rod.position.y - 14.0)
+	draw_circle(center, 12.0, ThemeManager.mark_color("go_black"), true, -1.0, true)
+	draw_circle(center + Vector2(-4.0, -4.0), 3.5, ThemeManager.mark_color("go_shine"), true, -1.0, true)
 
 
 ## The king's gate ("Darvaza", ICRA 3.1): an arch over the peg with a flag
@@ -273,8 +436,9 @@ func _draw_blocked_echo(rod: Rect2, strength: float) -> void:
 ## At a disk's left end: a crown (the new leader), a broken ring (it ignores
 ## the turns) or an hourglass (it waits for the leader).
 func _draw_disk_icon(rect: Rect2, kind: String) -> void:
-	var unit: float = clampf(rect.size.y * 0.32, 6.0, 13.0)
-	var center: Vector2 = Vector2(rect.position.x + unit * 1.8, rect.get_center().y)
+	# Smaller on a narrow disk, so it stays clear of the number in its middle.
+	var unit: float = clampf(rect.size.y * 0.32, 6.0, 13.0) * clampf(rect.size.x / 120.0, 0.5, 1.0)
+	var center: Vector2 = Vector2(rect.position.x + maxf(unit * 1.8, 9.0), rect.get_center().y)
 	match kind:
 		"crown":
 			var color: Color = ThemeManager.mark_color("crown")
@@ -289,6 +453,9 @@ func _draw_disk_icon(rect: Rect2, kind: String) -> void:
 					center, ]), color)
 			draw_colored_polygon(PackedVector2Array([center, center + Vector2(unit * 0.7, unit * 0.8),
 					center + Vector2(-unit * 0.7, unit * 0.8)]), color)
+		"navel":
+			# Xalça: the navel's disk wears a small gold medallion.
+			draw_circle(center, unit * 0.6, ThemeManager.mark_color("navel"), true, -1.0, true)
 		"elephant":
 			# Fil Çayı: a round body, a head with a trunk curling down, two legs.
 			var color: Color = ThemeManager.mark_color("elephant")

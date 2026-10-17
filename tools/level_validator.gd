@@ -292,6 +292,9 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 		found.append("glass")
 	found.append_array(world_three_four_variants(rules, level.get_peg_count(), errors))
 	found.append_array(world_five_variants(rules, level, errors))
+	found.append_array(world_six_variants(rules, level))
+	found.append_array(world_seven_variants(rules, level, errors))
+	found.append_array(world_eight_nine_variants(rules, level))
 	for variant: String in found:
 		if not level.variants.has(variant):
 			errors.append("the level has a %s but does not name it" % variant)
@@ -302,8 +305,18 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 					"neutral", "colored_base", "paint", "inverse", "back_peg", "shortcut", "center", "eight", "broken_ring", \
 					"reset_peg", "new_leader", "waiting_ring", "stone", "long_arm", "three_scales", "own_limits", "moving_stone", \
 					"vizier", "narrow_gate", "odd_even", "goal_odd_even", "stone_bridge", "ferry", "two_crossings", "reverse", \
-					"bonfire", "mixed", "caravanserai", "three_caravans":
+					"bonfire", "mixed", "caravanserai", "three_caravans", "navel", "coloured", "buta", "twin", "target_ko", \
+					"free_peg", "long_ko", "two_stones", "two_chains", "breaking", "long_chain", "rubber", "cart", \
+					"reverse_weight", "fatigue", "uphill", "neutral_earth", "element_base", "creation", "element_peg", \
+					"changing", "clean_peg", "fading", "two_trails", "big_trail", "fair", "sum_and_height", "double_peg", \
+					"parity", "pass", "grey", "double_turn", "three_colours", "deep_crack", "two_workshops", "single_repair", \
+					"ordered_repair", "long_light", "fixed_lantern", "two_lamps", "lamp_disk", "free_cell", "red_black", \
+					"king_spot":
 				missing = not found.has(variant)
+			"goal_sum":
+				missing = not level.rule_ids.has(SumRule.ID)
+			"goal_silhouette":
+				missing = not level.rule_ids.has(CarpetRule.ID)
 			"goal_king":
 				missing = not level.rule_ids.has(KingRule.ID)
 			"siege":
@@ -403,6 +416,101 @@ static func world_five_variants(rules: RuleSet, level: Level, errors: Array[Stri
 					["three_caravans", swap.colours == 3]]:
 				if pair[1]:
 					found.append(pair[0])
+	return found
+
+
+## The World 6 sub-elements `rules` hold (ICRA World 5-9, sections 3.4-3.6):
+## a carpet's navel, colours, uneven ("buta") or twin silhouette (a goal
+## variant's silhouette is "goal_silhouette" and not named by its shape); Ko's
+## kinds of breathing and free peg; a second chain, a chain of three, one that
+## breaks, one of rubber.
+static func world_six_variants(rules: RuleSet, level: Level) -> Array[String]:
+	var found: Array[String] = []
+	for rule: RuleBase in rules.active_rules:
+		if rule is CarpetRule and not level.variants.has("goal_silhouette"):
+			var carpet: CarpetRule = rule
+			var mirrored: Array[int] = carpet.heights.duplicate()
+			mirrored.reverse()
+			var twin: bool = carpet.heights.size() == 6 and carpet.heights.slice(0, 3) == carpet.heights.slice(3)
+			for pair: Array in [["navel", not carpet.navel.is_empty()], ["coloured", not carpet.colours.is_empty()],
+					["twin", twin], ["buta", not twin and carpet.heights != mirrored]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is KoRule:
+			var ko: KoRule = rule
+			for pair: Array in [["target_ko", ko.target], ["two_stones", ko.both], ["free_peg", ko.free >= 0],
+					["long_ko", ko.turns > 1]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is ChainRule:
+			var chain: ChainRule = rule
+			for pair: Array in [["two_chains", chain.groups.size() > 1],
+					["long_chain", chain.groups.any(func(group: Array) -> bool: return group.size() > 2)],
+					["breaking", chain.breaking], ["rubber", chain.rubber]]:
+				if pair[1]:
+					found.append(pair[0])
+	return found
+
+
+## The World 7 sub-elements `rules` hold (ICRA World 5-9, sections 3.7-3.9);
+## a setting only made for measuring (a cart's peg as a plain stop) goes to
+## `errors`.
+static func world_seven_variants(rules: RuleSet, level: Level, errors: Array[String]) -> Array[String]:
+	var found: Array[String] = []
+	for rule: RuleBase in rules.active_rules:
+		if rule is HeavyRule:
+			var heavy: HeavyRule = rule
+			if heavy.stop >= 0:
+				errors.append("a cart without its free way out (only for measuring)")
+			var reversed: bool = heavy.reach.size() > 1 and heavy.reach[-1] == 0 and heavy.reach[0] > 0
+			for pair: Array in [["cart", heavy.cart >= 0], ["reverse_weight", reversed], ["fatigue", heavy.fatigue],
+					["uphill", heavy.uphill]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is ElementsRule:
+			var wuxing: ElementsRule = rule
+			for pair: Array in [["neutral_earth", wuxing.earth], ["element_base", wuxing.bases.any(func(b: int) -> bool: return b >= 0)],
+					["creation", wuxing.creation], ["element_peg", wuxing.turning >= 0], ["changing", wuxing.changing]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is TrailRule:
+			var trail: TrailRule = rule
+			for pair: Array in [["clean_peg", trail.clean >= 0], ["fading", trail.recent > 2],
+					["two_trails", trail.disks.size() > 1], ["big_trail", trail.disk == level.get_disk_count()]]:
+				if pair[1]:
+					found.append(pair[0])
+	return found
+
+
+## The World 8-9 sub-elements `rules` hold (ICRA World 5-9, sections
+## 3.10-3.14); a goal variant's sums ("goal_sum") are not named by their kind.
+static func world_eight_nine_variants(rules: RuleSet, level: Level) -> Array[String]:
+	var found: Array[String] = []
+	for rule: RuleBase in rules.active_rules:
+		var pairs: Array = []
+		if rule is SumRule and not level.variants.has("goal_sum"):
+			var sum: SumRule = rule
+			pairs = [["fair", sum.fair], ["sum_and_height", not sum.counts.is_empty()], ["double_peg", sum.double >= 0],
+					["parity", not sum.parity.is_empty()]]
+		elif rule is TurnsRule:
+			var turns: TurnsRule = rule
+			pairs = [["pass", turns.pass], ["grey", turns.colours.has(TurnsRule.GREY)],
+					["double_turn", turns.order.size() == 4], ["three_colours", turns.order.has(TurnsRule.RED)]]
+		elif rule is KintsugiRule:
+			var kintsugi: KintsugiRule = rule
+			pairs = [["deep_crack", kintsugi.deep], ["two_workshops", kintsugi.workshops.size() > 1],
+					["single_repair", kintsugi.single], ["ordered_repair", kintsugi.ordered]]
+		elif rule is LampRule:
+			var lamp: LampRule = rule
+			pairs = [["long_light", lamp.radius > 1], ["fixed_lantern", lamp.fixed >= 0], ["two_lamps", lamp.two],
+					["lamp_disk", lamp.carrier > 0]]
+		elif rule is SolitaireRule:
+			var solitaire: SolitaireRule = rule
+			pairs = [["free_cell", solitaire.cell >= 0], ["red_black", not solitaire.colours.is_empty()],
+					["king_spot", solitaire.kings > 0]]
+		for pair: Array in pairs:
+			if pair[1]:
+				found.append(pair[0])
 	return found
 
 

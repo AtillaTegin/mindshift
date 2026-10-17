@@ -156,7 +156,65 @@ const SKINS: Dictionary = {
 		LIGHT: {"board": Color("e4efdc"), "pattern": Color("c8dcb8"), "peg": Color("4f6a3a"), "mark": Color("3f7fb0")},
 		DARK: {"board": Color("1b2618"), "pattern": Color("2f4128"), "peg": Color("8fae74"), "mark": Color("5fa3d6")},
 	},
+	# ICRA World 6: the carpet (madder red and indigo, a rug under the pegs)
+	# and the Go board for Ko (kaya wood with its grid).
+	"carpet": {
+		LIGHT: {"board": Color("f7ebe2"), "pattern": Color("e6cdbd"), "peg": Color("7a2e2e"), "mark": Color("2e4a7a")},
+		DARK: {"board": Color("2b1d1c"), "pattern": Color("452f2c"), "peg": Color("c47a6a"), "mark": Color("7f9fd8")},
+	},
+	"goban": {
+		LIGHT: {"board": Color("f1dfb6"), "pattern": Color("c9a96e"), "peg": Color("6b4a24"), "mark": Color("3a2a18")},
+		DARK: {"board": Color("2e2617"), "pattern": Color("4f4027"), "peg": Color("c3a06a"), "mark": Color("e8d5ae")},
+	},
+	# ICRA World 7, the heavy disks: a quarry's sand and a measuring track.
+	"quarry": {
+		LIGHT: {"board": Color("efe6d6"), "pattern": Color("d9c9ab"), "peg": Color("5d5446"), "mark": Color("8a6a3a")},
+		DARK: {"board": Color("27231c"), "pattern": Color("41392b"), "peg": Color("b4a68c"), "mark": Color("d6a95e")},
+	},
+	# ICRA World 8-9: the counting board for Cəm, the turns' marble, Kintsugi's
+	# dark lacquer, the lamp's night room, the patience table's felt.
+	"abacus": {
+		LIGHT: {"board": Color("f1ece2"), "pattern": Color("dcd2bf"), "peg": Color("5b4a36"), "mark": Color("2e6a5a")},
+		DARK: {"board": Color("221e19"), "pattern": Color("3a332a"), "peg": Color("b9a68a"), "mark": Color("6fc0a8")},
+	},
+	"marble": {
+		LIGHT: {"board": Color("ecebe8"), "pattern": Color("d4d2cc"), "peg": Color("4a4a52"), "mark": Color("8a2d3b")},
+		DARK: {"board": Color("1f1f23"), "pattern": Color("35353c"), "peg": Color("aeaeb6"), "mark": Color("d0707e")},
+	},
+	"lacquer": {
+		LIGHT: {"board": Color("2b2422"), "pattern": Color("3d3330"), "peg": Color("d9b45a"), "mark": Color("e7c25e")},
+		DARK: {"board": Color("1a1514"), "pattern": Color("2c2422"), "peg": Color("d9b45a"), "mark": Color("e7c25e")},
+	},
+	"night": {
+		LIGHT: {"board": Color("2a2d3a"), "pattern": Color("363a4a"), "peg": Color("c9b48a"), "mark": Color("f2c35a")},
+		DARK: {"board": Color("181a22"), "pattern": Color("242734"), "peg": Color("c9b48a"), "mark": Color("f2c35a")},
+	},
+	"felt": {
+		LIGHT: {"board": Color("2f6b45"), "pattern": Color("3a7a52"), "peg": Color("e9e1c8"), "mark": Color("f2d38a")},
+		DARK: {"board": Color("1e4630"), "pattern": Color("27563b"), "peg": Color("d8cfb3"), "mark": Color("e8c87a")},
+	},
+	# ICRA World 7, the five elements: ink on rice paper with the cycle drawn.
+	"wuxing": {
+		LIGHT: {"board": Color("f4f0e6"), "pattern": Color("ddd4c0"), "peg": Color("4a4238"), "mark": Color("8a3a2a")},
+		DARK: {"board": Color("221f1b"), "pattern": Color("3a352d"), "peg": Color("b8ad9a"), "mark": Color("d8846c")},
+	},
 }
+## The five elements' disks (ICRA 3.8): Wood green, Fire red, Earth yellow,
+## Metal white, Water blue; the same in both modes.
+const ELEMENT_DISKS: Array[Dictionary] = [
+	{"fill": Color("4f9a4a"), "text": Color("f2fbef"), "outline": Color("2f6a2c")},
+	{"fill": Color("d8452e"), "text": Color("fff1ec"), "outline": Color("9a2a18")},
+	{"fill": Color("e2b93b"), "text": Color("3d2e08"), "outline": Color("a07c1a")},
+	{"fill": Color("ecebe6"), "text": Color("3a3a40"), "outline": Color("8a8a90")},
+	{"fill": Color("3f78c4"), "text": Color("eef4ff"), "outline": Color("244e88")},
+]
+## A coloured carpet's disks ("Rəngli naxış"): madder red, indigo and ivory;
+## the same in both modes.
+const CARPET_DISKS: Array[Dictionary] = [
+	{"fill": Color("b0303a"), "text": Color("fff3ec"), "outline": Color("7d1f27")},
+	{"fill": Color("2e4a8a"), "text": Color("eef2ff"), "outline": Color("1e3263")},
+	{"fill": Color("ecdcb4"), "text": Color("4a3a20"), "outline": Color("9c8658")},
+]
 ## The two caravans of a great exchange: disk fill, number colour and (for the
 ## light one, so it shows on sand) an outline; the same in both modes (they are
 ## game pieces).
@@ -165,6 +223,8 @@ const EXCHANGE_DISKS: Dictionary = {
 	"black": {"fill": Color("3b3a52"), "text": Color("f3ead6")},
 	# ICRA 3.3, "Üç karvan": the third caravan.
 	"red": {"fill": Color("c2413a"), "text": Color("fff3ec"), "outline": Color("8e2a25")},
+	# ICRA 3.11, "Boz disk": the grey disk of the turns.
+	"grey": {"fill": Color("9a9ca3"), "text": Color("f4f4f6"), "outline": Color("6d6f76")},
 }
 ## The two colours of the striped tower (odd and even sizes), after a barber
 ## pole; the same in both modes.
@@ -238,12 +298,45 @@ const MARK_COLORS: Dictionary = {
 	"elephant": Color("6f7480"),
 	"inn_roof": Color("a8552c"),
 	"odd_even": Color("3b3a52"),
+	# World 6: the carpet's rug, its done pattern and target numbers, the navel's
+	# medallion; Go's stones on a breathing peg and a free peg's ring.
+	"rug": Color("9c2f35"),
+	"rug_border": Color("2e4a7a"),
+	"rug_done": Color("e3b448"),
+	"rug_text": Color("fff4e0"),
+	"navel": Color("e3b448"),
+	"go_black": Color("1d1d1f"),
+	"go_white": Color("f5f3ee"),
+	"go_shine": Color(1.0, 1.0, 1.0, 0.35),
+	"ko_free": Color("3f8f6b"),
+	# World 7: a heavy disk's reach dots, the cart, the slope; an element's
+	# glyph and the puff of a refused one; the clean peg's broom mark.
+	"reach_dot": Color("2b2b33"),
+	"cart": Color("8b5a2b"),
+	"slope": Color(0.45, 0.35, 0.2, 0.35),
+	"element_glyph": Color(1.0, 1.0, 1.0, 0.85),
+	"puff": Color(0.85, 0.85, 0.85, 0.7),
+	"clean_peg": Color("3f8fb0"),
+	# World 8-9: the sums (target, now, met), the turn's chip, a crack and its
+	# gold, a workshop, the dark over an unlit peg and the lamp's glow, the cell
+	# and the king's spot.
+	"sum_target": Color("2e6a5a"),
+	"sum_now": Color("8a7a5a"),
+	"sum_met": Color("3f9f5a"),
+	"crack": Color("1a1412"),
+	"gold": Color("e7c25e"),
+	"workshop_closed": Color("6f6a60"),
+	"dark": Color(0.04, 0.05, 0.09, 0.62),
+	"lamp_glow": Color(1.0, 0.82, 0.45, 0.28),
+	"lamp": Color("f2c35a"),
+	"cell": Color("f2d38a"),
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
 		"color_swap": "caravan", "peg_capacity": "temple", "foundation": "stone", "balance": "scales",
 		"cyclic": "zodiac", "stripes": "stripes", "chain": "chain", "mirror": "mirror", "trail": "trail",
-		"king": "palace", "river": "river"}
+		"king": "palace", "river": "river", "carpet": "carpet", "ko": "goban", "heavy": "quarry", "elements": "wuxing",
+		"sum": "abacus", "turns": "marble", "kintsugi": "lacquer", "lamp": "night", "solitaire": "felt"}
 
 var mode: String = LIGHT
 var theme: Theme

@@ -66,7 +66,9 @@ const BIG_TEST_BOARDS: String = "big_test"
 const MODE_FILES: Dictionary = {"peg_capacity": "capacity", "covered_pegs": "fog", "foundation": "foundation",
 	"adjacent_pegs": "caravan", "stripes": "stripes", "cyclic": "cyclic", "alternation": "rings", "balance": "balance",
 	"color_swap": "swap", "trail": "trail", "chain": "chain", "mirror": "mirror", "linked_pegs": "linked",
-	"magnet": "magnet", "king": "king", "river": "river"}
+	"magnet": "magnet", "king": "king", "river": "river", "carpet": "carpet", "ko": "ko", "heavy": "heavy",
+	"elements": "elements", "sum": "sum", "turns": "turns", "kintsugi": "kintsugi", "lamp": "lamp",
+	"solitaire": "solitaire"}
 ## Mechanic level ids: each mode, then each combination of the whitelist,
 ## owns a block of ID_BLOCK ids from Difficulty.MECHANIC_FIRST_ID; modes past
 ## the first COMBO_FIRST_BLOCK take the blocks from LATE_MODE_FIRST_BLOCK on.

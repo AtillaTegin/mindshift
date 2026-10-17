@@ -145,6 +145,47 @@ func partner_of(_disk: int) -> int:
 	return 0
 
 
+## Every disk linked with `disk` (it included, smallest first) when the rules
+## remember `memory`; [] for a free disk. They only ever move together, as one
+## compound move. By default the pair of partner_of().
+func group_of_with(disk: int, _memory: int) -> Array[int]:
+	var partner: int = partner_of(disk)
+	var group: Array[int] = []
+	if partner != 0:
+		group.assign([mini(disk, partner), maxi(disk, partner)])
+	return group
+
+
+## True when group_of_with() depends on the memory (a chain that breaks): the
+## Solver then searches generically.
+func groups_change() -> bool:
+	return false
+
+
+## True when the two disks of a linked pair may land on one peg, the larger
+## first and the smaller on it ("Qırılan zəncir").
+func allows_shared_target() -> bool:
+	return false
+
+
+## Whether a compound move may put its disks on `targets` (one peg per disk, in
+## the move's order) together ("Rezin zəncir": two neighbouring pegs).
+func compound_allowed(_targets: Array[int]) -> bool:
+	return true
+
+
+## The memory after the compound move of `disks` (each from `froms[i]` to
+## `tos[i]`), `facts` being those before it; by default each disk in turn.
+func compound_memory_after(facts: MoveFacts, disks: Array[int], froms: Array[int], tos: Array[int]) -> int:
+	var before: int = facts.memory
+	var memory: int = before
+	for i: int in disks.size():
+		facts.memory = memory
+		memory = memory_after(facts, disks[i], froms[i], tos[i])
+	facts.memory = before
+	return memory
+
+
 ## Groups of pegs that never exchange disks (each group a separate board); the
 ## Solver then solves every group on its own. Empty for one board.
 func peg_groups(_peg_count: int) -> Array[Array]:
@@ -181,6 +222,18 @@ func has_special_moves() -> bool:
 ## The memory after the special `move` (from special_moves()).
 func special_memory_after(facts: MoveFacts, _move: Move) -> int:
 	return facts.memory
+
+
+## Whether the special move's button shows with `facts` (it may still be
+## refused now, like a disk move): the stone not yet carried, the pass not yet
+## spent.
+func special_open(_facts: MoveFacts) -> bool:
+	return false
+
+
+## The translation key of the special move's button.
+func special_label() -> String:
+	return "STONE_MOVE"
 
 
 ## Peg orders that keep a puzzle under this rule the same puzzle (the

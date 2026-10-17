@@ -25,7 +25,7 @@ const COMBO_CHAPTER: String = "combo"
 const MODES: Array[String] = ["peg_capacity", "covered_pegs", "foundation", "adjacent_pegs", "stripes", "cyclic",
 		"alternation", "balance", "color_swap", "trail", "chain", "mirror", "linked_pegs", "magnet",
 		# ICRA World 5-9 (MindShift_ICRA_Dunya5-9_Yeni_Modlar_v1.md).
-		"king", "river"]
+		"king", "river", "carpet", "ko", "heavy", "elements", "sum", "turns", "kintsugi", "lamp", "solitaire"]
 const COVERED: String = "covered_pegs"
 
 ## The chapters along the main road (section 2). `first`/`last`: main road
@@ -62,6 +62,29 @@ const CHAPTERS: Array[Dictionary] = [
 	{"world": 5, "kind": COMBO_CHAPTER, "first": 1371, "last": 1420, "singles": ["king", "river", "color_swap"],
 		"combos": [["river", "peg_capacity"], ["river", "covered_pegs"], ["river", "foundation"],
 			["color_swap", "adjacent_pegs"], ["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 1421, "last": 1520, "ratio": 3.0},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 1521, "last": 1620, "ratio": 3.0},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 1621, "last": 1770, "ratio": 3.0},
+	{"world": 6, "kind": COMBO_CHAPTER, "first": 1771, "last": 1820, "singles": ["carpet", "ko", "chain"],
+		"combos": [["ko", "peg_capacity"], ["ko", "adjacent_pegs"], ["ko", "river"], ["chain", "peg_capacity"],
+			["chain", "adjacent_pegs"], ["chain", "balance"], ["carpet", "stripes"]]},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "heavy", "first": 1821, "last": 1920, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "elements", "first": 1921, "last": 2040, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "trail", "first": 2041, "last": 2140, "ratio": 3.0},
+	{"world": 7, "kind": COMBO_CHAPTER, "first": 2141, "last": 2190, "singles": ["heavy", "elements", "trail"],
+		"combos": [["elements", "cyclic"], ["elements", "adjacent_pegs"], ["elements", "peg_capacity"],
+			["heavy", "peg_capacity"], ["heavy", "foundation"], ["trail", "adjacent_pegs"], ["trail", "river"]]},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "sum", "first": 2191, "last": 2290, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "turns", "first": 2291, "last": 2390, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "kintsugi", "first": 2391, "last": 2510, "ratio": 3.0},
+	{"world": 8, "kind": COMBO_CHAPTER, "first": 2511, "last": 2560, "singles": ["sum", "turns", "kintsugi"],
+		"combos": [["sum", "peg_capacity"], ["sum", "adjacent_pegs"], ["sum", "foundation"], ["turns", "peg_capacity"],
+			["turns", "river"], ["kintsugi", "adjacent_pegs"], ["kintsugi", "turns"]]},
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "lamp", "first": 2561, "last": 2680, "ratio": 3.0},
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "solitaire", "first": 2681, "last": 2830, "ratio": 3.0},
+	{"world": 9, "kind": COMBO_CHAPTER, "first": 2831, "last": 2880, "singles": ["lamp", "solitaire"],
+		"combos": [["solitaire", "stripes"], ["solitaire", "peg_capacity"], ["solitaire", "adjacent_pegs"],
+			["lamp", "peg_capacity"], ["lamp", "adjacent_pegs"]]},
 ]
 
 ## Combination chapters: shares of combinations, single modes and classic
@@ -142,6 +165,18 @@ const WAVES: Dictionary = {
 	"king": {"waves": ["base", "odd_even", "vizier", "narrow_gate", "siege"], "mixed": true},
 	"river": {"waves": ["base", "stone_bridge", "ferry", "two_crossings", "reverse"], "mixed": true},
 	"color_swap": {"waves": ["base", "mid_start", "mixed", "caravanserai", "three_caravans"], "mixed": true},
+	"carpet": {"waves": ["base", "navel", "coloured", "buta", "twin"], "mixed": true},
+	"ko": {"waves": ["base", "target_ko", "free_peg", "long_ko", "two_stones"], "mixed": true},
+	"chain": {"waves": ["base", "two_chains", "breaking", "long_chain", "rubber"], "mixed": true},
+	"heavy": {"waves": ["base", "cart", "reverse_weight", "fatigue", "uphill"], "mixed": true},
+	"elements": {"waves": ["base", "neutral_earth", "element_base", "creation", "element_peg"], "mixed": true},
+	"trail": {"waves": ["base", "clean_peg", "fading", "two_trails", "big_trail"], "mixed": true},
+	"sum": {"waves": ["base", "fair", "sum_and_height", "double_peg", "parity"], "mixed": true},
+	"turns": {"waves": ["base", "pass", "grey", "double_turn", "three_colours"], "mixed": true},
+	"kintsugi": {"waves": ["base", "deep_crack", "two_workshops", "single_repair", "ordered_repair"], "mixed": true},
+	"lamp": {"waves": ["base", "long_light", "fixed_lantern", "two_lamps", "lamp_disk"], "mixed": true},
+	# "Sıra köçürmə" is not built (ICRA 3.14 allows dropping it): four waves.
+	"solitaire": {"waves": ["base", "free_cell", "red_black", "king_spot"], "mixed": true},
 }
 ## Waves that hold fewer levels than an even share, because their puzzles run
 ## out (measured 2026-10-17: the great exchange's base form from the ends is
@@ -151,7 +186,7 @@ const WAVE_SIZES: Dictionary = {"color_swap": {"base": 2}}
 ## Sub-elements only the islands use (section 3): one per island, mixed with
 ## the chapter's own.
 const ISLAND_VARIANTS: Dictionary = {"peg_capacity": "holed", "covered_pegs": "reclosing", "adjacent_pegs": "jump",
-	"balance": "moving_stone", "river": "bonfire"}
+	"balance": "moving_stone", "river": "bonfire", "elements": "changing"}
 ## Islands whose levels always hold these sub-elements of the chapter
 ## together (ICRA 3.1: the king's island has the king, the vizier and the
 ## narrow gate in one level).
@@ -161,8 +196,9 @@ const ISLAND_SETS: Dictionary = {"king": ["vizier", "narrow_gate"], "river": []}
 ## Sub-elements that keep their own wave: never mixed with others, never in a
 ## repeat or a Böyük Sınaq (World 3-4 spec: the turned stripes and the figure
 ## eight are twists of their own; ICRA: the odd and even towers change the
-## king's goal, the reversed river turns its mode).
-const SOLO: Array[String] = ["inverse", "eight", "odd_even", "reverse"]
+## king's goal, the reversed river, the reversed weight and the large disk's
+## trail turn their mode; odd and even sums are a goal of their own).
+const SOLO: Array[String] = ["inverse", "eight", "odd_even", "reverse", "reverse_weight", "big_trail", "parity"]
 ## The most moves a level with these sub-elements reaches (measured
 ## 2026-10-17: a centre linked to every peg, three scales and the river's
 ## ferry keep solutions short); their levels' windows stop there, and they
@@ -181,12 +217,18 @@ const ISLAND_WINDOWS: Dictionary = {"river": [34, 65]}
 ## must be used, without it the level takes longer (LevelForge.variants_matter);
 ## every other rule-changing one must make it longer.
 const HELPERS: Array[String] = ["oasis", "tunnel", "jump", "neutral", "back_peg", "shortcut", "center", "broken_ring",
-	"reset_peg", "moving_stone", "stone_bridge", "ferry", "caravanserai"]
+	"reset_peg", "moving_stone", "stone_bridge", "ferry", "caravanserai", "free_peg", "breaking", "cart", "neutral_earth",
+	"clean_peg", "pass", "grey", "two_workshops", "long_light", "fixed_lantern", "free_cell"]
 ## Sub-elements that cannot share a level: in a fully hidden level every box
 ## holds a disk, so it has no empty box (current decisions 2026-10-16, B.1).
 ## Three caravans (ICRA 3.3) have the pure kind's size rule only: no colour
-## rule, so no mixed ends and no caravanserai with them.
-const CLASHES: Array[Array] = [["full_hidden", "empty_box"], ["three_caravans", "mixed"], ["three_caravans", "caravanserai"]]
+## rule, so no mixed ends and no caravanserai with them. A twin carpet has no
+## one middle peg for a navel; the target ko and two stones are two kinds of
+## breathing; a chain of three is no pair to break or stretch, and no second
+## chain beside it.
+const CLASHES: Array[Array] = [["full_hidden", "empty_box"], ["three_caravans", "mixed"], ["three_caravans", "caravanserai"],
+	["twin", "navel"], ["target_ko", "two_stones"], ["long_chain", "breaking"], ["long_chain", "rubber"],
+	["long_chain", "two_chains"], ["element_peg", "changing"], ["double_turn", "three_colours"], ["two_lamps", "lamp_disk"]]
 ## Rules that belong to a mode as one of its sub-elements (not modes).
 const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 
@@ -197,13 +239,13 @@ const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 ## never a Böyük Sınaq. The goal comes from a goal-setting mode's rule
 ## (GOAL_RULES); such a level names the variant and is still a level of its
 ## chapter's mode (Level.modes()).
-const GOAL_VARIANTS: Dictionary = {"goal_king": 1121, "goal_odd_even": 1121}
-const GOAL_RULES: Dictionary = {"goal_king": "king", "goal_odd_even": "king"}
+const GOAL_VARIANTS: Dictionary = {"goal_king": 1121, "goal_odd_even": 1121, "goal_silhouette": 1521, "goal_sum": 2291}
+const GOAL_RULES: Dictionary = {"goal_king": "king", "goal_odd_even": "king", "goal_silhouette": "carpet", "goal_sum": "sum"}
 const BREATH_SHARE: float = 0.1
 const BREATH_MOVES: Array[int] = [12, 18]
 ## Modes that bring a goal of their own: no goal variant goes with them (ICRA
 ## section 4: not with the scales or the exchange; one goal per level).
-const OWN_GOAL: Array[String] = ["king", "color_swap", "balance", "mirror"]
+const OWN_GOAL: Array[String] = ["king", "color_swap", "balance", "mirror", "carpet", "sum"]
 
 
 ## The goal variants a chapter starting at main road `position` may use.
@@ -248,6 +290,15 @@ const CATEGORIES: Dictionary = {
 	# ICRA World 5-9, section 5.
 	"king": ["goal"],
 	"river": ["topology"],
+	"carpet": ["goal"],
+	"ko": ["history"],
+	"heavy": ["topology"],
+	"elements": ["colour"],
+	"sum": ["goal"],
+	"turns": ["history", "colour"],
+	"kintsugi": ["local"],
+	"lamp": ["history"],
+	"solitaire": ["local"],
 }
 ## Categories a combination may hold only one mode of (section 4.2, rule 1).
 const EXCLUSIVE: Array[String] = ["hidden", "topology", "colour", "history", "layout", "goal", "compound"]

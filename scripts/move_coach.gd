@@ -4,8 +4,8 @@ extends RefCounted
 ## tutorial so both look the same: the board is dimmed except the pegs
 ## involved, a ring marks the disk to pick up (or, once it is picked up, the
 ## target peg), and a ghost finger glides from the disk to the target peg.
-## A compound move (two linked disks) is shown in its two steps: the first
-## disk to its target, then, once that target is chosen, its partner to its own.
+## A compound move (linked disks) is shown step by step: the first disk to its
+## target, then, once that target is chosen, the next one to its own.
 
 
 static func present(coaching: CoachingLayer, board: GameBoard, move: Move, picked_up: bool) -> void:
@@ -21,10 +21,13 @@ static func present(coaching: CoachingLayer, board: GameBoard, move: Move, picke
 	var to_peg: int = move.to_peg
 	var area: Rect2 = board.get_peg_rect(move.from_peg).merge(board.get_peg_rect(move.to_peg))
 	if move.is_compound():
-		area = area.merge(board.get_peg_rect(move.from_peg_2)).merge(board.get_peg_rect(move.to_peg_2))
-		if picked_up and board.session.pending_target != -1:
-			from_peg = move.from_peg_2
-			to_peg = move.to_peg_2
+		var parts: Array = move.parts()
+		for part: Array in parts:
+			area = area.merge(board.get_peg_rect(part[0])).merge(board.get_peg_rect(part[1]))
+		var step: int = board.session.pending_targets.size() if picked_up else 0
+		if step > 0 and step < parts.size():
+			from_peg = parts[step][0]
+			to_peg = parts[step][1]
 	var disk_rect: Rect2 = board.get_disk_rect(board.session.state.get_top_disk(from_peg))
 	var target_rect: Rect2 = board.get_peg_rect(to_peg)
 	coaching.scrim.show_scrim(area.grow(12.0))

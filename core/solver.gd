@@ -50,9 +50,10 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 	var result: Dictionary
 	var groups: Array[Array] = rules.peg_groups(start.pegs.size())
 	var goal_rule: RuleBase = rules.goal_rule()
-	if rules.has_echo() or rules.has_special_moves():
+	if rules.has_echo() or rules.has_special_moves() or rules.needs_generic_groups(start):
 		# A move with an echo changes two disks the packed codes do not follow;
-		# a rule's own piece (RuleBase.special_moves) is no disk move at all.
+		# a rule's own piece (RuleBase.special_moves) is no disk move at all; a
+		# chain of three or one that breaks is no fixed pair.
 		result = _solve_generic(start, goal, rules, max_states)
 		result["strategy"] = "generic"
 	elif not groups.is_empty() and goal_rule == null:
@@ -370,7 +371,7 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 					if d == c or d == b:
 						continue
 					var top_d: int = seconds[a] if d == a else facts.tops[d]
-					if not _allowed(rule_list, partner, c, d, top_d, facts):
+					if not _allowed(rule_list, partner, c, d, top_d, facts) or not _pair_allowed(rule_list, b, d):
 						continue
 					var next_code: int = code + (b - a) * powers[rank_a] + (d - c) * powers[rank_p]
 					var next_memory: int = 0
@@ -461,6 +462,15 @@ static func _allowed(rule_list: Array[RuleBase], disk: int, from_peg: int, to_pe
 		facts: MoveFacts) -> bool:
 	for rule: RuleBase in rule_list:
 		if not rule.is_move_allowed_with(disk, from_peg, to_peg, target_top, facts):
+			return false
+	return true
+
+
+## Whether every rule lets a pair land on `b` and `d` together (RuleBase.compound_allowed).
+static func _pair_allowed(rule_list: Array[RuleBase], b: int, d: int) -> bool:
+	var targets: Array[int] = [b, d]
+	for rule: RuleBase in rule_list:
+		if not rule.compound_allowed(targets):
 			return false
 	return true
 

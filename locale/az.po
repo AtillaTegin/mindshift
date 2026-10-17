@@ -259,6 +259,69 @@ msgstr "Disk çayı yalnız keçiddən, rəqəmi qədər böyüklükdə keçə b
 msgid "RULE_BONFIRE"
 msgstr "Tonqalın üstündən yalnız ən kiçik iki disk tullanıb keçə bilər."
 
+msgid "RULE_KO"
+msgstr "Bu qüllə nəfəs alır: bu gediş ona toxuna bilməz."
+
+msgid "RULE_RUBBER"
+msgstr "Rezin zəncir: cüt yalnız yanaşı iki qülləyə gedə bilər."
+
+msgid "RULE_HEAVY"
+msgstr "Bu disk o qədər uzağa gedə bilməz: nöqtələri qədər qüllə."
+
+msgid "RULE_CART_FULL"
+msgstr "Araba yalnız bir disk daşıyır."
+
+msgid "RULE_FATIGUE"
+msgstr "Ağır disk yorulub: iki dəfə dalbadal gedə bilməz."
+
+msgid "RULE_ELEMENT"
+msgstr "Disk onu məğlub edən ünsürün üstünə qoyulmaz."
+
+msgid "RULE_CREATION"
+msgstr "Disk yalnız onu yaradan ünsürün üstünə və ya boş qülləyə qoyula bilər."
+
+msgid "RULE_ELEMENT_BASE"
+msgstr "Qüllənin əsasındakı ünsür bu diski qəbul etmir."
+
+msgid "RULE_TURN"
+msgstr "İndi bu rəngin növbəsi deyil."
+
+msgid "RULE_TURN_WHITE"
+msgstr "İndi ağların növbəsidir."
+
+msgid "RULE_TURN_BLACK"
+msgstr "İndi qaraların növbəsidir."
+
+msgid "RULE_TURN_RED"
+msgstr "İndi qırmızıların növbəsidir."
+
+msgid "PASS_TURN"
+msgstr "Pas"
+
+msgid "RULE_CRACKED"
+msgstr "Çatlaq diskin üstünə ən çox bir disk qoyulur."
+
+msgid "RULE_DEEP_CRACK"
+msgstr "Dərin çatlı diskin üstünə heç nə qoyulmur."
+
+msgid "RULE_REPAIR_ORDER"
+msgstr "Emalatxana çatlaq diskləri böyükdən kiçiyə sıra ilə təmir edir."
+
+msgid "RULE_DARK"
+msgstr "Qaranlıqda disk götürmək və qoymaq olmaz: yalnız işıqlı qüllələr."
+
+msgid "RULE_SOLITAIRE"
+msgstr "Disk yalnız özündən bir böyük diskin üstünə və ya boş qülləyə qoyulur."
+
+msgid "RULE_CELL_FULL"
+msgstr "Boş hücrə yalnız bir disk saxlayır."
+
+msgid "RULE_KING_SPOT"
+msgstr "Boş qülləyə yalnız böyük disklər qoyula bilər."
+
+msgid "RULE_RED_BLACK"
+msgstr "Üst-üstə disklərin rəngi növbələşməlidir."
+
 msgid "RULE_FOUNDATION"
 msgstr "Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar."
 
@@ -601,6 +664,282 @@ msgstr "Tək-Cüt hədəfi"
 msgid "VARIANT_GOAL_ODD_EVEN_RULE"
 msgstr "bu dəfə tək ölçülər bir işarəli qülləyə, cütlər o birinə yığılır."
 
+msgid "VARIANT_NAVEL_NAME"
+msgstr "Göbək"
+
+msgid "VARIANT_NAVEL_RULE"
+msgstr "ortadakı qüllənin ən üstündə işarəli disk olmalıdır."
+
+msgid "VARIANT_COLOURED_NAME"
+msgstr "Rəngli naxış"
+
+msgid "VARIANT_COLOURED_RULE"
+msgstr "işarəli qüllələrin ən üst diski göstərilən rəngdə olmalıdır."
+
+msgid "VARIANT_BUTA_NAME"
+msgstr "Buta"
+
+msgid "VARIANT_BUTA_RULE"
+msgstr "naxış simmetrik deyil, buta kimi bir tərəfə əyilir."
+
+msgid "VARIANT_TWIN_NAME"
+msgstr "Qoşa xalça"
+
+msgid "VARIANT_TWIN_RULE"
+msgstr "altı qüllə, iki xalça: hər üçlük eyni naxışı qurmalıdır."
+
+msgid "VARIANT_TARGET_KO_NAME"
+msgstr "Hədəf ko"
+
+msgid "VARIANT_TARGET_KO_RULE"
+msgstr "indi disk qoyulan qüllə bir gediş nəfəs alır."
+
+msgid "VARIANT_FREE_PEG_NAME"
+msgstr "Azad qüllə"
+
+msgid "VARIANT_FREE_PEG_RULE"
+msgstr "işarəli qüllə heç vaxt nəfəs almır."
+
+msgid "VARIANT_LONG_KO_NAME"
+msgstr "Uzun ko"
+
+msgid "VARIANT_LONG_KO_RULE"
+msgstr "qüllə iki gediş nəfəs alır."
+
+msgid "VARIANT_TWO_STONES_NAME"
+msgstr "İki daş"
+
+msgid "VARIANT_TWO_STONES_RULE"
+msgstr "həm götürülən, həm qoyulan qüllə nəfəs alır."
+
+msgid "VARIANT_TWO_CHAINS_NAME"
+msgstr "İki zəncir"
+
+msgid "VARIANT_TWO_CHAINS_RULE"
+msgstr "iki zəncirli cüt var, hər cüt yalnız birlikdə gedir."
+
+msgid "VARIANT_BREAKING_NAME"
+msgstr "Qırılan zəncir"
+
+msgid "VARIANT_BREAKING_RULE"
+msgstr "cütü bir qülləyə üst-üstə qoysan, zəncir həmişəlik qırılır."
+
+msgid "VARIANT_LONG_CHAIN_NAME"
+msgstr "Uzun zəncir"
+
+msgid "VARIANT_LONG_CHAIN_RULE"
+msgstr "üç disk birlikdə gedir, hər biri öz qülləsinə."
+
+msgid "VARIANT_RUBBER_NAME"
+msgstr "Rezin zəncir"
+
+msgid "VARIANT_RUBBER_RULE"
+msgstr "cüt yalnız yanaşı iki qülləyə köçə bilər."
+
+msgid "VARIANT_CART_NAME"
+msgstr "Araba"
+
+msgid "VARIANT_CART_RULE"
+msgstr "araba bir disk daşıyır, arabadan düşən disk istənilən qədər uzağa gedir."
+
+msgid "VARIANT_REVERSE_WEIGHT_NAME"
+msgstr "Tərs çəki"
+
+msgid "VARIANT_REVERSE_WEIGHT_RULE"
+msgstr "indi kiçik disklər yaxına gedir, böyüklər isə sərbəstdir."
+
+msgid "VARIANT_FATIGUE_NAME"
+msgstr "Yorğunluq"
+
+msgid "VARIANT_FATIGUE_RULE"
+msgstr "ağır disk iki dəfə dalbadal hərəkət edə bilməz."
+
+msgid "VARIANT_UPHILL_NAME"
+msgstr "Yoxuş"
+
+msgid "VARIANT_UPHILL_RULE"
+msgstr "sağa doğru disklər yarı qədər uzağa gedir, sola isə tam."
+
+msgid "VARIANT_NEUTRAL_EARTH_NAME"
+msgstr "Mərkəzi Torpaq"
+
+msgid "VARIANT_NEUTRAL_EARTH_RULE"
+msgstr "Torpaq neytraldır, istənilən ünsürə toxuna bilər."
+
+msgid "VARIANT_ELEMENT_BASE_NAME"
+msgstr "Ünsür əsası"
+
+msgid "VARIANT_ELEMENT_BASE_RULE"
+msgstr "bəzi qüllələrin əsası bir ünsürdür, ilk disk ona uyğun olmalıdır."
+
+msgid "VARIANT_CREATION_NAME"
+msgstr "Yaradılış yolu"
+
+msgid "VARIANT_CREATION_RULE"
+msgstr "disk yalnız onu yaradan ünsürün üstünə və ya boş qülləyə qoyulur."
+
+msgid "VARIANT_ELEMENT_PEG_NAME"
+msgstr "Ünsür qülləsi"
+
+msgid "VARIANT_ELEMENT_PEG_RULE"
+msgstr "bu qülləyə qoyulan disk yaradılış dövrü üzrə növbəti ünsürə çevrilir."
+
+msgid "VARIANT_CHANGING_NAME"
+msgstr "Dəyişən ünsür"
+
+msgid "VARIANT_CHANGING_RULE"
+msgstr "disk hər gedişdə növbəti ünsürə çevrilir."
+
+msgid "VARIANT_CLEAN_PEG_NAME"
+msgstr "Təmiz qüllə"
+
+msgid "VARIANT_CLEAN_PEG_RULE"
+msgstr "işarəli qüllədə iz qalmır, ora istənilən vaxt qayıtmaq olar."
+
+msgid "VARIANT_FADING_NAME"
+msgstr "Silinən iz"
+
+msgid "VARIANT_FADING_RULE"
+msgstr "iz daha uzun qalır, yalnız bir neçə gedişdən sonra silinir."
+
+msgid "VARIANT_TWO_TRAILS_NAME"
+msgstr "İki izli disk"
+
+msgid "VARIANT_TWO_TRAILS_RULE"
+msgstr "iki disk iz qoyur, hər biri öz izinə qayıda bilməz."
+
+msgid "VARIANT_BIG_TRAIL_NAME"
+msgstr "Böyük iz"
+
+msgid "VARIANT_BIG_TRAIL_RULE"
+msgstr "indi iz qoyan disk ən kiçik yox, ən böyük diskdir."
+
+msgid "VARIANT_FAIR_NAME"
+msgstr "Ədalət"
+
+msgid "VARIANT_FAIR_RULE"
+msgstr "rəqəm verilmir, bütün qüllələrin cəmi bərabər olmalıdır."
+
+msgid "VARIANT_SUM_AND_HEIGHT_NAME"
+msgstr "Cəm və hündürlük"
+
+msgid "VARIANT_SUM_AND_HEIGHT_RULE"
+msgstr "hər qüllə üçün həm cəm, həm disk sayı verilib."
+
+msgid "VARIANT_DOUBLE_PEG_NAME"
+msgstr "İkiqat qüllə"
+
+msgid "VARIANT_DOUBLE_PEG_RULE"
+msgstr "işarəli qüllənin cəmi iki dəfə sayılır."
+
+msgid "VARIANT_PARITY_NAME"
+msgstr "Tək-cüt cəm"
+
+msgid "VARIANT_PARITY_RULE"
+msgstr "qüllənin cəmi işarəyə görə tək və ya cüt olmalıdır."
+
+msgid "VARIANT_PASS_NAME"
+msgstr "Pas"
+
+msgid "VARIANT_PASS_RULE"
+msgstr "səviyyədə bir dəfə növbəni ötürmək olar."
+
+msgid "VARIANT_GREY_NAME"
+msgstr "Boz disk"
+
+msgid "VARIANT_GREY_RULE"
+msgstr "boz disk istənilən rəngin növbəsində gedə bilər."
+
+msgid "VARIANT_DOUBLE_TURN_NAME"
+msgstr "İkiqat növbə"
+
+msgid "VARIANT_DOUBLE_TURN_RULE"
+msgstr "ağ, ağ, qara, qara: hər rəng iki dəfə dalbadal gedir."
+
+msgid "VARIANT_THREE_COLOURS_NAME"
+msgstr "Üç rəng"
+
+msgid "VARIANT_THREE_COLOURS_RULE"
+msgstr "ağ, qara, qırmızı növbə ilə gedir."
+
+msgid "VARIANT_DEEP_CRACK_NAME"
+msgstr "Dərin çat"
+
+msgid "VARIANT_DEEP_CRACK_RULE"
+msgstr "çatlaq diskin üstünə heç nə qoyulmur."
+
+msgid "VARIANT_TWO_WORKSHOPS_NAME"
+msgstr "İki emalatxana"
+
+msgid "VARIANT_TWO_WORKSHOPS_RULE"
+msgstr "lövhədə iki qızıl emalatxana var."
+
+msgid "VARIANT_SINGLE_REPAIR_NAME"
+msgstr "Tək təmir"
+
+msgid "VARIANT_SINGLE_REPAIR_RULE"
+msgstr "emalatxana yalnız bir diski təmir edir, sonra bağlanır."
+
+msgid "VARIANT_ORDERED_REPAIR_NAME"
+msgstr "Sıralı təmir"
+
+msgid "VARIANT_ORDERED_REPAIR_RULE"
+msgstr "çatlaq disklər böyükdən kiçiyə sıra ilə təmir olunur."
+
+msgid "VARIANT_LONG_LIGHT_NAME"
+msgstr "Uzun işıq"
+
+msgid "VARIANT_LONG_LIGHT_RULE"
+msgstr "çıraq iki qüllə uzağa qədər işıqlandırır."
+
+msgid "VARIANT_FIXED_LANTERN_NAME"
+msgstr "Sabit fənər"
+
+msgid "VARIANT_FIXED_LANTERN_RULE"
+msgstr "fənərli qüllə həmişə işıqlıdır."
+
+msgid "VARIANT_TWO_LAMPS_NAME"
+msgstr "İki çıraq"
+
+msgid "VARIANT_TWO_LAMPS_RULE"
+msgstr "son iki diskin qoyulduğu qüllələrdə çıraq var."
+
+msgid "VARIANT_LAMP_DISK_NAME"
+msgstr "Fənərçi disk"
+
+msgid "VARIANT_LAMP_DISK_RULE"
+msgstr "çıraq yalnız işarəli disklə birlikdə yerini dəyişir."
+
+msgid "VARIANT_FREE_CELL_NAME"
+msgstr "Boş hücrə"
+
+msgid "VARIANT_FREE_CELL_RULE"
+msgstr "bir disklik müvəqqəti yer bütün qüllələrə açıqdır."
+
+msgid "VARIANT_RED_BLACK_NAME"
+msgstr "Qırmızı-qara"
+
+msgid "VARIANT_RED_BLACK_RULE"
+msgstr "üst-üstə disklərin rəngi növbələşməlidir."
+
+msgid "VARIANT_KING_SPOT_NAME"
+msgstr "Kral yeri"
+
+msgid "VARIANT_KING_SPOT_RULE"
+msgstr "boş qülləyə yalnız işarəli ölçüdən böyük disk qoyulur."
+
+msgid "VARIANT_GOAL_SUM_NAME"
+msgstr "Cəm hədəfi"
+
+msgid "VARIANT_GOAL_SUM_RULE"
+msgstr "bu dəfə hər qüllənin cəmi altındakı rəqəmə bərabər olmalıdır."
+
+msgid "VARIANT_GOAL_SILHOUETTE_NAME"
+msgstr "Siluet hədəfi"
+
+msgid "VARIANT_GOAL_SILHOUETTE_RULE"
+msgstr "bu dəfə qüllələrin hündürlüyü göstərilən naxışa uyğun olmalıdır."
+
 msgid "KING_GOAL"
 msgstr "Tacı darvazaya çatdır"
 
@@ -660,6 +999,33 @@ msgstr "Kral: tac taxmış ən böyük disk bayraqlı darvazaya çatmalıdır. Q
 
 msgid "INTRO_RIVER"
 msgstr "Fil Çayı: çay lövhəni iki sahilə bölür. Fil işarəli böyük disklər çayı keçə bilməz, kiçiklər isə qarşı sahilə keçməlidir."
+
+msgid "INTRO_CARPET"
+msgstr "Xalça: hər qüllənin üstündə neçə disk olacağı yazılıb. İstənilən disklərlə bu naxışı qur, böyük disk kiçiyin üstünə qoyulmur."
+
+msgid "INTRO_HEAVY"
+msgstr "Ağır Disk: qüllələr bir xəttdədir. Diskin nöqtələri onun neçə qüllə uzağa gedə biləcəyini göstərir, ∞ istənilən qədər deməkdir."
+
+msgid "INTRO_ELEMENTS"
+msgstr "Beş Ünsür: hər diskin ünsürü var. Ağac Torpağı, Torpaq Suyu, Su Odu, Od Metalı, Metal Ağacı məğlub edir. Disk onu məğlub edənin üstünə qoyulmaz."
+
+msgid "INTRO_SUM"
+msgstr "Cəm: hər qüllənin altında bir rəqəm var. Qüllədəki disklərin ölçülərinin cəmi o rəqəmə bərabər olmalıdır, indiki cəm görünür."
+
+msgid "INTRO_TURNS"
+msgstr "Növbə: disklər ağ və qaradır, gedişlər növbə ilə: əvvəl ağ, sonra qara. Kimin növbəsi olduğu yuxarıda görünür."
+
+msgid "INTRO_KINTSUGI"
+msgstr "Kintsugi: çatlaq diskin üstünə ən çox bir disk qoyulur. Onu qızıl emalatxanaya qoysan, həmişəlik təmir olunur."
+
+msgid "INTRO_LAMP"
+msgstr "Çıraq: lövhə qaranlıqdır. Çıraq son disk qoyulan qüllədədir və onu, bir də qonşularını işıqlandırır. Yalnız işıqlı qüllələrdə oynamaq olar."
+
+msgid "INTRO_SOLITAIRE"
+msgstr "Pasyans: disk yalnız özündən düz bir ölçü böyük diskin üstünə və ya boş qülləyə qoyulur."
+
+msgid "INTRO_KO"
+msgstr "Ko: disk götürdüyün qüllə bir gediş nəfəs alır. Növbəti gedişdə ondan disk götürmək də, ona disk qoymaq da olmaz."
 
 msgid "SCALE_DIFFERENCE"
 msgstr "FƏRQ"
@@ -804,6 +1170,87 @@ msgstr "Fil Çayı"
 
 msgid "MODE_RIVER_RULE"
 msgstr "Fil işarəli disklər çayı keçə bilməz."
+
+msgid "MODE_CARPET_LABEL"
+msgstr "Xalça"
+
+msgid "MODE_CARPET_NAME"
+msgstr "Xalça"
+
+msgid "MODE_CARPET_RULE"
+msgstr "Qüllələrin hündürlüyü naxışa uyğun olmalıdır."
+
+msgid "MODE_KO_LABEL"
+msgstr "Ko"
+
+msgid "MODE_KO_NAME"
+msgstr "Ko"
+
+msgid "MODE_KO_RULE"
+msgstr "Disk götürdüyün qüllə bir gediş nəfəs alır."
+
+msgid "MODE_HEAVY_LABEL"
+msgstr "Ağır Disk"
+
+msgid "MODE_HEAVY_NAME"
+msgstr "Ağır Disk"
+
+msgid "MODE_HEAVY_RULE"
+msgstr "Disk nöqtələri qədər uzağa gedə bilər."
+
+msgid "MODE_ELEMENTS_LABEL"
+msgstr "Beş Ünsür"
+
+msgid "MODE_ELEMENTS_NAME"
+msgstr "Beş Ünsür"
+
+msgid "MODE_ELEMENTS_RULE"
+msgstr "Disk onu məğlub edən ünsürün üstünə qoyulmaz."
+
+msgid "MODE_SUM_LABEL"
+msgstr "Cəm"
+
+msgid "MODE_SUM_NAME"
+msgstr "Cəm"
+
+msgid "MODE_SUM_RULE"
+msgstr "Hər qüllənin cəmi altındakı rəqəmə bərabər olsun."
+
+msgid "MODE_TURNS_LABEL"
+msgstr "Növbə"
+
+msgid "MODE_TURNS_NAME"
+msgstr "Növbə"
+
+msgid "MODE_TURNS_RULE"
+msgstr "Ağ və qara disklər növbə ilə gedir."
+
+msgid "MODE_KINTSUGI_LABEL"
+msgstr "Kintsugi"
+
+msgid "MODE_KINTSUGI_NAME"
+msgstr "Kintsugi"
+
+msgid "MODE_KINTSUGI_RULE"
+msgstr "Çatlaq diskin üstünə ən çox bir disk. Emalatxana təmir edir."
+
+msgid "MODE_LAMP_LABEL"
+msgstr "Çıraq"
+
+msgid "MODE_LAMP_NAME"
+msgstr "Çıraq"
+
+msgid "MODE_LAMP_RULE"
+msgstr "Yalnız işıqlı qüllələrdə oynamaq olar."
+
+msgid "MODE_SOLITAIRE_LABEL"
+msgstr "Pasyans"
+
+msgid "MODE_SOLITAIRE_NAME"
+msgstr "Pasyans"
+
+msgid "MODE_SOLITAIRE_RULE"
+msgstr "Disk yalnız özündən bir böyük diskin üstünə və ya boş qülləyə."
 
 msgid "MODE_CYCLIC_LABEL"
 msgstr "Dairə"

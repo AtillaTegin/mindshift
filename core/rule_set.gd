@@ -70,7 +70,8 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 ## each mode has its texts in ModeTexts; a sub-element's rule, e.g. the sealed
 ## box, belongs to its mode: ChapterPlan.SUB_RULES).
 const RULE_IDS: Array[String] = ["classic_hanoi", "alternation", "adjacent_pegs", "color_swap", "peg_capacity",
-		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet", "sealed_box", "king", "river"]
+		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet", "sealed_box", "king", "river",
+		"carpet", "ko", "heavy", "elements", "sum", "turns", "kintsugi", "lamp", "solitaire"]
 
 
 ## Rule registry: a fresh rule for a level JSON id, or null if the id is unknown.
@@ -108,6 +109,24 @@ static func create_rule(id: String) -> RuleBase:
 			return KingRule.new()
 		RiverRule.ID:
 			return RiverRule.new()
+		CarpetRule.ID:
+			return CarpetRule.new()
+		KoRule.ID:
+			return KoRule.new()
+		HeavyRule.ID:
+			return HeavyRule.new()
+		ElementsRule.ID:
+			return ElementsRule.new()
+		SumRule.ID:
+			return SumRule.new()
+		TurnsRule.ID:
+			return TurnsRule.new()
+		KintsugiRule.ID:
+			return KintsugiRule.new()
+		LampRule.ID:
+			return LampRule.new()
+		SolitaireRule.ID:
+			return SolitaireRule.new()
 	return null
 
 
@@ -190,12 +209,53 @@ func partner_of(disk: int) -> int:
 	return 0
 
 
-## Whether any rule links two disks.
+## Whether any rule links two disks (a pair the Solver's fast search moves).
 func has_partners(state: PuzzleState) -> bool:
 	for peg: Array in state.pegs:
 		for disk: int in peg:
 			if partner_of(disk) != 0:
 				return true
+	return false
+
+
+## The disks linked with `disk` (it included, smallest first) in `state`
+## (its memory: a chain that broke), or [] for a free disk.
+func group_of(disk: int, state: PuzzleState = null) -> Array[int]:
+	var memory: int = memory_of(state) if state != null else 0
+	for rule: RuleBase in active_rules:
+		var group: Array[int] = rule.group_of_with(disk, memory)
+		if not group.is_empty():
+			return group
+	return [] as Array[int]
+
+
+## The rule that links `disk` to others in `state`, or null.
+func _linking_rule(disk: int, state: PuzzleState) -> RuleBase:
+	var memory: int = memory_of(state)
+	for rule: RuleBase in active_rules:
+		if not rule.group_of_with(disk, memory).is_empty():
+			return rule
+	return null
+
+
+## Whether linked disks need the generic search: a chain of three, a chain
+## that breaks, a pair that may share a peg.
+func needs_generic_groups(state: PuzzleState) -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.groups_change() or rule.allows_shared_target():
+			return true
+	for peg: Array in state.pegs:
+		for disk: int in peg:
+			if group_of(disk, state).size() > 2:
+				return true
+	return false
+
+
+## Whether a pair of linked disks may land on one peg (RuleBase.allows_shared_target).
+func _shares_targets() -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.allows_shared_target():
+			return true
 	return false
 
 
@@ -271,7 +331,8 @@ func search_key(state: PuzzleState) -> String:
 
 
 ## Whether the top disk of `peg_index` may be picked up (false for an empty
-## peg). A linked disk only when its partner is on top of another peg too.
+## peg). A linked disk only when every disk linked with it is on top of
+## another peg too.
 func can_pick_up(state: PuzzleState, peg_index: int) -> bool:
 	return state.get_top_disk(peg_index) != -1 and get_pick_up_violation_message(state, peg_index).is_empty()
 
@@ -286,9 +347,9 @@ func get_pick_up_violation_message(state: PuzzleState, peg_index: int) -> String
 	for rule: RuleBase in active_rules:
 		if not rule.is_disk_movable_with(disk, facts):
 			return rule.pick_up_message(disk, facts)
-		var partner: int = rule.partner_of(disk)
-		if partner != 0 and (not facts.is_top(partner) or facts.peg_of[partner] == peg_index):
-			return rule.violation_message
+	for member: int in group_of(disk, state):
+		if member != disk and (not facts.is_top(member) or facts.peg_of[member] == peg_index):
+			return _linking_rule(disk, state).violation_message
 	return ""
 
 
@@ -308,8 +369,8 @@ func is_move_legal(state: PuzzleState, move: Move) -> bool:
 
 
 ## All legal moves, in a fixed order (by source peg, then target peg; compound
-## moves by their first disk's pegs, then the second's) so that search results
-## are reproducible.
+## moves by their first disk's pegs, then the next disk's) so that search
+## results are reproducible.
 func get_legal_moves(state: PuzzleState) -> Array[Move]:
 	var moves: Array[Move] = []
 	var facts: MoveFacts = MoveFacts.of(state, self)
@@ -318,17 +379,16 @@ func get_legal_moves(state: PuzzleState) -> Array[Move]:
 		var disk: int = state.get_top_disk(from_peg)
 		if disk == -1:
 			continue
-		var partner: int = partner_of(disk)
-		if partner != 0:
-			# Each linked pair once, from its smaller disk; both must be on top.
-			if partner < disk or not facts.is_top(partner):
+		var group: Array[int] = group_of(disk, state)
+		if group.size() > 1:
+			# Each linked group once, from its smallest disk; all must be on top.
+			if disk != group[0] or not group.all(func(member: int) -> bool: return facts.is_top(member)):
 				continue
-			var partner_peg: int = facts.peg_of[partner]
-			for to_peg: int in peg_count:
-				for to_peg_2: int in peg_count:
-					var move: Move = Move.new(from_peg, to_peg, partner_peg, to_peg_2)
-					if _is_structural(state, move) and _refusing_rule(state, move, facts) == null:
-						moves.append(move)
+			var froms: Array = group.map(func(member: int) -> int: return facts.peg_of[member])
+			for tos: Array in _target_lists(group.size(), peg_count):
+				var move: Move = Move.of_parts(froms, tos)
+				if _is_structural(state, move) and _refusing_rule(state, move, facts) == null:
+					moves.append(move)
 			continue
 		for to_peg: int in peg_count:
 			if to_peg == from_peg:
@@ -339,6 +399,19 @@ func get_legal_moves(state: PuzzleState) -> Array[Move]:
 	for rule: RuleBase in active_rules:
 		moves.append_array(rule.special_moves(facts))
 	return moves
+
+
+## Every list of `count` target pegs out of `peg_count`, in order
+## (_is_structural() keeps the ones a compound move may take).
+static func _target_lists(count: int, peg_count: int) -> Array:
+	var lists: Array = [[]]
+	for i: int in count:
+		var longer: Array = []
+		for list: Array in lists:
+			for peg: int in peg_count:
+				longer.append(list + [peg])
+		lists = longer
+	return lists
 
 
 ## Whether a rule has moves of its own piece (RuleBase.special_moves): the
@@ -383,17 +456,28 @@ func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 		return next
 	var memory: RuleBase = memory_rule()
 	var facts: MoveFacts = MoveFacts.of(state, self) if memory != null else null
-	var disk: int = next.pegs[move.from_peg].pop_back()
-	var disk_2: int = next.pegs[move.from_peg_2].pop_back() if move.is_compound() else 0
-	next.pegs[move.to_peg].append(disk)
-	if move.is_compound():
-		next.pegs[move.to_peg_2].append(disk_2)
-	next.last_moved_disk = disk
-	if memory != null:
-		next.memory = memory.memory_after(facts, disk, move.from_peg, move.to_peg)
-		if move.is_compound():
-			facts.memory = next.memory
-			next.memory = memory.memory_after(facts, disk_2, move.from_peg_2, move.to_peg_2)
+	if not move.is_compound():
+		var disk: int = next.pegs[move.from_peg].pop_back()
+		next.pegs[move.to_peg].append(disk)
+		next.last_moved_disk = disk
+		if memory != null:
+			next.memory = memory.memory_after(facts, disk, move.from_peg, move.to_peg)
+	else:
+		var froms: Array[int] = move.froms()
+		var tos: Array[int] = move.tos()
+		var disks: Array[int] = []
+		for from_peg: int in froms:
+			disks.append(next.pegs[from_peg].pop_back())
+		# Every disk is lifted first; a pair landing on one peg puts its larger
+		# one down first.
+		var order: Array = range(disks.size())
+		if disks.size() == 2 and tos[0] == tos[1] and disks[1] > disks[0]:
+			order.reverse()
+		for i: int in order:
+			next.pegs[tos[i]].append(disks[i])
+		next.last_moved_disk = disks[0]
+		if memory != null:
+			next.memory = memory.compound_memory_after(facts, disks, froms, tos)
 	# An echoing rule's follow-up move, when it is possible (RuleBase.echo_of).
 	if not move.is_compound():
 		for rule: RuleBase in active_rules:
@@ -453,47 +537,82 @@ func get_violation_message(state: PuzzleState, move: Move) -> String:
 		return ""
 	# The part of a compound move the rule refuses, so it names the right reason.
 	var part: Move = move
-	if move.is_compound() and _part_allowed(rule, state, facts, move.from_peg, move.to_peg, _top_after_lift(state, move, move.to_peg)):
-		part = Move.new(move.from_peg_2, move.to_peg_2)
+	if move.is_compound():
+		var parts: Array = move.parts()
+		var tops: Array[int] = _landing_tops(state, move)
+		for i: int in parts.size():
+			if not _part_allowed(rule, state, facts, parts[i][0], parts[i][1], tops[i]):
+				part = Move.new(parts[i][0], parts[i][1])
+				break
 	return rule.get_violation_message(state, part)
 
 
-## Pegs in range and different, sources not empty; a compound move takes two
-## linked top disks from two pegs to two different pegs, each moving.
+## Pegs in range and different, sources not empty; a compound move takes the
+## linked top disks of one group, each from its own peg to its own other peg
+## (a pair that may share a peg lands on one, RuleBase.allows_shared_target).
 func _is_structural(state: PuzzleState, move: Move) -> bool:
 	var peg_count: int = state.pegs.size()
-	for peg: int in [move.from_peg, move.to_peg]:
-		if peg < 0 or peg >= peg_count:
+	var parts: Array = move.parts()
+	for i: int in parts.size():
+		var from_peg: int = parts[i][0]
+		var to_peg: int = parts[i][1]
+		if from_peg < 0 or from_peg >= peg_count or to_peg < 0 or to_peg >= peg_count:
 			return false
-	if move.from_peg == move.to_peg or state.pegs[move.from_peg].is_empty():
-		return false
+		if from_peg == to_peg or state.pegs[from_peg].is_empty():
+			return false
+		for j: int in range(i + 1, parts.size()):
+			if from_peg == parts[j][0]:
+				return false
+			if to_peg == parts[j][1] and not (parts.size() == 2 and _shares_targets()):
+				return false
 	if not move.is_compound():
 		return true
-	for peg: int in [move.from_peg_2, move.to_peg_2]:
-		if peg < 0 or peg >= peg_count:
-			return false
-	if move.from_peg_2 == move.to_peg_2 or move.from_peg_2 == move.from_peg or move.to_peg_2 == move.to_peg:
-		return false
-	if state.pegs[move.from_peg_2].is_empty():
-		return false
-	return partner_of(state.get_top_disk(move.from_peg)) == state.get_top_disk(move.from_peg_2)
+	var disks: Array[int] = []
+	for part: Array in parts:
+		disks.append(state.get_top_disk(part[0]))
+	var group: Array[int] = group_of(disks[0], state)
+	disks.sort()
+	return disks == group
 
 
 ## The first rule that refuses `move` (structurally valid), or null. A linked
 ## disk moving alone is refused by the rule that links it.
 func _refusing_rule(state: PuzzleState, move: Move, facts: MoveFacts) -> RuleBase:
 	var disk: int = state.get_top_disk(move.from_peg)
-	if not move.is_compound() and partner_of(disk) != 0:
+	if not move.is_compound():
+		if group_of(disk, state).size() > 1:
+			return _linking_rule(disk, state)
 		for rule: RuleBase in active_rules:
-			if rule.partner_of(disk) != 0:
+			if not _part_allowed(rule, state, facts, move.from_peg, move.to_peg, _top_after_lift(state, move, move.to_peg)):
 				return rule
+		return null
+	var parts: Array = move.parts()
+	var tops: Array[int] = _landing_tops(state, move)
+	var targets: Array[int] = move.tos()
 	for rule: RuleBase in active_rules:
-		if not _part_allowed(rule, state, facts, move.from_peg, move.to_peg, _top_after_lift(state, move, move.to_peg)):
-			return rule
-		if move.is_compound() and not _part_allowed(rule, state, facts, move.from_peg_2, move.to_peg_2,
-				_top_after_lift(state, move, move.to_peg_2)):
+		for i: int in parts.size():
+			if not _part_allowed(rule, state, facts, parts[i][0], parts[i][1], tops[i]):
+				return rule
+		if not rule.compound_allowed(targets):
 			return rule
 	return null
+
+
+## For each disk of a compound move, the top of its target once every moving
+## disk is lifted; a pair landing on one peg puts its smaller disk on the larger.
+func _landing_tops(state: PuzzleState, move: Move) -> Array[int]:
+	var parts: Array = move.parts()
+	var disks: Array[int] = []
+	for part: Array in parts:
+		disks.append(state.get_top_disk(part[0]))
+	var tops: Array[int] = []
+	for i: int in parts.size():
+		var below: int = _top_after_lift(state, move, parts[i][1])
+		for j: int in parts.size():
+			if j != i and parts[j][1] == parts[i][1] and disks[j] > disks[i]:
+				below = disks[j]
+		tops.append(below)
+	return tops
 
 
 ## Whether `rule` lets the top disk of `from_peg` go to `to_peg`, whose top is
@@ -509,5 +628,6 @@ func _part_allowed(rule: RuleBase, state: PuzzleState, facts: MoveFacts, from_pe
 ## The top disk of `peg` once the moving disks of `move` are lifted (-1: empty).
 func _top_after_lift(state: PuzzleState, move: Move, peg: int) -> int:
 	var stack: Array = state.pegs[peg]
-	var lifted: int = (1 if peg == move.from_peg else 0) + (1 if move.is_compound() and peg == move.from_peg_2 else 0)
+	var lifted: int = (1 if peg == move.from_peg else 0) + (1 if move.from_peg_2 >= 0 and peg == move.from_peg_2 else 0) \
+			+ (1 if move.from_peg_3 >= 0 and peg == move.from_peg_3 else 0)
 	return stack[stack.size() - 1 - lifted] if stack.size() > lifted else -1

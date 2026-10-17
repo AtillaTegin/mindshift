@@ -249,6 +249,7 @@ func start_level(level: Level) -> void:
 	_goal_preview.disk_palette = _palette
 	_goal_preview.disk_total = level.get_disk_count()
 	_goal_preview.gates = BoardDress.goal_gates(level)
+	_goal_preview.silhouette = BoardDress.goal_silhouette(level)
 	_goal_preview.position_state = BoardDress.goal_view(level)
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
@@ -433,9 +434,12 @@ func on_peg_pressed(peg_index: int) -> void:
 		return
 	var selected_before: int = session.selected_peg
 	var target_move: Move = Move.new(session.selected_peg, peg_index)
-	# The second target of a linked pair completes a compound move.
-	if session.pending_target != -1:
-		target_move = Move.new(session.selected_peg, session.pending_target, session.get_partner_peg(), peg_index)
+	# The last target of a linked group completes a compound move.
+	var pegs: Array[int] = session.get_selected_pegs()
+	if pegs.size() > 1 and session.pending_targets.size() == pegs.size() - 1:
+		var targets: Array[int] = session.pending_targets.duplicate()
+		targets.append(peg_index)
+		target_move = Move.of_parts(pegs, targets)
 	var result: GameSession.TapResult = session.tap_peg(peg_index)
 	if result != GameSession.TapResult.IGNORED:
 		_message = ""
@@ -581,9 +585,13 @@ func _update_buttons() -> void:
 	_undo_button.disabled = locked or not session.can_undo()
 	_way_back_button.visible = dead_ends.is_dead() and not session.is_solved()
 	_way_back_button.disabled = locked
-	# Until the stone has been carried over (the rule's memory).
-	_stone_button.visible = session.rules.has_special_moves() and session.rules.memory_of(session.state) == 0 \
-			and not session.is_solved()
+	# Until the stone has been carried over or the pass is spent (the rule's memory).
+	var facts: MoveFacts = MoveFacts.of(session.state, session.rules)
+	_stone_button.visible = false
+	for rule: RuleBase in session.rules.active_rules:
+		if rule.has_special_moves() and rule.special_open(facts) and not session.is_solved():
+			_stone_button.visible = true
+			_stone_button.text = rule.special_label()
 	_stone_button.disabled = locked
 	_restart_button.disabled = locked
 	var free_left: int = economy.free_undos_left()
@@ -726,8 +734,8 @@ func _layout(animated: bool) -> void:
 	_scale.rod_tops = rod_tops
 	_scale.queue_redraw()
 	_board_skin.set_cells(_cells, base_top + base_height)
-	# The picked-up disks hover above their pegs (a linked pair both); once its
-	# first target is chosen, the tapped disk hovers above that peg instead.
+	# The picked-up disks hover above their pegs (a linked group all); once a
+	# disk's target is chosen, it hovers above that peg instead.
 	var lifted: Array[int] = session.get_selected_disks()
 	for peg_index: int in peg_count:
 		var peg: Array = session.state.pegs[peg_index]
@@ -736,8 +744,9 @@ func _layout(animated: bool) -> void:
 			var view: DiskView = _disk_views[disk_size]
 			var raised: bool = lifted.has(disk_size)
 			var cell: Rect2 = _cells[peg_index]
-			if raised and session.pending_target != -1 and disk_size == lifted[0]:
-				cell = _cells[session.pending_target]
+			var order: int = lifted.find(disk_size)
+			if raised and order < session.pending_targets.size():
+				cell = _cells[session.pending_targets[order]]
 			var column: float = cell.size.x
 			var width: float = BoardLayout.disk_width(disk_size, disk_count, column)
 			if _palette.has(disk_size) and _palette[disk_size].has("size"):

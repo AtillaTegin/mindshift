@@ -42,6 +42,13 @@ var gates: Array[int] = []:
 	set(value):
 		gates = value
 		queue_redraw()
+## A carpet's aim (BoardDress.goal_silhouette, ICRA 3.4): {heights, tops,
+## navel}, drawn as empty slots of each peg's height, the marked tops' colours
+## and the navel's disk; {} for every other level.
+var silhouette: Dictionary = {}:
+	set(value):
+		silhouette = value
+		queue_redraw()
 var position_state: PuzzleState:
 	set(value):
 		position_state = value
@@ -95,6 +102,62 @@ func _disk_total() -> int:
 	return disk_total if disk_total > 0 else maxi(position_state.get_disk_count(), 1)
 
 
+## The carpet's silhouette: on each peg as many outlined slots as it must
+## hold, its height above them, a marked top's colour in its top slot and the
+## navel's disk number on the middle peg.
+func _draw_silhouette(cells: Array[Rect2], disk_height: float, font: Font) -> void:
+	if silhouette.has("sums") or silhouette.get("fair", false):
+		_draw_sums(cells, font)
+		return
+	var heights: Array = silhouette.get("heights", [])
+	var tops: Array = silhouette.get("tops", [])
+	var navel: Array = silhouette.get("navel", [])
+	var outline: Color = ThemeManager.skin_color(skin, "peg")
+	for peg_index: int in mini(heights.size(), cells.size()):
+		var cell: Rect2 = cells[peg_index]
+		var base_top: float = cell.end.y - BASE_HEIGHT
+		var width: float = cell.size.x * 0.7
+		var height: int = heights[peg_index]
+		for slot: int in height:
+			var rect: Rect2 = Rect2(cell.get_center().x - width * 0.5, base_top - disk_height * (slot + 1), width, disk_height - 2.0)
+			var colour: int = int(tops[peg_index]) if peg_index < tops.size() and slot == height - 1 else -1
+			if colour >= 0:
+				draw_rect(rect, ThemeManager.CARPET_DISKS[colour]["fill"])
+			draw_rect(rect, outline, false, 1.5)
+			if slot == height - 1 and navel.size() == 2 and int(navel[0]) == peg_index:
+				var text: String = str(navel[1])
+				var text_width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, MIN_FONT_SIZE).x
+				draw_string(font, rect.get_center() + Vector2(-text_width * 0.5, 5.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+						MIN_FONT_SIZE, outline)
+		var number: String = str(height)
+		var number_width: float = font.get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE).x
+		draw_string(font, Vector2(cell.get_center().x - number_width * 0.5, base_top - disk_height * (height + 1) + 6.0),
+				number, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE, outline)
+
+
+## Cəm's aim: over each peg the sum it must reach ("=" for equal sums, "tək"
+## or "cüt" for parity, "x2" on a doubled peg), and its count where one is set.
+func _draw_sums(cells: Array[Rect2], font: Font) -> void:
+	var sums: Array = silhouette.get("sums", [])
+	var counts: Array = silhouette.get("counts", [])
+	var parity: Array = silhouette.get("parity", [])
+	var color: Color = ThemeManager.skin_color(skin, "peg")
+	for peg_index: int in cells.size():
+		var text: String = "="
+		if peg_index < sums.size() and int(sums[peg_index]) >= 0:
+			text = str(sums[peg_index])
+		elif peg_index < parity.size():
+			text = tr("ODD_PEG") if int(parity[peg_index]) == 1 else tr("EVEN_PEG") if int(parity[peg_index]) == 2 else "·"
+		if peg_index == int(silhouette.get("double", -1)):
+			text += " ×2"
+		if peg_index < counts.size():
+			text += " (%d)" % int(counts[peg_index])
+		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE).x
+		var cell: Rect2 = cells[peg_index]
+		draw_string(font, Vector2(cell.get_center().x - width * 0.5, cell.get_center().y), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				MAX_FONT_SIZE, color)
+
+
 ## The most disks one peg can hold (every disk unless the board says less).
 func _stack() -> int:
 	if stack_room > 0:
@@ -129,6 +192,8 @@ func _draw() -> void:
 					pole + Vector2(1.0, -6.0)]), ThemeManager.mark_color("flag"))
 	var font: Font = get_theme_default_font()
 	var text_color: Color = ThemeManager.color("text_on_disk")
+	if not silhouette.is_empty():
+		_draw_silhouette(cells, disk_height, font)
 	for label: Dictionary in get_disk_labels():
 		var rect: Rect2 = label["rect"]
 		var font_size: int = label["font_size"]

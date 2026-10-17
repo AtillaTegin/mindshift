@@ -15,6 +15,10 @@ static func layout_kind(level: Level) -> String:
 		return BoardLayout.ROW  # one row even with 6 pegs: its two ends are the point
 	if _has(level, RiverRule.ID):
 		return BoardLayout.ROW  # the river runs between the two banks of one row
+	if _has(level, HeavyRule.ID):
+		return BoardLayout.ROW  # the distances are along one line
+	if _has(level, LampRule.ID):
+		return BoardLayout.CIRCLE if (_rule(level, LampRule.ID) as LampRule).circle else BoardLayout.ROW
 	if _has(level, CyclicRule.ID):
 		var dial: CyclicRule = _rule(level, CyclicRule.ID) as CyclicRule
 		if not dial.eight.is_empty():
@@ -50,6 +54,25 @@ static func disk_palette(level: Level) -> Dictionary:
 			palette[disk] = colors
 	elif _has(level, StripesRule.ID):
 		palette = stripe_palette(_rule(level, StripesRule.ID) as StripesRule, level.get_disk_count(), 0)
+	elif _has(level, ElementsRule.ID):
+		palette = element_palette(_rule(level, ElementsRule.ID) as ElementsRule, level.get_disk_count(), 0)
+	elif _has(level, TurnsRule.ID):
+		# Növbə: white, black, red and the grey disk.
+		var turns: TurnsRule = _rule(level, TurnsRule.ID) as TurnsRule
+		for disk: int in range(1, level.get_disk_count() + 1):
+			var hue: String = {TurnsRule.WHITE: "white", TurnsRule.BLACK: "black", TurnsRule.RED: "red",
+				TurnsRule.GREY: "grey"}[turns.colour_of(disk)]
+			palette[disk] = ThemeManager.EXCHANGE_DISKS[hue].duplicate()
+	elif _has(level, SolitaireRule.ID) and not (_rule(level, SolitaireRule.ID) as SolitaireRule).colours.is_empty():
+		# "Qırmızı-qara": card colours.
+		var solitaire: SolitaireRule = _rule(level, SolitaireRule.ID) as SolitaireRule
+		for disk: int in range(1, level.get_disk_count() + 1):
+			palette[disk] = ThemeManager.EXCHANGE_DISKS["red" if solitaire.colour_of(disk) == 1 else "black"].duplicate()
+	elif _has(level, CarpetRule.ID) and not (_rule(level, CarpetRule.ID) as CarpetRule).colours.is_empty():
+		# "Rəngli naxış": each disk in its carpet colour.
+		var carpet: CarpetRule = _rule(level, CarpetRule.ID) as CarpetRule
+		for disk: int in range(1, level.get_disk_count() + 1):
+			palette[disk] = ThemeManager.CARPET_DISKS[carpet.colour_of(disk)].duplicate()
 	elif _has(level, MirrorRule.ID):
 		# Each board numbers its disks from 1; the bottom one, the echo, is paler
 		# and bluish (Güzgü "Əks-səda").
@@ -77,9 +100,22 @@ static func stripe_palette(rule: StripesRule, disk_count: int, memory: int) -> D
 	return palette
 
 
+## The five elements' colours with `memory` (each disk's turns so far).
+static func element_palette(rule: ElementsRule, disk_count: int, memory: int) -> Dictionary:
+	var palette: Dictionary = {}
+	for disk: int in range(1, disk_count + 1):
+		palette[disk] = ThemeManager.ELEMENT_DISKS[rule.element_of(disk, memory)].duplicate()
+	return palette
+
+
 ## The disk colours of the position now, where a move can change them (the
-## paint peg); empty for every other level.
+## paint peg, the element that turns); empty for every other level.
 static func disk_palette_now(session: GameSession) -> Dictionary:
+	if _has(session.level, ElementsRule.ID):
+		var wuxing: ElementsRule = _rule(session.level, ElementsRule.ID) as ElementsRule
+		if not wuxing.uses_memory():
+			return {}
+		return element_palette(wuxing, session.level.get_disk_count(), session.rules.memory_of(session.state))
 	if not _has(session.level, StripesRule.ID):
 		return {}
 	var rule: StripesRule = _rule(session.level, StripesRule.ID) as StripesRule
@@ -122,6 +158,10 @@ static func rod_rooms(level: Level) -> Array[int]:
 		short = (_rule(level, CyclicRule.ID) as CyclicRule).center
 	if _has(level, RiverRule.ID):
 		short = (_rule(level, RiverRule.ID) as RiverRule).ferry()
+	if _has(level, HeavyRule.ID):
+		short = (_rule(level, HeavyRule.ID) as HeavyRule).cart
+	if _has(level, SolitaireRule.ID):
+		short = (_rule(level, SolitaireRule.ID) as SolitaireRule).cell
 	if short < 0:
 		return [] as Array[int]
 	var rooms: Array[int] = []
@@ -137,15 +177,22 @@ static func rod_rooms(level: Level) -> Array[int]:
 static func says_why(level: Level) -> bool:
 	for id: String in [Difficulty.COLOR_SWAP, PegCapacityRule.ID, FoundationRule.ID, BalanceRule.ID, CyclicRule.ID,
 			StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID, SealedBoxRule.ID, AdjacentPegsRule.ID,
-			KingRule.ID, RiverRule.ID]:
+			KingRule.ID, RiverRule.ID, KoRule.ID, HeavyRule.ID, ElementsRule.ID, TurnsRule.ID, KintsugiRule.ID, LampRule.ID,
+			SolitaireRule.ID]:
 		if _has(level, id):
 			return true
 	return false
 
 
 ## What the goal preview shows: the goal position, or for a goal condition
-## (ICRA section 2) only what it asks: the crowned disks on their gates.
+## (ICRA section 2) only what it asks: the crowned disks on their gates, a
+## carpet's empty pegs (its silhouette is drawn over them, goal_silhouette()).
 static func goal_view(level: Level) -> PuzzleState:
+	if _has(level, CarpetRule.ID) or _has(level, SumRule.ID):
+		var empty: Array = []
+		for i: int in level.get_peg_count():
+			empty.append([])
+		return PuzzleState.new(empty)
 	if _has(level, KingRule.ID):
 		var king: KingRule = _rule(level, KingRule.ID) as KingRule
 		if king.defines_goal():
@@ -158,6 +205,20 @@ static func goal_view(level: Level) -> PuzzleState:
 				layout[crown[1]].append(crown[0])
 			return PuzzleState.new(layout)
 	return level.goal
+
+
+## What the goal preview draws for a carpet (ICRA 3.4): {heights, tops (the
+## colour each marked top must have, -1 none), navel [peg, disk]}; {} for any
+## other level.
+static func goal_silhouette(level: Level) -> Dictionary:
+	if _has(level, SumRule.ID):
+		# Cəm: the numbers under the pegs (or "=" for equal sums).
+		var sum: SumRule = _rule(level, SumRule.ID) as SumRule
+		return {"sums": sum.sums, "fair": sum.fair, "counts": sum.counts, "parity": sum.parity, "double": sum.double}
+	if not _has(level, CarpetRule.ID):
+		return {}
+	var carpet: CarpetRule = _rule(level, CarpetRule.ID) as CarpetRule
+	return {"heights": carpet.heights, "tops": carpet.tops, "navel": carpet.navel}
 
 
 ## The pegs the goal preview marks with a gate's flag (the king's gates).
@@ -229,8 +290,9 @@ static func skin_marks(session: GameSession) -> Dictionary:
 		var memory: int = session.rules.memory_of(session.state)
 		var visited: Array[int] = []
 		for peg_index: int in session.state.get_peg_count():
-			if rule.remembers(memory, peg_index, session.state.get_peg_count()):
-				visited.append(peg_index)
+			for index: int in rule.disks.size():
+				if rule.remembers_of(memory, index, peg_index, session.state.get_peg_count()) and not visited.has(peg_index):
+					visited.append(peg_index)
 		marks["visited"] = visited
 	# World 3-4: the caravan road's oasis, tunnels, bridges and arrows; the
 	# dial's centre or figure eight.
@@ -247,6 +309,27 @@ static func skin_marks(session: GameSession) -> Dictionary:
 		var river: RiverRule = _rule(level, RiverRule.ID) as RiverRule
 		marks["river"] = {"banks": river.banks, "bridges": river.bridges, "crossings": river.crossings, "fire": river.fire,
 				"reverse": river.reverse}
+	# World 6: the carpet's silhouette and how far each peg has come.
+	if _has(level, CarpetRule.ID):
+		var counts: Array = []
+		for peg: Array in session.state.pegs:
+			counts.append(peg.size())
+		marks["carpet"] = {"heights": (_rule(level, CarpetRule.ID) as CarpetRule).heights, "counts": counts}
+	# World 7: the heavy disks' track, its slope and cart.
+	if _has(level, HeavyRule.ID):
+		var heavy: HeavyRule = _rule(level, HeavyRule.ID) as HeavyRule
+		marks["quarry"] = {"uphill": heavy.uphill, "cart": heavy.cart}
+	# World 8: each peg's sum now and the one it must reach (doubled where so).
+	if _has(level, SumRule.ID):
+		var sum: SumRule = _rule(level, SumRule.ID) as SumRule
+		var facts: MoveFacts = MoveFacts.of(session.state, session.rules)
+		var now: Array = []
+		var counts: Array = []
+		for peg: int in level.get_peg_count():
+			now.append(sum.shown_sum(facts, peg))
+			counts.append(facts.counts[peg])
+		marks["sums"] = {"targets": sum.sums, "fair": sum.fair, "now": now, "counts": sum.counts, "count_now": counts,
+				"parity": sum.parity, "double": sum.double}
 	return marks
 
 
@@ -260,12 +343,20 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 	var level: Level = session.level
 	var marks: Dictionary = {}
 	if _has(level, ChainRule.ID):
-		var pair: Array[int] = (_rule(level, ChainRule.ID) as ChainRule).disks
-		var free: bool = false
-		for peg_index: int in session.state.get_peg_count():
-			if session.state.get_top_disk(peg_index) == pair[0]:
-				free = session.rules.can_pick_up(session.state, peg_index)
-		marks["chain"] = [pair[0], pair[1], free]
+		# Every chain that holds (a broken one is gone), bright when it can move.
+		var chains: Array = []
+		var chain: ChainRule = _rule(level, ChainRule.ID) as ChainRule
+		var memory: int = session.rules.memory_of(session.state)
+		for index: int in chain.groups.size():
+			if chain.is_broken(memory, index):
+				continue
+			var group: Array = chain.groups[index]
+			var free: bool = false
+			for peg_index: int in session.state.get_peg_count():
+				if session.state.get_top_disk(peg_index) == group[0]:
+					free = session.rules.can_pick_up(session.state, peg_index)
+			chains.append([group, free])
+		marks["chains"] = chains
 	if _has(level, FoundationRule.ID):
 		var lock: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
 		var open: int = session.rules.memory_of(session.state)
@@ -356,6 +447,90 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 		var inn: int = (_rule(level, ColorSwapRule.ID) as ColorSwapRule).caravanserai
 		if inn >= 0:
 			marks["inn"] = inn
+	# World 6: Go stones on the breathing pegs and the free peg's ring; the
+	# carpet's navel and its marked top colours.
+	if _has(level, KoRule.ID):
+		var ko: KoRule = _rule(level, KoRule.ID) as KoRule
+		marks["ko"] = ko.breathing(session.rules.memory_of(session.state), level.get_peg_count())
+		if ko.free >= 0:
+			marks["ko_free"] = ko.free
+	if _has(level, CarpetRule.ID):
+		var carpet: CarpetRule = _rule(level, CarpetRule.ID) as CarpetRule
+		if not carpet.navel.is_empty():
+			var icons: Dictionary = marks.get("disk_icons", {})
+			icons[carpet.navel[1]] = "navel"
+			marks["disk_icons"] = icons
+			marks["navel_peg"] = carpet.navel[0]
+		var tops: Dictionary = {}
+		for peg: int in carpet.tops.size():
+			if carpet.tops[peg] >= 0:
+				tops[peg] = carpet.tops[peg]
+		if not tops.is_empty():
+			marks["top_colours"] = tops
+	# World 7: each heavy disk's reach in dots (∞ for any), a tired disk; each
+	# disk's element glyph, the bases' and the turning peg's elements; the
+	# clean peg and every trail disk.
+	if _has(level, HeavyRule.ID):
+		var heavy: HeavyRule = _rule(level, HeavyRule.ID) as HeavyRule
+		var reach: Dictionary = {}
+		for disk: int in range(1, level.get_disk_count() + 1):
+			reach[disk] = heavy.reach_of(disk)
+		marks["reach"] = reach
+		var last: int = session.state.last_moved_disk
+		if heavy.fatigue and last > 0 and heavy.reach_of(last) == 1:
+			marks["tired"] = last
+	if _has(level, ElementsRule.ID):
+		var wuxing: ElementsRule = _rule(level, ElementsRule.ID) as ElementsRule
+		var memory: int = session.rules.memory_of(session.state)
+		var glyphs: Dictionary = {}
+		for disk: int in range(1, level.get_disk_count() + 1):
+			glyphs[disk] = wuxing.element_of(disk, memory)
+		marks["elements"] = glyphs
+		var bases: Dictionary = {}
+		for peg: int in wuxing.bases.size():
+			if wuxing.bases[peg] >= 0:
+				bases[peg] = wuxing.bases[peg]
+		if not bases.is_empty():
+			marks["element_bases"] = bases
+		if wuxing.turning >= 0:
+			marks["turning"] = wuxing.turning
+	if _has(level, TrailRule.ID):
+		var trail: TrailRule = _rule(level, TrailRule.ID) as TrailRule
+		marks["trail_disks"] = trail.disks
+		if trail.clean >= 0:
+			marks["clean_peg"] = trail.clean
+	# World 8-9: whose turn it is; the cracks and the workshops; the dark and
+	# the lamps; the patience cell and the kings' spot.
+	var facts: MoveFacts = MoveFacts.of(session.state, session.rules)
+	if _has(level, TurnsRule.ID):
+		marks["turn"] = (_rule(level, TurnsRule.ID) as TurnsRule).turn_of(facts)
+	if _has(level, KintsugiRule.ID):
+		var kintsugi: KintsugiRule = _rule(level, KintsugiRule.ID) as KintsugiRule
+		var cracks: Dictionary = {}
+		for disk: int in kintsugi.cracked:
+			cracks[disk] = kintsugi.is_mended(facts.memory, disk)
+		marks["cracks"] = cracks
+		marks["deep"] = kintsugi.deep
+		var workshops: Dictionary = {}
+		for peg: int in kintsugi.workshops:
+			workshops[peg] = kintsugi.is_closed(facts.memory, peg)
+		marks["workshops"] = workshops
+	if _has(level, LampRule.ID):
+		var lamp: LampRule = _rule(level, LampRule.ID) as LampRule
+		var dark: Array = []
+		for peg: int in level.get_peg_count():
+			if not lamp.is_lit(peg, facts):
+				dark.append(peg)
+		marks["dark"] = dark
+		marks["lamps"] = lamp.lamps(facts)
+		if lamp.fixed >= 0:
+			marks["lantern"] = lamp.fixed
+	if _has(level, SolitaireRule.ID):
+		var solitaire: SolitaireRule = _rule(level, SolitaireRule.ID) as SolitaireRule
+		if solitaire.cell >= 0:
+			marks["cell"] = solitaire.cell
+		if solitaire.kings > 0:
+			marks["kings"] = solitaire.kings
 	return marks
 
 

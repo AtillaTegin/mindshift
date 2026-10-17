@@ -46,7 +46,8 @@ const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosi
 ## are drawn first, since they decide which positions are allowed at all
 ## (colours, pans, stops off the road), then a start and a goal the rules
 ## allow (_shape(), _allowed_state()).
-const SHAPED: Array[String] = ["adjacent_pegs", "stripes", "cyclic", "alternation", "balance", "river"]
+const SHAPED: Array[String] = ["adjacent_pegs", "stripes", "cyclic", "alternation", "balance", "river", "heavy",
+		"elements", "kintsugi", "solitaire"]
 ## Allowed positions of a balance board, by its settings (enumerated once).
 static var _balanced: Dictionary = {}
 
@@ -58,6 +59,18 @@ static func random_state(rng: RandomNumberGenerator, peg_count: int, disk_count:
 		layout.append([])
 	for size: int in range(disk_count, 0, -1):
 		layout[rng.randi_range(0, peg_count - 1)].append(size)
+	return PuzzleState.new(layout)
+
+
+## Every disk on one of `stacks` random pegs (a recipe's "stacks": a start
+## scattered over a few tall stacks, so a goal of heights or sums is far).
+static func stacked_state(rng: RandomNumberGenerator, peg_count: int, disk_count: int, stacks: int) -> PuzzleState:
+	var layout: Array = []
+	for i: int in peg_count:
+		layout.append([])
+	var homes: Array = _shuffled(range(peg_count), rng).slice(0, mini(stacks, peg_count))
+	for size: int in range(disk_count, 0, -1):
+		layout[homes[rng.randi_range(0, homes.size() - 1)]].append(size)
 	return PuzzleState.new(layout)
 
 
@@ -121,7 +134,8 @@ static func attempt(modes: Array, board: Dictionary, low: int, high: int, used: 
 		start = pair[0]
 		goal = pair[1]
 	elif (shape as Dictionary).is_empty():
-		start = random_state(rng, pegs, disks)
+		start = random_state(rng, pegs, disks) if int(board.get("stacks", 0)) == 0 \
+				else stacked_state(rng, pegs, disks, board["stacks"])
 		goal = tower_state(pegs, disks, rng.randi_range(0, pegs - 1)) \
 				if rng.randf() < board.get("tower", TOWER_GOAL_CHANCE) else random_state(rng, pegs, disks)
 	else:
@@ -168,13 +182,17 @@ static func attempt(modes: Array, board: Dictionary, low: int, high: int, used: 
 	var rules: RuleSet = RuleSet.from_ids(rule_ids, params)
 	if rules == null or not rules.is_state_valid(start) or not rules.is_state_valid(goal):
 		return {}
-	if rules.uses_memory() and rules.memory_of(start) != 0:
+	if (rule_ids.has(FoundationRule.ID) or rule_ids.has(SealedBoxRule.ID)) and rules.memory_of(start) != 0:
 		return {}  # every lock and seal closed at the start
 	var result: Dictionary = Solver.solve(start, goal, rules, MAX_STATES)
 	var moves: int = result["min_moves"]
 	if not result["solvable"] or moves < low or moves > high:
 		return {}
 	var path: Array[Move] = result["path"]
+	# A chain that never moves teaches nothing.
+	if rules.has_partners(start) or rules.needs_generic_groups(start):
+		if not path.any(func(move: Move) -> bool: return move.is_compound()):
+			return {}
 	if aimed:
 		goal = end_of(start, path, rules)
 	if not matters(start, goal, rule_ids, params, moves) or not variants_matter(start, goal, rule_ids, params, variants, moves):
@@ -319,6 +337,77 @@ static func settings_without(variant: String, params: Dictionary) -> Variant:
 			changed[ColorSwapRule.ID]["colour"] = false
 		"caravanserai":
 			(changed[ColorSwapRule.ID] as Dictionary).erase("caravanserai")
+		# World 6 (ICRA 3.4-3.6).
+		"navel", "coloured":
+			var carpet: Dictionary = changed[CarpetRule.ID]
+			if variant == "navel":
+				carpet.erase("navel")
+			else:
+				carpet.erase("colours")
+				carpet.erase("tops")
+		"free_peg", "long_ko", "two_stones":
+			var name: String = {"free_peg": "free", "long_ko": "turns", "two_stones": "both"}[variant]
+			(changed[KoRule.ID] as Dictionary).erase(name)
+		"two_chains", "long_chain", "breaking", "rubber":
+			var chain: Dictionary = changed[ChainRule.ID]
+			if variant == "breaking" or variant == "rubber":
+				chain.erase(variant)
+			elif variant == "two_chains":
+				chain["groups"] = [chain["groups"][0]]
+			else:
+				chain["groups"] = [(chain["groups"][0] as Array).slice(0, 2)]
+		# World 7 (ICRA 3.7-3.9).
+		"cart":
+			# The cart's peg stays, a plain one-disk stop without the free way out.
+			var heavy: Dictionary = changed[HeavyRule.ID]
+			heavy["stop"] = heavy["cart"]
+			heavy.erase("cart")
+		"fatigue", "uphill":
+			(changed[HeavyRule.ID] as Dictionary).erase(variant)
+		"neutral_earth", "element_base", "creation", "element_peg":
+			var name: String = {"neutral_earth": "earth", "element_base": "bases", "creation": "creation",
+				"element_peg": "turning"}[variant]
+			(changed[ElementsRule.ID] as Dictionary).erase(name)
+		"clean_peg":
+			(changed[TrailRule.ID] as Dictionary).erase("clean")
+		"fading":
+			changed[TrailRule.ID]["recent"] = 2
+		"two_trails":
+			var trail: Dictionary = changed[TrailRule.ID]
+			trail["disk"] = trail["disks"][0]
+			trail.erase("disks")
+		# World 8-9 (ICRA 3.10-3.14).
+		"sum_and_height", "double_peg":
+			var sum: Dictionary = changed[SumRule.ID]
+			if variant == "sum_and_height":
+				sum.erase("counts")
+			else:
+				sum["sums"][sum["double"]] = int(sum["sums"][sum["double"]]) / 2
+				sum.erase("double")
+		"pass", "grey", "double_turn":
+			var turns: Dictionary = changed[TurnsRule.ID]
+			if variant == "pass":
+				turns.erase("pass")
+			elif variant == "double_turn":
+				turns.erase("order")
+			else:
+				# The grey disk takes the colour of the turn it would be missed in: white.
+				var colours: Array = turns["colours"]
+				colours[colours.find(TurnsRule.GREY)] = TurnsRule.WHITE
+		"deep_crack", "single_repair", "ordered_repair":
+			(changed[KintsugiRule.ID] as Dictionary).erase({"deep_crack": "deep", "single_repair": "single",
+				"ordered_repair": "ordered"}[variant])
+		"two_workshops":
+			var kintsugi: Dictionary = changed[KintsugiRule.ID]
+			kintsugi["workshops"] = [kintsugi["workshops"][0]]
+		"long_light", "fixed_lantern", "two_lamps", "lamp_disk":
+			(changed[LampRule.ID] as Dictionary).erase({"long_light": "radius", "fixed_lantern": "fixed", "two_lamps": "two",
+				"lamp_disk": "carrier"}[variant])
+		"free_cell":
+			# The cell stays, an ordinary peg (the run rule for whatever lands on it).
+			(changed[SolitaireRule.ID] as Dictionary).erase("cell")
+		"red_black", "king_spot":
+			(changed[SolitaireRule.ID] as Dictionary).erase("colours" if variant == "red_black" else "kings")
 		_:
 			return null
 	return changed
@@ -406,6 +495,75 @@ static func _params(modes: Array, board: Dictionary, start: PuzzleState, goal: P
 		if foundation == null:
 			return null
 		params[FoundationRule.ID] = foundation
+	# World 6 (ICRA 3.5-3.6): Ko's kind of breathing, the chains' disks.
+	if modes.has(KoRule.ID):
+		var ko: Dictionary = {}
+		if variants.has("target_ko"):
+			ko["target"] = true
+		if variants.has("two_stones"):
+			ko["both"] = true
+		if variants.has("long_ko"):
+			ko["turns"] = 2
+		if variants.has("free_peg"):
+			ko["free"] = rng.randi_range(0, start.get_peg_count() - 1)
+		params[KoRule.ID] = ko
+	if modes.has(ChainRule.ID):
+		var pool: Array = _shuffled(range(1, disks + 1), rng)
+		var groups: Array = [pool.slice(0, 3 if variants.has("long_chain") else 2)]
+		if variants.has("two_chains"):
+			groups.append(pool.slice(2, 4))
+		for group: Array in groups:
+			group.sort()
+		var chain: Dictionary = {"groups": groups}
+		if groups.size() == 1 and groups[0].size() == 2:
+			chain = {"disks": groups[0]}
+		if variants.has("breaking"):
+			chain["breaking"] = true
+		if variants.has("rubber"):
+			chain["rubber"] = true
+		params[ChainRule.ID] = chain
+	# World 7 (ICRA 3.9): the trail's disk (the smallest, the largest for "Böyük
+	# iz", a second one for "İki izli disk"), how long it lasts, a clean peg.
+	if modes.has(TrailRule.ID):
+		var trail: Dictionary = {"disk": disks if variants.has("big_trail") else 1,
+				"recent": rng.randi_range(3, 4) if variants.has("fading") else 2}
+		if variants.has("two_trails"):
+			trail.erase("disk")
+			trail["disks"] = [1, rng.randi_range(2, mini(3, disks))]
+		if variants.has("clean_peg"):
+			trail["clean"] = rng.randi_range(0, start.get_peg_count() - 1)
+		params[TrailRule.ID] = trail
+	# World 8-9 (ICRA 3.11, 3.13): the disks' colours and the order of turns; the
+	# lamp's start and its kind.
+	if modes.has(TurnsRule.ID):
+		var three: bool = variants.has("three_colours")
+		var colours: Array = []
+		for size: int in disks:
+			colours.append(rng.randi_range(0, 2 if three else 1))
+		if variants.has("grey"):
+			colours[rng.randi_range(0, disks - 1)] = TurnsRule.GREY
+		var turns: Dictionary = {"colours": colours}
+		if three:
+			turns["order"] = [TurnsRule.WHITE, TurnsRule.BLACK, TurnsRule.RED]
+		elif variants.has("double_turn"):
+			turns["order"] = [TurnsRule.WHITE, TurnsRule.WHITE, TurnsRule.BLACK, TurnsRule.BLACK]
+		if variants.has("pass"):
+			turns["pass"] = true
+		params[TurnsRule.ID] = turns
+	if modes.has(LampRule.ID):
+		var pegs: int = start.get_peg_count()
+		var lamp: Dictionary = {"start": rng.randi_range(0, pegs - 1)}
+		if board.get("circle", false):
+			lamp["circle"] = true
+		if variants.has("long_light"):
+			lamp["radius"] = 2
+		if variants.has("fixed_lantern"):
+			lamp["fixed"] = rng.randi_range(0, pegs - 1)
+		if variants.has("two_lamps"):
+			lamp["two"] = true
+		if variants.has("lamp_disk"):
+			lamp["carrier"] = rng.randi_range(1, disks)
+		params[LampRule.ID] = lamp
 	return params
 
 
@@ -506,11 +664,12 @@ static func _lock(board: Dictionary, variants: Array, start: PuzzleState, goal: 
 static func fitted(board: Dictionary) -> Dictionary:
 	var variants: Array = board.get("variants", [])
 	var fit: Dictionary = board.duplicate()
-	if variants.has("oasis") or variants.has("center") or variants.has("ferry"):
+	if variants.has("oasis") or variants.has("center") or variants.has("ferry") or variants.has("cart") \
+			or variants.has("free_cell"):
 		fit["pegs"] = int(board["pegs"]) + 1
 	if variants.has("eight") and int(fit["pegs"]) % 2 == 0:
 		fit["pegs"] = int(fit["pegs"]) + 1
-	if variants.has("three_scales"):
+	if variants.has("three_scales") or variants.has("twin"):
 		fit["pegs"] = 6
 	return fit
 
@@ -646,6 +805,70 @@ static func _shape(modes: Array, board: Dictionary, rng: RandomNumberGenerator) 
 		var boat: int = (river["banks"] as Array).find(RiverRule.FERRY)
 		if boat >= 0:
 			keep.append(boat)
+	# World 7 (ICRA 3.7-3.8).
+	if modes.has(HeavyRule.ID):
+		# Reach by size: the smallest third any distance, the middle two pegs,
+		# the largest one (reversed for "Tərs çəki").
+		var reach: Array = []
+		for size: int in range(1, disks + 1):
+			var third: int = (size - 1) * 3 / disks
+			reach.append([0, 2, 1][2 - third] if variants.has("reverse_weight") else [0, 2, 1][third])
+		var heavy: Dictionary = {"reach": reach}
+		if variants.has("cart"):
+			heavy["cart"] = rng.randi_range(1, pegs - 2)
+			keep.append(heavy["cart"])
+		if variants.has("fatigue"):
+			heavy["fatigue"] = true
+		if variants.has("uphill"):
+			heavy["uphill"] = true
+		params[HeavyRule.ID] = heavy
+	if modes.has(ElementsRule.ID):
+		var elements: Array = []
+		for size: int in disks:
+			elements.append(rng.randi_range(ElementsRule.WOOD, ElementsRule.WATER))
+		var wuxing: Dictionary = {"elements": elements}
+		if variants.has("neutral_earth"):
+			wuxing["earth"] = true
+			if not elements.has(ElementsRule.EARTH):
+				elements[rng.randi_range(0, disks - 1)] = ElementsRule.EARTH
+		if variants.has("element_base"):
+			var bases: Array = []
+			bases.resize(pegs)
+			bases.fill(-1)
+			for peg: int in _shuffled(range(pegs), rng).slice(0, rng.randi_range(1, 2)):
+				bases[peg] = rng.randi_range(ElementsRule.WOOD, ElementsRule.WATER)
+			wuxing["bases"] = bases
+		if variants.has("creation"):
+			wuxing["creation"] = true
+		if variants.has("element_peg"):
+			wuxing["turning"] = rng.randi_range(0, pegs - 1)
+		if variants.has("changing"):
+			wuxing["changing"] = true
+		params[ElementsRule.ID] = wuxing
+	# World 8-9 (ICRA 3.12, 3.14).
+	if modes.has(KintsugiRule.ID):
+		var places: Array = _shuffled(range(pegs), rng)
+		var kintsugi: Dictionary = {"cracked": _shuffled(range(2, disks + 1), rng).slice(0, rng.randi_range(1, 2)),
+				"workshops": places.slice(0, 2 if variants.has("two_workshops") else 1)}
+		for flag: Array in [["deep_crack", "deep"], ["single_repair", "single"], ["ordered_repair", "ordered"]]:
+			if variants.has(flag[0]):
+				kintsugi[flag[1]] = true
+		if variants.has("ordered_repair") and (kintsugi["cracked"] as Array).size() < 2:
+			kintsugi["cracked"] = _shuffled(range(2, disks + 1), rng).slice(0, 2)
+		params[KintsugiRule.ID] = kintsugi
+	if modes.has(SolitaireRule.ID):
+		var solitaire: Dictionary = {}
+		if variants.has("free_cell"):
+			solitaire["cell"] = pegs - 1
+			keep.append(pegs - 1)
+		if variants.has("red_black"):
+			var colours: Array = []
+			for size: int in disks:
+				colours.append(rng.randi_range(0, 1))
+			solitaire["colours"] = colours
+		if variants.has("king_spot"):
+			solitaire["kings"] = rng.randi_range(maxi(disks / 2, 2), disks - 1)
+		params[SolitaireRule.ID] = solitaire
 	return {"params": params, "keep": keep}
 
 
@@ -783,7 +1006,7 @@ static func _goal_shape(modes: Array, board: Dictionary, rng: RandomNumberGenera
 	if modes.has(KingRule.ID):
 		var king: Dictionary = {}
 		var places: Array = _shuffled(range(pegs), rng)
-		if variants.has("odd_even"):
+		if variants.has("odd_even") or variants.has("goal_odd_even"):
 			king["odd_even"] = [places[0], places[1]]
 		else:
 			var crowns: Array = [[disks, places[0]]]
@@ -798,7 +1021,129 @@ static func _goal_shape(modes: Array, board: Dictionary, rng: RandomNumberGenera
 					narrow.append([gate, sides[rng.randi_range(0, sides.size() - 1)]])
 				king["narrow"] = narrow
 		params[KingRule.ID] = king
+	if modes.has(CarpetRule.ID):
+		var carpet: Variant = _carpet_shape(pegs, disks, variants, rng)
+		if carpet == null:
+			return null
+		params[CarpetRule.ID] = carpet
+	if modes.has(SumRule.ID):
+		params[SumRule.ID] = _sum_shape(pegs, disks, variants, rng)
 	return params
+
+
+## Cəm's settings (ICRA 3.10), read off a random position so they can be met:
+## its sums under the pegs; for "Ədalət" no numbers but equal sums (that board
+## must split 1..n evenly, else the draw tries again); its counts too ("Cəm və
+## hündürlük"); one peg doubled ("İkiqat qüllə"); for "Tək-cüt cəm" only each
+## sum's parity on most pegs.
+static func _sum_shape(pegs: int, disks: int, variants: Array, rng: RandomNumberGenerator) -> Dictionary:
+	var model: PuzzleState = random_state(rng, pegs, disks)
+	var sums: Array = []
+	var counts: Array = []
+	for stack: Array in model.pegs:
+		sums.append(stack.reduce(func(a: int, b: int) -> int: return a + b, 0))
+		counts.append(stack.size())
+	var total: int = disks * (disks + 1) / 2
+	var sum: Dictionary = {}
+	if variants.has("fair") and total % pegs == 0:
+		sum["fair"] = true
+	elif variants.has("parity"):
+		var parity: Array = []
+		for value: int in sums:
+			parity.append((2 if value % 2 == 0 else 1) if rng.randf() < 0.75 else 0)
+		sum["parity"] = parity
+	else:
+		sum["sums"] = sums
+	if variants.has("sum_and_height"):
+		sum["counts"] = counts
+	if variants.has("double_peg") and sum.has("sums"):
+		var peg: int = rng.randi_range(0, pegs - 1)
+		sum["double"] = peg
+		sums[peg] = int(sums[peg]) * 2
+	return sum
+
+
+## Xalça's settings (ICRA 3.4): a silhouette of `disks` disks on `pegs` pegs,
+## symmetric with its highest peg in the middle (a carpet's navel), uneven
+## for "buta", three pegs repeated on a twin carpet's six; the navel's disk on
+## top of the middle peg; for a coloured carpet the disks in two or three
+## colours and the top colour of two or three pegs.
+static func _carpet_shape(pegs: int, disks: int, variants: Array, rng: RandomNumberGenerator) -> Variant:
+	var heights: Array = []
+	if variants.has("twin"):
+		if pegs != 6 or disks % 2 != 0:
+			return null
+		var half: Array = _composition(3, disks / 2, rng)
+		heights = half + half
+	elif variants.has("buta"):
+		for again: int in 20:
+			heights = _composition(pegs, disks, rng)
+			var mirrored: Array = heights.duplicate()
+			mirrored.reverse()
+			if heights != mirrored:
+				break
+		var reversed: Array = heights.duplicate()
+		reversed.reverse()
+		if heights == reversed:
+			return null
+	else:
+		# Rising to the middle: pairs from the edges in, the rest in the middle.
+		heights.resize(pegs)
+		heights.fill(0)
+		var left: int = disks
+		var pairs: int = pegs / 2
+		# Every peg has a share where the disks allow it (1-3-5-3-1, not 0-0-9-0-0).
+		var low: int = 1 if disks >= pegs + 2 else 0
+		for i: int in pairs:
+			var room: int = (left - (pegs % 2)) / (2 * (pairs - i) + (pegs % 2))
+			var height: int = rng.randi_range(low, maxi(room, low))
+			if pegs % 2 == 0 and i == pairs - 1:
+				height = left / 2  # the middle pair takes the rest
+			if 2 * height > left:
+				height = left / 2
+			heights[i] = height
+			heights[pegs - 1 - i] = height
+			left -= 2 * height
+			low = height
+		if pegs % 2 == 1:
+			heights[pegs / 2] = left
+		elif left > 0:
+			return null
+	var carpet: Dictionary = {"heights": heights}
+	if variants.has("navel"):
+		var middle: int = pegs / 2
+		if int(heights[middle]) < 1:
+			return null
+		carpet["navel"] = [middle, rng.randi_range(1, disks)]
+	if variants.has("coloured"):
+		var hues: int = rng.randi_range(2, 3)
+		var colours: Array = []
+		for disk: int in disks:
+			colours.append(rng.randi_range(0, hues - 1))
+		var tops: Array = []
+		tops.resize(pegs)
+		tops.fill(-1)
+		var filled: Array = _shuffled(range(pegs).filter(func(peg: int) -> bool: return int(heights[peg]) > 0), rng)
+		for i: int in mini(rng.randi_range(2, 3), filled.size()):
+			tops[filled[i]] = colours[rng.randi_range(0, disks - 1)]
+		carpet["colours"] = colours
+		carpet["tops"] = tops
+	return carpet
+
+
+## `total` split into `parts` random counts (each 0 or more).
+static func _composition(parts: int, total: int, rng: RandomNumberGenerator) -> Array:
+	var cuts: Array = []
+	for i: int in parts - 1:
+		cuts.append(rng.randi_range(0, total))
+	cuts.sort()
+	var counts: Array = []
+	var previous: int = 0
+	for cut: int in cuts:
+		counts.append(cut - previous)
+		previous = cut
+	counts.append(total - previous)
+	return counts
 
 
 ## "Mühasirə" (ICRA 3.1): the king, the largest disk, under the tallest stack
@@ -957,10 +1302,13 @@ static func _shaped_positions(modes: Array, shape: Dictionary, board: Dictionary
 	for mode: String in SHAPED:
 		if modes.has(mode):
 			ids.append(mode)
-	# The positions are drawn as they stand before anything is painted.
+	# The positions are drawn as they stand before anything is painted or turned.
 	var drawing: Dictionary = (shape["params"] as Dictionary).duplicate(true)
 	if drawing.has(StripesRule.ID):
 		(drawing[StripesRule.ID] as Dictionary).erase("paint")
+	if drawing.has(ElementsRule.ID):
+		(drawing[ElementsRule.ID] as Dictionary).erase("turning")
+		(drawing[ElementsRule.ID] as Dictionary).erase("changing")
 	var rules: RuleSet = RuleSet.from_ids(ids, drawing)
 	if rules == null:
 		return none

@@ -38,6 +38,10 @@ const CARAVAN_ROOM: float = 44.0
 ## Height kept free under the pegs for the footprints (the scales keep
 ## BalanceScale.ROOM).
 const TRAIL_ROOM: float = 30.0
+## Height kept free under the pegs for the carpet's medallions.
+const CARPET_ROOM: float = 40.0
+## Height kept free under the pegs for Cəm's numbers.
+const SUM_ROOM: float = 48.0
 
 ## Pegs on the board (the caravan road draws a stop under each).
 var peg_count: int = 3:
@@ -88,6 +92,10 @@ func bottom_room() -> float:
 			return BalanceScale.ROOM
 		"trail":
 			return TRAIL_ROOM
+		"carpet":
+			return CARPET_ROOM
+		"abacus":
+			return SUM_ROOM
 	return 0.0
 
 
@@ -149,6 +157,165 @@ func _draw() -> void:
 			_draw_band(inner)
 		"river":
 			_draw_river(inner)
+		"carpet":
+			_draw_carpet(inner)
+		"goban":
+			_draw_goban(inner)
+		"quarry":
+			_draw_quarry(inner)
+		"wuxing":
+			_draw_wuxing(inner)
+		"abacus":
+			_draw_abacus(inner)
+		"marble", "lacquer", "night", "felt":
+			_draw_grain(inner)
+
+
+## Cəm: under each peg its sum now over the one it must reach ("=" when all
+## must be equal; "tək"/"cüt" marks for parity), green once it is met; a
+## doubled peg shows "x2"; with counts, the count too.
+func _draw_abacus(area: Rect2) -> void:
+	_draw_grain(area)
+	var sums: Dictionary = marks.get("sums", {})
+	var targets: Array = sums.get("targets", [])
+	var now: Array = sums.get("now", [])
+	var counts: Array = sums.get("counts", [])
+	var count_now: Array = sums.get("count_now", [])
+	var parity: Array = sums.get("parity", [])
+	var font: Font = get_theme_default_font()
+	var y: float = size.y - SUM_ROOM * 0.55
+	for peg_index: int in mini(now.size(), peg_count):
+		var current: int = now[peg_index]
+		var aim: String = "="
+		var met: bool = false
+		if peg_index < targets.size() and int(targets[peg_index]) >= 0:
+			aim = str(targets[peg_index])
+			met = current == int(targets[peg_index])
+		elif peg_index < parity.size() and int(parity[peg_index]) > 0:
+			aim = tr("ODD_PEG") if int(parity[peg_index]) == 1 else tr("EVEN_PEG")
+			met = current % 2 == int(parity[peg_index]) % 2
+		elif sums.get("fair", false):
+			met = now.all(func(value: int) -> bool: return value == int(now[0]))
+		var text: String = "%d / %s" % [current, aim]
+		if peg_index == int(sums.get("double", -1)):
+			text += " ×2"
+		if peg_index < counts.size():
+			text += "  (%d/%d)" % [count_now[peg_index], counts[peg_index]]
+		var color: Color = ThemeManager.mark_color("sum_met") if met else ThemeManager.mark_color("sum_target")
+		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		draw_string(font, Vector2(peg_x(peg_index) - width * 0.5, y + 6.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
+
+
+## A faint grain for the plain boards of World 8-9 (marble veins, lacquer,
+## night, felt).
+func _draw_grain(area: Rect2) -> void:
+	var line: Color = ThemeManager.skin_color(skin, "pattern")
+	var y: float = area.position.y + 28.0
+	var row: int = 0
+	while y < area.end.y:
+		var points: PackedVector2Array = PackedVector2Array()
+		var x: float = area.position.x
+		while x <= area.end.x:
+			points.append(Vector2(x, y + sin(x * 0.015 + row * 2.3) * 6.0))
+			x += 16.0
+		draw_polyline(points, line, 2.0, true)
+		y += 52.0
+		row += 1
+
+
+## Ağır Disk: a measuring track under the pegs, a tick at every peg; a slope
+## rising to the right when uphill; the cart under its peg.
+func _draw_quarry(area: Rect2) -> void:
+	var line: Color = ThemeManager.skin_color(skin, "pattern")
+	var mark: Color = ThemeManager.skin_color(skin, "mark")
+	var quarry: Dictionary = marks.get("quarry", {})
+	if quarry.get("uphill", false):
+		draw_colored_polygon(PackedVector2Array([Vector2(area.position.x, area.end.y), Vector2(area.end.x, area.end.y),
+				Vector2(area.end.x, area.position.y + area.size.y * 0.45)]), ThemeManager.mark_color("slope"))
+	var y: float = (cells[0].end.y + 10.0) if not cells.is_empty() else size.y - 10.0
+	draw_line(Vector2(area.position.x + 10.0, y), Vector2(area.end.x - 10.0, y), mark, 3.0, true)
+	for peg_index: int in peg_count:
+		draw_line(Vector2(peg_x(peg_index), y - 7.0), Vector2(peg_x(peg_index), y + 7.0), mark, 3.0, true)
+	var cart: int = quarry.get("cart", -1)
+	if cart >= 0 and cart < peg_count:
+		var bottom: Vector2 = Vector2(peg_x(cart), y - 12.0)
+		var color: Color = ThemeManager.mark_color("cart")
+		draw_rect(Rect2(bottom + Vector2(-22.0, -10.0), Vector2(44.0, 12.0)), color)
+		for side: float in [-1.0, 1.0]:
+			draw_circle(bottom + Vector2(side * 14.0, 6.0), 6.0, color.darkened(0.3), true, -1.0, true)
+	var x: float = area.position.x + 30.0
+	while x < area.end.x:
+		draw_circle(Vector2(x, area.position.y + 30.0 + fmod(x * 7.3, 40.0)), 2.0, line, true, -1.0, true)
+		x += 23.0
+
+
+## Beş Ünsür: the five elements around a small circle in the corner, each
+## arrow of creation round it (Water Wood, Wood Fire, Fire Earth, Earth Metal,
+## Metal Water).
+func _draw_wuxing(area: Rect2) -> void:
+	var line: Color = ThemeManager.skin_color(skin, "pattern")
+	var center: Vector2 = area.position + Vector2(46.0, 46.0)
+	draw_arc(center, 30.0, 0.0, TAU, 40, line, 2.0, true)
+	for i: int in 5:
+		var angle: float = TAU * i / 5.0 - PI * 0.5
+		draw_circle(center + Vector2(cos(angle), sin(angle)) * 30.0, 8.0, ThemeManager.ELEMENT_DISKS[i]["fill"], true, -1.0, true)
+	# Brush strokes across the paper.
+	var y: float = area.position.y + 110.0
+	while y < area.end.y - 20.0:
+		draw_line(Vector2(area.position.x + 20.0, y), Vector2(area.position.x + 20.0 + fmod(y * 3.7, 80.0) + 40.0, y), line, 2.0, true)
+		y += 70.0
+
+
+## Xalça: a rug along the bottom with a medallion under each peg showing how
+## high it must stand; a peg that has its height fills its medallion with
+## gold, so the pattern fills in as the silhouette is built.
+func _draw_carpet(area: Rect2) -> void:
+	var line: Color = ThemeManager.skin_color(skin, "pattern")
+	# The field: a lattice of small diamonds, as on a carpet's ground.
+	var step: float = 36.0
+	var y: float = area.position.y + step
+	while y < area.end.y - CARPET_ROOM:
+		var x: float = area.position.x + step * 0.5
+		while x < area.end.x:
+			draw_polyline(PackedVector2Array([Vector2(x, y - 7.0), Vector2(x + 7.0, y), Vector2(x, y + 7.0), Vector2(x - 7.0, y),
+					Vector2(x, y - 7.0)]), line, 2.0, true)
+			x += step
+		y += step
+	var carpet: Dictionary = marks.get("carpet", {})
+	var heights: Array = carpet.get("heights", [])
+	var counts: Array = carpet.get("counts", [])
+	var rug: Rect2 = Rect2(area.position.x + 6.0, size.y - CARPET_ROOM + 2.0, area.size.x - 12.0, CARPET_ROOM - 6.0)
+	draw_rect(rug, ThemeManager.mark_color("rug"))
+	draw_rect(rug.grow(-4.0), ThemeManager.mark_color("rug_border"), false, 3.0)
+	var font: Font = get_theme_default_font()
+	for peg_index: int in mini(heights.size(), peg_count):
+		var center: Vector2 = Vector2(peg_x(peg_index), rug.get_center().y)
+		var done: bool = peg_index < counts.size() and int(counts[peg_index]) == int(heights[peg_index])
+		var medallion: PackedVector2Array = PackedVector2Array([center + Vector2(0.0, -14.0), center + Vector2(18.0, 0.0),
+				center + Vector2(0.0, 14.0), center + Vector2(-18.0, 0.0)])
+		draw_colored_polygon(medallion, ThemeManager.mark_color("rug_done") if done else ThemeManager.mark_color("rug_border"))
+		var text: String = str(heights[peg_index])
+		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		draw_string(font, center + Vector2(-width * 0.5, 6.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18,
+				ThemeManager.mark_color("rug_text"))
+
+
+## Ko: the lines of a Go board on kaya wood, with its star points.
+func _draw_goban(area: Rect2) -> void:
+	var line: Color = ThemeManager.skin_color(skin, "pattern")
+	var step: float = 40.0
+	var x: float = area.position.x + step * 0.5
+	while x < area.end.x:
+		draw_line(Vector2(x, area.position.y + 6.0), Vector2(x, area.end.y - 6.0), line, 1.5, true)
+		x += step
+	var y: float = area.position.y + step * 0.5
+	while y < area.end.y:
+		draw_line(Vector2(area.position.x + 6.0, y), Vector2(area.end.x - 6.0, y), line, 1.5, true)
+		y += step
+	for point: Vector2 in [area.get_center(), area.position + area.size * Vector2(0.25, 0.25),
+			area.position + area.size * Vector2(0.75, 0.25), area.position + area.size * Vector2(0.25, 0.75),
+			area.position + area.size * Vector2(0.75, 0.75)]:
+		draw_circle(point, 4.0, line, true, -1.0, true)
 
 
 ## Gold lozenges on crimson silk, in rows.
@@ -241,13 +408,17 @@ func _draw_bonfire(band: Rect2) -> void:
 	var foot: Vector2 = Vector2(band.get_center().x, (cells[0].end.y if not cells.is_empty() else size.y) - 10.0)
 	var flame: Color = ThemeManager.mark_color("fire")
 	var core: Color = ThemeManager.mark_color("fire_core")
+	# The bonfire stands in the middle of the board's height, so the disks and
+	# bases never hide it.
+	foot.y = band.position.y + band.size.y * 0.62
+	var half: float = band.size.x * 0.45
 	for i: int in 3:
-		var side: float = (i - 1) * band.size.x * 0.22
-		var height: float = 42.0 + sin(_time * 6.0 + i * 2.0) * 6.0
-		draw_colored_polygon(PackedVector2Array([foot + Vector2(side - 12.0, 0.0), foot + Vector2(side, -height),
-				foot + Vector2(side + 12.0, 0.0)]), flame)
-		draw_colored_polygon(PackedVector2Array([foot + Vector2(side - 6.0, 0.0), foot + Vector2(side, -height * 0.55),
-				foot + Vector2(side + 6.0, 0.0)]), core)
+		var side: float = (i - 1) * half * 0.45
+		var height: float = 70.0 + sin(_time * 6.0 + i * 2.0) * 10.0 - absf(i - 1) * 18.0
+		draw_colored_polygon(PackedVector2Array([foot + Vector2(side - half * 0.4, 0.0), foot + Vector2(side, -height),
+				foot + Vector2(side + half * 0.4, 0.0)]), flame)
+		draw_colored_polygon(PackedVector2Array([foot + Vector2(side - half * 0.2, 0.0), foot + Vector2(side, -height * 0.55),
+				foot + Vector2(side + half * 0.2, 0.0)]), core)
 	draw_line(foot + Vector2(-band.size.x * 0.4, 4.0), foot + Vector2(band.size.x * 0.4, 4.0), ThemeManager.mark_color("boat"), 6.0, true)
 
 

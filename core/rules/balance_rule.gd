@@ -186,6 +186,11 @@ func has_special_moves() -> bool:
 	return moving_stone
 
 
+## The stone's button shows until it has been carried over.
+func special_open(facts: MoveFacts) -> bool:
+	return moving_stone and facts.memory == 0
+
+
 ## Carried over, the stone never comes back.
 func can_dead_end() -> bool:
 	return moving_stone

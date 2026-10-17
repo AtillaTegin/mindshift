@@ -341,6 +341,90 @@ msgstr ""
 msgid "RULE_BONFIRE"
 msgstr ""
 
+#. [TODO: TR] az: Bu qüllə nəfəs alır: bu gediş ona toxuna bilməz.
+msgid "RULE_KO"
+msgstr ""
+
+#. [TODO: TR] az: Rezin zəncir: cüt yalnız yanaşı iki qülləyə gedə bilər.
+msgid "RULE_RUBBER"
+msgstr ""
+
+#. [TODO: TR] az: Bu disk o qədər uzağa gedə bilməz: nöqtələri qədər qüllə.
+msgid "RULE_HEAVY"
+msgstr ""
+
+#. [TODO: TR] az: Araba yalnız bir disk daşıyır.
+msgid "RULE_CART_FULL"
+msgstr ""
+
+#. [TODO: TR] az: Ağır disk yorulub: iki dəfə dalbadal gedə bilməz.
+msgid "RULE_FATIGUE"
+msgstr ""
+
+#. [TODO: TR] az: Disk onu məğlub edən ünsürün üstünə qoyulmaz.
+msgid "RULE_ELEMENT"
+msgstr ""
+
+#. [TODO: TR] az: Disk yalnız onu yaradan ünsürün üstünə və ya boş qülləyə qoyula bilər.
+msgid "RULE_CREATION"
+msgstr ""
+
+#. [TODO: TR] az: Qüllənin əsasındakı ünsür bu diski qəbul etmir.
+msgid "RULE_ELEMENT_BASE"
+msgstr ""
+
+#. [TODO: TR] az: İndi bu rəngin növbəsi deyil.
+msgid "RULE_TURN"
+msgstr ""
+
+#. [TODO: TR] az: İndi ağların növbəsidir.
+msgid "RULE_TURN_WHITE"
+msgstr ""
+
+#. [TODO: TR] az: İndi qaraların növbəsidir.
+msgid "RULE_TURN_BLACK"
+msgstr ""
+
+#. [TODO: TR] az: İndi qırmızıların növbəsidir.
+msgid "RULE_TURN_RED"
+msgstr ""
+
+#. [TODO: TR] az: Pas
+msgid "PASS_TURN"
+msgstr ""
+
+#. [TODO: TR] az: Çatlaq diskin üstünə ən çox bir disk qoyulur.
+msgid "RULE_CRACKED"
+msgstr ""
+
+#. [TODO: TR] az: Dərin çatlı diskin üstünə heç nə qoyulmur.
+msgid "RULE_DEEP_CRACK"
+msgstr ""
+
+#. [TODO: TR] az: Emalatxana çatlaq diskləri böyükdən kiçiyə sıra ilə təmir edir.
+msgid "RULE_REPAIR_ORDER"
+msgstr ""
+
+#. [TODO: TR] az: Qaranlıqda disk götürmək və qoymaq olmaz: yalnız işıqlı qüllələr.
+msgid "RULE_DARK"
+msgstr ""
+
+#. [TODO: TR] az: Disk yalnız özündən bir böyük diskin üstünə və ya boş qülləyə qoyulur.
+msgid "RULE_SOLITAIRE"
+msgstr ""
+
+#. [TODO: TR] az: Boş hücrə yalnız bir disk saxlayır.
+msgid "RULE_CELL_FULL"
+msgstr ""
+
+#. [TODO: TR] az: Boş qülləyə yalnız böyük disklər qoyula bilər.
+msgid "RULE_KING_SPOT"
+msgstr ""
+
+#. [TODO: TR] az: Üst-üstə disklərin rəngi növbələşməlidir.
+msgid "RULE_RED_BLACK"
+msgstr ""
+
 #. [TODO: TR] az: Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar.
 msgid "RULE_FOUNDATION"
 msgstr ""
@@ -797,6 +881,374 @@ msgstr ""
 msgid "VARIANT_GOAL_ODD_EVEN_RULE"
 msgstr ""
 
+#. [TODO: TR] az: Göbək
+msgid "VARIANT_NAVEL_NAME"
+msgstr ""
+
+#. [TODO: TR] az: ortadakı qüllənin ən üstündə işarəli disk olmalıdır.
+msgid "VARIANT_NAVEL_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Rəngli naxış
+msgid "VARIANT_COLOURED_NAME"
+msgstr ""
+
+#. [TODO: TR] az: işarəli qüllələrin ən üst diski göstərilən rəngdə olmalıdır.
+msgid "VARIANT_COLOURED_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Buta
+msgid "VARIANT_BUTA_NAME"
+msgstr ""
+
+#. [TODO: TR] az: naxış simmetrik deyil, buta kimi bir tərəfə əyilir.
+msgid "VARIANT_BUTA_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Qoşa xalça
+msgid "VARIANT_TWIN_NAME"
+msgstr ""
+
+#. [TODO: TR] az: altı qüllə, iki xalça: hər üçlük eyni naxışı qurmalıdır.
+msgid "VARIANT_TWIN_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Hədəf ko
+msgid "VARIANT_TARGET_KO_NAME"
+msgstr ""
+
+#. [TODO: TR] az: indi disk qoyulan qüllə bir gediş nəfəs alır.
+msgid "VARIANT_TARGET_KO_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Azad qüllə
+msgid "VARIANT_FREE_PEG_NAME"
+msgstr ""
+
+#. [TODO: TR] az: işarəli qüllə heç vaxt nəfəs almır.
+msgid "VARIANT_FREE_PEG_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Uzun ko
+msgid "VARIANT_LONG_KO_NAME"
+msgstr ""
+
+#. [TODO: TR] az: qüllə iki gediş nəfəs alır.
+msgid "VARIANT_LONG_KO_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İki daş
+msgid "VARIANT_TWO_STONES_NAME"
+msgstr ""
+
+#. [TODO: TR] az: həm götürülən, həm qoyulan qüllə nəfəs alır.
+msgid "VARIANT_TWO_STONES_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İki zəncir
+msgid "VARIANT_TWO_CHAINS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: iki zəncirli cüt var, hər cüt yalnız birlikdə gedir.
+msgid "VARIANT_TWO_CHAINS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Qırılan zəncir
+msgid "VARIANT_BREAKING_NAME"
+msgstr ""
+
+#. [TODO: TR] az: cütü bir qülləyə üst-üstə qoysan, zəncir həmişəlik qırılır.
+msgid "VARIANT_BREAKING_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Uzun zəncir
+msgid "VARIANT_LONG_CHAIN_NAME"
+msgstr ""
+
+#. [TODO: TR] az: üç disk birlikdə gedir, hər biri öz qülləsinə.
+msgid "VARIANT_LONG_CHAIN_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Rezin zəncir
+msgid "VARIANT_RUBBER_NAME"
+msgstr ""
+
+#. [TODO: TR] az: cüt yalnız yanaşı iki qülləyə köçə bilər.
+msgid "VARIANT_RUBBER_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Araba
+msgid "VARIANT_CART_NAME"
+msgstr ""
+
+#. [TODO: TR] az: araba bir disk daşıyır, arabadan düşən disk istənilən qədər uzağa gedir.
+msgid "VARIANT_CART_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Tərs çəki
+msgid "VARIANT_REVERSE_WEIGHT_NAME"
+msgstr ""
+
+#. [TODO: TR] az: indi kiçik disklər yaxına gedir, böyüklər isə sərbəstdir.
+msgid "VARIANT_REVERSE_WEIGHT_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Yorğunluq
+msgid "VARIANT_FATIGUE_NAME"
+msgstr ""
+
+#. [TODO: TR] az: ağır disk iki dəfə dalbadal hərəkət edə bilməz.
+msgid "VARIANT_FATIGUE_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Yoxuş
+msgid "VARIANT_UPHILL_NAME"
+msgstr ""
+
+#. [TODO: TR] az: sağa doğru disklər yarı qədər uzağa gedir, sola isə tam.
+msgid "VARIANT_UPHILL_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Mərkəzi Torpaq
+msgid "VARIANT_NEUTRAL_EARTH_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Torpaq neytraldır, istənilən ünsürə toxuna bilər.
+msgid "VARIANT_NEUTRAL_EARTH_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ünsür əsası
+msgid "VARIANT_ELEMENT_BASE_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bəzi qüllələrin əsası bir ünsürdür, ilk disk ona uyğun olmalıdır.
+msgid "VARIANT_ELEMENT_BASE_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Yaradılış yolu
+msgid "VARIANT_CREATION_NAME"
+msgstr ""
+
+#. [TODO: TR] az: disk yalnız onu yaradan ünsürün üstünə və ya boş qülləyə qoyulur.
+msgid "VARIANT_CREATION_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ünsür qülləsi
+msgid "VARIANT_ELEMENT_PEG_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bu qülləyə qoyulan disk yaradılış dövrü üzrə növbəti ünsürə çevrilir.
+msgid "VARIANT_ELEMENT_PEG_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Dəyişən ünsür
+msgid "VARIANT_CHANGING_NAME"
+msgstr ""
+
+#. [TODO: TR] az: disk hər gedişdə növbəti ünsürə çevrilir.
+msgid "VARIANT_CHANGING_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Təmiz qüllə
+msgid "VARIANT_CLEAN_PEG_NAME"
+msgstr ""
+
+#. [TODO: TR] az: işarəli qüllədə iz qalmır, ora istənilən vaxt qayıtmaq olar.
+msgid "VARIANT_CLEAN_PEG_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Silinən iz
+msgid "VARIANT_FADING_NAME"
+msgstr ""
+
+#. [TODO: TR] az: iz daha uzun qalır, yalnız bir neçə gedişdən sonra silinir.
+msgid "VARIANT_FADING_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İki izli disk
+msgid "VARIANT_TWO_TRAILS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: iki disk iz qoyur, hər biri öz izinə qayıda bilməz.
+msgid "VARIANT_TWO_TRAILS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Böyük iz
+msgid "VARIANT_BIG_TRAIL_NAME"
+msgstr ""
+
+#. [TODO: TR] az: indi iz qoyan disk ən kiçik yox, ən böyük diskdir.
+msgid "VARIANT_BIG_TRAIL_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ədalət
+msgid "VARIANT_FAIR_NAME"
+msgstr ""
+
+#. [TODO: TR] az: rəqəm verilmir, bütün qüllələrin cəmi bərabər olmalıdır.
+msgid "VARIANT_FAIR_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Cəm və hündürlük
+msgid "VARIANT_SUM_AND_HEIGHT_NAME"
+msgstr ""
+
+#. [TODO: TR] az: hər qüllə üçün həm cəm, həm disk sayı verilib.
+msgid "VARIANT_SUM_AND_HEIGHT_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İkiqat qüllə
+msgid "VARIANT_DOUBLE_PEG_NAME"
+msgstr ""
+
+#. [TODO: TR] az: işarəli qüllənin cəmi iki dəfə sayılır.
+msgid "VARIANT_DOUBLE_PEG_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Tək-cüt cəm
+msgid "VARIANT_PARITY_NAME"
+msgstr ""
+
+#. [TODO: TR] az: qüllənin cəmi işarəyə görə tək və ya cüt olmalıdır.
+msgid "VARIANT_PARITY_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Pas
+msgid "VARIANT_PASS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: səviyyədə bir dəfə növbəni ötürmək olar.
+msgid "VARIANT_PASS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Boz disk
+msgid "VARIANT_GREY_NAME"
+msgstr ""
+
+#. [TODO: TR] az: boz disk istənilən rəngin növbəsində gedə bilər.
+msgid "VARIANT_GREY_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İkiqat növbə
+msgid "VARIANT_DOUBLE_TURN_NAME"
+msgstr ""
+
+#. [TODO: TR] az: ağ, ağ, qara, qara: hər rəng iki dəfə dalbadal gedir.
+msgid "VARIANT_DOUBLE_TURN_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Üç rəng
+msgid "VARIANT_THREE_COLOURS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: ağ, qara, qırmızı növbə ilə gedir.
+msgid "VARIANT_THREE_COLOURS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Dərin çat
+msgid "VARIANT_DEEP_CRACK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: çatlaq diskin üstünə heç nə qoyulmur.
+msgid "VARIANT_DEEP_CRACK_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İki emalatxana
+msgid "VARIANT_TWO_WORKSHOPS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: lövhədə iki qızıl emalatxana var.
+msgid "VARIANT_TWO_WORKSHOPS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Tək təmir
+msgid "VARIANT_SINGLE_REPAIR_NAME"
+msgstr ""
+
+#. [TODO: TR] az: emalatxana yalnız bir diski təmir edir, sonra bağlanır.
+msgid "VARIANT_SINGLE_REPAIR_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Sıralı təmir
+msgid "VARIANT_ORDERED_REPAIR_NAME"
+msgstr ""
+
+#. [TODO: TR] az: çatlaq disklər böyükdən kiçiyə sıra ilə təmir olunur.
+msgid "VARIANT_ORDERED_REPAIR_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Uzun işıq
+msgid "VARIANT_LONG_LIGHT_NAME"
+msgstr ""
+
+#. [TODO: TR] az: çıraq iki qüllə uzağa qədər işıqlandırır.
+msgid "VARIANT_LONG_LIGHT_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Sabit fənər
+msgid "VARIANT_FIXED_LANTERN_NAME"
+msgstr ""
+
+#. [TODO: TR] az: fənərli qüllə həmişə işıqlıdır.
+msgid "VARIANT_FIXED_LANTERN_RULE"
+msgstr ""
+
+#. [TODO: TR] az: İki çıraq
+msgid "VARIANT_TWO_LAMPS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: son iki diskin qoyulduğu qüllələrdə çıraq var.
+msgid "VARIANT_TWO_LAMPS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Fənərçi disk
+msgid "VARIANT_LAMP_DISK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: çıraq yalnız işarəli disklə birlikdə yerini dəyişir.
+msgid "VARIANT_LAMP_DISK_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Boş hücrə
+msgid "VARIANT_FREE_CELL_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bir disklik müvəqqəti yer bütün qüllələrə açıqdır.
+msgid "VARIANT_FREE_CELL_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Qırmızı-qara
+msgid "VARIANT_RED_BLACK_NAME"
+msgstr ""
+
+#. [TODO: TR] az: üst-üstə disklərin rəngi növbələşməlidir.
+msgid "VARIANT_RED_BLACK_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Kral yeri
+msgid "VARIANT_KING_SPOT_NAME"
+msgstr ""
+
+#. [TODO: TR] az: boş qülləyə yalnız işarəli ölçüdən böyük disk qoyulur.
+msgid "VARIANT_KING_SPOT_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Cəm hədəfi
+msgid "VARIANT_GOAL_SUM_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bu dəfə hər qüllənin cəmi altındakı rəqəmə bərabər olmalıdır.
+msgid "VARIANT_GOAL_SUM_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Siluet hədəfi
+msgid "VARIANT_GOAL_SILHOUETTE_NAME"
+msgstr ""
+
+#. [TODO: TR] az: bu dəfə qüllələrin hündürlüyü göstərilən naxışa uyğun olmalıdır.
+msgid "VARIANT_GOAL_SILHOUETTE_RULE"
+msgstr ""
+
 #. [TODO: TR] az: Tacı darvazaya çatdır
 msgid "KING_GOAL"
 msgstr ""
@@ -875,6 +1327,42 @@ msgstr ""
 
 #. [TODO: TR] az: Fil Çayı: çay lövhəni iki sahilə bölür. Fil işarəli böyük disklər çayı keçə bilməz, kiçiklər isə qarşı sahilə keçməlidir.
 msgid "INTRO_RIVER"
+msgstr ""
+
+#. [TODO: TR] az: Xalça: hər qüllənin üstündə neçə disk olacağı yazılıb. İstənilən disklərlə bu naxışı qur, böyük disk kiçiyin üstünə qoyulmur.
+msgid "INTRO_CARPET"
+msgstr ""
+
+#. [TODO: TR] az: Ağır Disk: qüllələr bir xəttdədir. Diskin nöqtələri onun neçə qüllə uzağa gedə biləcəyini göstərir, ∞ istənilən qədər deməkdir.
+msgid "INTRO_HEAVY"
+msgstr ""
+
+#. [TODO: TR] az: Beş Ünsür: hər diskin ünsürü var. Ağac Torpağı, Torpaq Suyu, Su Odu, Od Metalı, Metal Ağacı məğlub edir. Disk onu məğlub edənin üstünə qoyulmaz.
+msgid "INTRO_ELEMENTS"
+msgstr ""
+
+#. [TODO: TR] az: Cəm: hər qüllənin altında bir rəqəm var. Qüllədəki disklərin ölçülərinin cəmi o rəqəmə bərabər olmalıdır, indiki cəm görünür.
+msgid "INTRO_SUM"
+msgstr ""
+
+#. [TODO: TR] az: Növbə: disklər ağ və qaradır, gedişlər növbə ilə: əvvəl ağ, sonra qara. Kimin növbəsi olduğu yuxarıda görünür.
+msgid "INTRO_TURNS"
+msgstr ""
+
+#. [TODO: TR] az: Kintsugi: çatlaq diskin üstünə ən çox bir disk qoyulur. Onu qızıl emalatxanaya qoysan, həmişəlik təmir olunur.
+msgid "INTRO_KINTSUGI"
+msgstr ""
+
+#. [TODO: TR] az: Çıraq: lövhə qaranlıqdır. Çıraq son disk qoyulan qüllədədir və onu, bir də qonşularını işıqlandırır. Yalnız işıqlı qüllələrdə oynamaq olar.
+msgid "INTRO_LAMP"
+msgstr ""
+
+#. [TODO: TR] az: Pasyans: disk yalnız özündən düz bir ölçü böyük diskin üstünə və ya boş qülləyə qoyulur.
+msgid "INTRO_SOLITAIRE"
+msgstr ""
+
+#. [TODO: TR] az: Ko: disk götürdüyün qüllə bir gediş nəfəs alır. Növbəti gedişdə ondan disk götürmək də, ona disk qoymaq da olmaz.
+msgid "INTRO_KO"
 msgstr ""
 
 #. [TODO: TR] az: FƏRQ
@@ -1067,6 +1555,114 @@ msgstr ""
 
 #. [TODO: TR] az: Fil işarəli disklər çayı keçə bilməz.
 msgid "MODE_RIVER_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Xalça
+msgid "MODE_CARPET_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Xalça
+msgid "MODE_CARPET_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Qüllələrin hündürlüyü naxışa uyğun olmalıdır.
+msgid "MODE_CARPET_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ko
+msgid "MODE_KO_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Ko
+msgid "MODE_KO_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Disk götürdüyün qüllə bir gediş nəfəs alır.
+msgid "MODE_KO_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Ağır Disk
+msgid "MODE_HEAVY_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Ağır Disk
+msgid "MODE_HEAVY_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Disk nöqtələri qədər uzağa gedə bilər.
+msgid "MODE_HEAVY_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Beş Ünsür
+msgid "MODE_ELEMENTS_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Beş Ünsür
+msgid "MODE_ELEMENTS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Disk onu məğlub edən ünsürün üstünə qoyulmaz.
+msgid "MODE_ELEMENTS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Cəm
+msgid "MODE_SUM_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Cəm
+msgid "MODE_SUM_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Hər qüllənin cəmi altındakı rəqəmə bərabər olsun.
+msgid "MODE_SUM_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Növbə
+msgid "MODE_TURNS_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Növbə
+msgid "MODE_TURNS_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Ağ və qara disklər növbə ilə gedir.
+msgid "MODE_TURNS_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Kintsugi
+msgid "MODE_KINTSUGI_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Kintsugi
+msgid "MODE_KINTSUGI_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Çatlaq diskin üstünə ən çox bir disk. Emalatxana təmir edir.
+msgid "MODE_KINTSUGI_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Çıraq
+msgid "MODE_LAMP_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Çıraq
+msgid "MODE_LAMP_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Yalnız işıqlı qüllələrdə oynamaq olar.
+msgid "MODE_LAMP_RULE"
+msgstr ""
+
+#. [TODO: TR] az: Pasyans
+msgid "MODE_SOLITAIRE_LABEL"
+msgstr ""
+
+#. [TODO: TR] az: Pasyans
+msgid "MODE_SOLITAIRE_NAME"
+msgstr ""
+
+#. [TODO: TR] az: Disk yalnız özündən bir böyük diskin üstünə və ya boş qülləyə.
+msgid "MODE_SOLITAIRE_RULE"
 msgstr ""
 
 #. [TODO: TR] az: Dairə

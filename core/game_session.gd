@@ -25,9 +25,13 @@ var state: PuzzleState
 var move_count: int = 0
 ## Peg whose top disk is picked up, or -1.
 var selected_peg: int = -1
-## A linked pair (RuleBase.partner_of): the target already chosen for the
-## selected disk while the partner's is still to come, or -1.
-var pending_target: int = -1
+## Linked disks (RuleBase.group_of_with): the targets already chosen, in the
+## order of get_selected_disks(), while the others' are still to come.
+var pending_targets: Array[int] = []
+## The first chosen target of a linked group, or -1.
+var pending_target: int:
+	get:
+		return pending_targets[0] if not pending_targets.is_empty() else -1
 var history: Array[Move] = []
 var undo_count: int = 0
 ## Play time of this attempt. The clock starts with the first move (thinking
@@ -85,7 +89,7 @@ func restart() -> void:
 	state = level.start.duplicate_state()
 	move_count = 0
 	selected_peg = -1
-	pending_target = -1
+	pending_targets.clear()
 	history.clear()
 	_previous_states.clear()
 	undo_count = 0
@@ -108,35 +112,42 @@ func get_selected_disk() -> int:
 
 
 ## Every disk picked up with the selected peg: its top disk and, for a linked
-## disk (RuleBase.partner_of), its partner; empty when nothing is selected.
+## disk (RuleBase.group_of_with), the others of its group, smallest first;
+## empty when nothing is selected.
 func get_selected_disks() -> Array[int]:
 	var disks: Array[int] = []
 	if selected_peg == -1:
 		return disks
 	disks.append(get_selected_disk())
-	var partner: int = rules.partner_of(disks[0])
-	if partner != 0:
-		disks.append(partner)
+	for member: int in rules.group_of(disks[0], state):
+		if member != disks[0]:
+			disks.append(member)
 	return disks
 
 
-## The peg of the partner of the selected linked disk, or -1.
+## The pegs of get_selected_disks(), in its order.
+func get_selected_pegs() -> Array[int]:
+	var pegs: Array[int] = []
+	for disk: int in get_selected_disks():
+		for peg_index: int in state.get_peg_count():
+			if state.get_top_disk(peg_index) == disk:
+				pegs.append(peg_index)
+	return pegs
+
+
+## The peg of the partner of the selected linked disk (the next one of its
+## group), or -1.
 func get_partner_peg() -> int:
-	if selected_peg == -1:
-		return -1
-	var partner: int = rules.partner_of(get_selected_disk())
-	for peg_index: int in state.get_peg_count():
-		if partner != 0 and state.get_top_disk(peg_index) == partner:
-			return peg_index
-	return -1
+	var pegs: Array[int] = get_selected_pegs()
+	return pegs[1] if pegs.size() > 1 else -1
 
 
 ## A tap on a peg. With nothing selected it picks up that peg's top disk; a
 ## second tap on the same peg puts it back; a tap on another peg moves it there.
 ## An illegal target keeps the selection so the player can pick another peg.
-## A linked disk lifts its partner too: the next tap names the tapped disk's
-## target (TARGETED), the one after it the partner's, and only then the
-## compound move is tried.
+## A linked disk lifts the others of its group too: each next tap names one
+## disk's target (TARGETED), the tapped disk's first, and once the last one
+## has its target the compound move is tried.
 func tap_peg(peg_index: int) -> TapResult:
 	if is_solved() or peg_index < 0 or peg_index >= state.get_peg_count():
 		return TapResult.IGNORED
@@ -148,19 +159,20 @@ func tap_peg(peg_index: int) -> TapResult:
 		if not rules.can_pick_up(state, peg_index):
 			return TapResult.BLOCKED
 		selected_peg = peg_index
-		pending_target = -1
+		pending_targets.clear()
 		return TapResult.SELECTED
-	if peg_index == selected_peg and pending_target == -1:
+	if peg_index == selected_peg and pending_targets.is_empty():
 		selected_peg = -1
 		return TapResult.DESELECTED
-	var partner_peg: int = get_partner_peg()
-	if partner_peg != -1:
-		if pending_target == -1:
-			pending_target = peg_index
+	var pegs: Array[int] = get_selected_pegs()
+	if pegs.size() > 1:
+		if pending_targets.size() < pegs.size() - 1:
+			pending_targets.append(peg_index)
 			return TapResult.TARGETED
-		var first: int = pending_target
-		pending_target = -1
-		if try_move(Move.new(selected_peg, first, partner_peg, peg_index)):
+		var targets: Array[int] = pending_targets.duplicate()
+		targets.append(peg_index)
+		pending_targets.clear()
+		if try_move(Move.of_parts(pegs, targets)):
 			return TapResult.MOVED
 		return TapResult.ILLEGAL
 	if try_move(Move.new(selected_peg, peg_index)):
@@ -185,7 +197,7 @@ func try_move(move: Move) -> bool:
 	move_count += 1
 	history.append(move)
 	selected_peg = -1
-	pending_target = -1
+	pending_targets.clear()
 	clock_started = true
 	# The smallest disk on a sealed lid breaks the seal: the box opens.
 	open_box(move.to_peg)
@@ -266,7 +278,7 @@ func undo() -> bool:
 	last_echo = null
 	echo_blocked = false
 	selected_peg = -1
-	pending_target = -1
+	pending_targets.clear()
 	_reveal_tops()
 	return true
 
@@ -289,7 +301,7 @@ func rewind_to(moves: int) -> bool:
 	last_echo = null
 	echo_blocked = false
 	selected_peg = -1
-	pending_target = -1
+	pending_targets.clear()
 	_reveal_tops()
 	return true
 
@@ -350,7 +362,7 @@ func return_to_path_move() -> Move:
 	if history.is_empty() or _path_index.has(_path_key(state)):
 		return null
 	var last: Move = history[-1]
-	var back: Move = Move.new(last.to_peg, last.from_peg, last.to_peg_2, last.from_peg_2)
+	var back: Move = Move.of_parts(last.tos(), last.froms())
 	var before: PuzzleState = rules.apply_move(state, back)
 	return back if before != null and _path_key(before) == _path_key(_previous_states[-1]) else null
 
