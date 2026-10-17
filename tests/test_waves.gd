@@ -191,8 +191,13 @@ func test_world_two_rides_in_waves() -> void:
 			var third: int = maxi(list.size() / 3, 1)
 			var head: float = list.slice(0, third).reduce(func(a: int, b: int) -> int: return a + b, 0) / float(third)
 			var tail: float = list.slice(-third).reduce(func(a: int, b: int) -> int: return a + b, 0) / float(third)
-			assert_true(tail > head, "%s wave %d climbs (%.1f -> %.1f)" % [mode, k, head, tail])
-			if k + 1 < waves.size() and moves_by_wave.has(k + 1):
+			# A sub-element that keeps solutions short has its windows capped; a
+			# scarce one (RoadBuilder.SCARCE, the figure eight) takes the lengths
+			# its rare draws give.
+			var capped: bool = ChapterPlan.VARIANT_CEILINGS.has(waves[k])
+			if not capped and not RoadBuilder.SCARCE.has(waves[k]):
+				assert_true(tail > head, "%s wave %d climbs (%.1f -> %.1f)" % [mode, k, head, tail])
+			if k + 1 < waves.size() and moves_by_wave.has(k + 1) and not capped:
 				assert_true(int(moves_by_wave[k + 1][0]) < int(list.max()), "%s wave %d starts below wave %d's top" % [mode, k + 1, k])
 			means.append(list.reduce(func(a: int, b: int) -> int: return a + b, 0) / float(list.size()))
 		assert_true(means[-1] > means[0], "%s: the chapter climbs overall %s" % [mode, str(means)])
@@ -200,7 +205,9 @@ func test_world_two_rides_in_waves() -> void:
 		var big_test: Level = LevelCatalog.load_at(MAIN, chapter["last"])
 		assert_eq(big_test.lesson(), mode, "%s: the chapter ends with its Böyük Sınaq" % mode)
 		assert_true(big_test.min_moves >= 34 and big_test.min_moves <= 65, "%s: %d moves" % [mode, big_test.min_moves])
-		var room: int = waves.size() - 1
+		# Not the twists of their own nor those that keep solutions short.
+		var room: int = waves.filter(func(v: String) -> bool:
+			return v != ChapterPlan.BASE and not ChapterPlan.SOLO.has(v) and not ChapterPlan.VARIANT_CEILINGS.has(v)).size()
 		for pair: Array in ChapterPlan.CLASHES:
 			room -= 1 if waves.has(pair[0]) and waves.has(pair[1]) else 0
 		assert_eq(big_test.variants.size(), room, "%s: %s" % [mode, str(big_test.variants)])

@@ -20,8 +20,12 @@ const COMBO_CHAPTER: String = "combo"
 
 ## Every mode a chapter can teach, in road order. Each is a rule id, except
 ## "covered_pegs" (karakuri boxes, presentation only).
+## New modes join at the end: a mode's place gives its level ids
+## (RoadBuilder.id_block) and its order inside a combination's name.
 const MODES: Array[String] = ["peg_capacity", "covered_pegs", "foundation", "adjacent_pegs", "stripes", "cyclic",
-		"alternation", "balance", "color_swap", "trail", "chain", "mirror", "linked_pegs", "magnet"]
+		"alternation", "balance", "color_swap", "trail", "chain", "mirror", "linked_pegs", "magnet",
+		# ICRA World 5-9 (MindShift_ICRA_Dunya5-9_Yeni_Modlar_v1.md).
+		"king", "river"]
 const COVERED: String = "covered_pegs"
 
 ## The chapters along the main road (section 2). `first`/`last`: main road
@@ -50,20 +54,14 @@ const CHAPTERS: Array[Dictionary] = [
 	{"world": 4, "kind": COMBO_CHAPTER, "first": 971, "last": 1020, "singles": ["alternation", "balance"],
 		"combos": [["alternation", "peg_capacity"], ["balance", "peg_capacity"], ["balance", "foundation"],
 			["balance", "stripes"], ["balance", "covered_pegs"]]},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 1021, "last": 1170, "ratio": 3.0},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "trail", "first": 1171, "last": 1270, "ratio": 3.0},
-	{"world": 5, "kind": COMBO_CHAPTER, "first": 1271, "last": 1320, "singles": ["color_swap", "trail"],
-		"combos": [["color_swap", "adjacent_pegs"], ["color_swap", "cyclic"], ["color_swap", "peg_capacity"],
-			["trail", "adjacent_pegs"], ["trail", "peg_capacity"]]},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 1321, "last": 1470, "ratio": 3.0},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "mirror", "first": 1471, "last": 1570, "ratio": 3.0},
-	{"world": 6, "kind": COMBO_CHAPTER, "first": 1571, "last": 1620, "singles": ["chain", "mirror"],
-		"combos": [["chain", "peg_capacity"], ["chain", "adjacent_pegs"], ["chain", "balance"], ["mirror", "peg_capacity"]]},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "linked_pegs", "first": 1621, "last": 1770, "ratio": 3.0},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "magnet", "first": 1771, "last": 1920, "ratio": 3.0},
-	{"world": 7, "kind": COMBO_CHAPTER, "first": 1921, "last": 2020, "singles": ["linked_pegs", "magnet"],
-		"combos": [["linked_pegs", "foundation"], ["linked_pegs", "peg_capacity"], ["magnet", "peg_capacity"],
-			["magnet", "foundation"]], "with_earlier_combos": true},
+	# ICRA World 5-9 (2026-10-17) replaces the old World 5-7 plan; Güzgü,
+	# Bağlı, Maqnit and the Final wait for a later update.
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "king", "first": 1021, "last": 1120, "ratio": 3.0},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "river", "first": 1121, "last": 1220, "ratio": 3.0},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 1221, "last": 1370, "ratio": 3.0},
+	{"world": 5, "kind": COMBO_CHAPTER, "first": 1371, "last": 1420, "singles": ["king", "river", "color_swap"],
+		"combos": [["river", "peg_capacity"], ["river", "covered_pegs"], ["river", "foundation"],
+			["color_swap", "adjacent_pegs"], ["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
 ]
 
 ## Combination chapters: shares of combinations, single modes and classic
@@ -134,23 +132,99 @@ const WAVES: Dictionary = {
 	"peg_capacity": {"waves": ["base", "narrow", "arch"], "mixed": false},
 	"covered_pegs": {"waves": ["base", "full_hidden", "glass", "empty_box", "sealed"], "mixed": true},
 	"foundation": {"waves": ["base", "key_disk", "middle_lock", "chain_lock"], "mixed": true},
+	# World 3-4 (MindShift_Dunya3-4_Alt_Elementler_v1.md).
+	"adjacent_pegs": {"waves": ["base", "oasis", "tunnel", "bridge", "one_way"], "mixed": true},
+	"stripes": {"waves": ["base", "neutral", "colored_base", "paint", "inverse"], "mixed": true},
+	"cyclic": {"waves": ["base", "back_peg", "shortcut", "center", "eight"], "mixed": true},
+	"alternation": {"waves": ["base", "broken_ring", "reset_peg", "new_leader", "waiting_ring"], "mixed": true},
+	"balance": {"waves": ["base", "stone", "long_arm", "three_scales", "own_limits"], "mixed": true},
+	# ICRA World 5-9, section 3.
+	"king": {"waves": ["base", "odd_even", "vizier", "narrow_gate", "siege"], "mixed": true},
+	"river": {"waves": ["base", "stone_bridge", "ferry", "two_crossings", "reverse"], "mixed": true},
+	"color_swap": {"waves": ["base", "mid_start", "mixed", "caravanserai", "three_caravans"], "mixed": true},
 }
+## Waves that hold fewer levels than an even share, because their puzzles run
+## out (measured 2026-10-17: the great exchange's base form from the ends is
+## one puzzle per board, and only 4 pegs / 8 disks reaches the world's floor,
+## besides the intro); the other waves of the mode share the rest.
+const WAVE_SIZES: Dictionary = {"color_swap": {"base": 2}}
 ## Sub-elements only the islands use (section 3): one per island, mixed with
 ## the chapter's own.
-const ISLAND_VARIANTS: Dictionary = {"peg_capacity": "holed", "covered_pegs": "reclosing"}
+const ISLAND_VARIANTS: Dictionary = {"peg_capacity": "holed", "covered_pegs": "reclosing", "adjacent_pegs": "jump",
+	"balance": "moving_stone", "river": "bonfire"}
+## Islands whose levels always hold these sub-elements of the chapter
+## together (ICRA 3.1: the king's island has the king, the vizier and the
+## narrow gate in one level).
+## The river's island is the bonfire alone (its fords and bridges are the
+## river's).
+const ISLAND_SETS: Dictionary = {"king": ["vizier", "narrow_gate"], "river": []}
+## Sub-elements that keep their own wave: never mixed with others, never in a
+## repeat or a Böyük Sınaq (World 3-4 spec: the turned stripes and the figure
+## eight are twists of their own; ICRA: the odd and even towers change the
+## king's goal, the reversed river turns its mode).
+const SOLO: Array[String] = ["inverse", "eight", "odd_even", "reverse"]
+## The most moves a level with these sub-elements reaches (measured
+## 2026-10-17: a centre linked to every peg, three scales and the river's
+## ferry keep solutions short); their levels' windows stop there, and they
+## stay out of a Böyük Sınaq (34+) and an island.
+const VARIANT_CEILINGS: Dictionary = {"center": 22, "three_scales": 20, "ferry": 22}
+## The most moves the islands of these modes reach on boards whose hints stay
+## within a few seconds (measured 2026-10-17: stripes and the Nine Rings on 4
+## pegs / 9 disks, the scales on 4 / 7, hardly ever past 44); their island
+## levels stay at most that long (still 34+).
+const ISLAND_CEILINGS: Dictionary = {"stripes": 44, "alternation": 44, "balance": 44}
+## Islands whose levels take any length of the expert range rather than a
+## climbing one: the bonfire's stack of elephants moves in a few fixed
+## lengths (measured 2026-10-17: 33-34 moves on 5 pegs / 7 disks, 65 on 5 / 8).
+const ISLAND_WINDOWS: Dictionary = {"river": [34, 65]}
+## Sub-elements that only help (World 3-4 spec, [kömək]): such a sub-element
+## must be used, without it the level takes longer (LevelForge.variants_matter);
+## every other rule-changing one must make it longer.
+const HELPERS: Array[String] = ["oasis", "tunnel", "jump", "neutral", "back_peg", "shortcut", "center", "broken_ring",
+	"reset_peg", "moving_stone", "stone_bridge", "ferry", "caravanserai"]
 ## Sub-elements that cannot share a level: in a fully hidden level every box
 ## holds a disk, so it has no empty box (current decisions 2026-10-16, B.1).
-const CLASHES: Array[Array] = [["full_hidden", "empty_box"]]
+## Three caravans (ICRA 3.3) have the pure kind's size rule only: no colour
+## rule, so no mixed ends and no caravanserai with them.
+const CLASHES: Array[Array] = [["full_hidden", "empty_box"], ["three_caravans", "mixed"], ["three_caravans", "caravanserai"]]
 ## Rules that belong to a mode as one of its sub-elements (not modes).
 const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 
+## Goal variants, the "nəfəs" levels (ICRA section 4): from the main road
+## position given on (once the chapter that teaches it is over), about
+## BREATH_SHARE of each chapter's levels are its own mode's with another
+## goal, short (BREATH_MOVES, below the world's floor too) on small boards,
+## never a Böyük Sınaq. The goal comes from a goal-setting mode's rule
+## (GOAL_RULES); such a level names the variant and is still a level of its
+## chapter's mode (Level.modes()).
+const GOAL_VARIANTS: Dictionary = {"goal_king": 1121, "goal_odd_even": 1121}
+const GOAL_RULES: Dictionary = {"goal_king": "king", "goal_odd_even": "king"}
+const BREATH_SHARE: float = 0.1
+const BREATH_MOVES: Array[int] = [12, 18]
+## Modes that bring a goal of their own: no goal variant goes with them (ICRA
+## section 4: not with the scales or the exchange; one goal per level).
+const OWN_GOAL: Array[String] = ["king", "color_swap", "balance", "mirror"]
 
-## The sub-elements of `mode` in wave order (base first), chapter and island.
+
+## The goal variants a chapter starting at main road `position` may use.
+static func goal_variants_at(position: int) -> Array[String]:
+	var found: Array[String] = []
+	for variant: String in GOAL_VARIANTS:
+		if position >= int(GOAL_VARIANTS[variant]):
+			found.append(variant)
+	return found
+
+
+## The sub-elements of `mode` in wave order (base first), chapter and island;
+## any mode without a goal of its own may carry a goal variant.
 static func variants_of(mode: String) -> Array[String]:
 	var found: Array[String] = []
 	found.assign(WAVES.get(mode, {}).get("waves", [BASE]))
 	if ISLAND_VARIANTS.has(mode):
 		found.append(ISLAND_VARIANTS[mode])
+	if not OWN_GOAL.has(mode):
+		for variant: String in GOAL_VARIANTS:
+			found.append(variant)
 	return found
 
 
@@ -171,6 +245,9 @@ const CATEGORIES: Dictionary = {
 	"balance": ["layout", "goal"],
 	"mirror": ["layout", "goal"],
 	"chain": ["compound"],
+	# ICRA World 5-9, section 5.
+	"king": ["goal"],
+	"river": ["topology"],
 }
 ## Categories a combination may hold only one mode of (section 4.2, rule 1).
 const EXCLUSIVE: Array[String] = ["hidden", "topology", "colour", "history", "layout", "goal", "compound"]

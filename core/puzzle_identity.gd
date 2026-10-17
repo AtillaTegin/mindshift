@@ -31,6 +31,9 @@ static func key(start: PuzzleState, goal: PuzzleState, rule_ids: Array, params: 
 	var maps: Array[Dictionary] = [{}]
 	for rule: RuleBase in rules.active_rules:
 		maps.append_array(rule.disk_swaps(disks))
+	# A goal condition (RuleBase.defines_goal) is the aim; its stored goal is
+	# only where one shortest solution ends.
+	var aimed: bool = rules.goal_rule() != null
 	var best: String = ""
 	for map: Dictionary in maps:
 		var columns: Array[String] = []
@@ -38,7 +41,8 @@ static func key(start: PuzzleState, goal: PuzzleState, rule_ids: Array, params: 
 			var marks: Array = []
 			for rule: RuleBase in rules.active_rules:
 				marks.append(rule.peg_mark(peg_index))
-			columns.append(JSON.stringify([_relabelled(start.pegs[peg_index], map), _relabelled(goal.pegs[peg_index], map), marks]))
+			var aim: Array = [] if aimed else _relabelled(goal.pegs[peg_index], map)
+			columns.append(JSON.stringify([_relabelled(start.pegs[peg_index], map), aim, marks]))
 		var candidates: Array[String] = []
 		if orders.is_empty():
 			var sorted: Array[String] = columns.duplicate()

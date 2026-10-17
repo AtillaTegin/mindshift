@@ -33,7 +33,12 @@ const PREVIEW_SIZE: int = 22
 
 ## The limit of the level (BalanceRule.tolerance).
 var tolerance: int = 1
-## Per pair: [left sum - right sum].
+## The level's rule (World 3-4 sub-elements: the stone, long arms, each
+## scale's own limit) and the memory of the position (the stone carried over);
+## without a rule every pan weighs its disks and one limit holds.
+var rule: BalanceRule
+var memory: int = 0
+## Per pair: [left weight - right weight].
 var differences: Array[int] = []
 ## Each peg's cell on the board, and the y (inside a cell) where its base ends
 ## and where its rod begins.
@@ -67,8 +72,9 @@ func _ready() -> void:
 
 ## The position after a move (or at the start): new differences to settle on.
 ## `settle_now` places the pans without a swing (a level just started).
-func show_position(state: PuzzleState, p_tolerance: int, settle_now: bool = false) -> void:
+func show_position(state: PuzzleState, p_tolerance: int, settle_now: bool = false, p_memory: int = 0) -> void:
 	tolerance = maxi(p_tolerance, 1)
+	memory = p_memory
 	pegs = state.pegs.duplicate(true)
 	var pair_count: int = state.get_peg_count() / 2
 	if differences.size() != pair_count:
@@ -80,7 +86,8 @@ func show_position(state: PuzzleState, p_tolerance: int, settle_now: bool = fals
 		settle_now = true
 	differences.clear()
 	for pair: int in pair_count:
-		differences.append(BalanceRule.sum_of(state.pegs[pair * 2]) - BalanceRule.sum_of(state.pegs[pair * 2 + 1]))
+		differences.append(weight_of(pair * 2, BalanceRule.sum_of(state.pegs[pair * 2]))
+				- weight_of(pair * 2 + 1, BalanceRule.sum_of(state.pegs[pair * 2 + 1])))
 	for pair: int in pair_count:
 		var shown: int = absi(differences[pair])
 		if settle_now:
@@ -105,11 +112,27 @@ func show_preview(from_peg: int, disk: int) -> void:
 			if to_peg == from_peg or (top != -1 and top < disk):
 				continue  # not a place the disk can go anyway
 			var after: Array[int] = differences.duplicate()
-			after[from_peg / 2] += -disk if from_peg % 2 == 0 else disk
-			after[to_peg / 2] += disk if to_peg % 2 == 0 else -disk
-			var broken: bool = absi(after[from_peg / 2]) > tolerance or absi(after[to_peg / 2]) > tolerance
+			var leaving: int = disk * _factor(from_peg)
+			var arriving: int = disk * _factor(to_peg)
+			after[from_peg / 2] += -leaving if from_peg % 2 == 0 else leaving
+			after[to_peg / 2] += arriving if to_peg % 2 == 0 else -arriving
+			var broken: bool = absi(after[from_peg / 2]) > limit_of(from_peg / 2) or absi(after[to_peg / 2]) > limit_of(to_peg / 2)
 			preview[to_peg] = -1 if broken else absi(after[to_peg / 2])
 	queue_redraw()
+
+
+## What pan `peg` weighs with disk sizes `sum` (long arms double, the stone adds).
+func weight_of(peg: int, sum: int) -> int:
+	return rule.weight_of(peg, sum, memory) if rule != null else sum
+
+
+func _factor(peg: int) -> int:
+	return rule.factor_of(peg) if rule != null else 1
+
+
+## The limit of scale `pair`.
+func limit_of(pair: int) -> int:
+	return maxi(rule.limit_of(pair * 2), 1) if rule != null else tolerance
 
 
 ## A refused move onto `peg`: its scale shakes, its LCD flashes red twice and
@@ -215,8 +238,27 @@ func _draw_scale(pair: int) -> void:
 		style.set_corner_radius_all(3)
 		draw_style_box(style, pan)
 		draw_line(Vector2(side[0], rest + side[1] + 5.0), Vector2(side[0], pivot.y + side[1] * 0.5), metal, 4.0, true)
-	# The beam through the pivot, tipped with the pans.
+	# World 3-4: a stone on its pan, and the "×2" of a long arm.
+	for peg: int in [pair * 2, pair * 2 + 1]:
+		var cell: Rect2 = cells[peg]
+		var drop: float = pan_drop(peg)
+		if rule != null and rule.stone_on(peg, memory) > 0:
+			_draw_stone(Vector2(cell.get_center().x + cell.size.x * 0.32, rest + drop - 10.0), rule.stone_on(peg, memory))
+		if rule != null and rule.factor_of(peg) > 1:
+			var font: Font = get_theme_default_font()
+			var label: String = "×%d" % rule.factor_of(peg)
+			var outward: float = -1.0 if peg % 2 == 0 else 1.0
+			draw_string(font, Vector2(cell.get_center().x + outward * cell.size.x * 0.36 - 12.0, rest + drop + 22.0), label,
+					HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE + 4, brass)
+	# The beam through the pivot, tipped with the pans; a long arm reaches out
+	# further on its side.
 	draw_line(Vector2(lx, pivot.y + left_drop * 0.5), Vector2(rx, pivot.y + right_drop * 0.5), metal, 6.0, true)
+	for side: Array in [[pair * 2, lx, left_drop, -1.0], [pair * 2 + 1, rx, right_drop, 1.0]]:
+		if rule != null and rule.factor_of(side[0]) > 1:
+			var reach: float = cells[side[0]].size.x * 0.3
+			draw_line(Vector2(side[1], pivot.y + side[2] * 0.5), Vector2(side[1] + side[3] * reach, pivot.y + side[2] * 0.75),
+					metal, 6.0, true)
+			draw_circle(Vector2(side[1] + side[3] * reach, pivot.y + side[2] * 0.75), 5.0, brass, true, -1.0, true)
 	# Post and foot.
 	var foot_y: float = rest + ROOM - LCD_HEIGHT - 10.0
 	draw_line(pivot, Vector2(mid_x, foot_y), metal, 7.0, true)
@@ -229,6 +271,27 @@ func _draw_scale(pair: int) -> void:
 	_draw_lcd(pair, Rect2(mid_x - 90.0, foot_y + 6.0, 180.0, LCD_HEIGHT))
 
 
+## A weight stone with its number; a stone of weight 1 is a feather (Maat's,
+## the World 3-4 spec).
+func _draw_stone(center: Vector2, weight: int) -> void:
+	if weight == 1:
+		var feather: Color = ThemeManager.mark_color("feather")
+		draw_set_transform(center, -0.5, Vector2(0.45, 1.0))
+		draw_circle(Vector2.ZERO, 12.0, feather, true, -1.0, true)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		draw_line(center + Vector2(-5.0, 10.0), center + Vector2(5.0, -10.0), ThemeManager.mark_color("scale_metal"), 1.5, true)
+		return
+	var stone: StyleBoxFlat = StyleBoxFlat.new()
+	stone.bg_color = ThemeManager.mark_color("stone")
+	stone.set_corner_radius_all(8)
+	draw_style_box(stone, Rect2(center - Vector2(13.0, 10.0), Vector2(26.0, 20.0)))
+	var font: Font = get_theme_default_font()
+	var text: String = str(weight)
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE + 2).x
+	draw_string(font, center + Vector2(-width * 0.5, font.get_ascent(LABEL_SIZE + 2) * 0.38), text, HORIZONTAL_ALIGNMENT_LEFT,
+			-1, LABEL_SIZE + 2, ThemeManager.mark_color("stone_text"))
+
+
 ## "FƏRQ x · HƏDD T" in seven-segment digits on a dark screen.
 func _draw_lcd(pair: int, screen: Rect2) -> void:
 	var back: StyleBoxFlat = StyleBoxFlat.new()
@@ -236,7 +299,8 @@ func _draw_lcd(pair: int, screen: Rect2) -> void:
 	back.set_corner_radius_all(6)
 	draw_style_box(back, screen)
 	var difference: int = absi(differences[pair])
-	var ink: Color = ThemeManager.mark_color("lcd_green" if difference < tolerance else "lcd_yellow")
+	var limit: int = limit_of(pair)
+	var ink: Color = ThemeManager.mark_color("lcd_green" if difference < limit else "lcd_yellow")
 	if _flash[pair] > 0.0 and int(_flash[pair] / (FLASH_SECONDS / 4.0)) % 2 == 1:
 		ink = ThemeManager.mark_color("lcd_red")
 	var font: Font = get_theme_default_font()
@@ -261,7 +325,7 @@ func _draw_lcd(pair: int, screen: Rect2) -> void:
 	x += 8.0
 	draw_string(font, Vector2(x, baseline), Languages.text("SCALE_LIMIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE, ink)
 	x += font.get_string_size(Languages.text("SCALE_LIMIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE).x + 6.0
-	_draw_number(tolerance, Vector2(x, top), ink)
+	_draw_number(limit, Vector2(x, top), ink)
 
 
 ## A number in seven-segment digits from `at` (top left); returns the x after it.

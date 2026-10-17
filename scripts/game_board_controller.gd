@@ -116,6 +116,9 @@ var _cells: Array[Rect2] = []
 @onready var _undo_button: Button = %UndoButton
 ## Beside the status line, only in a dead end: the free way back.
 @onready var _way_back_button: Button = %WayBackButton
+## Beside the status line on a level whose weight stone may be carried over
+## (the Tərəzi island's "Hərəkətli daş"), while it still may.
+@onready var _stone_button: Button = %StoneButton
 
 
 func _ready() -> void:
@@ -151,6 +154,7 @@ func _ready() -> void:
 	dead_ends.changed.connect(_on_dead_end_changed)
 	add_child(dead_ends)
 	_way_back_button.pressed.connect(request_way_back)
+	_stone_button.pressed.connect(request_special_move)
 	var bold: FontVariation = FontVariation.new()
 	bold.base_font = _rule_name.get_theme_default_font()
 	bold.variation_embolden = 0.8
@@ -236,13 +240,16 @@ func start_level(level: Level) -> void:
 		_scale.sound_on = save_system.sound_enabled
 		_scale.peg_views = _peg_views
 		_scale.disk_views = _disk_views
+		_scale.rule = _balance_rule(level)
 		_scale.show_position(level.start, _tolerance(level), true)
 	_goal_preview.skin = _board_skin.skin
 	_goal_preview.layout_kind = BoardDress.layout_kind(level)
 	_goal_preview.stack_room = BoardDress.stack_room(level)
 	_goal_preview.rod_rooms = BoardDress.rod_rooms(level)
 	_goal_preview.disk_palette = _palette
-	_goal_preview.position_state = level.goal
+	_goal_preview.disk_total = level.get_disk_count()
+	_goal_preview.gates = BoardDress.goal_gates(level)
+	_goal_preview.position_state = BoardDress.goal_view(level)
 	_level_label.text = LevelCatalog.level_title(level)
 	_min_label.text = tr("BOARD_MINIMUM") % level.min_moves
 	_rule_name.text = ModeTexts.name_of(level)
@@ -310,6 +317,43 @@ func request_way_back() -> void:
 	_message = ""
 	_refresh(true)
 	position_changed.emit()
+
+
+## The level's special move now (RuleBase.special_moves: the weight stone
+## carried to the other pan), or null.
+func special_move() -> Move:
+	if session == null or session.is_solved():
+		return null
+	var facts: MoveFacts = MoveFacts.of(session.state, session.rules)
+	for rule: RuleBase in session.rules.active_rules:
+		var moves: Array[Move] = rule.special_moves(facts)
+		if not moves.is_empty():
+			return moves[0]
+	return null
+
+
+## Plays the special move (the stone's button), like any move; where the
+## scale cannot take it now, it is refused like a disk move.
+func request_special_move() -> void:
+	if session == null or restricted_peg >= 0:
+		return
+	var move: Move = special_move()
+	if move == null or not session.try_move(move):
+		var rule: BalanceRule = _balance_rule(session.level)
+		if rule != null and _scale.visible:
+			_scale.refuse(rule.stone_pan())
+		show_message(tr("RULE_BALANCE"), true)
+		return
+	_message = ""
+	_refresh(true)
+	position_changed.emit()
+	if session.is_solved():
+		_on_solved()
+
+
+## The stone's button, in viewport coordinates.
+func get_stone_button_rect() -> Rect2:
+	return _stone_button.get_global_rect()
 
 
 ## A dead end was found (its words replace any older note) or left.
@@ -435,10 +479,16 @@ func on_peg_pressed(peg_index: int) -> void:
 
 ## The limit of a Tərəzi level (its BalanceRule's tolerance), 0 for others.
 static func _tolerance(level: Level) -> int:
+	var rule: BalanceRule = _balance_rule(level)
+	return rule.tolerance if rule != null else 0
+
+
+## A Tərəzi level's rule (its stone, long arms and limits), or null.
+static func _balance_rule(level: Level) -> BalanceRule:
 	for rule: RuleBase in level.get_rule_set().active_rules:
 		if rule is BalanceRule:
-			return (rule as BalanceRule).tolerance
-	return 0
+			return rule
+	return null
 
 
 ## The level after this one on its track: {track, position}, or {} after the
@@ -510,11 +560,11 @@ func _release_chest() -> void:
 ## top disks that may go right now wear a ring.
 func _update_rings() -> void:
 	var watch: bool = session.rules.uses_last_move() and not session.is_solved()
-	var last: int = session.state.last_moved_disk
+	var facts: MoveFacts = MoveFacts.of(session.state, session.rules) if watch else null
 	for peg_index: int in session.state.get_peg_count():
 		var top: int = session.state.get_top_disk(peg_index)
 		for disk: int in session.state.pegs[peg_index]:
-			_disk_views[disk].movable_ring = watch and disk == top and session.rules.is_disk_movable(disk, last)
+			_disk_views[disk].movable_ring = watch and disk == top and session.rules.is_disk_movable_with(disk, facts)
 
 
 func _update_buttons() -> void:
@@ -531,6 +581,10 @@ func _update_buttons() -> void:
 	_undo_button.disabled = locked or not session.can_undo()
 	_way_back_button.visible = dead_ends.is_dead() and not session.is_solved()
 	_way_back_button.disabled = locked
+	# Until the stone has been carried over (the rule's memory).
+	_stone_button.visible = session.rules.has_special_moves() and session.rules.memory_of(session.state) == 0 \
+			and not session.is_solved()
+	_stone_button.disabled = locked
 	_restart_button.disabled = locked
 	var free_left: int = economy.free_undos_left()
 	if free_left > 0:
@@ -596,8 +650,17 @@ func _refresh(animated: bool) -> void:
 		peg.highlighted = peg.peg_index == session.selected_peg
 	_board_skin.marks = BoardDress.skin_marks(session)
 	_marks.marks = BoardDress.overlay_marks(session)
+	# Zolaqlı's paint peg: a painted disk takes its new colour, the pot drips.
+	var now: Dictionary = BoardDress.disk_palette_now(session)
+	for disk: int in now:
+		if _disk_views.has(disk) and _disk_views[disk].color != now[disk]["fill"]:
+			_disk_views[disk].color = now[disk]["fill"]
+			_disk_views[disk].number_color = now[disk]["text"]
+			_disk_views[disk].outline_color = now[disk].get("outline")
+			if animated:
+				_marks.flash_paint()
 	if _scale.visible:
-		_scale.show_position(session.state, _tolerance(session.level))
+		_scale.show_position(session.state, _tolerance(session.level), false, session.rules.memory_of(session.state))
 		_scale.show_preview(session.selected_peg, session.get_selected_disk())
 	_update_rings()
 	_update_buttons()

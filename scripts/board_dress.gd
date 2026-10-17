@@ -13,8 +13,13 @@ extends RefCounted
 static func layout_kind(level: Level) -> String:
 	if _has(level, Difficulty.COLOR_SWAP):
 		return BoardLayout.ROW  # one row even with 6 pegs: its two ends are the point
+	if _has(level, RiverRule.ID):
+		return BoardLayout.ROW  # the river runs between the two banks of one row
 	if _has(level, CyclicRule.ID):
-		return BoardLayout.CIRCLE
+		var dial: CyclicRule = _rule(level, CyclicRule.ID) as CyclicRule
+		if not dial.eight.is_empty():
+			return BoardLayout.EIGHT
+		return BoardLayout.CIRCLE_CENTER if dial.center >= 0 else BoardLayout.CIRCLE
 	if _has(level, BalanceRule.ID):
 		return BoardLayout.PAIRS
 	if _has(level, MirrorRule.ID):
@@ -33,16 +38,18 @@ static func layout_kind(level: Level) -> String:
 static func disk_palette(level: Level) -> Dictionary:
 	var palette: Dictionary = {}
 	if _has(level, Difficulty.COLOR_SWAP):
-		var sizes: int = level.get_disk_count() / 2
+		# Two caravans, or three ("Üç karvan": white, black, red).
+		var count: int = (_rule(level, ColorSwapRule.ID) as ColorSwapRule).colours
+		var sizes: int = level.get_disk_count() / count
 		for disk: int in range(1, level.get_disk_count() + 1):
-			var colors: Dictionary = ThemeManager.EXCHANGE_DISKS["white" if ColorSwapRule.is_white(disk) else "black"].duplicate()
-			colors["label"] = ColorSwapRule.size_of(disk)
-			colors["size"] = ColorSwapRule.size_of(disk)
+			var hue: String = ["white", "black", "red"][ColorSwapRule.colour_of(disk, count)]
+			var colors: Dictionary = ThemeManager.EXCHANGE_DISKS[hue].duplicate()
+			colors["label"] = ColorSwapRule.size_of(disk, count)
+			colors["size"] = ColorSwapRule.size_of(disk, count)
 			colors["sizes"] = sizes
 			palette[disk] = colors
 	elif _has(level, StripesRule.ID):
-		for disk: int in range(1, level.get_disk_count() + 1):
-			palette[disk] = ThemeManager.STRIPE_DISKS["odd" if disk % 2 == 1 else "even"].duplicate()
+		palette = stripe_palette(_rule(level, StripesRule.ID) as StripesRule, level.get_disk_count(), 0)
 	elif _has(level, MirrorRule.ID):
 		# Each board numbers its disks from 1; the bottom one, the echo, is paler
 		# and bluish (Güzgü "Əks-səda").
@@ -59,6 +66,28 @@ static func disk_palette(level: Level) -> Dictionary:
 	return palette
 
 
+## The striped tower's colours with `memory` (the paint peg's painted disks
+## turned, the neutral disk grey).
+static func stripe_palette(rule: StripesRule, disk_count: int, memory: int) -> Dictionary:
+	var palette: Dictionary = {}
+	for disk: int in range(1, disk_count + 1):
+		var colour: int = rule.colour_of(disk, memory)
+		var role: String = "neutral" if colour == StripesRule.NONE else "odd" if colour == StripesRule.ODD else "even"
+		palette[disk] = ThemeManager.STRIPE_DISKS[role].duplicate()
+	return palette
+
+
+## The disk colours of the position now, where a move can change them (the
+## paint peg); empty for every other level.
+static func disk_palette_now(session: GameSession) -> Dictionary:
+	if not _has(session.level, StripesRule.ID):
+		return {}
+	var rule: StripesRule = _rule(session.level, StripesRule.ID) as StripesRule
+	if rule.paint < 0:
+		return {}
+	return stripe_palette(rule, session.level.get_disk_count(), session.rules.memory_of(session.state))
+
+
 ## The disks of the first (upper) board of a twin level: its lowest ids.
 static func first_board_disks(level: Level) -> int:
 	var count: int = 0
@@ -70,7 +99,8 @@ static func first_board_disks(level: Level) -> int:
 ## The most disks one peg can ever hold (the rods are drawn for it).
 static func stack_room(level: Level) -> int:
 	if _has(level, Difficulty.COLOR_SWAP):
-		return maxi(level.get_disk_count() / 2, 1)  # one disk of each size
+		# One disk of each size.
+		return maxi(level.get_disk_count() / (_rule(level, ColorSwapRule.ID) as ColorSwapRule).colours, 1)
 	if _has(level, PegCapacityRule.ID):
 		return maxi((_rule(level, PegCapacityRule.ID) as PegCapacityRule).capacities.max(), 1)
 	if _has(level, MirrorRule.ID):
@@ -84,7 +114,21 @@ static func stack_room(level: Level) -> int:
 static func rod_rooms(level: Level) -> Array[int]:
 	if _has(level, PegCapacityRule.ID):
 		return (_rule(level, PegCapacityRule.ID) as PegCapacityRule).capacities.duplicate()
-	return [] as Array[int]
+	# An oasis and a dial's centre hold one disk: a short rod.
+	var short: int = -1
+	if _has(level, AdjacentPegsRule.ID):
+		short = (_rule(level, AdjacentPegsRule.ID) as AdjacentPegsRule).oasis
+	if _has(level, CyclicRule.ID):
+		short = (_rule(level, CyclicRule.ID) as CyclicRule).center
+	if _has(level, RiverRule.ID):
+		short = (_rule(level, RiverRule.ID) as RiverRule).ferry()
+	if short < 0:
+		return [] as Array[int]
+	var rooms: Array[int] = []
+	rooms.resize(level.get_peg_count())
+	rooms.fill(stack_room(level))
+	rooms[short] = 1
+	return rooms
 
 
 ## Whether a refused move says why in the status line (not just a flash): the
@@ -92,10 +136,37 @@ static func rod_rooms(level: Level) -> Array[int]:
 ## new mechanics specification v1 ("blocked, with a message").
 static func says_why(level: Level) -> bool:
 	for id: String in [Difficulty.COLOR_SWAP, PegCapacityRule.ID, FoundationRule.ID, BalanceRule.ID, CyclicRule.ID,
-			StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID, SealedBoxRule.ID]:
+			StripesRule.ID, ChainRule.ID, MirrorRule.ID, TrailRule.ID, MagnetRule.ID, SealedBoxRule.ID, AdjacentPegsRule.ID,
+			KingRule.ID, RiverRule.ID]:
 		if _has(level, id):
 			return true
 	return false
+
+
+## What the goal preview shows: the goal position, or for a goal condition
+## (ICRA section 2) only what it asks: the crowned disks on their gates.
+static func goal_view(level: Level) -> PuzzleState:
+	if _has(level, KingRule.ID):
+		var king: KingRule = _rule(level, KingRule.ID) as KingRule
+		if king.defines_goal():
+			var layout: Array = []
+			for i: int in level.get_peg_count():
+				layout.append([])
+			var crowns: Array = king.crowns.duplicate()
+			crowns.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) > int(b[0]))
+			for crown: Array in crowns:
+				layout[crown[1]].append(crown[0])
+			return PuzzleState.new(layout)
+	return level.goal
+
+
+## The pegs the goal preview marks with a gate's flag (the king's gates).
+static func goal_gates(level: Level) -> Array[int]:
+	var gates: Array[int] = []
+	if _has(level, KingRule.ID):
+		for crown: Array in (_rule(level, KingRule.ID) as KingRule).crowns:
+			gates.append(crown[1])
+	return gates
 
 
 ## A note in the status line before the first move (translated), or "": the
@@ -104,6 +175,8 @@ static func says_why(level: Level) -> bool:
 static func goal_text(level: Level) -> String:
 	if _has(level, MirrorRule.ID):
 		return Languages.text("MIRROR_GOAL")
+	if _has(level, KingRule.ID) and (_rule(level, KingRule.ID) as KingRule).defines_goal():
+		return Languages.text("KING_GOAL")
 	if _has(level, FoundationRule.ID):
 		var rule: FoundationRule = _rule(level, FoundationRule.ID) as FoundationRule
 		return Languages.text(_keys_text(level)) % [rule.keys_in_place(level.start), rule.keys_needed()]
@@ -159,6 +232,21 @@ static func skin_marks(session: GameSession) -> Dictionary:
 			if rule.remembers(memory, peg_index, session.state.get_peg_count()):
 				visited.append(peg_index)
 		marks["visited"] = visited
+	# World 3-4: the caravan road's oasis, tunnels, bridges and arrows; the
+	# dial's centre or figure eight.
+	if _has(level, AdjacentPegsRule.ID):
+		var road: AdjacentPegsRule = _rule(level, AdjacentPegsRule.ID) as AdjacentPegsRule
+		marks["road"] = {"oasis": [road.oasis, road.oasis_stop], "tunnels": road.tunnels, "bridges": road.bridges,
+				"one_way": road.one_way}
+	if _has(level, CyclicRule.ID):
+		var dial: CyclicRule = _rule(level, CyclicRule.ID) as CyclicRule
+		marks["dial"] = {"center": dial.center, "eight": dial.eight}
+	# World 5: the river between its banks, its bridges, fords and ferry, or the
+	# bonfire in its place.
+	if _has(level, RiverRule.ID):
+		var river: RiverRule = _rule(level, RiverRule.ID) as RiverRule
+		marks["river"] = {"banks": river.banks, "bridges": river.bridges, "crossings": river.crossings, "fire": river.fire,
+				"reverse": river.reverse}
 	return marks
 
 
@@ -207,6 +295,67 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 				marks[list] = found
 	if _has(level, TrailRule.ID):
 		marks["trail_disk"] = (_rule(level, TrailRule.ID) as TrailRule).disk
+	# World 3-4: the rings' crowned leader, broken ring and hourglass, the reset
+	# peg; the coloured bases and the paint peg; the dial's back step and
+	# shortcut.
+	if _has(level, AlternationRule.ID):
+		var rings: AlternationRule = _rule(level, AlternationRule.ID) as AlternationRule
+		var icons: Dictionary = {}
+		if rings.leader != 1:
+			icons[rings.leader] = "crown"
+		if rings.free > 0:
+			icons[rings.free] = "broken"
+		if rings.waiting > 0:
+			icons[rings.waiting] = "hourglass"
+		if not icons.is_empty():
+			marks["disk_icons"] = icons
+		if rings.reset >= 0:
+			marks["reset"] = rings.reset
+	if _has(level, StripesRule.ID):
+		var stripes: StripesRule = _rule(level, StripesRule.ID) as StripesRule
+		var bases: Dictionary = {}
+		for peg: int in stripes.bases.size():
+			if stripes.bases[peg] != StripesRule.NONE:
+				bases[peg] = "odd" if stripes.bases[peg] == StripesRule.ODD else "even"
+		if not bases.is_empty():
+			marks["bases"] = bases
+		if stripes.paint >= 0:
+			marks["paint"] = stripes.paint
+	if _has(level, CyclicRule.ID):
+		var dial: CyclicRule = _rule(level, CyclicRule.ID) as CyclicRule
+		var peg_count: int = level.get_peg_count()
+		if dial.back >= 0:
+			marks["back"] = [dial.back, dial.previous_of(dial.back, peg_count)]
+		if dial.skip >= 0:
+			marks["skip"] = [dial.skip, dial.next_of(dial.next_of(dial.skip, peg_count), peg_count)]
+	# World 5: crowns on the crowned disks, a flagged gate over each gate, the
+	# narrow gate's arrow, the odd and even pegs; an elephant on each elephant;
+	# the caravanserai's roof.
+	if _has(level, KingRule.ID):
+		var king: KingRule = _rule(level, KingRule.ID) as KingRule
+		var icons: Dictionary = marks.get("disk_icons", {})
+		var gates: Array = []
+		for crown: Array in king.crowns:
+			icons[crown[0]] = "crown"
+			gates.append(crown[1])
+		if not icons.is_empty():
+			marks["disk_icons"] = icons
+		if not gates.is_empty():
+			marks["gates"] = gates
+		if not king.narrow.is_empty():
+			marks["narrow"] = king.narrow
+		if not king.odd_even.is_empty():
+			marks["odd_even"] = king.odd_even
+	if _has(level, RiverRule.ID):
+		var river: RiverRule = _rule(level, RiverRule.ID) as RiverRule
+		var icons: Dictionary = marks.get("disk_icons", {})
+		for disk: int in range(river.elephant, level.get_disk_count() + 1):
+			icons[disk] = "elephant"
+		marks["disk_icons"] = icons
+	if _has(level, Difficulty.COLOR_SWAP):
+		var inn: int = (_rule(level, ColorSwapRule.ID) as ColorSwapRule).caravanserai
+		if inn >= 0:
+			marks["inn"] = inn
 	return marks
 
 

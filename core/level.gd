@@ -90,7 +90,9 @@ func get_rule_set(errors: Array[String] = []) -> RuleSet:
 	return RuleSet.from_ids(rule_ids, rule_params, errors)
 
 
-## Whether `state` solves the level: the exact goal position.
+## Whether `state` solves the level: the exact goal position, or the
+## condition of a rule that sets the goal (then `goal` is just one position
+## that meets it, where the stored solution ends).
 func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
 	return rules.is_goal_state(state, goal)
 
@@ -100,22 +102,37 @@ func is_goal_met(state: PuzzleState, rules: RuleSet) -> bool:
 ## level's dress and chapter on the path; it is never shown as a category.
 ## A sub-element's rule (the sealed box) counts as its mode.
 func mechanic() -> String:
+	var carried: Array[String] = goal_carriers()
 	for rule_id: String in rule_ids:
-		if rule_id != ClassicHanoiRule.ID:
+		if rule_id != ClassicHanoiRule.ID and not carried.has(rule_id):
 			return ChapterPlan.mode_of_rule(rule_id)
 	if not covered_pegs.is_empty():
 		return "covered_pegs"
 	return CLASSIC
 
 
+## The rules that only carry a goal variant the level names (ICRA section 4,
+## "goal_king": the king's rule sets the goal of a river level): they are no
+## mode of the level.
+func goal_carriers() -> Array[String]:
+	var found: Array[String] = []
+	for variant: String in variants:
+		if ChapterPlan.GOAL_RULES.has(variant):
+			found.append(ChapterPlan.GOAL_RULES[variant])
+	return found
+
+
 ## Every mode the level combines (chapter plan): its rules beyond classic
 ## Hanoi, then "covered_pegs" for karakuri boxes, in ChapterPlan.MODES order.
-## Empty for a classic level, two for a combination.
+## Empty for a classic level, two for a combination. A rule that only carries
+## a goal variant is none of them.
 func modes() -> Array[String]:
 	var found: Array[String] = []
 	var own: Array[String] = []
+	var carried: Array[String] = goal_carriers()
 	for rule_id: String in rule_ids:
-		own.append(ChapterPlan.mode_of_rule(rule_id))
+		if not carried.has(rule_id):
+			own.append(ChapterPlan.mode_of_rule(rule_id))
 	for mode: String in ChapterPlan.MODES:
 		if own.has(mode) or (mode == ChapterPlan.COVERED and not covered_pegs.is_empty()):
 			found.append(mode)
@@ -342,6 +359,10 @@ func check(errors: Array[String]) -> void:
 		errors.append("goal is not a valid position")
 	if start.equals(goal):
 		errors.append("start equals goal")
+	elif rules.is_goal_state(start, goal):
+		errors.append("start already meets the goal")
+	if rules.goal_rule() != null and not rules.is_goal_state(goal, goal):
+		errors.append("goal does not meet the goal condition")
 	if solution_path.size() != min_moves:
 		errors.append("solution_path has %d moves, min_moves is %d" % [solution_path.size(), min_moves])
 	var state: PuzzleState = start

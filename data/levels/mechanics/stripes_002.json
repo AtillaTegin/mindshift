@@ -1,0 +1,14 @@
+{
+  "id": 14002,
+  "difficulty": "medium",
+  "pegs": 4,
+  "disks": 7,
+  "start": [[7,6,5],[3],[4],[2,1]],
+  "goal": [[3,2,1],[7,4],[6],[5]],
+  "rules": ["classic_hanoi","stripes"],
+  "min_moves": 16,
+  "solution_path": [[3,2],[3,1],[0,3],[2,0],[2,3],[0,3],[0,2],[1,0],[1,2],[0,2],[0,1],[2,1],[2,0],[1,0],[3,0],[3,1]],
+  "star_thresholds": {"three":16,"two":20},
+  "time_limit_seconds": null,
+  "rule_params": {"stripes":{}}
+}

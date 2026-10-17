@@ -269,12 +269,76 @@ msgstr ""
 msgid "RULE_ADJACENT_PEGS"
 msgstr ""
 
+#. [TODO: EN] az: Vaha yalnız bir disk tutur.
+msgid "RULE_OASIS_FULL"
+msgstr ""
+
+#. [TODO: EN] az: Bu dar körpüdən yalnız rəqəmindən böyük olmayan disklər keçir.
+msgid "RULE_BRIDGE"
+msgstr ""
+
+#. [TODO: EN] az: Bu yol yalnız ox istiqamətində keçilir.
+msgid "RULE_ONE_WAY"
+msgstr ""
+
+#. [TODO: EN] az: Tərs zolaq: disk yalnız öz rənginin üstünə qoyula bilər.
+msgid "RULE_STRIPES_INVERSE"
+msgstr ""
+
+#. [TODO: EN] az: Rəngli əsasın üstünə eyni rəngli disk qoyula bilməz.
+msgid "RULE_STRIPES_BASE"
+msgstr ""
+
+#. [TODO: EN] az: Boyanan disk düşdüyü yerdə eyni rəngə toxuna bilməz.
+msgid "RULE_STRIPES_PAINT"
+msgstr ""
+
+#. [TODO: EN] az: Mərkəz yalnız bir disk tutur.
+msgid "RULE_CENTER_FULL"
+msgstr ""
+
+#. [TODO: EN] az: İndi yalnız tac taxmış lider və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. Liderdən sonra istənilən disk gedə bilər.
+msgid "RULE_ALTERNATION_LEADER"
+msgstr ""
+
+#. [TODO: EN] az: Qum saatlı disk yalnız liderdən dərhal sonra gedə bilər.
+msgid "RULE_WAITING"
+msgstr ""
+
+#. [TODO: EN] az: Daşı köçür
+msgid "STONE_MOVE"
+msgstr ""
+
 #. [TODO: EN] az: Eyni ölçülü disklər üst-üstə qoyula bilməz.
 msgid "RULE_SAME_SIZE"
 msgstr ""
 
 #. [TODO: EN] az: Fərqli rəngli disklər bir-birinə toxuna bilməz.
 msgid "RULE_COLOUR_TOUCH"
+msgstr ""
+
+#. [TODO: EN] az: Dar qapı: darvazaya yalnız oxlu qonşu qüllədən girmək olar.
+msgid "RULE_NARROW_GATE"
+msgstr ""
+
+#. [TODO: EN] az: Fil çayı keçə bilməz.
+msgid "RULE_ELEPHANT"
+msgstr ""
+
+#. [TODO: EN] az: Bərə yalnız bir disk götürür.
+msgid "RULE_FERRY_FULL"
+msgstr ""
+
+#. [TODO: EN] az: Tərs çay: çayı yalnız fillər keçə bilər.
+msgid "RULE_RIVER_REVERSE"
+msgstr ""
+
+#. [TODO: EN] az: Disk çayı yalnız keçiddən, rəqəmi qədər böyüklükdə keçə bilər.
+msgid "RULE_CROSSING"
+msgstr ""
+
+#. [TODO: EN] az: Tonqalın üstündən yalnız ən kiçik iki disk tullanıb keçə bilər.
+msgid "RULE_BONFIRE"
 msgstr ""
 
 #. [TODO: EN] az: Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar.
@@ -437,6 +501,314 @@ msgstr ""
 msgid "VARIANT_CHAIN_LOCK_RULE"
 msgstr ""
 
+#. [TODO: EN] az: Vaha
+msgid "VARIANT_OASIS_NAME"
+msgstr ""
+
+#. [TODO: EN] az: yolun kənarındakı vaha bir disk tutur, yalnız öz dayanacağına bağlıdır.
+msgid "VARIANT_OASIS_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Kəhriz
+msgid "VARIANT_TUNNEL_NAME"
+msgstr ""
+
+#. [TODO: EN] az: yeraltı tunellə bağlı iki uzaq dayanacaq qonşu sayılır.
+msgid "VARIANT_TUNNEL_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Dar körpü
+msgid "VARIANT_BRIDGE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: körpüdən yalnız rəqəmindən böyük olmayan disklər keçir.
+msgid "VARIANT_BRIDGE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Birtərəfli yol
+msgid "VARIANT_ONE_WAY_NAME"
+msgstr ""
+
+#. [TODO: EN] az: oxlu yol yalnız ox istiqamətində keçilir.
+msgid "VARIANT_ONE_WAY_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Sıçrayış
+msgid "VARIANT_JUMP_NAME"
+msgstr ""
+
+#. [TODO: EN] az: disk qonşu dayanacağın üstündən tullana bilər, əgər oradakı üst disk ondan böyükdürsə.
+msgid "VARIANT_JUMP_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Neytral disk
+msgid "VARIANT_NEUTRAL_NAME"
+msgstr ""
+
+#. [TODO: EN] az: boz disk hər iki rənglə toxuna bilər.
+msgid "VARIANT_NEUTRAL_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Rəngli əsas
+msgid "VARIANT_COLORED_BASE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: rəngli əsas bir disk sayılır: üstünə o biri rəngdən disk qoyulur.
+msgid "VARIANT_COLORED_BASE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Boya qülləsi
+msgid "VARIANT_PAINT_NAME"
+msgstr ""
+
+#. [TODO: EN] az: bu qülləyə düşən disk o biri rəngə boyanır və elə qalır.
+msgid "VARIANT_PAINT_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tərs zolaq
+msgid "VARIANT_INVERSE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: qayda tərsinə döndü: disk yalnız öz rənginin üstünə qoyulur.
+msgid "VARIANT_INVERSE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Əks qüllə
+msgid "VARIANT_BACK_PEG_NAME"
+msgstr ""
+
+#. [TODO: EN] az: iki oxlu qüllədən disk geriyə də gedə bilər.
+msgid "VARIANT_BACK_PEG_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Qısa yol
+msgid "VARIANT_SHORTCUT_NAME"
+msgstr ""
+
+#. [TODO: EN] az: qövslü qüllədən disk bir qülləni atlaya bilər.
+msgid "VARIANT_SHORTCUT_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Mərkəz
+msgid "VARIANT_CENTER_NAME"
+msgstr ""
+
+#. [TODO: EN] az: ortadakı qüllə bir disk tutur, bütün qüllələrlə iki tərəfli bağlıdır.
+msgid "VARIANT_CENTER_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Səkkiz
+msgid "VARIANT_EIGHT_NAME"
+msgstr ""
+
+#. [TODO: EN] az: iki dairə ortaq qüllədə birləşir, hər biri öz istiqamətində fırlanır.
+msgid "VARIANT_EIGHT_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Qırıq halqa
+msgid "VARIANT_BROKEN_RING_NAME"
+msgstr ""
+
+#. [TODO: EN] az: qırıq halqalı disk növbə gözləmir.
+msgid "VARIANT_BROKEN_RING_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Sıfırlama qülləsi
+msgid "VARIANT_RESET_PEG_NAME"
+msgstr ""
+
+#. [TODO: EN] az: bu qülləyə disk qoyulandan sonra istənilən disk gedə bilər.
+msgid "VARIANT_RESET_PEG_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Yeni lider
+msgid "VARIANT_NEW_LEADER_NAME"
+msgstr ""
+
+#. [TODO: EN] az: həmişə sərbəst olan disk 1-ci yox, tac taxmış diskdir.
+msgid "VARIANT_NEW_LEADER_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Gözləyən halqa
+msgid "VARIANT_WAITING_RING_NAME"
+msgstr ""
+
+#. [TODO: EN] az: qum saatlı disk yalnız liderdən dərhal sonra gedə bilər.
+msgid "VARIANT_WAITING_RING_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Çəki daşı
+msgid "VARIANT_STONE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: platformadakı daş öz rəqəmi qədər ağırlıq əlavə edir.
+msgid "VARIANT_STONE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Uzun qol
+msgid "VARIANT_LONG_ARM_NAME"
+msgstr ""
+
+#. [TODO: EN] az: uzun qoldakı disklərin ağırlığı 2 dəfə sayılır.
+msgid "VARIANT_LONG_ARM_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Üç tərəzi
+msgid "VARIANT_THREE_SCALES_NAME"
+msgstr ""
+
+#. [TODO: EN] az: altı qüllə, üç tərəzi: hər biri öz cütünü tarazlayır.
+msgid "VARIANT_THREE_SCALES_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Fərqli hədlər
+msgid "VARIANT_OWN_LIMITS_NAME"
+msgstr ""
+
+#. [TODO: EN] az: hər tərəzinin öz həddi var.
+msgid "VARIANT_OWN_LIMITS_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Hərəkətli daş
+msgid "VARIANT_MOVING_STONE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: daşı bir dəfə tərəzinin o biri platformasına köçürmək olar.
+msgid "VARIANT_MOVING_STONE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tək-Cüt
+msgid "VARIANT_ODD_EVEN_NAME"
+msgstr ""
+
+#. [TODO: EN] az: tək ölçülü disklər bir işarəli qülləyə, cütlər o birinə yığılır.
+msgid "VARIANT_ODD_EVEN_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Kral və vəzir
+msgid "VARIANT_VIZIER_NAME"
+msgstr ""
+
+#. [TODO: EN] az: iki tac var, hər birinin öz darvazası var.
+msgid "VARIANT_VIZIER_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Dar qapı
+msgid "VARIANT_NARROW_GATE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: darvazaya yalnız oxlu qonşu qüllədən girmək olar.
+msgid "VARIANT_NARROW_GATE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Mühasirə
+msgid "VARIANT_SIEGE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: kral ən hündür yığının ən altında başlayır.
+msgid "VARIANT_SIEGE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Daş körpü
+msgid "VARIANT_STONE_BRIDGE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: körpü ilə bağlı iki qüllə arasında fillər də çayı keçir.
+msgid "VARIANT_STONE_BRIDGE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Bərə
+msgid "VARIANT_FERRY_NAME"
+msgstr ""
+
+#. [TODO: EN] az: çaydakı bərə bir disk götürür, fillər də ona minib çayı bir-bir keçir.
+msgid "VARIANT_FERRY_RULE"
+msgstr ""
+
+#. [TODO: EN] az: İki keçid
+msgid "VARIANT_TWO_CROSSINGS_NAME"
+msgstr ""
+
+#. [TODO: EN] az: çayı yalnız iki keçiddən keçmək olar, hər keçiddən rəqəmi qədər böyüklükdə disk.
+msgid "VARIANT_TWO_CROSSINGS_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tərs çay
+msgid "VARIANT_REVERSE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: indi çayı yalnız fillər keçir, kiçik disklər keçə bilməz.
+msgid "VARIANT_REVERSE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Novruz tonqalı
+msgid "VARIANT_BONFIRE_NAME"
+msgstr ""
+
+#. [TODO: EN] az: çayın yerində tonqal yanır, üstündən yalnız ən kiçik iki disk tullanır.
+msgid "VARIANT_BONFIRE_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Ortadan başlanğıc
+msgid "VARIANT_MID_START_NAME"
+msgstr ""
+
+#. [TODO: EN] az: karvanlar artıq yoldadır, hədəf eyni qalır.
+msgid "VARIANT_MID_START_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Qarışıq-Ayırma
+msgid "VARIANT_MIXED_NAME"
+msgstr ""
+
+#. [TODO: EN] az: uclarda rənglər qarışıqdır, fərqli rənglər bir-birinə toxuna bilməz.
+msgid "VARIANT_MIXED_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Karvansara
+msgid "VARIANT_CARAVANSERAI_NAME"
+msgstr ""
+
+#. [TODO: EN] az: ortadakı qüllədə rənglər qarışıq dura bilər.
+msgid "VARIANT_CARAVANSERAI_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Üç karvan
+msgid "VARIANT_THREE_CARAVANS_NAME"
+msgstr ""
+
+#. [TODO: EN] az: ağ qaranın, qara qırmızının, qırmızı ağın yerinə keçir.
+msgid "VARIANT_THREE_CARAVANS_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Kral hədəfi
+msgid "VARIANT_GOAL_KING_NAME"
+msgstr ""
+
+#. [TODO: EN] az: bu dəfə yalnız tac taxmış disk darvazaya çatmalıdır.
+msgid "VARIANT_GOAL_KING_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tək-Cüt hədəfi
+msgid "VARIANT_GOAL_ODD_EVEN_NAME"
+msgstr ""
+
+#. [TODO: EN] az: bu dəfə tək ölçülər bir işarəli qülləyə, cütlər o birinə yığılır.
+msgid "VARIANT_GOAL_ODD_EVEN_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Tacı darvazaya çatdır
+msgid "KING_GOAL"
+msgstr ""
+
+#. [TODO: EN] az: Tək
+msgid "ODD_PEG"
+msgstr ""
+
+#. [TODO: EN] az: Cüt
+msgid "EVEN_PEG"
+msgstr ""
+
 #. [TODO: EN] az: İndi zəncirin o biri diskinin qülləsini seç.
 msgid "CHAIN_SECOND_TARGET"
 msgstr ""
@@ -495,6 +867,14 @@ msgstr ""
 
 #. [TODO: EN] az: Zəncir: iki disk bir-birinə bağlıdır və yalnız birlikdə gedir. Birinə toxun, əvvəl onun, sonra yoldaşının qülləsini seç.
 msgid "INTRO_CHAIN"
+msgstr ""
+
+#. [TODO: EN] az: Kral: tac taxmış ən böyük disk bayraqlı darvazaya çatmalıdır. Qalan disklər harada qalsa olar.
+msgid "INTRO_KING"
+msgstr ""
+
+#. [TODO: EN] az: Fil Çayı: çay lövhəni iki sahilə bölür. Fil işarəli böyük disklər çayı keçə bilməz, kiçiklər isə qarşı sahilə keçməlidir.
+msgid "INTRO_RIVER"
 msgstr ""
 
 #. [TODO: EN] az: FƏRQ
@@ -663,6 +1043,30 @@ msgstr ""
 
 #. [TODO: EN] az: Zəncirli iki disk yalnız birlikdə hərəkət edir.
 msgid "MODE_CHAIN_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Kral
+msgid "MODE_KING_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Kral
+msgid "MODE_KING_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Tacı darvazaya çatdır. Qalan disklər harada qalsa olar.
+msgid "MODE_KING_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Fil Çayı
+msgid "MODE_RIVER_LABEL"
+msgstr ""
+
+#. [TODO: EN] az: Fil Çayı
+msgid "MODE_RIVER_NAME"
+msgstr ""
+
+#. [TODO: EN] az: Fil işarəli disklər çayı keçə bilməz.
+msgid "MODE_RIVER_RULE"
 msgstr ""
 
 #. [TODO: EN] az: Dairə

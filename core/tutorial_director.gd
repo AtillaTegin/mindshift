@@ -46,6 +46,8 @@ const INTRO_TEXTS: Dictionary = {
 	"chain": "INTRO_CHAIN",
 	"mirror": "INTRO_MIRROR",
 	"trail": "INTRO_TRAIL",
+	"king": "INTRO_KING",
+	"river": "INTRO_RIVER",
 }
 ## A combination's words: its name ("Tutum + Kilid") and both rules.
 const COMBO_TEXT: String = "INTRO_COMBO"

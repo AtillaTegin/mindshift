@@ -19,16 +19,19 @@ func _built_chapters() -> Array[Dictionary]:
 
 
 func test_plan_follows_the_table() -> void:
-	# Section 2: seven worlds, ~2020 levels, chapters back to back.
+	# Section 2 and ICRA World 5-9 section 1: chapters back to back, world by
+	# world (World 1-4 to main 1020, then World 5-9 to 2880 as they are planned).
 	var next: int = 1
 	var world: int = 1
+	var ends: Dictionary = {}
 	for chapter: Dictionary in ChapterPlan.CHAPTERS:
 		assert_eq(chapter["first"], next, "no gap before main %d" % chapter["first"])
 		assert_true(int(chapter["world"]) == world or int(chapter["world"]) == world + 1, "worlds in order")
 		world = chapter["world"]
 		next = int(chapter["last"]) + 1
-	assert_eq(next - 1, 2020)
-	assert_eq(world, 7)
+		ends[world] = chapter["last"]
+	assert_eq([ends[4], ends[5]], [1020, 1420], "World 4 ends at 1020, World 5 at 1420")
+	assert_true(world >= 5 and world <= 9)
 	var lengths: Dictionary = {}
 	for chapter: Dictionary in ChapterPlan.CHAPTERS:
 		lengths[chapter.get("mode", "%s %d" % [chapter["kind"], chapter["first"]])] = ChapterPlan.length_of(chapter)
@@ -36,12 +39,14 @@ func test_plan_follows_the_table() -> void:
 	assert_eq(lengths["covered_pegs"], 100)
 	assert_eq(lengths["alternation"], 120)
 	assert_eq(lengths["balance"], 150)
-	assert_eq(lengths["color_swap"], 150)
+	assert_eq([lengths["king"], lengths["river"], lengths["color_swap"], lengths["combo 1371"]], [100, 100, 150, 50])
 	assert_eq(lengths["combo 301"], 50)
-	assert_eq(lengths["combo 1921"], 100)
 	for mode: String in ChapterPlan.MODES:
-		assert_eq(ChapterPlan.CHAPTERS.filter(func(c: Dictionary) -> bool: return c.get("mode", "") == mode).size(), 1,
-				"%s has one chapter" % mode)
+		assert_true(ChapterPlan.CHAPTERS.filter(func(c: Dictionary) -> bool: return c.get("mode", "") == mode).size() <= 1,
+				"%s has one chapter at most" % mode)
+	# Güzgü, Bağlı and Maqnit wait for a later update (ICRA section 1).
+	for mode: String in ["mirror", "linked_pegs", "magnet"]:
+		assert_false(lengths.has(mode), "%s has no chapter yet" % mode)
 
 
 func test_bands_climb_through_a_chapter() -> void:
@@ -132,7 +137,11 @@ func test_road_follows_the_plan() -> void:
 			assert_eq(level.difficulty, "expert", "its hint costs what an expert one does")
 		else:
 			assert_true(level.min_moves <= 33, "main %d stays within 33 moves" % position)
-	assert_eq(big_tests, [100, 200, 300, 350] as Array[int])
+	var expected: Array[int] = []
+	for chapter: Dictionary in chapters:
+		if chapter["kind"] != ChapterPlan.CLASSIC_CHAPTER:
+			expected.append(chapter["last"])
+	assert_eq(big_tests, expected, "the last level of every built mode and combination chapter")
 	assert_false(ChapterPlan.is_big_test(50), "the classic chapter has none")
 
 

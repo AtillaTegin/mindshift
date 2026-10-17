@@ -152,7 +152,9 @@ static func validate_path(levels_dir: String) -> Array[String]:
 					intro = intro or not taught.has(level.lesson() + "/" + variant)
 					taught[level.lesson() + "/" + variant] = true
 			var least: int = ChapterPlan.world_floor(ChapterPlan.world_at(i + 1 if on_main else track["after"]))
-			if not intro and level.min_moves < least:
+			# A goal variant's level is a short breather (ICRA section 4).
+			var breath: bool = level.variants.any(func(variant: String) -> bool: return ChapterPlan.GOAL_RULES.has(variant))
+			if not intro and not breath and level.min_moves < least:
 				errors.append("%s %d: %s takes %d moves, below the world's floor of %d" % [track["name"], i + 1, file,
 						level.min_moves, least])
 			if modes.size() > 1 and (not ChapterPlan.is_combo_allowed(modes) or (modes.size() == 2 \
@@ -219,7 +221,7 @@ static func validate_mechanic_design(level: Level, errors: Array[String]) -> voi
 	if level.rule_ids.size() > 1 \
 			and not LevelForge.matters(level.start, level.goal, level.rule_ids, level.rule_params, level.min_moves):
 		errors.append("a rule of %s changes nothing (as short without it)" % ChapterPlan.combo_key(level.modes()))
-	if level.mechanic() == Difficulty.COLOR_SWAP:
+	if level.rule_ids.has(ColorSwapRule.ID):
 		validate_color_swap_shape(level, errors)
 	# Every lock and seal must be closed at the start, and a chain must move.
 	if (level.rule_ids.has(FoundationRule.ID) or level.rule_ids.has(SealedBoxRule.ID)) and rules.memory_of(level.start) != 0:
@@ -288,14 +290,26 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 		found.append("sealed")
 	if not level.glass_disks.is_empty():
 		found.append("glass")
+	found.append_array(world_three_four_variants(rules, level.get_peg_count(), errors))
+	found.append_array(world_five_variants(rules, level, errors))
 	for variant: String in found:
 		if not level.variants.has(variant):
 			errors.append("the level has a %s but does not name it" % variant)
 	for variant: String in level.variants:
 		var missing: bool = false
 		match variant:
-			"narrow", "arch", "holed", "chain_lock", "sealed", "glass":
+			"narrow", "arch", "holed", "chain_lock", "sealed", "glass", "oasis", "tunnel", "bridge", "one_way", "jump", \
+					"neutral", "colored_base", "paint", "inverse", "back_peg", "shortcut", "center", "eight", "broken_ring", \
+					"reset_peg", "new_leader", "waiting_ring", "stone", "long_arm", "three_scales", "own_limits", "moving_stone", \
+					"vizier", "narrow_gate", "odd_even", "goal_odd_even", "stone_bridge", "ferry", "two_crossings", "reverse", \
+					"bonfire", "mixed", "caravanserai", "three_caravans":
 				missing = not found.has(variant)
+			"goal_king":
+				missing = not level.rule_ids.has(KingRule.ID)
+			"siege":
+				missing = not LevelForge._besieged(level.start)
+			"mid_start":
+				missing = LevelForge.swap_at_home(level.start, 3 if found.has("three_caravans") else 2)
 			"full_hidden":
 				missing = range(level.get_peg_count()).any(func(peg: int) -> bool:
 					return level.covered_pegs.has(peg) == level.start.pegs[peg].is_empty())
@@ -320,31 +334,120 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 		errors.append("a sub-element of %s changes nothing" % str(level.variants))
 
 
-## "Böyük Mübadilə" v2 (ColorSwapRule alone, at least two empty pegs between
-## the ends): each end peg starts with one disk of every size k..1, the two
-## disks of a size on opposite ends, the pegs between empty; the goal is every
-## black disk on the left end and every white one on the right. The pure kind
-## (no colour rule) starts all white on the left: the stacks swap. The mixed
-## kind starts with both ends mixed and the largest pair on the wrong ends.
+## The World 3-4 sub-elements `rules` hold on a board of `peg_count` pegs
+## (MindShift_Dunya3-4_Alt_Elementler_v1.md); a setting only made for
+## measuring (a centre cut off) goes to `errors`.
+static func world_three_four_variants(rules: RuleSet, peg_count: int, errors: Array[String]) -> Array[String]:
+	var found: Array[String] = []
+	for rule: RuleBase in rules.active_rules:
+		if rule is AdjacentPegsRule:
+			var road: AdjacentPegsRule = rule
+			for pair: Array in [["oasis", road.oasis >= 0], ["tunnel", not road.tunnels.is_empty()],
+					["bridge", not road.bridges.is_empty()], ["one_way", not road.one_way.is_empty()], ["jump", road.jump]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is StripesRule:
+			var stripes: StripesRule = rule
+			for pair: Array in [["neutral", stripes.neutral > 0], ["colored_base", stripes.get_params().has("bases")],
+					["paint", stripes.paint >= 0], ["inverse", stripes.inverse]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is CyclicRule:
+			var dial: CyclicRule = rule
+			if dial.center_closed:
+				errors.append("a centre cut off from the circle (only for measuring)")
+			for pair: Array in [["back_peg", dial.back >= 0], ["shortcut", dial.skip >= 0], ["center", dial.center >= 0],
+					["eight", not dial.eight.is_empty()]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is AlternationRule:
+			var rings: AlternationRule = rule
+			for pair: Array in [["broken_ring", rings.free > 0], ["reset_peg", rings.reset >= 0],
+					["new_leader", rings.leader != 1], ["waiting_ring", rings.waiting > 0]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is BalanceRule:
+			var scales: BalanceRule = rule
+			for pair: Array in [["stone", scales.stone_pan() >= 0], ["long_arm", scales.get_params().has("factors")],
+					["own_limits", not scales.tolerances.is_empty()], ["moving_stone", scales.moving_stone],
+					["three_scales", peg_count == 6]]:
+				if pair[1]:
+					found.append(pair[0])
+	return found
+
+
+## The World 5 sub-elements `rules` hold (ICRA World 5-9, sections 3.1-3.3);
+## a setting only made for measuring (a ferry closed to elephants) goes to
+## `errors`. The king's odd and even towers are "goal_odd_even" where the level
+## names that goal variant.
+static func world_five_variants(rules: RuleSet, level: Level, errors: Array[String]) -> Array[String]:
+	var found: Array[String] = []
+	for rule: RuleBase in rules.active_rules:
+		if rule is KingRule:
+			var king: KingRule = rule
+			for pair: Array in [["vizier", king.crowns.size() > 1], ["narrow_gate", not king.narrow.is_empty()],
+					["goal_odd_even" if level.variants.has("goal_odd_even") else "odd_even", not king.odd_even.is_empty()]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is RiverRule:
+			var river: RiverRule = rule
+			if river.ferry_small:
+				errors.append("a ferry closed to the elephants (only for measuring)")
+			for pair: Array in [["stone_bridge", not river.bridges.is_empty()], ["ferry", river.ferry() >= 0],
+					["two_crossings", not river.crossings.is_empty()], ["reverse", river.reverse], ["bonfire", river.fire]]:
+				if pair[1]:
+					found.append(pair[0])
+		elif rule is ColorSwapRule:
+			var swap: ColorSwapRule = rule
+			for pair: Array in [["mixed", swap.colour_bound], ["caravanserai", swap.caravanserai >= 0],
+					["three_caravans", swap.colours == 3]]:
+				if pair[1]:
+					found.append(pair[0])
+	return found
+
+
+## "Böyük Mübadilə" (v2, ICRA 3.3): its own size rule (no classic Hanoi), at
+## least four pegs. Two colours: k disks of each, the goal every black disk on
+## the left end and every white one on the right, the pegs between empty. The
+## start: each end one disk of every size k..1, the two disks of a size on
+## opposite ends; the pure kind (no colour rule) all white on the left, the
+## mixed kind both ends mixed with the largest pair on the wrong ends. Three
+## colours ("Üç karvan"): white, black and red stacks on the left end, the
+## middle peg and the right end, the goal each on the next one's place. A
+## "mid_start" level starts on the way instead, at a legal position (Level.check).
 static func validate_color_swap_shape(level: Level, errors: Array[String]) -> void:
 	var rules: RuleSet = level.get_rule_set()
-	if level.rule_ids.size() != 1 or level.get_disk_count() % 2 != 0 or level.get_peg_count() < 4:
-		errors.append("a great exchange has the %s rule alone, k disks of each colour and at least 2 empty pegs between the ends" % ColorSwapRule.ID)
+	var swap: ColorSwapRule = null
+	for rule: RuleBase in rules.active_rules:
+		if rule is ColorSwapRule:
+			swap = rule
+	var colours: int = swap.colours
+	if level.rule_ids.has(ClassicHanoiRule.ID) or level.get_disk_count() % colours != 0 or level.get_peg_count() < 4:
+		errors.append("a great exchange has its own size rule, k disks of each colour and at least 4 pegs")
 		return
-	var colour_bound: bool = (rules.active_rules[0] as ColorSwapRule).colour_bound
-	var k: int = level.get_disk_count() / 2
+	var colour_bound: bool = swap.colour_bound
+	var k: int = level.get_disk_count() / colours
 	var last: int = level.get_peg_count() - 1
+	var expected: PuzzleState = LevelForge.swap_goal(level.get_peg_count(), k, colours)
+	if not level.goal.equals(expected):
+		errors.append("the goal is every black disk on the left end and every white one on the right" if colours == 2 \
+				else "the goal is each caravan on the next one's place")
+		return
+	if level.variants.has("mid_start"):
+		return
+	if colours == 3:
+		if not level.start.equals(LevelForge.swap_start_three(level.get_peg_count(), k)):
+			errors.append("three caravans start white on the left end, black in the middle, red on the right end")
+		return
+	for peg_index: int in range(1, last):
+		if not level.start.pegs[peg_index].is_empty():
+			errors.append("the pegs between the two ends start empty")
+			return
 	var black: Array = []
 	var white: Array = []
 	for size: int in range(k, 0, -1):
 		black.append(ColorSwapRule.disk_of(size, false))
 		white.append(ColorSwapRule.disk_of(size, true))
-	for peg_index: int in range(1, last):
-		if not level.start.pegs[peg_index].is_empty() or not level.goal.pegs[peg_index].is_empty():
-			errors.append("the pegs between the two ends start and end empty")
-			return
-	if level.goal.pegs[0] != black or level.goal.pegs[last] != white:
-		errors.append("the goal is every black disk on the left end and every white one on the right")
 	var left: Array = level.start.pegs[0]
 	var right: Array = level.start.pegs[last]
 	var paired: bool = left.size() == k and right.size() == k

@@ -1,0 +1,15 @@
+{
+  "id": 15018,
+  "difficulty": "medium",
+  "pegs": 5,
+  "disks": 5,
+  "start": [[5],[],[1],[4],[3,2]],
+  "goal": [[3,2,1],[5],[4],[],[]],
+  "rules": ["classic_hanoi","cyclic"],
+  "min_moves": 17,
+  "solution_path": [[0,1],[2,3],[4,0],[0,1],[1,2],[3,4],[2,3],[4,0],[0,1],[1,2],[4,0],[3,4],[2,3],[4,0],[3,4],[3,2],[4,0]],
+  "star_thresholds": {"three":17,"two":21},
+  "time_limit_seconds": null,
+  "rule_params": {"cyclic":{"back":3}},
+  "variants": ["back_peg"]
+}

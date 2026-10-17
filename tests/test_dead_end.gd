@@ -133,18 +133,51 @@ func test_rules_that_say_so_never_dead_end() -> void:
 		[BalanceRule.ID, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {BalanceRule.ID: {"tolerance": 4}}],
 		[TrailRule.ID, [[4, 3, 2, 1], [], []], [[], [], [4, 3, 2, 1]], {TrailRule.ID: {"disk": 1, "recent": 2}}],
 		[MirrorRule.ID, [[2, 1], [], [], [], [3], [4]], [[], [], [2, 1], [4, 3], [], []], {}],
+		# World 3-4 sub-elements.
+		[AdjacentPegsRule.ID, [[4, 3, 2, 1], [], [], []], [[], [], [], [4, 3, 2, 1]], {AdjacentPegsRule.ID: {"oasis": [2, 1]}}],
+		[AdjacentPegsRule.ID, [[4, 3, 2, 1], [], [], []], [[], [], [], [4, 3, 2, 1]], {AdjacentPegsRule.ID: {"tunnels": [[0, 3]]}}],
+		[AdjacentPegsRule.ID, [[4, 3, 2, 1], [], [], []], [[4, 3], [], [], [2, 1]], {AdjacentPegsRule.ID: {"bridges": [[1, 2, 2]]}}],
+		[AdjacentPegsRule.ID, [[4, 3, 2, 1], [], [], []], [[], [], [], [4, 3, 2, 1]], {AdjacentPegsRule.ID: {"jump": true}}],
+		[StripesRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {StripesRule.ID: {"neutral": 3}}],
+		[StripesRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {StripesRule.ID: {"bases": [0, 1, 0, 0]}}],
+		[StripesRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {StripesRule.ID: {"paint": 2}}],
+		[StripesRule.ID, [[5, 3, 1], [4, 2], [], []], [[], [], [5, 3, 1], [4, 2]], {StripesRule.ID: {"inverse": true}}],
+		[CyclicRule.ID, [[4, 3, 2, 1], [], [], []], [[], [], [4, 3, 2, 1], []], {CyclicRule.ID: {"back": 1}}],
+		[CyclicRule.ID, [[4, 3, 2, 1], [], [], []], [[], [], [4, 3, 2, 1], []], {CyclicRule.ID: {"skip": 2}}],
+		[CyclicRule.ID, [[4, 3, 2, 1], [], [], [], []], [[], [], [4, 3, 2, 1], [], []], {CyclicRule.ID: {"center": 4}}],
+		[CyclicRule.ID, [[4, 3, 2, 1], [], [], [], []], [[], [], [4, 3, 2, 1], [], []], {CyclicRule.ID: {"eight": [[0, 1, 2], [0, 4, 3]]}}],
+		[AlternationRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {AlternationRule.ID: {"free": 3}}],
+		[AlternationRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {AlternationRule.ID: {"reset": 2}}],
+		[AlternationRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {AlternationRule.ID: {"leader": 3}}],
+		[AlternationRule.ID, [[5, 4, 3, 2, 1], [], [], []], [[], [], [], [5, 4, 3, 2, 1]], {AlternationRule.ID: {"waiting": 4}}],
+		[BalanceRule.ID, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {BalanceRule.ID: {"tolerance": 5, "weights": [0, 0, 1, 0]}}],
+		[BalanceRule.ID, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {BalanceRule.ID: {"tolerance": 8, "factors": [2, 1, 1, 1]}}],
+		[BalanceRule.ID, [[3, 1], [], [2], []], [[], [3, 1], [], [2]], {BalanceRule.ID: {"tolerances": [4, 3]}}],
 	]
 	for sample: Array in samples:
 		var ids: Array[String] = [ClassicHanoiRule.ID, sample[0]]
-		levels.append(make_level(19201, ids, sample[1], sample[2], sample[3]))
+		var made: Level = make_level(19201, ids, sample[1], sample[2], sample[3])
+		if made.get_rule_set().can_dead_end():
+			# The paint peg and a new leader (measured): their boards do dead-end.
+			assert_true(_dead_positions(made) > 0, "%s %s says it can dead-end" % [sample[0], str(sample[3])])
+			continue
+		levels.append(made)
+	# The dial alone never dead-ends; beside a capacity it can (a combination
+	# level of World 3 had 13 dead positions, measured 2026-10-17), so that
+	# combination is watched.
+	var dial_and_capacity: Array[String] = [ClassicHanoiRule.ID, PegCapacityRule.ID, CyclicRule.ID]
+	assert_true(RuleSet.from_ids(dial_and_capacity, {PegCapacityRule.ID: {"capacities": [3, 2, 2, 3]}}).can_dead_end())
 	var checked: int = 0
 	for level: Level in levels:
-		assert_false(level.get_rule_set().can_dead_end(), "%d %s" % [level.id, level.lesson()])
+		# Rules that say so (a one-way road, the dial beside a limit) are watched.
+		if level.get_rule_set().can_dead_end():
+			continue
 		var dead: int = _dead_positions(level)
 		if dead == -1:
 			continue
 		checked += 1
-		assert_eq(dead, 0, "level %d (%s %s) has no dead end" % [level.id, level.lesson(), str(level.variants)])
+		assert_eq(dead, 0, "level %d (%s %s %s) has no dead end" % [level.id, level.lesson(), str(level.variants),
+				JSON.stringify(level.rule_params)])
 	assert_true(checked >= 12, "enough boards were searched to the end (%d)" % checked)
 	assert_true(_dead_positions(_mixed_level()) > 0, "the mixed exchange's board has dead ends")
 

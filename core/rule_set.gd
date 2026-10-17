@@ -39,6 +39,7 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 			return null
 	var rules: Array[RuleBase] = []
 	var memories: int = 0
+	var goals: int = 0
 	for id: Variant in ids:
 		if typeof(id) != TYPE_STRING:
 			errors.append("rule ids must be strings")
@@ -54,9 +55,13 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 			errors.append(problem)
 			return null
 		memories += 1 if rule.uses_memory() else 0
+		goals += 1 if rule.defines_goal() else 0
 		rules.append(rule)
 	if memories > 1:
 		errors.append("only one rule may keep a memory")
+		return null
+	if goals > 1:
+		errors.append("only one rule may set the goal")
 		return null
 	return RuleSet.new(rules)
 
@@ -65,7 +70,7 @@ static func from_ids(ids: Variant, params: Variant = {}, errors: Array[String] =
 ## each mode has its texts in ModeTexts; a sub-element's rule, e.g. the sealed
 ## box, belongs to its mode: ChapterPlan.SUB_RULES).
 const RULE_IDS: Array[String] = ["classic_hanoi", "alternation", "adjacent_pegs", "color_swap", "peg_capacity",
-		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet", "sealed_box"]
+		"foundation", "balance", "cyclic", "stripes", "chain", "mirror", "trail", "magnet", "sealed_box", "king", "river"]
 
 
 ## Rule registry: a fresh rule for a level JSON id, or null if the id is unknown.
@@ -99,6 +104,10 @@ static func create_rule(id: String) -> RuleBase:
 			return MagnetRule.new()
 		SealedBoxRule.ID:
 			return SealedBoxRule.new()
+		KingRule.ID:
+			return KingRule.new()
+		RiverRule.ID:
+			return RiverRule.new()
 	return null
 
 
@@ -115,6 +124,14 @@ func get_rule_params() -> Dictionary:
 func is_disk_movable(disk: int, last_disk: int) -> bool:
 	for rule: RuleBase in active_rules:
 		if not rule.is_disk_movable(disk, last_disk):
+			return false
+	return true
+
+
+## is_disk_movable() knowing the whole position (`facts`).
+func is_disk_movable_with(disk: int, facts: MoveFacts) -> bool:
+	for rule: RuleBase in active_rules:
+		if not rule.is_disk_movable_with(disk, facts):
 			return false
 	return true
 
@@ -199,12 +216,17 @@ func has_echo() -> bool:
 	return false
 
 
-## Whether a rule can leave the goal out of reach for good (RuleBase.can_dead_end).
+## Whether a rule can leave the goal out of reach for good (RuleBase.can_dead_end),
+## or a one-way rule meets another rule that limits moves (RuleBase.moves_one_way).
 func can_dead_end() -> bool:
+	var one_way: bool = false
+	var others: int = 0
 	for rule: RuleBase in active_rules:
 		if rule.can_dead_end():
 			return true
-	return false
+		one_way = one_way or rule.moves_one_way()
+		others += 1 if rule.get_id() != ClassicHanoiRule.ID and not rule.moves_one_way() else 0
+	return one_way and others > 0
 
 
 ## The move that echoes `move` made from `state` (RuleBase.echo_of), or null
@@ -263,7 +285,7 @@ func get_pick_up_violation_message(state: PuzzleState, peg_index: int) -> String
 	var facts: MoveFacts = MoveFacts.of(state, self)
 	for rule: RuleBase in active_rules:
 		if not rule.is_disk_movable_with(disk, facts):
-			return rule.violation_message
+			return rule.pick_up_message(disk, facts)
 		var partner: int = rule.partner_of(disk)
 		if partner != 0 and (not facts.is_top(partner) or facts.peg_of[partner] == peg_index):
 			return rule.violation_message
@@ -278,6 +300,8 @@ func get_rule_ids() -> Array[String]:
 
 
 func is_move_legal(state: PuzzleState, move: Move) -> bool:
+	if state != null and move != null and move.from_peg == move.to_peg:
+		return _special_rule(state, move) != null
 	if state == null or move == null or not _is_structural(state, move):
 		return false
 	return _refusing_rule(state, move, MoveFacts.of(state, self)) == null
@@ -312,7 +336,30 @@ func get_legal_moves(state: PuzzleState) -> Array[Move]:
 			var move: Move = Move.new(from_peg, to_peg)
 			if _refusing_rule(state, move, facts) == null:
 				moves.append(move)
+	for rule: RuleBase in active_rules:
+		moves.append_array(rule.special_moves(facts))
 	return moves
+
+
+## Whether a rule has moves of its own piece (RuleBase.special_moves): the
+## stone on a pan, written Move.new(peg, peg).
+func has_special_moves() -> bool:
+	for rule: RuleBase in active_rules:
+		if rule.has_special_moves():
+			return true
+	return false
+
+
+## The rule whose special move `move` is legal now, or null.
+func _special_rule(state: PuzzleState, move: Move) -> RuleBase:
+	if move.from_peg != move.to_peg or move.is_compound():
+		return null
+	var facts: MoveFacts = MoveFacts.of(state, self)
+	for rule: RuleBase in active_rules:
+		for special: Move in rule.special_moves(facts):
+			if special.equals(move):
+				return rule
+	return null
 
 
 ## New state with `move` applied, or null if the move is illegal.
@@ -328,6 +375,12 @@ func apply_move(state: PuzzleState, move: Move) -> PuzzleState:
 ## first of a compound move) and the rules' memory.
 func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 	var next: PuzzleState = state.duplicate_state()
+	if move.from_peg == move.to_peg:
+		# A rule's own piece moved (RuleBase.special_moves): only its memory changes.
+		var special: RuleBase = _special_rule(state, move)
+		if special != null:
+			next.memory = special.special_memory_after(MoveFacts.of(state, self), move)
+		return next
 	var memory: RuleBase = memory_rule()
 	var facts: MoveFacts = MoveFacts.of(state, self) if memory != null else null
 	var disk: int = next.pegs[move.from_peg].pop_back()
@@ -352,8 +405,23 @@ func apply_move_unchecked(state: PuzzleState, move: Move) -> PuzzleState:
 	return next
 
 
+## Whether `state` is the goal: the condition of a rule that sets the goal
+## (RuleBase.defines_goal), otherwise the exact position `goal`.
 func is_goal_state(state: PuzzleState, goal: PuzzleState) -> bool:
-	return state != null and state.equals(goal)
+	if state == null:
+		return false
+	var rule: RuleBase = goal_rule()
+	if rule != null:
+		return rule.is_goal_with(MoveFacts.of(state, self))
+	return state.equals(goal)
+
+
+## The one active rule that sets the goal (RuleBase.defines_goal), or null.
+func goal_rule() -> RuleBase:
+	for rule: RuleBase in active_rules:
+		if rule.defines_goal():
+			return rule
+	return null
 
 
 ## Structural check (at least one peg, disk sizes positive and unique) plus

@@ -68,6 +68,12 @@ func is_disk_movable_with(disk: int, facts: MoveFacts) -> bool:
 	return is_disk_movable(disk, facts.last_disk)
 
 
+## Translation key of why `disk` may not be picked up now (this rule holds it
+## back); violation_message by default.
+func pick_up_message(_disk: int, _facts: MoveFacts) -> String:
+	return violation_message
+
+
 ## Whether the top disk of `move.from_peg` may be placed on `move.to_peg`.
 ## RuleSet only calls this for structurally valid moves: both peg indices are in
 ## range, they differ, and the source peg is not empty.
@@ -159,6 +165,24 @@ func echoes() -> bool:
 	return false
 
 
+## Moves of a rule's own piece rather than a disk (the island's movable weight
+## stone), written Move.new(peg, peg): legal now with `facts`. Such a move
+## changes only the memory (special_memory_after); the Solver then searches
+## generically.
+func special_moves(_facts: MoveFacts) -> Array[Move]:
+	return [] as Array[Move]
+
+
+## True for a rule that has special moves at all.
+func has_special_moves() -> bool:
+	return false
+
+
+## The memory after the special `move` (from special_moves()).
+func special_memory_after(facts: MoveFacts, _move: Move) -> int:
+	return facts.memory
+
+
 ## Peg orders that keep a puzzle under this rule the same puzzle (the
 ## similarity check, PuzzleIdentity): any order (pegs are only places), a row
 ## read either way, the turns of a dial, pairs kept together, or only the
@@ -192,11 +216,42 @@ func disk_swaps(_disks: Array) -> Array[Dictionary]:
 	return [] as Array[Dictionary]
 
 
+## True for a rule that sets the level's goal itself: a condition on the
+## position (the crowned disk on its gate, each peg's height or sum), not one
+## position (ICRA World 5-9, section 2). At most one per RuleSet. The level's
+## goal is then one position that meets it (where its stored solution ends);
+## the Solver searches one way until a position meets the condition.
+func defines_goal() -> bool:
+	return false
+
+
+## Whether the position `facts` describes meets this rule's goal condition
+## (only asked of a rule whose defines_goal() is true).
+func is_goal_with(_facts: MoveFacts) -> bool:
+	return true
+
+
+## True for a rule that only says what the goal is: it sets the goal itself
+## (defines_goal) or marks the pegs of an exact goal (the king's odd and even
+## towers), and limits no move. Such a rule is the puzzle's aim, so it need
+## not make the solution longer (LevelForge.matters).
+func only_aims() -> bool:
+	return defines_goal()
+
+
 ## True for a rule under which a move may leave the goal out of reach for good
 ## (a move that cannot be taken back, e.g. a disk lifted off the other colour).
 ## Only then the board checks each new position (DeadEndWatcher) and offers a
 ## free way back from a dead end (Mod Kataloqu v1.1, D.3: nobody loses).
 func can_dead_end() -> bool:
+	return false
+
+
+## True for a rule whose moves are not taken back by the opposite move (the
+## dial goes round one way): alone it never dead-ends, but beside another rule
+## that limits moves (a full peg on the way round) it can (RuleSet.can_dead_end,
+## measured 2026-10-17 on capacity with the dial).
+func moves_one_way() -> bool:
 	return false
 
 

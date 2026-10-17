@@ -205,11 +205,59 @@ msgstr "Diqqət! Böyük disk kiçik diskin üstünə qoyula bilməz."
 msgid "RULE_ADJACENT_PEGS"
 msgstr "Karvan yalnız qonşu dayanacağa gedə bilər."
 
+msgid "RULE_OASIS_FULL"
+msgstr "Vaha yalnız bir disk tutur."
+
+msgid "RULE_BRIDGE"
+msgstr "Bu dar körpüdən yalnız rəqəmindən böyük olmayan disklər keçir."
+
+msgid "RULE_ONE_WAY"
+msgstr "Bu yol yalnız ox istiqamətində keçilir."
+
+msgid "RULE_STRIPES_INVERSE"
+msgstr "Tərs zolaq: disk yalnız öz rənginin üstünə qoyula bilər."
+
+msgid "RULE_STRIPES_BASE"
+msgstr "Rəngli əsasın üstünə eyni rəngli disk qoyula bilməz."
+
+msgid "RULE_STRIPES_PAINT"
+msgstr "Boyanan disk düşdüyü yerdə eyni rəngə toxuna bilməz."
+
+msgid "RULE_CENTER_FULL"
+msgstr "Mərkəz yalnız bir disk tutur."
+
+msgid "RULE_ALTERNATION_LEADER"
+msgstr "İndi yalnız tac taxmış lider və ya sonuncu tərpənən diskin qonşusu (±1) gedə bilər. Liderdən sonra istənilən disk gedə bilər."
+
+msgid "RULE_WAITING"
+msgstr "Qum saatlı disk yalnız liderdən dərhal sonra gedə bilər."
+
+msgid "STONE_MOVE"
+msgstr "Daşı köçür"
+
 msgid "RULE_SAME_SIZE"
 msgstr "Eyni ölçülü disklər üst-üstə qoyula bilməz."
 
 msgid "RULE_COLOUR_TOUCH"
 msgstr "Fərqli rəngli disklər bir-birinə toxuna bilməz."
+
+msgid "RULE_NARROW_GATE"
+msgstr "Dar qapı: darvazaya yalnız oxlu qonşu qüllədən girmək olar."
+
+msgid "RULE_ELEPHANT"
+msgstr "Fil çayı keçə bilməz."
+
+msgid "RULE_FERRY_FULL"
+msgstr "Bərə yalnız bir disk götürür."
+
+msgid "RULE_RIVER_REVERSE"
+msgstr "Tərs çay: çayı yalnız fillər keçə bilər."
+
+msgid "RULE_CROSSING"
+msgstr "Disk çayı yalnız keçiddən, rəqəmi qədər böyüklükdə keçə bilər."
+
+msgid "RULE_BONFIRE"
+msgstr "Tonqalın üstündən yalnız ən kiçik iki disk tullanıb keçə bilər."
 
 msgid "RULE_FOUNDATION"
 msgstr "Təməl hələ qoyulmayıb: əvvəl kiçik diskləri öz yerinə apar."
@@ -331,6 +379,237 @@ msgstr "Zəncirvari kilid"
 msgid "VARIANT_CHAIN_LOCK_RULE"
 msgstr "kilidlər ardıcıl açılır: açılan disk növbəti kilidin açarıdır."
 
+msgid "VARIANT_OASIS_NAME"
+msgstr "Vaha"
+
+msgid "VARIANT_OASIS_RULE"
+msgstr "yolun kənarındakı vaha bir disk tutur, yalnız öz dayanacağına bağlıdır."
+
+msgid "VARIANT_TUNNEL_NAME"
+msgstr "Kəhriz"
+
+msgid "VARIANT_TUNNEL_RULE"
+msgstr "yeraltı tunellə bağlı iki uzaq dayanacaq qonşu sayılır."
+
+msgid "VARIANT_BRIDGE_NAME"
+msgstr "Dar körpü"
+
+msgid "VARIANT_BRIDGE_RULE"
+msgstr "körpüdən yalnız rəqəmindən böyük olmayan disklər keçir."
+
+msgid "VARIANT_ONE_WAY_NAME"
+msgstr "Birtərəfli yol"
+
+msgid "VARIANT_ONE_WAY_RULE"
+msgstr "oxlu yol yalnız ox istiqamətində keçilir."
+
+msgid "VARIANT_JUMP_NAME"
+msgstr "Sıçrayış"
+
+msgid "VARIANT_JUMP_RULE"
+msgstr "disk qonşu dayanacağın üstündən tullana bilər, əgər oradakı üst disk ondan böyükdürsə."
+
+msgid "VARIANT_NEUTRAL_NAME"
+msgstr "Neytral disk"
+
+msgid "VARIANT_NEUTRAL_RULE"
+msgstr "boz disk hər iki rənglə toxuna bilər."
+
+msgid "VARIANT_COLORED_BASE_NAME"
+msgstr "Rəngli əsas"
+
+msgid "VARIANT_COLORED_BASE_RULE"
+msgstr "rəngli əsas bir disk sayılır: üstünə o biri rəngdən disk qoyulur."
+
+msgid "VARIANT_PAINT_NAME"
+msgstr "Boya qülləsi"
+
+msgid "VARIANT_PAINT_RULE"
+msgstr "bu qülləyə düşən disk o biri rəngə boyanır və elə qalır."
+
+msgid "VARIANT_INVERSE_NAME"
+msgstr "Tərs zolaq"
+
+msgid "VARIANT_INVERSE_RULE"
+msgstr "qayda tərsinə döndü: disk yalnız öz rənginin üstünə qoyulur."
+
+msgid "VARIANT_BACK_PEG_NAME"
+msgstr "Əks qüllə"
+
+msgid "VARIANT_BACK_PEG_RULE"
+msgstr "iki oxlu qüllədən disk geriyə də gedə bilər."
+
+msgid "VARIANT_SHORTCUT_NAME"
+msgstr "Qısa yol"
+
+msgid "VARIANT_SHORTCUT_RULE"
+msgstr "qövslü qüllədən disk bir qülləni atlaya bilər."
+
+msgid "VARIANT_CENTER_NAME"
+msgstr "Mərkəz"
+
+msgid "VARIANT_CENTER_RULE"
+msgstr "ortadakı qüllə bir disk tutur, bütün qüllələrlə iki tərəfli bağlıdır."
+
+msgid "VARIANT_EIGHT_NAME"
+msgstr "Səkkiz"
+
+msgid "VARIANT_EIGHT_RULE"
+msgstr "iki dairə ortaq qüllədə birləşir, hər biri öz istiqamətində fırlanır."
+
+msgid "VARIANT_BROKEN_RING_NAME"
+msgstr "Qırıq halqa"
+
+msgid "VARIANT_BROKEN_RING_RULE"
+msgstr "qırıq halqalı disk növbə gözləmir."
+
+msgid "VARIANT_RESET_PEG_NAME"
+msgstr "Sıfırlama qülləsi"
+
+msgid "VARIANT_RESET_PEG_RULE"
+msgstr "bu qülləyə disk qoyulandan sonra istənilən disk gedə bilər."
+
+msgid "VARIANT_NEW_LEADER_NAME"
+msgstr "Yeni lider"
+
+msgid "VARIANT_NEW_LEADER_RULE"
+msgstr "həmişə sərbəst olan disk 1-ci yox, tac taxmış diskdir."
+
+msgid "VARIANT_WAITING_RING_NAME"
+msgstr "Gözləyən halqa"
+
+msgid "VARIANT_WAITING_RING_RULE"
+msgstr "qum saatlı disk yalnız liderdən dərhal sonra gedə bilər."
+
+msgid "VARIANT_STONE_NAME"
+msgstr "Çəki daşı"
+
+msgid "VARIANT_STONE_RULE"
+msgstr "platformadakı daş öz rəqəmi qədər ağırlıq əlavə edir."
+
+msgid "VARIANT_LONG_ARM_NAME"
+msgstr "Uzun qol"
+
+msgid "VARIANT_LONG_ARM_RULE"
+msgstr "uzun qoldakı disklərin ağırlığı 2 dəfə sayılır."
+
+msgid "VARIANT_THREE_SCALES_NAME"
+msgstr "Üç tərəzi"
+
+msgid "VARIANT_THREE_SCALES_RULE"
+msgstr "altı qüllə, üç tərəzi: hər biri öz cütünü tarazlayır."
+
+msgid "VARIANT_OWN_LIMITS_NAME"
+msgstr "Fərqli hədlər"
+
+msgid "VARIANT_OWN_LIMITS_RULE"
+msgstr "hər tərəzinin öz həddi var."
+
+msgid "VARIANT_MOVING_STONE_NAME"
+msgstr "Hərəkətli daş"
+
+msgid "VARIANT_MOVING_STONE_RULE"
+msgstr "daşı bir dəfə tərəzinin o biri platformasına köçürmək olar."
+
+msgid "VARIANT_ODD_EVEN_NAME"
+msgstr "Tək-Cüt"
+
+msgid "VARIANT_ODD_EVEN_RULE"
+msgstr "tək ölçülü disklər bir işarəli qülləyə, cütlər o birinə yığılır."
+
+msgid "VARIANT_VIZIER_NAME"
+msgstr "Kral və vəzir"
+
+msgid "VARIANT_VIZIER_RULE"
+msgstr "iki tac var, hər birinin öz darvazası var."
+
+msgid "VARIANT_NARROW_GATE_NAME"
+msgstr "Dar qapı"
+
+msgid "VARIANT_NARROW_GATE_RULE"
+msgstr "darvazaya yalnız oxlu qonşu qüllədən girmək olar."
+
+msgid "VARIANT_SIEGE_NAME"
+msgstr "Mühasirə"
+
+msgid "VARIANT_SIEGE_RULE"
+msgstr "kral ən hündür yığının ən altında başlayır."
+
+msgid "VARIANT_STONE_BRIDGE_NAME"
+msgstr "Daş körpü"
+
+msgid "VARIANT_STONE_BRIDGE_RULE"
+msgstr "körpü ilə bağlı iki qüllə arasında fillər də çayı keçir."
+
+msgid "VARIANT_FERRY_NAME"
+msgstr "Bərə"
+
+msgid "VARIANT_FERRY_RULE"
+msgstr "çaydakı bərə bir disk götürür, fillər də ona minib çayı bir-bir keçir."
+
+msgid "VARIANT_TWO_CROSSINGS_NAME"
+msgstr "İki keçid"
+
+msgid "VARIANT_TWO_CROSSINGS_RULE"
+msgstr "çayı yalnız iki keçiddən keçmək olar, hər keçiddən rəqəmi qədər böyüklükdə disk."
+
+msgid "VARIANT_REVERSE_NAME"
+msgstr "Tərs çay"
+
+msgid "VARIANT_REVERSE_RULE"
+msgstr "indi çayı yalnız fillər keçir, kiçik disklər keçə bilməz."
+
+msgid "VARIANT_BONFIRE_NAME"
+msgstr "Novruz tonqalı"
+
+msgid "VARIANT_BONFIRE_RULE"
+msgstr "çayın yerində tonqal yanır, üstündən yalnız ən kiçik iki disk tullanır."
+
+msgid "VARIANT_MID_START_NAME"
+msgstr "Ortadan başlanğıc"
+
+msgid "VARIANT_MID_START_RULE"
+msgstr "karvanlar artıq yoldadır, hədəf eyni qalır."
+
+msgid "VARIANT_MIXED_NAME"
+msgstr "Qarışıq-Ayırma"
+
+msgid "VARIANT_MIXED_RULE"
+msgstr "uclarda rənglər qarışıqdır, fərqli rənglər bir-birinə toxuna bilməz."
+
+msgid "VARIANT_CARAVANSERAI_NAME"
+msgstr "Karvansara"
+
+msgid "VARIANT_CARAVANSERAI_RULE"
+msgstr "ortadakı qüllədə rənglər qarışıq dura bilər."
+
+msgid "VARIANT_THREE_CARAVANS_NAME"
+msgstr "Üç karvan"
+
+msgid "VARIANT_THREE_CARAVANS_RULE"
+msgstr "ağ qaranın, qara qırmızının, qırmızı ağın yerinə keçir."
+
+msgid "VARIANT_GOAL_KING_NAME"
+msgstr "Kral hədəfi"
+
+msgid "VARIANT_GOAL_KING_RULE"
+msgstr "bu dəfə yalnız tac taxmış disk darvazaya çatmalıdır."
+
+msgid "VARIANT_GOAL_ODD_EVEN_NAME"
+msgstr "Tək-Cüt hədəfi"
+
+msgid "VARIANT_GOAL_ODD_EVEN_RULE"
+msgstr "bu dəfə tək ölçülər bir işarəli qülləyə, cütlər o birinə yığılır."
+
+msgid "KING_GOAL"
+msgstr "Tacı darvazaya çatdır"
+
+msgid "ODD_PEG"
+msgstr "Tək"
+
+msgid "EVEN_PEG"
+msgstr "Cüt"
+
 msgid "CHAIN_SECOND_TARGET"
 msgstr "İndi zəncirin o biri diskinin qülləsini seç."
 
@@ -375,6 +654,12 @@ msgstr "Zolaqlı Qüllə: tək və cüt ölçülər iki rəngdədir. Eyni rəngl
 
 msgid "INTRO_CHAIN"
 msgstr "Zəncir: iki disk bir-birinə bağlıdır və yalnız birlikdə gedir. Birinə toxun, əvvəl onun, sonra yoldaşının qülləsini seç."
+
+msgid "INTRO_KING"
+msgstr "Kral: tac taxmış ən böyük disk bayraqlı darvazaya çatmalıdır. Qalan disklər harada qalsa olar."
+
+msgid "INTRO_RIVER"
+msgstr "Fil Çayı: çay lövhəni iki sahilə bölür. Fil işarəli böyük disklər çayı keçə bilməz, kiçiklər isə qarşı sahilə keçməlidir."
 
 msgid "SCALE_DIFFERENCE"
 msgstr "FƏRQ"
@@ -501,6 +786,24 @@ msgstr "Zəncirlənmiş Disklər"
 
 msgid "MODE_CHAIN_RULE"
 msgstr "Zəncirli iki disk yalnız birlikdə hərəkət edir."
+
+msgid "MODE_KING_LABEL"
+msgstr "Kral"
+
+msgid "MODE_KING_NAME"
+msgstr "Kral"
+
+msgid "MODE_KING_RULE"
+msgstr "Tacı darvazaya çatdır. Qalan disklər harada qalsa olar."
+
+msgid "MODE_RIVER_LABEL"
+msgstr "Fil Çayı"
+
+msgid "MODE_RIVER_NAME"
+msgstr "Fil Çayı"
+
+msgid "MODE_RIVER_RULE"
+msgstr "Fil işarəli disklər çayı keçə bilməz."
 
 msgid "MODE_CYCLIC_LABEL"
 msgstr "Dairə"

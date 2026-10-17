@@ -26,6 +26,9 @@ const MODES: Dictionary = {
 	"mirror": ["MODE_MIRROR_LABEL", "MODE_MIRROR_NAME", "MODE_MIRROR_RULE"],
 	"trail": ["MODE_TRAIL_LABEL", "MODE_TRAIL_NAME", "MODE_TRAIL_RULE"],
 	"magnet": ["MODE_MAGNET_LABEL", "MODE_MAGNET_NAME", "MODE_MAGNET_RULE"],
+	# ICRA World 5-9, section 6.
+	"king": ["MODE_KING_LABEL", "MODE_KING_NAME", "MODE_KING_RULE"],
+	"river": ["MODE_RIVER_LABEL", "MODE_RIVER_NAME", "MODE_RIVER_RULE"],
 }
 
 
@@ -45,7 +48,49 @@ const VARIANTS: Dictionary = {
 	"key_disk": ["VARIANT_KEY_DISK_NAME", "VARIANT_KEY_DISK_RULE"],
 	"middle_lock": ["VARIANT_MIDDLE_LOCK_NAME", "VARIANT_MIDDLE_LOCK_RULE"],
 	"chain_lock": ["VARIANT_CHAIN_LOCK_NAME", "VARIANT_CHAIN_LOCK_RULE"],
+	# World 3-4 (MindShift_Dunya3-4_Alt_Elementler_v1.md).
+	"oasis": ["VARIANT_OASIS_NAME", "VARIANT_OASIS_RULE"],
+	"tunnel": ["VARIANT_TUNNEL_NAME", "VARIANT_TUNNEL_RULE"],
+	"bridge": ["VARIANT_BRIDGE_NAME", "VARIANT_BRIDGE_RULE"],
+	"one_way": ["VARIANT_ONE_WAY_NAME", "VARIANT_ONE_WAY_RULE"],
+	"jump": ["VARIANT_JUMP_NAME", "VARIANT_JUMP_RULE"],
+	"neutral": ["VARIANT_NEUTRAL_NAME", "VARIANT_NEUTRAL_RULE"],
+	"colored_base": ["VARIANT_COLORED_BASE_NAME", "VARIANT_COLORED_BASE_RULE"],
+	"paint": ["VARIANT_PAINT_NAME", "VARIANT_PAINT_RULE"],
+	"inverse": ["VARIANT_INVERSE_NAME", "VARIANT_INVERSE_RULE"],
+	"back_peg": ["VARIANT_BACK_PEG_NAME", "VARIANT_BACK_PEG_RULE"],
+	"shortcut": ["VARIANT_SHORTCUT_NAME", "VARIANT_SHORTCUT_RULE"],
+	"center": ["VARIANT_CENTER_NAME", "VARIANT_CENTER_RULE"],
+	"eight": ["VARIANT_EIGHT_NAME", "VARIANT_EIGHT_RULE"],
+	"broken_ring": ["VARIANT_BROKEN_RING_NAME", "VARIANT_BROKEN_RING_RULE"],
+	"reset_peg": ["VARIANT_RESET_PEG_NAME", "VARIANT_RESET_PEG_RULE"],
+	"new_leader": ["VARIANT_NEW_LEADER_NAME", "VARIANT_NEW_LEADER_RULE"],
+	"waiting_ring": ["VARIANT_WAITING_RING_NAME", "VARIANT_WAITING_RING_RULE"],
+	"stone": ["VARIANT_STONE_NAME", "VARIANT_STONE_RULE"],
+	"long_arm": ["VARIANT_LONG_ARM_NAME", "VARIANT_LONG_ARM_RULE"],
+	"three_scales": ["VARIANT_THREE_SCALES_NAME", "VARIANT_THREE_SCALES_RULE"],
+	"own_limits": ["VARIANT_OWN_LIMITS_NAME", "VARIANT_OWN_LIMITS_RULE"],
+	"moving_stone": ["VARIANT_MOVING_STONE_NAME", "VARIANT_MOVING_STONE_RULE"],
+	# World 5 (ICRA World 5-9, sections 3.1-3.3 and 4).
+	"odd_even": ["VARIANT_ODD_EVEN_NAME", "VARIANT_ODD_EVEN_RULE"],
+	"vizier": ["VARIANT_VIZIER_NAME", "VARIANT_VIZIER_RULE"],
+	"narrow_gate": ["VARIANT_NARROW_GATE_NAME", "VARIANT_NARROW_GATE_RULE"],
+	"siege": ["VARIANT_SIEGE_NAME", "VARIANT_SIEGE_RULE"],
+	"stone_bridge": ["VARIANT_STONE_BRIDGE_NAME", "VARIANT_STONE_BRIDGE_RULE"],
+	"ferry": ["VARIANT_FERRY_NAME", "VARIANT_FERRY_RULE"],
+	"two_crossings": ["VARIANT_TWO_CROSSINGS_NAME", "VARIANT_TWO_CROSSINGS_RULE"],
+	"reverse": ["VARIANT_REVERSE_NAME", "VARIANT_REVERSE_RULE"],
+	"bonfire": ["VARIANT_BONFIRE_NAME", "VARIANT_BONFIRE_RULE"],
+	"mid_start": ["VARIANT_MID_START_NAME", "VARIANT_MID_START_RULE"],
+	"mixed": ["VARIANT_MIXED_NAME", "VARIANT_MIXED_RULE"],
+	"caravanserai": ["VARIANT_CARAVANSERAI_NAME", "VARIANT_CARAVANSERAI_RULE"],
+	"three_caravans": ["VARIANT_THREE_CARAVANS_NAME", "VARIANT_THREE_CARAVANS_RULE"],
+	"goal_king": ["VARIANT_GOAL_KING_NAME", "VARIANT_GOAL_KING_RULE"],
+	"goal_odd_even": ["VARIANT_GOAL_ODD_EVEN_NAME", "VARIANT_GOAL_ODD_EVEN_RULE"],
 }
+## Sub-elements that are a lesson of their own (Level.lesson(): the exchange's
+## mixed kind): the mode's name says them, so the rule panel leaves them out.
+const OWN_LESSON: Array[String] = ["mixed"]
 
 
 ## The name of sub-element `variant` (translated).
@@ -68,7 +113,8 @@ static func variant_line(variant: String) -> String:
 static func variants_of(level: Level) -> String:
 	var parts: PackedStringArray = PackedStringArray()
 	for variant: String in level.variants:
-		parts.append(variant_line(variant))
+		if not OWN_LESSON.has(variant):
+			parts.append(variant_line(variant))
 	return " ".join(parts)
 
 

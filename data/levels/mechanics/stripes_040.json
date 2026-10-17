@@ -1,0 +1,15 @@
+{
+  "id": 14040,
+  "difficulty": "hard",
+  "pegs": 4,
+  "disks": 8,
+  "start": [[2,1],[],[3],[8,7,6,5,4]],
+  "goal": [[8,3],[7,4],[6,5,2,1],[]],
+  "rules": ["classic_hanoi","stripes"],
+  "min_moves": 24,
+  "solution_path": [[3,1],[2,1],[0,2],[0,1],[2,1],[3,0],[3,2],[0,2],[1,0],[1,2],[0,2],[1,0],[2,1],[2,0],[1,0],[1,2],[3,1],[2,1],[0,1],[0,2],[1,2],[0,1],[3,0],[1,0]],
+  "star_thresholds": {"three":24,"two":30},
+  "time_limit_seconds": null,
+  "rule_params": {"stripes":{"paint":3}},
+  "variants": ["paint"]
+}

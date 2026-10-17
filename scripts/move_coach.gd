@@ -9,6 +9,14 @@ extends RefCounted
 
 
 static func present(coaching: CoachingLayer, board: GameBoard, move: Move, picked_up: bool) -> void:
+	if move.from_peg == move.to_peg:
+		# A rule's own piece (the island's weight stone, RuleBase.special_moves):
+		# its button.
+		var button: Rect2 = board.get_stone_button_rect()
+		coaching.scrim.show_scrim(button.grow(12.0))
+		coaching.ring.show_around(button)
+		coaching.pointer.play(button.get_center(), button.get_center())
+		return
 	var from_peg: int = move.from_peg
 	var to_peg: int = move.to_peg
 	var area: Rect2 = board.get_peg_rect(move.from_peg).merge(board.get_peg_rect(move.to_peg))

@@ -192,6 +192,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
+[node name="StoneButton" type="Button" parent="Margin/Layout/StatusRow"]
+script = ExtResource("pb_polished")
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(220, 72)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 26
+text = "STONE_MOVE"
+
 [node name="WayBackButton" type="Button" parent="Margin/Layout/StatusRow"]
 script = ExtResource("pb_polished")
 unique_name_in_owner = true

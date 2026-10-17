@@ -14,6 +14,11 @@ const ROW: String = "row"
 const ROWS: String = "rows"
 const CIRCLE: String = "circle"
 const PAIRS: String = "pairs"
+## World 3-4 dials: a circle of all pegs but the last, which stands in the
+## middle ("Mərkəz"); two circles touching at peg 0, the first circle's pegs
+## (1..h) on the left, the second's (h+1..2h) on the right ("Səkkiz").
+const CIRCLE_CENTER: String = "circle_center"
+const EIGHT: String = "eight"
 ## The gap between two pairs, in peg columns.
 const PAIR_GAP: float = 0.5
 
@@ -54,6 +59,27 @@ static func peg_cells(kind: String, peg_count: int, area: Vector2) -> Array[Rect
 			for i: int in peg_count:
 				var angle: float = -PI / 2.0 + TAU * i / count
 				cells.append(Rect2(center + Vector2(cos(angle), sin(angle)) * radius - size * 0.5, size))
+		CIRCLE_CENTER:
+			# The circle of the others as usual, the last peg in its middle.
+			cells = peg_cells(CIRCLE, peg_count - 1, area)
+			var size: Vector2 = cells[0].size if not cells.is_empty() else area * 0.3
+			cells.append(Rect2(area * 0.5 - size * 0.5, size))
+		EIGHT:
+			var half: int = (peg_count - 1) / 2
+			var size: Vector2 = Vector2(area.x * 0.2, area.y * 0.3)
+			var radius: float = minf((area.x * 0.5 - size.x * 0.5) * 0.5, area.y * 0.4)
+			var middle: Vector2 = area * 0.5
+			cells.resize(peg_count)
+			cells[0] = Rect2(middle - size * 0.5, size)
+			for i: int in range(1, half + 1):
+				# The first circle (left), its pegs in travel order round from the shared one.
+				var angle: float = TAU * i / (half + 1)
+				var at: Vector2 = middle + Vector2(-radius, 0.0) + Vector2(cos(angle), sin(angle)) * radius
+				cells[i] = Rect2(at - size * 0.5, size)
+				# The second circle (right) runs the other way round.
+				var other: float = PI - TAU * i / (half + 1)
+				var there: Vector2 = middle + Vector2(radius, 0.0) + Vector2(cos(other), sin(other)) * radius
+				cells[peg_count - i] = Rect2(there - size * 0.5, size)
 		_:
 			var size: Vector2 = Vector2(area.x / count, area.y)
 			for i: int in peg_count:
@@ -72,4 +98,4 @@ static func circle_center(cells: Array[Rect2], area: Vector2) -> Vector2:
 ## Whether pegs of this layout stand in more than one line (the disks then get
 ## a little less room each).
 static func is_compact(kind: String) -> bool:
-	return kind == ROWS or kind == CIRCLE
+	return kind in [ROWS, CIRCLE, CIRCLE_CENTER, EIGHT]

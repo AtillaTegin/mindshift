@@ -33,6 +33,15 @@ var stack_room: int = 0
 ## Per peg, how many disks its rod is drawn for (unequal capacity); empty: every
 ## rod is drawn for stack_room.
 var rod_rooms: Array[int] = []
+## How many disks the level has (their widths and colours) when the preview
+## shows only some of them (a goal condition: the crowned disks on their
+## gates); 0: the shown position's own count.
+var disk_total: int = 0
+## Pegs marked with a gate's flag (the king's gates, ICRA 3.1).
+var gates: Array[int] = []:
+	set(value):
+		gates = value
+		queue_redraw()
 var position_state: PuzzleState:
 	set(value):
 		position_state = value
@@ -63,7 +72,7 @@ func get_disk_labels() -> Array[Dictionary]:
 	var labels: Array[Dictionary] = []
 	if position_state == null or position_state.get_peg_count() == 0:
 		return labels
-	var disk_count: int = maxi(position_state.get_disk_count(), 1)
+	var disk_count: int = _disk_total()
 	var cells: Array[Rect2] = get_cells()
 	var disk_height: float = _disk_height(cells[0].size.y)
 	for peg_index: int in position_state.get_peg_count():
@@ -82,6 +91,10 @@ func get_disk_labels() -> Array[Dictionary]:
 	return labels
 
 
+func _disk_total() -> int:
+	return disk_total if disk_total > 0 else maxi(position_state.get_disk_count(), 1)
+
+
 ## The most disks one peg can hold (every disk unless the board says less).
 func _stack() -> int:
 	if stack_room > 0:
@@ -96,7 +109,7 @@ func _disk_height(cell_height: float) -> float:
 func _draw() -> void:
 	if position_state == null or position_state.get_peg_count() == 0:
 		return
-	var disk_count: int = maxi(position_state.get_disk_count(), 1)
+	var disk_count: int = _disk_total()
 	var stack: int = maxi(_stack(), 1)
 	var cells: Array[Rect2] = get_cells()
 	var disk_height: float = _disk_height(cells[0].size.y)
@@ -108,6 +121,12 @@ func _draw() -> void:
 		var rod: float = disk_height * ((rod_rooms[peg_index] + 0.3) if peg_index < rod_rooms.size() else (stack + 0.5))
 		draw_rect(Rect2(center_x - 3.0, base_top - rod, 6.0, rod), peg_color)
 		draw_rect(Rect2(center_x - cell.size.x * 0.45, base_top, cell.size.x * 0.9, BASE_HEIGHT), peg_color)
+		if gates.has(peg_index):
+			# The gate's flag on top of its rod.
+			var pole: Vector2 = Vector2(center_x, base_top - rod)
+			draw_line(pole, pole + Vector2(0.0, -14.0), ThemeManager.mark_color("gate"), 2.0, true)
+			draw_colored_polygon(PackedVector2Array([pole + Vector2(1.0, -14.0), pole + Vector2(12.0, -10.0),
+					pole + Vector2(1.0, -6.0)]), ThemeManager.mark_color("flag"))
 	var font: Font = get_theme_default_font()
 	var text_color: Color = ThemeManager.color("text_on_disk")
 	for label: Dictionary in get_disk_labels():

@@ -56,7 +56,14 @@ func test_main_menu_builds() -> void:
 	(Engine.get_main_loop() as SceneTree).root.add_child(menu)
 	_nodes.append(menu)
 	assert_true((menu.get_node("%ProgressLabel") as Label).text.ends_with("/ %d" % (LevelCatalog.total_levels() * 3)), "every level on the path, 3 stars each")
-	assert_eq(LevelCatalog.total_levels(), 420, "world 1-2: 350 on the road, 70 on four islands")
+	# The built worlds: the road, the classic island and one island per mode chapter.
+	var road: int = LevelCatalog.track_length(LevelCatalog.MAIN)
+	var islands: int = 0
+	for chapter: Dictionary in ChapterPlan.CHAPTERS:
+		if int(chapter["last"]) <= road:
+			islands += ChapterPlan.ISLAND_LEVELS if chapter["kind"] == ChapterPlan.MODE_CHAPTER else 0
+			islands += 40 if chapter["kind"] == ChapterPlan.CLASSIC_CHAPTER else 0
+	assert_eq(LevelCatalog.total_levels(), road + islands, "%d on the road, %d on the islands" % [road, islands])
 	assert_false((menu.get_node("%SettingsPanel") as Control).visible)
 	(menu.get_node("%SettingsButton") as Button).pressed.emit()
 	assert_true((menu.get_node("%SettingsPanel") as Control).visible)

@@ -101,13 +101,18 @@ func test_colour_rule_only_for_the_mixed_kind() -> void:
 func test_both_kinds_are_lessons_of_their_own() -> void:
 	var pure: Level = _swap_level(PURE, false)
 	var mixed: Level = _swap_level(MIXED, true)
+	# ICRA 3.3: the mixed kind is the chapter's third wave and names itself.
+	mixed.variants.assign(["mixed"])
 	assert_true(pure.min_moves > 0 and mixed.min_moves > 0, "both boards solve")
 	assert_eq(pure.lesson(), ColorSwapRule.ID)
 	assert_eq(mixed.lesson(), Level.COLOR_SWAP_MIXED)
-	for level: Level in [pure, mixed]:
-		var errors: Array[String] = []
-		LevelValidator.validate_mechanic_design(level, errors)
-		assert_eq(errors, [] as Array[String], level.lesson())
+	var errors: Array[String] = []
+	LevelValidator.validate_mechanic_design(pure, errors)
+	assert_eq(errors, [] as Array[String], pure.lesson())
+	# The mixed board has its shape; whether its colour rule lengthens this one
+	# board is the forge's filter (LevelForge.variants_matter).
+	LevelValidator.validate_color_swap_shape(mixed, errors)
+	assert_eq(errors, [] as Array[String], mixed.lesson())
 	assert_true(TutorialDirector.INTRO_TEXTS.has(Level.COLOR_SWAP_MIXED))
 
 
@@ -133,7 +138,7 @@ func test_validator_knows_the_board() -> void:
 	var no_buffers: Level = Level.create(9900, "easy", PuzzleState.new([[3, 1], [4, 2]]), PuzzleState.new([[4, 2], [3, 1]]),
 			rule_ids, [], {ColorSwapRule.ID: {"colour": false}})
 	LevelValidator.validate_mechanic_design(no_buffers, errors)
-	assert_true(" ".join(errors).contains("empty pegs between"), str(errors))
+	assert_true(" ".join(errors).contains("at least 4 pegs"), str(errors))
 
 
 func test_board_shows_sizes_and_two_colours() -> void:

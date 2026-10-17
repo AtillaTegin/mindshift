@@ -146,6 +146,16 @@ const SKINS: Dictionary = {
 		LIGHT: {"board": Color("f6e8c8"), "pattern": Color("e6cf98"), "peg": Color("8c5b2e"), "mark": Color("b07030")},
 		DARK: {"board": Color("2f2719"), "pattern": Color("4d3e24"), "peg": Color("c49255"), "mark": Color("d8903c")},
 	},
+	# ICRA World 5: the king's palace (crimson and gold, a gate with a flag) and
+	# the elephant river (green banks, the river between them).
+	"palace": {
+		LIGHT: {"board": Color("f6e4e1"), "pattern": Color("e8c3bd"), "peg": Color("8a2d3b"), "mark": Color("c9962a")},
+		DARK: {"board": Color("2c1a1e"), "pattern": Color("472a30"), "peg": Color("c46a78"), "mark": Color("e0b040")},
+	},
+	"river": {
+		LIGHT: {"board": Color("e4efdc"), "pattern": Color("c8dcb8"), "peg": Color("4f6a3a"), "mark": Color("3f7fb0")},
+		DARK: {"board": Color("1b2618"), "pattern": Color("2f4128"), "peg": Color("8fae74"), "mark": Color("5fa3d6")},
+	},
 }
 ## The two caravans of a great exchange: disk fill, number colour and (for the
 ## light one, so it shows on sand) an outline; the same in both modes (they are
@@ -153,12 +163,16 @@ const SKINS: Dictionary = {
 const EXCHANGE_DISKS: Dictionary = {
 	"white": {"fill": Color("faf6ee"), "text": Color("3b3a52"), "outline": Color("3b3a52")},
 	"black": {"fill": Color("3b3a52"), "text": Color("f3ead6")},
+	# ICRA 3.3, "Üç karvan": the third caravan.
+	"red": {"fill": Color("c2413a"), "text": Color("fff3ec"), "outline": Color("8e2a25")},
 }
 ## The two colours of the striped tower (odd and even sizes), after a barber
 ## pole; the same in both modes.
 const STRIPE_DISKS: Dictionary = {
 	"odd": {"fill": Color("d64545"), "text": Color("fff6f2"), "outline": Color("a83232")},
 	"even": {"fill": Color("f7f3ea"), "text": Color("33354a"), "outline": Color("33354a")},
+	# World 3-4: the neutral disk, plain grey.
+	"neutral": {"fill": Color("9a9ca3"), "text": Color("f4f4f6"), "outline": Color("6d6f76")},
 }
 ## Board details drawn over the dresses: the lock of a locked disk, a trail
 ## footprint, the chain between linked disks (bright when they can move), a
@@ -187,11 +201,49 @@ const MARK_COLORS: Dictionary = {
 	# Güzgü's echo: the tint of the bottom (mirrored) board and a blocked echo.
 	"mirror_tint": Color("9db8d8"),
 	"echo_blocked": Color(0.85, 0.25, 0.25, 0.9),
+	# World 3-4 sub-elements: the oasis palm and its water, a well and the
+	# tunnel under the sand, a rope bridge, a road arrow; the paint bucket and
+	# its drops; the dial's extra arrows and the centre's glow; the rings'
+	# crown, broken ring, hourglass and reset arrow; the weight stone, its
+	# feather and a long arm's mark.
+	"palm": Color("3f8f4e"),
+	"oasis_water": Color("4aa3c7"),
+	"well": Color("5b4a3a"),
+	"tunnel": Color(0.36, 0.29, 0.22, 0.7),
+	"rope": Color("8b5a2b"),
+	"road_arrow": Color("7a4b1c"),
+	"paint": Color("6a4fb3"),
+	"dial_extra": Color("e0b84a"),
+	"center_glow": Color(1.0, 0.86, 0.45, 0.55),
+	"crown": Color("e0b020"),
+	"broken_ring": Color("7a8a7e"),
+	"hourglass": Color("8a6a3a"),
+	"reset": Color("2f7d6d"),
+	"stone": Color("7d7a73"),
+	"stone_text": Color("f4f1ea"),
+	"feather": Color("f2efe6"),
+	# World 5: the gate's arch and flag and the narrow gate's arrow; the river,
+	# its waves, a stone bridge, a ford, the ferry boat, the bonfire; an
+	# elephant; the caravanserai's roof; the odd and even marks.
+	"gate": Color("8a2d3b"),
+	"flag": Color("d23c3c"),
+	"river_water": Color(0.29, 0.56, 0.78, 0.55),
+	"river_wave": Color(1.0, 1.0, 1.0, 0.55),
+	"bridge_stone": Color("8f8778"),
+	"ford": Color("c9b48a"),
+	"boat": Color("8b5a2b"),
+	"fire": Color("e8702a"),
+	"fire_core": Color("ffd25a"),
+	"fire_glow": Color(1.0, 0.55, 0.2, 0.25),
+	"elephant": Color("6f7480"),
+	"inn_roof": Color("a8552c"),
+	"odd_even": Color("3b3a52"),
 }
 ## Level.mechanic() -> skin.
 const MECHANIC_SKINS: Dictionary = {"alternation": "jade", "covered_pegs": "wood", "adjacent_pegs": "caravan",
 		"color_swap": "caravan", "peg_capacity": "temple", "foundation": "stone", "balance": "scales",
-		"cyclic": "zodiac", "stripes": "stripes", "chain": "chain", "mirror": "mirror", "trail": "trail"}
+		"cyclic": "zodiac", "stripes": "stripes", "chain": "chain", "mirror": "mirror", "trail": "trail",
+		"king": "palace", "river": "river"}
 
 var mode: String = LIGHT
 var theme: Theme

@@ -36,6 +36,11 @@ const BUILT_WORLDS: Array[int] = [1, 2]
 ## (draw_group()); a draw with a count not seen yet wins at once.
 const ATTEMPTS_PER_LEVEL: int = 600
 const CANDIDATES: int = 3
+## Sub-elements that rarely make a level in a window (World 3-4, measured
+## 2026-10-17: a narrow bridge or a one-way road on a line, the figure eight,
+## a neutral disk or a coloured base about 1 draw in 30), and how many times
+## the attempts their levels get.
+const SCARCE: Dictionary = {"bridge": 4, "one_way": 3, "eight": 3, "neutral": 2, "colored_base": 2}
 ## Waves (chapter waves v1): the closing mixed wave's length, how many levels
 ## of a new sub-element alone follow its intro, how far a level's window
 ## reaches around its target.
@@ -61,11 +66,13 @@ const BIG_TEST_BOARDS: String = "big_test"
 const MODE_FILES: Dictionary = {"peg_capacity": "capacity", "covered_pegs": "fog", "foundation": "foundation",
 	"adjacent_pegs": "caravan", "stripes": "stripes", "cyclic": "cyclic", "alternation": "rings", "balance": "balance",
 	"color_swap": "swap", "trail": "trail", "chain": "chain", "mirror": "mirror", "linked_pegs": "linked",
-	"magnet": "magnet"}
+	"magnet": "magnet", "king": "king", "river": "river"}
 ## Mechanic level ids: each mode, then each combination of the whitelist,
-## owns a block of ID_BLOCK ids from Difficulty.MECHANIC_FIRST_ID.
+## owns a block of ID_BLOCK ids from Difficulty.MECHANIC_FIRST_ID; modes past
+## the first COMBO_FIRST_BLOCK take the blocks from LATE_MODE_FIRST_BLOCK on.
 const ID_BLOCK: int = 1000
 const COMBO_FIRST_BLOCK: int = 20
+const LATE_MODE_FIRST_BLOCK: int = 80
 
 ## Boards per stream and band, taken in turn (LevelForge's recipe boards).
 ## Sizes measured 2026-10-15: unequal capacity on 5 pegs searches slowly and
@@ -157,6 +164,245 @@ const RECIPES: Dictionary = {
 		"expert": [{"pegs": 3, "disks": 6, "locked": 2, "keys": 2, "covered": 2},
 			{"pegs": 3, "disks": 7, "locked": 2, "keys": 3, "covered": 2}],
 	},
+	# World 3-4 (MindShift_Dunya3-4_Alt_Elementler_v1.md), measured 2026-10-17.
+	# Base boards: an oasis or a centre adds a peg, the figure eight makes the
+	# count odd, three scales take six (LevelForge.fitted()).
+	# Caravan road: 4-5 stops, 5-6 disks reach every window (a tunnel stays
+	# under ~26, so its levels lean on the larger boards).
+	"adjacent_pegs": {
+		INTRO: [{"pegs": 4, "disks": 4}, {"pegs": 4, "disks": 5}],
+		"easy_medium": [{"pegs": 4, "disks": 5}, {"pegs": 5, "disks": 5}],
+		"medium": [{"pegs": 4, "disks": 5}, {"pegs": 5, "disks": 5}, {"pegs": 4, "disks": 6}],
+		"medium_hard": [{"pegs": 5, "disks": 5}, {"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"hard": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"expert": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+	},
+	# Stripes: 3 pegs never change a tower, 7-8 disks on 4 pegs reach the
+	# windows (5 pegs stay short); a paint peg on 8 disks takes ~4 s a draw.
+	"stripes": {
+		INTRO: [{"pegs": 4, "disks": 6}, {"pegs": 4, "disks": 7}],
+		"easy_medium": [{"pegs": 4, "disks": 7}],
+		"medium": [{"pegs": 4, "disks": 7}, {"pegs": 4, "disks": 8}],
+		"medium_hard": [{"pegs": 4, "disks": 8}, {"pegs": 4, "disks": 7}],
+		"hard": [{"pegs": 4, "disks": 8}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 8}, {"pegs": 4, "disks": 9}],
+		"expert": [{"pegs": 4, "disks": 9}],
+	},
+	# The dial: 4-5 pegs, 5-6 disks; on 3 pegs the back step and the shortcut
+	# are the same move, so 4 pegs at least.
+	"cyclic": {
+		INTRO: [{"pegs": 4, "disks": 4}, {"pegs": 4, "disks": 5}],
+		"easy_medium": [{"pegs": 4, "disks": 5}, {"pegs": 5, "disks": 5}],
+		"medium": [{"pegs": 4, "disks": 5}, {"pegs": 5, "disks": 5}],
+		"medium_hard": [{"pegs": 4, "disks": 5}, {"pegs": 5, "disks": 5}, {"pegs": 4, "disks": 6}],
+		"hard": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 5}, {"pegs": 5, "disks": 6}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"expert": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 5}, {"pegs": 5, "disks": 6}],
+	},
+	# The Nine Rings: 4 pegs (the rule matters reliably there), 6-8 disks.
+	"alternation": {
+		INTRO: [{"pegs": 4, "disks": 5}, {"pegs": 4, "disks": 6}],
+		"easy_medium": [{"pegs": 4, "disks": 6}, {"pegs": 4, "disks": 7}],
+		"medium": [{"pegs": 4, "disks": 7}, {"pegs": 4, "disks": 6}],
+		"medium_hard": [{"pegs": 4, "disks": 7}, {"pegs": 4, "disks": 8}],
+		"hard": [{"pegs": 4, "disks": 8}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 8}, {"pegs": 4, "disks": 9}],
+		"expert": [{"pegs": 4, "disks": 9}, {"pegs": 4, "disks": 8}],
+	},
+	# The scales: 2 scales of 6-7 disks, the limit drawn in the range where the
+	# rule works on the board (user decision 2026-10-15); three scales on 6
+	# pegs. The goal is taken at the window's distance (LevelForge).
+	"balance": {
+		INTRO: [{"pegs": 4, "disks": 5, "tolerance": [3, 7]}, {"pegs": 4, "disks": 6, "tolerance": [4, 8]}],
+		"easy_medium": [{"pegs": 4, "disks": 6, "tolerance": [4, 8]}, {"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"medium": [{"pegs": 4, "disks": 6, "tolerance": [4, 8]}, {"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}, {"pegs": 4, "disks": 6, "tolerance": [4, 8]}],
+		"hard": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}, {"pegs": 4, "disks": 6, "tolerance": [4, 8]}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"expert": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+	},
+	# World 3-4 combinations (the chapter plan's whitelist), measured in the
+	# build: each must be longer than either mode alone.
+	"peg_capacity+adjacent_pegs": {
+		"easy_medium": [{"pegs": 4, "disks": 5, "slack": 1}],
+		"medium": [{"pegs": 4, "disks": 5, "slack": 1}, {"pegs": 4, "disks": 6, "slack": 1}],
+		"medium_hard": [{"pegs": 4, "disks": 6, "slack": 1}, {"pegs": 5, "disks": 6, "slack": 1}],
+		"hard": [{"pegs": 4, "disks": 6, "slack": 1}, {"pegs": 5, "disks": 6, "slack": 1}],
+		"expert": [{"pegs": 4, "disks": 6, "slack": 1}, {"pegs": 5, "disks": 6, "slack": 1}],
+	},
+	"foundation+adjacent_pegs": {
+		"easy_medium": [{"pegs": 4, "disks": 5, "locked": 1, "keys": 2}],
+		"medium": [{"pegs": 4, "disks": 5, "locked": 1, "keys": 2}, {"pegs": 4, "disks": 6, "locked": 2, "keys": 2}],
+		"medium_hard": [{"pegs": 4, "disks": 6, "locked": 2, "keys": 2}, {"pegs": 5, "disks": 5, "locked": 1, "keys": 2}],
+		"hard": [{"pegs": 4, "disks": 6, "locked": 2, "keys": 3}, {"pegs": 5, "disks": 6, "locked": 2, "keys": 2}],
+		"expert": [{"pegs": 4, "disks": 6, "locked": 2, "keys": 3}, {"pegs": 5, "disks": 6, "locked": 2, "keys": 2}],
+	},
+	"peg_capacity+stripes": {
+		"easy_medium": [{"pegs": 4, "disks": 7, "slack": 1}],
+		"medium": [{"pegs": 4, "disks": 7, "slack": 1}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "slack": 1}, {"pegs": 4, "disks": 8, "slack": 1}],
+		"hard": [{"pegs": 4, "disks": 8, "slack": 1}],
+		"expert": [{"pegs": 4, "disks": 8, "slack": 1}],
+	},
+	"adjacent_pegs+stripes": {
+		"easy_medium": [{"pegs": 4, "disks": 5}, {"pegs": 4, "disks": 6}],
+		"medium": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"medium_hard": [{"pegs": 4, "disks": 6}, {"pegs": 4, "disks": 7}],
+		"hard": [{"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 6}],
+		"expert": [{"pegs": 4, "disks": 7}],
+	},
+	"peg_capacity+cyclic": {
+		"easy_medium": [{"pegs": 4, "disks": 5, "slack": 1}],
+		"medium": [{"pegs": 4, "disks": 5, "slack": 1}],
+		"medium_hard": [{"pegs": 4, "disks": 5, "slack": 1}, {"pegs": 4, "disks": 6, "slack": 1}],
+		"hard": [{"pegs": 4, "disks": 6, "slack": 1}],
+		"expert": [{"pegs": 4, "disks": 6, "slack": 1}],
+	},
+	"foundation+cyclic": {
+		"easy_medium": [{"pegs": 4, "disks": 5, "locked": 1, "keys": 2}],
+		"medium": [{"pegs": 4, "disks": 5, "locked": 1, "keys": 2}],
+		"medium_hard": [{"pegs": 4, "disks": 5, "locked": 1, "keys": 2}, {"pegs": 4, "disks": 6, "locked": 2, "keys": 2}],
+		"hard": [{"pegs": 4, "disks": 6, "locked": 2, "keys": 2}],
+		"expert": [{"pegs": 4, "disks": 6, "locked": 2, "keys": 3}],
+	},
+	"covered_pegs+stripes": {
+		"easy_medium": [{"pegs": 4, "disks": 7, "covered": 1}],
+		"medium": [{"pegs": 4, "disks": 7, "covered": 1}, {"pegs": 4, "disks": 8, "covered": 1}],
+		"medium_hard": [{"pegs": 4, "disks": 8, "covered": 2}, {"pegs": 4, "disks": 7, "covered": 2}],
+		"hard": [{"pegs": 4, "disks": 8, "covered": 2}],
+		"expert": [{"pegs": 4, "disks": 8, "covered": 2}],
+	},
+	"peg_capacity+alternation": {
+		"easy_medium": [{"pegs": 4, "disks": 6, "slack": 1}],
+		"medium": [{"pegs": 4, "disks": 6, "slack": 1}, {"pegs": 4, "disks": 7, "slack": 1}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "slack": 1}],
+		"hard": [{"pegs": 4, "disks": 7, "slack": 1}, {"pegs": 4, "disks": 8, "slack": 1}],
+		"expert": [{"pegs": 4, "disks": 8, "slack": 1}],
+	},
+	"peg_capacity+balance": {
+		"easy_medium": [{"pegs": 4, "disks": 6, "slack": 1, "tolerance": [4, 8]}],
+		"medium": [{"pegs": 4, "disks": 6, "slack": 1, "tolerance": [4, 8]}, {"pegs": 4, "disks": 7, "slack": 1, "tolerance": [5, 9]}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "slack": 1, "tolerance": [5, 9]}],
+		"hard": [{"pegs": 4, "disks": 7, "slack": 1, "tolerance": [5, 9]}],
+		"expert": [{"pegs": 4, "disks": 7, "slack": 1, "tolerance": [5, 9]}],
+	},
+	"foundation+balance": {
+		"easy_medium": [{"pegs": 4, "disks": 6, "locked": 1, "keys": 2, "tolerance": [4, 8]}],
+		"medium": [{"pegs": 4, "disks": 6, "locked": 1, "keys": 2, "tolerance": [4, 8]},
+			{"pegs": 4, "disks": 7, "locked": 2, "keys": 2, "tolerance": [5, 9]}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "locked": 2, "keys": 2, "tolerance": [5, 9]}],
+		"hard": [{"pegs": 4, "disks": 7, "locked": 2, "keys": 3, "tolerance": [5, 9]}],
+		"expert": [{"pegs": 4, "disks": 7, "locked": 2, "keys": 3, "tolerance": [5, 9]}],
+	},
+	"stripes+balance": {
+		"easy_medium": [{"pegs": 4, "disks": 6, "tolerance": [4, 8]}],
+		"medium": [{"pegs": 4, "disks": 6, "tolerance": [4, 8]}, {"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"hard": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+		"expert": [{"pegs": 4, "disks": 7, "tolerance": [5, 9]}],
+	},
+	"covered_pegs+balance": {
+		"easy_medium": [{"pegs": 4, "disks": 6, "covered": 1, "tolerance": [4, 8]}],
+		"medium": [{"pegs": 4, "disks": 6, "covered": 1, "tolerance": [4, 8]}, {"pegs": 4, "disks": 7, "covered": 2, "tolerance": [5, 9]}],
+		"medium_hard": [{"pegs": 4, "disks": 7, "covered": 2, "tolerance": [5, 9]}],
+		"hard": [{"pegs": 4, "disks": 7, "covered": 2, "tolerance": [5, 9]}],
+		"expert": [{"pegs": 4, "disks": 7, "covered": 2, "tolerance": [5, 9]}],
+	},
+	# World 5 (ICRA World 5-9), measured 2026-10-17. Kral: on 4-5 pegs the
+	# king gets out at once (4 pegs / 10 disks: 12-17 moves, below the world's
+	# floor of 18; the vizier and the narrow gate up to ~24), on 3 pegs 6
+	# disks take 12-32 moves and 7 disks 25-64, so most boards have 3 pegs.
+	"king": {
+		INTRO: [{"pegs": 3, "disks": 5}, {"pegs": 3, "disks": 6}],
+		"easy_medium": [{"pegs": 3, "disks": 6}, {"pegs": 4, "disks": 9}],
+		"medium": [{"pegs": 3, "disks": 6}, {"pegs": 4, "disks": 9}],
+		"medium_hard": [{"pegs": 3, "disks": 6}, {"pegs": 3, "disks": 7}, {"pegs": 4, "disks": 9}],
+		"hard": [{"pegs": 3, "disks": 7}, {"pegs": 3, "disks": 6}],
+		BIG_TEST_BOARDS: [{"pegs": 3, "disks": 7}, {"pegs": 3, "disks": 8}],
+		# The island (the king, the vizier and the narrow gate together): 4 pegs
+		# / 9 disks 34-41 moves, 3 / 8 47-65.
+		"expert": [{"pegs": 4, "disks": 9}, {"pegs": 3, "disks": 8}],
+	},
+	# Fil Çayı: the river lengthens a solution only where a stack moves on a
+	# bank of three pegs, so 5-6 pegs (2 + 3 or 3 + 3); 5 pegs / 7 disks take
+	# 13-34 moves, 6 / 7 12-34, 5 / 8 21-65; the stone bridge also works on 4
+	# pegs, the ferry stays under ~22, the bonfire is 33-34 on 5 / 7 and 65 on
+	# 5 / 8.
+	"river": {
+		INTRO: [{"pegs": 5, "disks": 6}, {"pegs": 5, "disks": 7}],
+		"easy_medium": [{"pegs": 5, "disks": 7}, {"pegs": 6, "disks": 7}, {"pegs": 4, "disks": 7}],
+		"medium": [{"pegs": 5, "disks": 7}, {"pegs": 6, "disks": 7}, {"pegs": 4, "disks": 7}],
+		"medium_hard": [{"pegs": 5, "disks": 7}, {"pegs": 6, "disks": 7}, {"pegs": 5, "disks": 8}],
+		"hard": [{"pegs": 5, "disks": 7}, {"pegs": 6, "disks": 7}, {"pegs": 5, "disks": 8}],
+		BIG_TEST_BOARDS: [{"pegs": 5, "disks": 8}, {"pegs": 6, "disks": 8}],
+		"expert": [{"pegs": 5, "disks": 7}, {"pegs": 6, "disks": 8}, {"pegs": 5, "disks": 8}],
+	},
+	# Combination IV (World 5), measured 2026-10-17. A capacity that matters
+	# beside the river's or the exchange's stacks is cut from their own
+	# shortest solution ("cut", LevelForge._cut_capacities): the exchange with
+	# capacity then makes 26 moves on 5 pegs / 8 disks (13 of 40 draws, hints
+	# up to 1.8 s), the river with capacity still only 4 of 120 draws (14-15
+	# moves, below the world's floor), and the exchange on the caravan road has
+	# no solution at all (two disks of one size can never pass each other on a
+	# line). Places a combination cannot fill go to the chapter's other
+	# combinations (_draw_bands()).
+	"peg_capacity+river": {
+		"medium": [{"pegs": 5, "disks": 7, "cut": true}, {"pegs": 6, "disks": 7, "cut": true}],
+		"medium_hard": [{"pegs": 5, "disks": 7, "cut": true}, {"pegs": 6, "disks": 7, "cut": true}],
+		"hard": [{"pegs": 5, "disks": 7, "cut": true}],
+		"expert": [{"pegs": 5, "disks": 8, "cut": true}],
+	},
+	"covered_pegs+river": {
+		"easy_medium": [{"pegs": 5, "disks": 7, "covered": 1}, {"pegs": 5, "disks": 6, "covered": 1}],
+		"medium": [{"pegs": 5, "disks": 7, "covered": 1}, {"pegs": 6, "disks": 7, "covered": 1}],
+		"medium_hard": [{"pegs": 5, "disks": 7, "covered": 2}, {"pegs": 6, "disks": 7, "covered": 2}],
+		"hard": [{"pegs": 5, "disks": 7, "covered": 2}, {"pegs": 6, "disks": 7, "covered": 2}],
+		"expert": [{"pegs": 5, "disks": 8, "covered": 2}],
+	},
+	"foundation+river": {
+		"easy_medium": [{"pegs": 5, "disks": 6, "locked": 1, "keys": 2}],
+		"medium": [{"pegs": 5, "disks": 6, "locked": 1, "keys": 2}, {"pegs": 5, "disks": 7, "locked": 1, "keys": 2}],
+		"medium_hard": [{"pegs": 5, "disks": 7, "locked": 1, "keys": 2}, {"pegs": 5, "disks": 6, "locked": 2, "keys": 2}],
+		"hard": [{"pegs": 5, "disks": 7, "locked": 2, "keys": 2}],
+		"expert": [{"pegs": 5, "disks": 7, "locked": 2, "keys": 3}],
+	},
+	"adjacent_pegs+color_swap": {
+		"medium": [{"pegs": 4, "disks": 6}], "medium_hard": [{"pegs": 4, "disks": 6}], "hard": [{"pegs": 4, "disks": 6}],
+		"expert": [{"pegs": 4, "disks": 6}],
+	},
+	"peg_capacity+color_swap": {
+		"medium": [{"pegs": 5, "disks": 8, "cut": true}],
+		"medium_hard": [{"pegs": 5, "disks": 8, "cut": true}],
+		"hard": [{"pegs": 5, "disks": 8, "cut": true}],
+		"expert": [{"pegs": 5, "disks": 8, "cut": true}],
+	},
+	"adjacent_pegs+king": {
+		"easy_medium": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"medium": [{"pegs": 4, "disks": 6}, {"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 7}],
+		"medium_hard": [{"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 7}, {"pegs": 4, "disks": 8}],
+		"hard": [{"pegs": 4, "disks": 7}, {"pegs": 4, "disks": 8}, {"pegs": 5, "disks": 7}],
+		"expert": [{"pegs": 4, "disks": 8}, {"pegs": 4, "disks": 7}],
+	},
+	"cyclic+king": {
+		"easy_medium": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}],
+		"medium": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 6}, {"pegs": 4, "disks": 7}],
+		"medium_hard": [{"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 6}, {"pegs": 5, "disks": 7}],
+		"hard": [{"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 7}, {"pegs": 4, "disks": 8}],
+		"expert": [{"pegs": 4, "disks": 7}, {"pegs": 5, "disks": 7}],
+	},
+	# Böyük Mübadilə: 4 pegs / 6 disks 15 (pure) to 22 moves (mixed), 5 / 8
+	# 14-26 (mid-way, mixed, caravanserai), 4 / 8 28-31 pure and 32-48 mixed;
+	# three caravans 5 / 9 (18-22). More buffers stay short.
+	"color_swap": {
+		INTRO: [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 9}],
+		"easy_medium": [{"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 8}, {"pegs": 5, "disks": 9}],
+		"medium": [{"pegs": 5, "disks": 8}, {"pegs": 4, "disks": 6}, {"pegs": 5, "disks": 9}],
+		"medium_hard": [{"pegs": 5, "disks": 8}, {"pegs": 4, "disks": 8}, {"pegs": 5, "disks": 9}],
+		"hard": [{"pegs": 4, "disks": 8}, {"pegs": 5, "disks": 8}, {"pegs": 5, "disks": 9}],
+		BIG_TEST_BOARDS: [{"pegs": 4, "disks": 8}],
+		"expert": [{"pegs": 4, "disks": 8}],
+	},
 }
 
 
@@ -166,12 +412,15 @@ func _initialize() -> void:
 
 func _run() -> bool:
 	var worlds: Array[int] = BUILT_WORLDS.duplicate()
+	var keep: Array[int] = []
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--worlds="):
 			worlds = parse_worlds(arg.trim_prefix("--worlds="))
+		elif arg.begins_with("--keep="):
+			keep = parse_worlds(arg.trim_prefix("--keep="))
 	var started: int = Time.get_ticks_msec()
 	var errors: Array[String] = []
-	var road: Dictionary = build(worlds, errors)
+	var road: Dictionary = build(worlds, errors, keep)
 	if not errors.is_empty():
 		for error: String in errors:
 			printerr(error)
@@ -203,8 +452,10 @@ static func parse_worlds(text: String) -> Array[int]:
 ## levels: [Level]}], files: {Level id: file}}. Problems go to `errors`.
 ## World by world (the waves of its main road and islands, then its bands), so
 ## a world's levels only depend on the worlds before it: building a later world
-## never changes an earlier one.
-static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
+## never changes an earlier one. The worlds in `keep` are read back from the
+## level files instead of drawn again (the same levels, much faster:
+## `-- --worlds=1-3 --keep=1-2`).
+static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = []) -> Dictionary:
 	var plan: Dictionary = layout(worlds)
 	var used: Dictionary = {}
 	var main: Array = plan["main"]
@@ -219,11 +470,45 @@ static func build(worlds: Array[int], errors: Array[String]) -> Dictionary:
 	var ordered: Array[int] = worlds.duplicate()
 	ordered.sort()
 	for world: int in ordered:
+		if keep.has(world):
+			_keep_world(plan, world, used, errors)
+			continue
 		_draw_waves(tracks, world, used, errors)
 		_draw_bands(tracks, world, used, errors)
 	if not errors.is_empty():
 		return {}
 	return _number(plan, ordered)
+
+
+## The slots of `world` take their levels from the level files of the road as
+## it stands (the path's entries in the same places).
+static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: Array[String]) -> void:
+	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [Difficulty.LEVELS_DIR, LevelCatalog.PATH_FILE], errors)
+	if path.is_empty():
+		return
+	var pairs: Array = []
+	for i: int in (plan["main"] as Array).size():
+		if i < (path[LevelCatalog.MAIN] as Array).size():
+			pairs.append([plan["main"][i], path[LevelCatalog.MAIN][i]])
+	for k: int in (plan["islands"] as Array).size():
+		if k < (path["islands"] as Array).size():
+			for i: int in (plan["islands"][k]["slots"] as Array).size():
+				pairs.append([plan["islands"][k]["slots"][i], path["islands"][k]["levels"][i]])
+	var kept: int = 0
+	for pair: Array in pairs:
+		var slot: Dictionary = pair[0]
+		if slot["world"] != world or slot.has("fixed"):
+			continue
+		var level: Level = Level.load_file("%s/%s" % [Difficulty.LEVELS_DIR, pair[1]["file"]], errors)
+		if level == null:
+			continue
+		var key: String = LevelForge.puzzle_key(level.start, level.goal, level.rule_ids, level.rule_params)
+		slot["draft"] = {"start": level.start, "goal": level.goal, "rule_ids": level.rule_ids, "params": level.rule_params,
+				"covered": level.covered_pegs, "glass": level.glass_disks, "variants": level.variants,
+				"path": level.solution_path, "moves": level.min_moves, "key": key}
+		used[key] = true
+		kept += 1
+	print("  world %d: %d levels kept from the files" % [world, kept])
 
 
 ## The band slots of `world`, by stream and band (one group per world), in
@@ -244,14 +529,29 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 		var slots: Array = groups[group]
 		var first: Dictionary = slots[0]
 		var started: int = Time.get_ticks_msec()
+		var group_errors: Array[String] = []
 		var drafts: Array[Dictionary] = draw_group(first["modes"], first["band"], slots.size(),
-				BASE_SEED + group.hash() % 100000, used, errors, first["floor"])
+				BASE_SEED + group.hash() % 100000, used, group_errors, first["floor"])
 		print("  %s: %d levels in %.1f s" % [group, drafts.size(), (Time.get_ticks_msec() - started) / 1000.0])
-		if drafts.size() < slots.size():
-			errors.append("%s: only %d of %d levels found" % [group, drafts.size(), slots.size()])
-			continue
-		for i: int in slots.size():
+		for i: int in drafts.size():
 			slots[i]["draft"] = drafts[i]
+		# A combination that gives too few levels (ICRA section 5: the rule is
+		# not loosened, the combination stays on the list and is reported)
+		# leaves its places to the chapter's other combinations.
+		var missing: Array = slots.slice(drafts.size())
+		for alternative: Array in first.get("alternatives", []):
+			if missing.is_empty():
+				break
+			var more: Array[Dictionary] = draw_group(alternative, first["band"], missing.size(),
+					BASE_SEED + (group + stream_of(alternative)).hash() % 100000, used, [] as Array[String], first["floor"])
+			print("  %s: %d of its %d places to %s" % [group, more.size(), missing.size(), stream_of(alternative)])
+			for i: int in more.size():
+				(missing[i] as Dictionary)["modes"] = alternative.duplicate()
+				(missing[i] as Dictionary)["draft"] = more[i]
+			missing = missing.slice(more.size())
+		if not missing.is_empty():
+			errors.append_array(group_errors)
+			errors.append("%s: only %d of %d levels found" % [group, slots.size() - missing.size(), slots.size()])
 
 
 ## The wave levels of `world` (a window of their own each), in road order:
@@ -371,7 +671,10 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 	var earlier: Array[String] = ChapterPlan.modes_before(first)
 	var repeat_count: int = 0 if earlier.is_empty() else ceili((length - length / 2) / float(ChapterPlan.REPEAT_EVERY))
 	var least: int = ChapterPlan.world_floor(chapter["world"])
-	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count, rng, least)
+	var goals: Array[String] = [] if ChapterPlan.OWN_GOAL.has(chapter["mode"]) else ChapterPlan.goal_variants_at(first)
+	var breath_count: int = 0 if goals.is_empty() else roundi(length * ChapterPlan.BREATH_SHARE)
+	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count - breath_count, rng,
+			least)
 	var last: int = items.size() - 1
 	# Repeats spread over the second half of the mode levels (never after the last).
 	var repeats: Dictionary = {}
@@ -379,6 +682,13 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 		var at: int = items.size() / 2 + int((last - items.size() / 2) * (r + 0.5) / repeat_count)
 		var mode: String = earlier[earlier.size() - 1 - r % earlier.size()]
 		repeats[at] = _repeat_item(mode, items[at], rng, least)
+	# Goal variants (ICRA section 4) spread over the chapter after its first wave.
+	var breaths: Dictionary = {}
+	for b: int in breath_count:
+		var at: int = mini(int(last * (0.15 + 0.8 * (b + 0.5) / breath_count)), last - 1)
+		while breaths.has(at):
+			at += 1
+		breaths[at] = _breath_item(chapter["mode"], goals[b % goals.size()], items[at])
 	# Classic levels right after a hard level (the end of a wave's climb), spaced evenly.
 	var classics: Dictionary = {}
 	var spacing: float = float(last) / classic_count
@@ -401,6 +711,8 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 		slots.append(items[at])
 		if repeats.has(at):
 			slots.append(repeats[at])
+		if breaths.has(at):
+			slots.append(breaths[at])
 		if classics.has(at):
 			slots.append({"modes": [], "band": _classic_band(first + slots.size(), classic_index)})
 			classic_index += 1
@@ -428,36 +740,65 @@ static func wave_items(mode: String, count: int, rng: RandomNumberGenerator, lea
 	var floors: Array[int] = [maxi(mode_floor, least), maxi(mode_floor - 2, least), mode_floor]
 	var items: Array[Dictionary] = []
 	var taught: Array[String] = []
+	# A wave with few puzzles of its own keeps at most its own count
+	# (ChapterPlan.WAVE_SIZES); the others share the rest.
+	var limits: Dictionary = ChapterPlan.WAVE_SIZES.get(mode, {})
+	var sizes: Array[int] = []
+	var open_waves: int = 0
+	var rest: int = body
+	for variant: String in waves:
+		if limits.has(variant):
+			sizes.append(mini(int(limits[variant]), rest))
+			rest -= sizes[-1]
+		else:
+			sizes.append(-1)
+			open_waves += 1
+	var share: int = 0
+	for k: int in waves.size():
+		if sizes[k] == -1:
+			sizes[k] = rest / maxi(open_waves, 1) + (1 if share < rest % maxi(open_waves, 1) else 0)
+			share += 1
 	for k: int in waves.size():
 		var variant: String = waves[k]
-		var size: int = body / waves.size() + (1 if k < body % waves.size() else 0)
+		var size: int = sizes[k]
 		for j: int in size:
 			var t: float = float(j) / maxf(size - 1, 1.0)
 			var variants: Array[String] = []
 			if variant != ChapterPlan.BASE:
 				variants.append(variant)
-				# Mixed with what came before once the new sub-element is known.
-				if j > DEV_LEVELS:
+				# Mixed with what came before once the new sub-element is known
+				# (a twist of its own, ChapterPlan.SOLO, stays alone).
+				if j > DEV_LEVELS and not ChapterPlan.SOLO.has(variant):
 					variants.append_array(_pick_variants(taught, 1 if j < size - 1 else 2, variants, rng))
 			var extra: Dictionary = _wave_extra(mode, variants, t, rng)
 			if variant == ChapterPlan.BASE and mode == ChapterPlan.COVERED:
 				extra["covered"] = 1 if j < size / 2 else 2  # one box first, two by the wave's end
-			var span: Array[int] = _wave_window(k, sections, t, j == 0, floors)
+			var span: Array[int] = _capped(_wave_window(k, sections, t, j == 0, floors), variants, floors[1], j == 0)
 			items.append({"modes": [mode], "variants": variants, "extra": extra, "low": span[0], "high": span[1], "t": t,
 					"wave": variant, "intro": j == 0})
-		if variant != ChapterPlan.BASE:
+		if variant != ChapterPlan.BASE and not ChapterPlan.SOLO.has(variant):
 			taught.append(variant)
 	for j: int in mixed_size:
 		var t: float = float(j) / maxf(mixed_size - 1, 1.0)
 		var variants: Array[String] = _pick_variants(taught, 2 + (1 if j >= mixed_size / 2 and taught.size() > 2 else 0), [], rng)
-		var span: Array[int] = _wave_window(sections - 1, sections, t, false, floors)
+		var span: Array[int] = _capped(_wave_window(sections - 1, sections, t, false, floors), variants, floors[1], false)
 		items.append({"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, t, rng),
 				"low": span[0], "high": span[1], "t": t, "wave": "mixed"})
-	# The Böyük Sınaq: every sub-element that can share a level, in wave order.
+	# The Böyük Sınaq: every sub-element that can share a level, in wave order
+	# but the helping ones last (a draw that cannot reach its length drops the
+	# last first); not the twists of their own nor those that stay short.
 	var all: Array[String] = []
 	for variant: String in waves:
-		if variant != ChapterPlan.BASE and _pick_variants([variant], 1, all, rng).size() == 1:
+		if variant == ChapterPlan.BASE or ChapterPlan.SOLO.has(variant) or ChapterPlan.VARIANT_CEILINGS.has(variant):
+			continue
+		if _pick_variants([variant], 1, all, rng).size() == 1:
 			all.append(variant)
+	var ordered: Array[String] = []
+	for helping: bool in [false, true]:
+		for variant: String in all:
+			if ChapterPlan.HELPERS.has(variant) == helping:
+				ordered.append(variant)
+	all = ordered
 	items.append({"modes": [mode], "variants": all, "extra": _wave_extra(mode, all, 1.0, rng),
 			"low": ChapterPlan.BIG_TEST[0], "high": ChapterPlan.BIG_TEST[1], "t": 1.0, "wave": "big_test"})
 	for item: Dictionary in items:
@@ -479,6 +820,20 @@ static func _wave_window(k: int, sections: int, t: float, intro: bool, floors: A
 	if intro:
 		return [maxi(floors[2] - 2, roundi(begin) - 4), maxi(roundi(begin), floors[2] + 1)]
 	return [maxi(floors[1], target - WINDOW), mini(target + WINDOW, roundi(high))]
+
+
+## `span` held under the ceiling of a sub-element in `variants`
+## (ChapterPlan.VARIANT_CEILINGS): at most the ceiling, never below the
+## world's floor `least` but for an intro.
+static func _capped(span: Array[int], variants: Array, least: int, intro: bool) -> Array[int]:
+	var ceiling: int = 1000
+	for variant: String in variants:
+		ceiling = mini(ceiling, ChapterPlan.VARIANT_CEILINGS.get(variant, 1000))
+	if span[1] <= ceiling:
+		return span
+	var high: int = maxi(ceiling, least)
+	var low: int = mini(span[0], high - 2 * WINDOW)
+	return [low if intro else maxi(low, least), high]
 
 
 ## Board settings a level's sub-elements need: boxes for the karakuri, how
@@ -512,35 +867,66 @@ static func _pick_variants(pool: Array, count: int, with: Array, rng: RandomNumb
 ## `item`: its window (never below the world's floor `least`: a repeat is no
 ## intro), with up to two of that mode's sub-elements.
 static func _repeat_item(mode: String, item: Dictionary, rng: RandomNumberGenerator, least: int = 0) -> Dictionary:
-	var pool: Array = []
-	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
-		if variant != ChapterPlan.BASE:
-			pool.append(variant)
+	var pool: Array = _sharable(mode)
 	var variants: Array[String] = _pick_variants(pool, rng.randi_range(0, 2), [], rng)
 	var low: int = maxi(item["low"], least)
 	return {"modes": [mode], "variants": variants, "extra": _wave_extra(mode, variants, item["t"], rng),
 			"low": low, "high": maxi(item["high"], low + WINDOW), "t": item["t"], "band": item["band"]}
 
 
+## A goal variant's level (ICRA section 4) of `mode` at the place of `item`:
+## the chapter's mode with the goal of the variant's carrying rule, short
+## (ChapterPlan.BREATH_MOVES) on the stream's small boards; it keeps the
+## stream (recipes, ids) of `mode`.
+static func _breath_item(mode: String, variant: String, item: Dictionary) -> Dictionary:
+	var modes: Array[String] = [mode, ChapterPlan.GOAL_RULES[variant]]
+	var variants: Array[String] = [variant]
+	var span: Array[int] = ChapterPlan.BREATH_MOVES
+	return {"modes": modes, "stream": mode, "variants": variants, "extra": {"variants": variants}, "low": span[0],
+			"high": span[1], "t": item["t"], "band": band_of_moves((span[0] + span[1]) / 2), "breath": true}
+
+
 ## The island of a mode chapter: ISLAND_LEVELS expert levels, each with the
 ## island's own sub-element (if the mode has one) and one or two of the
-## chapter's, longer and longer.
+## chapter's, longer and longer; or the chapter's set that always goes
+## together there (ChapterPlan.ISLAND_SETS).
 static func _mode_island(mode: String, rng: RandomNumberGenerator) -> Array[Dictionary]:
-	var pool: Array = []
-	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
-		if variant != ChapterPlan.BASE:
-			pool.append(variant)
+	var pool: Array = _sharable(mode)
 	var slots: Array[Dictionary] = []
 	for i: int in ChapterPlan.ISLAND_LEVELS:
 		var variants: Array[String] = []
 		if ChapterPlan.ISLAND_VARIANTS.has(mode):
 			variants.append(ChapterPlan.ISLAND_VARIANTS[mode])
-		variants.append_array(_pick_variants(pool, rng.randi_range(1, 2), variants, rng))
+			# The movable stone is a weight stone first.
+			if variants.has("moving_stone"):
+				variants.append("stone")
+		if ChapterPlan.ISLAND_SETS.has(mode):
+			variants.append_array(ChapterPlan.ISLAND_SETS[mode])
+		else:
+			variants.append_array(_pick_variants(pool, rng.randi_range(1, 2), variants, rng))
 		var extra: Dictionary = _wave_extra(mode, variants, float(i) / ChapterPlan.ISLAND_LEVELS, rng)
 		var low: int = ChapterPlan.BANDS["expert"][0] + i
-		slots.append({"modes": [mode], "variants": variants, "extra": extra, "low": low, "high": low + 10 + i,
+		var high: int = low + 10 + i
+		if ChapterPlan.ISLAND_CEILINGS.has(mode):
+			high = mini(high, ChapterPlan.ISLAND_CEILINGS[mode])
+			low = mini(low, high - 6)
+		if ChapterPlan.ISLAND_WINDOWS.has(mode):
+			low = ChapterPlan.ISLAND_WINDOWS[mode][0]
+			high = ChapterPlan.ISLAND_WINDOWS[mode][1]
+		slots.append({"modes": [mode], "variants": variants, "extra": extra, "low": low, "high": high,
 				"t": 1.0, "band": "expert"})
 	return slots
+
+
+## The sub-elements of `mode` a repeat or an island may carry: not the twists
+## of their own (ChapterPlan.SOLO) nor those that stay short
+## (ChapterPlan.VARIANT_CEILINGS).
+static func _sharable(mode: String) -> Array:
+	var pool: Array = []
+	for variant: String in ChapterPlan.WAVES.get(mode, {}).get("waves", []):
+		if variant != ChapterPlan.BASE and not ChapterPlan.SOLO.has(variant) and not ChapterPlan.VARIANT_CEILINGS.has(variant):
+			pool.append(variant)
+	return pool
 
 
 ## The band whose move range holds `moves`.
@@ -574,6 +960,14 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 			rest.append(index)
 	for index: int in _strata(rest, single_count, rng):
 		kinds[index] = "single"
+	# Goal variants (ICRA section 4) in some of the single modes' places.
+	var goals: Array[String] = ChapterPlan.goal_variants_at(first)
+	var hosts: Array = (chapter["singles"] as Array).filter(func(mode: String) -> bool:
+		return not ChapterPlan.OWN_GOAL.has(mode))
+	if not goals.is_empty() and not hosts.is_empty():
+		var single_places: Array = range(length).filter(func(index: int) -> bool: return kinds[index] == "single")
+		for index: int in _strata(single_places, mini(roundi(length * ChapterPlan.BREATH_SHARE), single_places.size()), rng):
+			kinds[index] = "breath"
 	var combo_slots: int = kinds.count("combo")
 	# The combinations join one by one over the first half of the combination slots.
 	var opens: Array[int] = []
@@ -584,7 +978,7 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 	combo_used.resize(combos.size())
 	combo_used.fill(0)
 	var slots: Array[Dictionary] = []
-	var counters: Dictionary = {CLASSIC: 0, "single": 0, "combo": 0}
+	var counters: Dictionary = {CLASSIC: 0, "single": 0, "combo": 0, "breath": 0}
 	for index: int in length:
 		var band: String = ChapterPlan.band_for(index, length)
 		if index == length - 1:
@@ -601,6 +995,10 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 				slots.append({"modes": [], "band": _classic_band(first + index, counters[CLASSIC])})
 			"single":
 				slots.append({"modes": [singles[counters["single"] % singles.size()]], "band": band})
+			"breath":
+				var turn: int = counters["breath"]
+				slots.append(_breath_item(hosts[turn % hosts.size()], goals[turn % goals.size()],
+						{"t": float(index) / length}))
 			_:
 				# A combination that just opened comes now; otherwise the one used least.
 				var pick: int = -1
@@ -614,7 +1012,13 @@ static func _combo_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> A
 				combo_used[pick] += 1
 				var modes: Array[String] = []
 				modes.assign(combos[pick])
-				slots.append({"modes": modes, "band": band})
+				# The chapter's other combinations, newest first, take its places
+				# if it gives too few levels (_draw_bands()).
+				var others: Array = []
+				for i: int in range(combos.size() - 1, -1, -1):
+					if i != pick:
+						others.append(combos[i])
+				slots.append({"modes": modes, "band": band, "alternatives": others})
 		counters[kinds[index]] += 1
 	return slots
 
@@ -705,13 +1109,13 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 ## instead of its band's. A sealed box tries the smaller boards first (its
 ## memory makes 9 disks slow to search).
 static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dictionary:
-	var recipe: Dictionary = RECIPES.get(stream_of(slot["modes"]), {})
+	var recipe: Dictionary = RECIPES.get(slot.get("stream", stream_of(slot["modes"])), {})
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed_value
 	var order: Array[String] = ["easy_medium", "medium", "medium_hard", "hard", "expert"]
 	var at: int = order.find(slot["band"])
 	var bands: Array[String] = [slot["band"]]
-	if slot.get("intro", false) and recipe.has(INTRO):
+	if (slot.get("intro", false) or slot.get("breath", false)) and recipe.has(INTRO):
 		bands.push_front(INTRO)
 	if slot.get("wave", "") == "big_test" and recipe.has(BIG_TEST_BOARDS):
 		bands = [BIG_TEST_BOARDS]
@@ -719,6 +1123,9 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 		if near >= 0 and near < order.size():
 			bands.append(order[near])
 	var sealed: bool = (slot.get("variants", []) as Array).has("sealed")
+	var attempts: int = ATTEMPTS_PER_LEVEL / 2
+	for variant: String in slot.get("variants", []):
+		attempts = maxi(attempts, ATTEMPTS_PER_LEVEL / 2 * int(SCARCE.get(variant, 1)))
 	for band: String in bands:
 		var boards: Array = recipe.get(band, []).duplicate()
 		var offset: int = rng.randi_range(0, maxi(boards.size() - 1, 0))
@@ -728,7 +1135,7 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 		for turn: int in boards.size():
 			var board: Dictionary = (boards[(offset + turn) % boards.size()] as Dictionary).duplicate()
 			board.merge(slot.get("extra", {}), true)
-			for attempt: int in ATTEMPTS_PER_LEVEL / 2:
+			for attempt: int in attempts:
 				var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
 				if not draft.is_empty():
 					return draft
@@ -755,7 +1162,7 @@ static func _number(plan: Dictionary, worlds: Array[int]) -> Dictionary:
 	var make: Callable = func(slot: Dictionary) -> Level:
 		var draft: Dictionary = slot["draft"]
 		var tier: String = Difficulty.tier_for_moves(draft["moves"])
-		var stream: String = stream_of(slot["modes"])
+		var stream: String = slot.get("stream", stream_of(slot["modes"]))
 		var id: int
 		var file: String
 		if stream == CLASSIC:
@@ -796,7 +1203,9 @@ static func _number(plan: Dictionary, worlds: Array[int]) -> Dictionary:
 ## First id of a mechanic stream's block.
 static func id_block(stream: String) -> int:
 	var index: int = ChapterPlan.MODES.find(stream)
-	if index == -1:
+	if index >= COMBO_FIRST_BLOCK:
+		index = LATE_MODE_FIRST_BLOCK + index - COMBO_FIRST_BLOCK
+	elif index == -1:
 		index = COMBO_FIRST_BLOCK + ChapterPlan.whitelist().find(stream)
 	return Difficulty.MECHANIC_FIRST_ID + index * ID_BLOCK
 

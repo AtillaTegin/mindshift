@@ -49,15 +49,19 @@ static func solve(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		return _result(false, [], 1, false)
 	var result: Dictionary
 	var groups: Array[Array] = rules.peg_groups(start.pegs.size())
-	if rules.has_echo():
-		# A move with an echo changes two disks the packed codes do not follow.
+	var goal_rule: RuleBase = rules.goal_rule()
+	if rules.has_echo() or rules.has_special_moves():
+		# A move with an echo changes two disks the packed codes do not follow;
+		# a rule's own piece (RuleBase.special_moves) is no disk move at all.
 		result = _solve_generic(start, goal, rules, max_states)
 		result["strategy"] = "generic"
-	elif not groups.is_empty():
+	elif not groups.is_empty() and goal_rule == null:
 		result = _solve_split(start, goal, rules, groups, max_states)
 		result["strategy"] = "split"
 	elif _can_pack(start, goal, rules) and (rules.uses_last_move() or rules.uses_memory() or rules.needs_facts()
-			or rules.has_partners(start)):
+			or rules.has_partners(start) or goal_rule != null):
+		# A goal condition (RuleBase.defines_goal) has no one position to search
+		# back from, so it searches one way too.
 		result = _solve_packed_history(start, goal, rules, max_states)
 		result["strategy"] = "packed_history"
 	elif _can_pack(start, goal, rules):
@@ -234,7 +238,9 @@ static func _solve_packed(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 ## RuleBase.is_move_allowed_with(). A linked pair (RuleBase.partner_of) moves
 ## only as one compound move: both on top of different pegs, each to its own
 ## different target. The first time the goal position is reached, with any
-## last disk and memory, the path is a shortest one.
+## last disk and memory, the path is a shortest one. A rule that sets the goal
+## (RuleBase.defines_goal) judges each new position instead: its facts are
+## moved on by the one move for a moment (_meets_goal_after).
 static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		max_states: int) -> Dictionary:
 	var peg_count: int = start.pegs.size()
@@ -265,9 +271,11 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 	var frontier: PackedInt64Array = PackedInt64Array([start_key])
 	var facts: MoveFacts = MoveFacts.new()
 	facts.reset(peg_count, sizes[-1])
-	# Counts, sums and disk pegs only when a rule reads them or disks are linked;
-	# otherwise just the tops (as fast as the history search ever was).
-	var full_facts: bool = rules.needs_facts() or rules.has_partners(start)
+	var goal_rule: RuleBase = rules.goal_rule()
+	# Counts, sums and disk pegs only when a rule reads them, disks are linked or
+	# a rule judges the goal; otherwise just the tops (as fast as the history
+	# search ever was).
+	var full_facts: bool = rules.needs_facts() or rules.has_partners(start) or goal_rule != null
 	# Rules that judge from the disk, the pegs, the target top and the last disk
 	# are asked directly (is_disk_move_allowed_after); the others get the facts.
 	var plain_rules: Array[RuleBase] = []
@@ -339,7 +347,8 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 					if parents.has(next_key):
 						continue
 					parents[next_key] = key
-					if next_code == goal_code:
+					if next_code == goal_code if goal_rule == null \
+							else _meets_goal_after(goal_rule, facts, disk, a, b, seconds[a], next_memory):
 						return _result(true, _history_path(parents, next_key, memories * lasts, peg_count, powers),
 								parents.size(), false)
 					if parents.size() >= max_states:
@@ -373,13 +382,78 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 					if parents.has(next_key):
 						continue
 					parents[next_key] = key
-					if next_code == goal_code:
+					if next_code == goal_code if goal_rule == null \
+							else _meets_pair_goal_after(goal_rule, facts, seconds, [disk, a, b, partner, c, d], next_memory):
 						return _result(true, _history_path(parents, next_key, memories * lasts, peg_count, powers),
 								parents.size(), false)
 					if parents.size() >= max_states:
 						return _result(false, [], parents.size(), true)
 					frontier.append(next_key)
 	return _result(false, [], parents.size(), false)
+
+
+## Whether the position after `disk` goes from `from_peg` (where `under` lies
+## below it, -1: nothing) to `to_peg` meets `rule`'s goal, the memory then
+## being `memory`. `facts` describe the position before; they are moved on
+## for the check and put back.
+static func _meets_goal_after(rule: RuleBase, facts: MoveFacts, disk: int, from_peg: int, to_peg: int, under: int,
+		memory: int) -> bool:
+	var old_top: int = facts.tops[to_peg]
+	var old_memory: int = facts.memory
+	var old_last: int = facts.last_disk
+	facts.counts[from_peg] -= 1
+	facts.sums[from_peg] -= disk
+	facts.tops[from_peg] = under
+	facts.counts[to_peg] += 1
+	facts.sums[to_peg] += disk
+	facts.tops[to_peg] = disk
+	facts.peg_of[disk] = to_peg
+	facts.memory = memory
+	facts.last_disk = disk
+	var met: bool = rule.is_goal_with(facts)
+	facts.last_disk = old_last
+	facts.memory = old_memory
+	facts.peg_of[disk] = from_peg
+	facts.tops[to_peg] = old_top
+	facts.sums[to_peg] -= disk
+	facts.counts[to_peg] -= 1
+	facts.tops[from_peg] = disk
+	facts.sums[from_peg] += disk
+	facts.counts[from_peg] += 1
+	return met
+
+
+## _meets_goal_after() for a compound move `parts` [disk, from, to, partner,
+## from, to]: both lifted, then both put down (`seconds`: the disk under each
+## peg's top).
+static func _meets_pair_goal_after(rule: RuleBase, facts: MoveFacts, seconds: PackedInt32Array, parts: Array,
+		memory: int) -> bool:
+	var disks: Array[int] = [parts[0], parts[3]]
+	var froms: Array[int] = [parts[1], parts[4]]
+	var tos: Array[int] = [parts[2], parts[5]]
+	var saved: Array[Array] = []
+	for peg: int in froms + tos:
+		saved.append([peg, facts.counts[peg], facts.sums[peg], facts.tops[peg]])
+	var old_memory: int = facts.memory
+	for i: int in 2:
+		facts.counts[froms[i]] -= 1
+		facts.sums[froms[i]] -= disks[i]
+		facts.tops[froms[i]] = seconds[froms[i]]
+	for i: int in 2:
+		facts.counts[tos[i]] += 1
+		facts.sums[tos[i]] += disks[i]
+		facts.tops[tos[i]] = disks[i]
+		facts.peg_of[disks[i]] = tos[i]
+	facts.memory = memory
+	var met: bool = rule.is_goal_with(facts)
+	facts.memory = old_memory
+	for i: int in 2:
+		facts.peg_of[disks[i]] = froms[i]
+	for entry: Array in saved:
+		facts.counts[entry[0]] = entry[1]
+		facts.sums[entry[0]] = entry[2]
+		facts.tops[entry[0]] = entry[3]
+	return met
 
 
 ## Whether every rule lets `disk` go from `from_peg` to `to_peg` (top `target_top`).

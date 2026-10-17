@@ -51,7 +51,12 @@ const COLOR_SWAP: String = "color_swap"
 ## Mechanics whose boards may leave MECHANIC_MAX_PEGS / MECHANIC_MAX_DISKS:
 ## mechanic -> {max_pegs, max_disks}.
 const MECHANIC_SIZES: Dictionary = {
-	COLOR_SWAP: {"max_pegs": 6, "max_disks": 8},
+	# Three caravans (ICRA 3.3) take three disks of a size: 9 on 6 pegs.
+	COLOR_SWAP: {"max_pegs": 6, "max_disks": 9},
+	# Fil Çayı: up to six pegs on the banks and a ferry in the river.
+	"river": {"max_pegs": 7, "max_disks": 10},
+	# The caravan road: five stops and an oasis beside one (World 3).
+	"adjacent_pegs": {"max_pegs": 6, "max_disks": 10},
 	# Two boards of 3-4 pegs (MirrorRule).
 	"mirror": {"max_pegs": 8, "max_disks": 10},
 }
