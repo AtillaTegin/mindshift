@@ -289,11 +289,20 @@ static func skin_marks(session: GameSession) -> Dictionary:
 		var rule: TrailRule = _rule(level, TrailRule.ID) as TrailRule
 		var memory: int = session.rules.memory_of(session.state)
 		var visited: Array[int] = []
-		for peg_index: int in session.state.get_peg_count():
+		# A fading trail's marks: the moves each one still lasts (the longest of
+		# the tracked disks' on a peg).
+		var fading: Dictionary = {}
+		var peg_count: int = session.state.get_peg_count()
+		for peg_index: int in peg_count:
 			for index: int in rule.disks.size():
-				if rule.remembers_of(memory, index, peg_index, session.state.get_peg_count()) and not visited.has(peg_index):
+				if rule.remembers_of(memory, index, peg_index, peg_count) and not visited.has(peg_index):
 					visited.append(peg_index)
+				if rule.fade > 0:
+					fading[peg_index] = maxi(fading.get(peg_index, 0), rule.fade_left(memory, index, peg_index, peg_count))
 		marks["visited"] = visited
+		if rule.fade > 0:
+			marks["fading"] = fading
+			marks["fade"] = rule.fade
 	# World 3-4: the caravan road's oasis, tunnels, bridges and arrows; the
 	# dial's centre or figure eight.
 	if _has(level, AdjacentPegsRule.ID):
@@ -500,7 +509,7 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 		if trail.clean >= 0:
 			marks["clean_peg"] = trail.clean
 	# World 8-9: whose turn it is; the cracks and the workshops; the dark and
-	# the lamps; the patience cell and the kings' spot.
+	# the lamps; the patience cell, arch and narrow tower.
 	var facts: MoveFacts = MoveFacts.of(session.state, session.rules)
 	if _has(level, TurnsRule.ID):
 		marks["turn"] = (_rule(level, TurnsRule.ID) as TurnsRule).turn_of(facts)
@@ -529,8 +538,10 @@ static func overlay_marks(session: GameSession) -> Dictionary:
 		var solitaire: SolitaireRule = _rule(level, SolitaireRule.ID) as SolitaireRule
 		if solitaire.cell >= 0:
 			marks["cell"] = solitaire.cell
-		if solitaire.kings > 0:
-			marks["kings"] = solitaire.kings
+		if solitaire.arches.any(func(n: int) -> bool: return n > 0):
+			marks["arches"] = solitaire.arches.duplicate()
+		if solitaire.limits.any(func(n: int) -> bool: return n > 0):
+			marks["limits"] = solitaire.limits.duplicate()
 	return marks
 
 

@@ -25,6 +25,9 @@ extends Control
 const LINK_SPACING: float = 16.0
 const LINK_RADIUS: float = 5.0
 const NUMBER_SIZE: int = 20
+## Half the width of a disk's centred size number (DiskView.label), kept free
+## of marks.
+const LABEL_HALF_WIDTH: float = 10.0
 
 ## The board's disk views (id -> DiskView), shared with the board.
 var disk_views: Dictionary[int, DiskView] = {}
@@ -185,7 +188,7 @@ func _draw() -> void:
 	for peg: int in marks.get("dark", []):
 		if peg < peg_rects.size():
 			var rod: Rect2 = peg_rects[peg]
-			draw_rect(Rect2(rod.position.x - rod.size.x * 0.05, rod.position.y - 8.0, rod.size.x * 1.1, rod.size.y + 24.0),
+			draw_rect(Rect2(rod.position.x - rod.size.x * 0.05, rod.position.y - 8.0, rod.size.x * 1.1, rod.size.y + 14.0),
 					ThemeManager.mark_color("dark"))
 	for peg: int in marks.get("lamps", []):
 		if peg < peg_rects.size():
@@ -197,16 +200,25 @@ func _draw() -> void:
 		var rod: Rect2 = peg_rects[marks["cell"]]
 		draw_rect(Rect2(rod.position.x + rod.size.x * 0.1, rod.end.y - 40.0, rod.size.x * 0.8, 46.0), ThemeManager.mark_color("cell"),
 				false, 3.0)
-	if marks.has("kings"):
-		for peg: int in peg_rects.size():
-			var rod: Rect2 = peg_rects[peg]
-			_draw_number("≥%d" % int(marks["kings"]), Vector2(rod.get_center().x, rod.end.y + 18.0), ThemeManager.mark_color("cell"))
+	for key: String in ["arches", "limits"]:
+		var per_peg: Array = marks.get(key, [])
+		for peg: int in mini(per_peg.size(), peg_rects.size()):
+			if int(per_peg[peg]) > 0:
+				var rod: Rect2 = peg_rects[peg]
+				_draw_number(("≤%d" if key == "arches" else "×%d") % int(per_peg[peg]),
+						Vector2(rod.get_center().x, rod.end.y + 18.0), ThemeManager.mark_color("cell"))
 	var tops: Dictionary = marks.get("top_colours", {})
 	for peg: int in tops:
 		if peg < peg_rects.size():
 			var top: Vector2 = Vector2(peg_rects[peg].get_center().x, peg_rects[peg].position.y - 14.0)
 			draw_colored_polygon(PackedVector2Array([top + Vector2(0.0, -10.0), top + Vector2(10.0, 0.0), top + Vector2(0.0, 10.0),
 					top + Vector2(-10.0, 0.0)]), ThemeManager.CARPET_DISKS[int(tops[peg])]["fill"])
+
+
+## Whether a mark `span` wide fits on the disk's right end beside its centred
+## number; on a narrower disk the mark goes just right of the disk instead.
+static func _fits_on(rect: Rect2, span: float) -> bool:
+	return rect.size.x * 0.5 - LABEL_HALF_WIDTH - 4.0 >= span
 
 
 ## Ağır Disk: dots on the disk's right end, one per peg it may go, or ∞; a
@@ -216,20 +228,31 @@ func _draw_reach(rect: Rect2, far: int, tired: bool) -> void:
 	if tired:
 		color.a *= 0.35
 	var y: float = rect.get_center().y
-	var x: float = rect.end.x - 10.0
+	var span: float = 16.0 if far == 0 else 9.0 * (far - 1) + 7.0
+	var inside: bool = _fits_on(rect, span)
+	# The first dot (or the ∞) nearest the disk's end, the others towards the
+	# middle on the disk or outwards beside it.
+	var x: float = rect.end.x - 10.0 if inside else rect.end.x + 7.0
+	var step: float = -9.0 if inside else 9.0
 	if far == 0:
-		_draw_number("∞", Vector2(x - 4.0, y), color)
+		_draw_number("∞", Vector2(x + step * 0.45, y), color)
 		return
 	for i: int in far:
-		draw_circle(Vector2(x - i * 9.0, y), 3.2, color, true, -1.0, true)
+		draw_circle(Vector2(x + i * step, y), 3.2, color, true, -1.0, true)
 
 
 ## Beş Ünsür: the element's glyph at the disk's right end (a leaf, a flame,
-## a square of earth, a ring of metal, a wave).
+## a square of earth, a ring of metal, a wave); beside a narrow disk on a chip
+## of the element's colour.
 func _draw_element(rect: Rect2, element: int) -> void:
 	var color: Color = ThemeManager.mark_color("element_glyph")
 	var unit: float = clampf(rect.size.y * 0.3, 5.0, 11.0)
 	var center: Vector2 = Vector2(rect.end.x - unit * 1.8, rect.get_center().y)
+	if not _fits_on(rect, unit * 2.8):
+		center = Vector2(rect.end.x + unit * 1.6, rect.get_center().y)
+		var chip: Dictionary = ThemeManager.ELEMENT_DISKS[element]
+		draw_circle(center, unit * 1.3, chip["fill"], true, -1.0, true)
+		draw_arc(center, unit * 1.3, 0.0, TAU, 20, chip["outline"], 1.5, true)
 	match element:
 		ElementsRule.WOOD:
 			draw_colored_polygon(PackedVector2Array([center + Vector2(0.0, -unit), center + Vector2(unit * 0.6, 0.0),
@@ -354,10 +377,12 @@ func _draw_chain(chain: Array) -> void:
 		draw_arc(point, LINK_RADIUS, 0.0, TAU, 12, color, 2.5, true)
 
 
-## A padlock at the right end of a locked disk.
+## A padlock at the right end of a locked disk (beside a narrow one).
 func _draw_lock(rect: Rect2) -> void:
 	var unit: float = clampf(rect.size.y * 0.32, 6.0, 14.0)
 	var center: Vector2 = Vector2(rect.end.x - unit * 1.6, rect.get_center().y + unit * 0.2)
+	if not _fits_on(rect, unit * 2.6):
+		center.x = rect.end.x + unit * 1.4
 	draw_arc(center - Vector2(0.0, unit * 0.45), unit * 0.65, PI, TAU, 16, ThemeManager.mark_color("lock_shackle"), unit * 0.3, true)
 	draw_rect(Rect2(center.x - unit, center.y - unit * 0.45, unit * 2.0, unit * 1.4), ThemeManager.mark_color("lock"))
 

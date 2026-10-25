@@ -129,10 +129,17 @@ func _draw_silhouette(cells: Array[Rect2], disk_height: float, font: Font) -> vo
 				var text_width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, MIN_FONT_SIZE).x
 				draw_string(font, rect.get_center() + Vector2(-text_width * 0.5, 5.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 						MIN_FONT_SIZE, outline)
-		var number: String = str(height)
-		var number_width: float = font.get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE).x
-		draw_string(font, Vector2(cell.get_center().x - number_width * 0.5, base_top - disk_height * (height + 1) + 6.0),
-				number, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE, outline)
+		_draw_tag(font, Vector2(cell.get_center().x, base_top - disk_height * (height + 0.5)), str(height), MAX_FONT_SIZE, outline)
+
+
+## `text` centred on `center` over a patch of the page's colour, so the rod
+## behind it never runs through the digits.
+func _draw_tag(font: Font, center: Vector2, text: String, font_size: int, color: Color) -> void:
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var height: float = font.get_ascent(font_size) + font.get_descent(font_size)
+	draw_rect(Rect2(center - Vector2(width * 0.5 + 4.0, height * 0.5), Vector2(width + 8.0, height)), ThemeManager.color("background"))
+	draw_string(font, Vector2(center.x - width * 0.5, center.y + (font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5),
+			text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 ## Cəm's aim: over each peg the sum it must reach ("=" for equal sums, "tək"
@@ -152,10 +159,7 @@ func _draw_sums(cells: Array[Rect2], font: Font) -> void:
 			text += " ×2"
 		if peg_index < counts.size():
 			text += " (%d)" % int(counts[peg_index])
-		var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT_SIZE).x
-		var cell: Rect2 = cells[peg_index]
-		draw_string(font, Vector2(cell.get_center().x - width * 0.5, cell.get_center().y), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
-				MAX_FONT_SIZE, color)
+		_draw_tag(font, cells[peg_index].get_center(), text, MAX_FONT_SIZE, color)
 
 
 ## The most disks one peg can hold (every disk unless the board says less).

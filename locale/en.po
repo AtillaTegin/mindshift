@@ -417,8 +417,8 @@ msgstr ""
 msgid "RULE_CELL_FULL"
 msgstr ""
 
-#. [TODO: EN] az: Boş qülləyə yalnız böyük disklər qoyula bilər.
-msgid "RULE_KING_SPOT"
+#. [TODO: EN] az: Bu dar qüllə daha çox disk tutmur.
+msgid "RULE_NARROW_FULL"
 msgstr ""
 
 #. [TODO: EN] az: Üst-üstə disklərin rəngi növbələşməlidir.
@@ -1061,7 +1061,7 @@ msgstr ""
 msgid "VARIANT_FADING_NAME"
 msgstr ""
 
-#. [TODO: EN] az: iz daha uzun qalır, yalnız bir neçə gedişdən sonra silinir.
+#. [TODO: EN] az: diskin tərk etdiyi hər qüllədə iz bir neçə gediş qalır, rəqəm neçə gediş qaldığını göstərir.
 msgid "VARIANT_FADING_RULE"
 msgstr ""
 
@@ -1071,14 +1071,6 @@ msgstr ""
 
 #. [TODO: EN] az: iki disk iz qoyur, hər biri öz izinə qayıda bilməz.
 msgid "VARIANT_TWO_TRAILS_RULE"
-msgstr ""
-
-#. [TODO: EN] az: Böyük iz
-msgid "VARIANT_BIG_TRAIL_NAME"
-msgstr ""
-
-#. [TODO: EN] az: indi iz qoyan disk ən kiçik yox, ən böyük diskdir.
-msgid "VARIANT_BIG_TRAIL_RULE"
 msgstr ""
 
 #. [TODO: EN] az: Ədalət
@@ -1225,12 +1217,20 @@ msgstr ""
 msgid "VARIANT_RED_BLACK_RULE"
 msgstr ""
 
-#. [TODO: EN] az: Kral yeri
-msgid "VARIANT_KING_SPOT_NAME"
+#. [TODO: EN] az: Tağ
+msgid "VARIANT_RUN_ARCH_NAME"
 msgstr ""
 
-#. [TODO: EN] az: boş qülləyə yalnız işarəli ölçüdən böyük disk qoyulur.
-msgid "VARIANT_KING_SPOT_RULE"
+#. [TODO: EN] az: işarəli qülləyə yalnız rəqəmindən böyük olmayan disklər qoyulur.
+msgid "VARIANT_RUN_ARCH_RULE"
+msgstr ""
+
+#. [TODO: EN] az: Dar qüllə
+msgid "VARIANT_RUN_NARROW_NAME"
+msgstr ""
+
+#. [TODO: EN] az: işarəli qüllə rəqəmdən çox disk tutmur.
+msgid "VARIANT_RUN_NARROW_RULE"
 msgstr ""
 
 #. [TODO: EN] az: Cəm hədəfi

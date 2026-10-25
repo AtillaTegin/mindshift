@@ -68,6 +68,11 @@ func uses_memory() -> bool:
 	return true
 
 
+## It looks where each broken disk lies (MoveFacts.peg_of).
+func needs_facts() -> bool:
+	return true
+
+
 func memory_states(_peg_count: int, _disk_count: int) -> int:
 	return 1 << (cracked.size() + workshops.size())
 

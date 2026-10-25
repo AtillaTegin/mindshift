@@ -576,16 +576,26 @@ func _draw_ripples(area: Rect2) -> void:
 		row += 1
 
 
-## Two footprints under each peg the trail disk has visited.
+## Two footprints under each peg the trail disk has visited; a fading trail's
+## prints pale as they age, the moves they still last written beside them.
 func _draw_footprints() -> void:
 	var foot: Color = ThemeManager.mark_color("footprint")
+	var fading: Dictionary = marks.get("fading", {})
+	var fade: int = marks.get("fade", 0)
+	var font: Font = get_theme_default_font()
 	for peg_index: int in marks.get("visited", []):
 		var bottom: Vector2 = Vector2(peg_x(peg_index), size.y - TRAIL_ROOM * 0.5)
+		var print_color: Color = foot
+		if fade > 0:
+			print_color.a *= 0.35 + 0.65 * float(fading.get(peg_index, 0)) / float(fade)
 		for side: float in [-1.0, 1.0]:
 			var center: Vector2 = bottom + Vector2(side * 8.0, side * 4.0)
 			draw_set_transform(center, 0.0, Vector2(0.6, 1.0))
-			draw_circle(Vector2.ZERO, 7.0, foot, true, -1.0, true)
+			draw_circle(Vector2.ZERO, 7.0, print_color, true, -1.0, true)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if fade > 0:
+			var text: String = str(fading.get(peg_index, 0))
+			draw_string(font, bottom + Vector2(18.0, 7.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, foot)
 
 
 func _draw_jade(area: Rect2) -> void:

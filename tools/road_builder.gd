@@ -673,7 +673,9 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 	var earlier: Array[String] = ChapterPlan.modes_before(first)
 	var repeat_count: int = 0 if earlier.is_empty() else ceili((length - length / 2) / float(ChapterPlan.REPEAT_EVERY))
 	var least: int = ChapterPlan.world_floor(chapter["world"])
-	var goals: Array[String] = [] if ChapterPlan.OWN_GOAL.has(chapter["mode"]) else ChapterPlan.goal_variants_at(first)
+	var goals: Array[String] = []
+	if not ChapterPlan.OWN_GOAL.has(chapter["mode"]):
+		goals = ChapterPlan.goal_variants_at(first)
 	var breath_count: int = 0 if goals.is_empty() else roundi(length * ChapterPlan.BREATH_SHARE)
 	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count - breath_count, rng,
 			least)

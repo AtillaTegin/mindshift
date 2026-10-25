@@ -170,13 +170,17 @@ const WAVES: Dictionary = {
 	"chain": {"waves": ["base", "two_chains", "breaking", "long_chain", "rubber"], "mixed": true},
 	"heavy": {"waves": ["base", "cart", "reverse_weight", "fatigue", "uphill"], "mixed": true},
 	"elements": {"waves": ["base", "neutral_earth", "element_base", "creation", "element_peg"], "mixed": true},
-	"trail": {"waves": ["base", "clean_peg", "fading", "two_trails", "big_trail"], "mixed": true},
-	"sum": {"waves": ["base", "fair", "sum_and_height", "double_peg", "parity"], "mixed": true},
+	# "Böyük iz" is not built: the largest disk never has to come back to a peg,
+	# so its trail never changes a solution (measured 2026-10-18).
+	"trail": {"waves": ["base", "clean_peg", "fading", "two_trails"], "mixed": true},
+	# "Tək-cüt cəm" is not built: odd and even sums are met in 3-7 moves
+	# (measured 2026-10-17), short even for a breather.
+	"sum": {"waves": ["base", "fair", "sum_and_height", "double_peg"], "mixed": true},
 	"turns": {"waves": ["base", "pass", "grey", "double_turn", "three_colours"], "mixed": true},
 	"kintsugi": {"waves": ["base", "deep_crack", "two_workshops", "single_repair", "ordered_repair"], "mixed": true},
 	"lamp": {"waves": ["base", "long_light", "fixed_lantern", "two_lamps", "lamp_disk"], "mixed": true},
 	# "Sıra köçürmə" is not built (ICRA 3.14 allows dropping it): four waves.
-	"solitaire": {"waves": ["base", "free_cell", "red_black", "king_spot"], "mixed": true},
+	"solitaire": {"waves": ["base", "free_cell", "red_black", "run_arch", "run_narrow"], "mixed": true},
 }
 ## Waves that hold fewer levels than an even share, because their puzzles run
 ## out (measured 2026-10-17: the great exchange's base form from the ends is
@@ -196,9 +200,8 @@ const ISLAND_SETS: Dictionary = {"king": ["vizier", "narrow_gate"], "river": []}
 ## Sub-elements that keep their own wave: never mixed with others, never in a
 ## repeat or a Böyük Sınaq (World 3-4 spec: the turned stripes and the figure
 ## eight are twists of their own; ICRA: the odd and even towers change the
-## king's goal, the reversed river, the reversed weight and the large disk's
-## trail turn their mode; odd and even sums are a goal of their own).
-const SOLO: Array[String] = ["inverse", "eight", "odd_even", "reverse", "reverse_weight", "big_trail", "parity"]
+## king's goal, the reversed river and the reversed weight turn their mode).
+const SOLO: Array[String] = ["inverse", "eight", "odd_even", "reverse", "reverse_weight"]
 ## The most moves a level with these sub-elements reaches (measured
 ## 2026-10-17: a centre linked to every peg, three scales and the river's
 ## ferry keep solutions short); their levels' windows stop there, and they

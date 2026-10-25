@@ -41,13 +41,18 @@ const TOWER_GOAL_CHANCE: float = 0.5
 const MAX_STATES: int = LevelValidator.SOLVER_MAX_STATES
 ## Sub-elements that only change what the player sees ("three_scales" is a
 ## board of six pegs).
-const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosing", "three_scales"]
+const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosing", "three_scales", "double_peg"]
 ## World 3-4 modes (MindShift_Dunya3-4_Alt_Elementler_v1.md): their settings
 ## are drawn first, since they decide which positions are allowed at all
 ## (colours, pans, stops off the road), then a start and a goal the rules
 ## allow (_shape(), _allowed_state()).
 const SHAPED: Array[String] = ["adjacent_pegs", "stripes", "cyclic", "alternation", "balance", "river", "heavy",
 		"elements", "kintsugi", "solitaire"]
+## How many moves a fading trail's mark lasts ("Silinən iz"; a recipe may set
+## its own "fade": [low, high]). Measured 2026-10-18 on 3 pegs / 5 disks:
+## from 4 moves on it lengthens nearly every solution of the base trail (the
+## disk's last two pegs), 2-3 hardly ever; on 4 pegs it hardly matters.
+const FADE_MOVES: Array = [4, 5]
 ## Allowed positions of a balance board, by its settings (enumerated once).
 static var _balanced: Dictionary = {}
 
@@ -371,19 +376,16 @@ static func settings_without(variant: String, params: Dictionary) -> Variant:
 		"clean_peg":
 			(changed[TrailRule.ID] as Dictionary).erase("clean")
 		"fading":
-			changed[TrailRule.ID]["recent"] = 2
+			var trail: Dictionary = changed[TrailRule.ID]
+			trail.erase("fade")
+			trail["recent"] = 2
 		"two_trails":
 			var trail: Dictionary = changed[TrailRule.ID]
 			trail["disk"] = trail["disks"][0]
 			trail.erase("disks")
 		# World 8-9 (ICRA 3.10-3.14).
-		"sum_and_height", "double_peg":
-			var sum: Dictionary = changed[SumRule.ID]
-			if variant == "sum_and_height":
-				sum.erase("counts")
-			else:
-				sum["sums"][sum["double"]] = int(sum["sums"][sum["double"]]) / 2
-				sum.erase("double")
+		"sum_and_height":
+			(changed[SumRule.ID] as Dictionary).erase("counts")
 		"pass", "grey", "double_turn":
 			var turns: Dictionary = changed[TurnsRule.ID]
 			if variant == "pass":
@@ -404,10 +406,11 @@ static func settings_without(variant: String, params: Dictionary) -> Variant:
 			(changed[LampRule.ID] as Dictionary).erase({"long_light": "radius", "fixed_lantern": "fixed", "two_lamps": "two",
 				"lamp_disk": "carrier"}[variant])
 		"free_cell":
-			# The cell stays, an ordinary peg (the run rule for whatever lands on it).
-			(changed[SolitaireRule.ID] as Dictionary).erase("cell")
-		"red_black", "king_spot":
-			(changed[SolitaireRule.ID] as Dictionary).erase("colours" if variant == "red_black" else "kings")
+			# The cell stays, closed to every disk.
+			changed[SolitaireRule.ID]["closed"] = true
+		"red_black", "run_arch", "run_narrow":
+			(changed[SolitaireRule.ID] as Dictionary).erase({"red_black": "colours", "run_arch": "arches",
+					"run_narrow": "limits"}[variant])
 		_:
 			return null
 	return changed
@@ -522,11 +525,16 @@ static func _params(modes: Array, board: Dictionary, start: PuzzleState, goal: P
 		if variants.has("rubber"):
 			chain["rubber"] = true
 		params[ChainRule.ID] = chain
-	# World 7 (ICRA 3.9): the trail's disk (the smallest, the largest for "Böyük
-	# iz", a second one for "İki izli disk"), how long it lasts, a clean peg.
+	# World 7 (ICRA 3.9): the trail's disk (the smallest, a second one for "İki
+	# izli disk"), how long it lasts (the disk's last two pegs, or a mark per peg
+	# fading after a few moves of any disk: "Silinən iz"), a clean peg.
 	if modes.has(TrailRule.ID):
-		var trail: Dictionary = {"disk": disks if variants.has("big_trail") else 1,
-				"recent": rng.randi_range(3, 4) if variants.has("fading") else 2}
+		var trail: Dictionary = {"disk": 1}
+		if variants.has("fading"):
+			var span: Array = board.get("fade", FADE_MOVES)
+			trail["fade"] = rng.randi_range(span[0], span[1])
+		else:
+			trail["recent"] = 2
 		if variants.has("two_trails"):
 			trail.erase("disk")
 			trail["disks"] = [1, rng.randi_range(2, mini(3, disks))]
@@ -537,9 +545,14 @@ static func _params(modes: Array, board: Dictionary, start: PuzzleState, goal: P
 	# lamp's start and its kind.
 	if modes.has(TurnsRule.ID):
 		var three: bool = variants.has("three_colours")
+		# Every colour about as many disks: a colour short of disks soon has none
+		# it can move when its turn comes (measured 2026-10-18: with random
+		# colours nearly every three-colour board was stuck).
+		var hues: int = 3 if three else 2
 		var colours: Array = []
 		for size: int in disks:
-			colours.append(rng.randi_range(0, 2 if three else 1))
+			colours.append(size % hues)
+		colours = _shuffled(colours, rng)
 		if variants.has("grey"):
 			colours[rng.randi_range(0, disks - 1)] = TurnsRule.GREY
 		var turns: Dictionary = {"colours": colours}
@@ -562,7 +575,9 @@ static func _params(modes: Array, board: Dictionary, start: PuzzleState, goal: P
 		if variants.has("two_lamps"):
 			lamp["two"] = true
 		if variants.has("lamp_disk"):
-			lamp["carrier"] = rng.randi_range(1, disks)
+			# One of the small disks: a large one, buried under the others, kept
+			# the lamp where it stood (measured 2026-10-18: no level at all).
+			lamp["carrier"] = rng.randi_range(1, mini(3, disks))
 		params[LampRule.ID] = lamp
 	return params
 
@@ -660,7 +675,8 @@ static func _lock(board: Dictionary, variants: Array, start: PuzzleState, goal: 
 
 
 ## A recipe `board` grown to what its sub-elements need: an oasis or a centre
-## is one more peg, the figure eight an odd number of pegs, three scales six.
+## is one more peg, the figure eight an odd number of pegs, three scales six;
+## the free cell takes the last peg (_shape()).
 static func fitted(board: Dictionary) -> Dictionary:
 	var variants: Array = board.get("variants", [])
 	var fit: Dictionary = board.duplicate()
@@ -824,8 +840,17 @@ static func _shape(modes: Array, board: Dictionary, rng: RandomNumberGenerator) 
 		params[HeavyRule.ID] = heavy
 	if modes.has(ElementsRule.ID):
 		var elements: Array = []
-		for size: int in disks:
-			elements.append(rng.randi_range(ElementsRule.WOOD, ElementsRule.WATER))
+		if variants.has("creation"):
+			# Down the cycle of creation from the largest disk, so a tower is a
+			# legal goal (ICRA 3.8: the generator shares the elements out so the
+			# goal is legal); with random elements nearly nothing could stack and
+			# no level was solvable (measured 2026-10-18).
+			var first: int = rng.randi_range(ElementsRule.WOOD, ElementsRule.WATER)
+			for size: int in range(1, disks + 1):
+				elements.append((first + disks - size) % 5)
+		else:
+			for size: int in disks:
+				elements.append(rng.randi_range(ElementsRule.WOOD, ElementsRule.WATER))
 		var wuxing: Dictionary = {"elements": elements}
 		if variants.has("neutral_earth"):
 			wuxing["earth"] = true
@@ -853,7 +878,10 @@ static func _shape(modes: Array, board: Dictionary, rng: RandomNumberGenerator) 
 		for flag: Array in [["deep_crack", "deep"], ["single_repair", "single"], ["ordered_repair", "ordered"]]:
 			if variants.has(flag[0]):
 				kintsugi[flag[1]] = true
-		if variants.has("ordered_repair") and (kintsugi["cracked"] as Array).size() < 2:
+		# An order, a workshop that closes or a second one only shows with two
+		# cracked disks.
+		if (variants.has("ordered_repair") or variants.has("single_repair") or variants.has("two_workshops")) \
+				and (kintsugi["cracked"] as Array).size() < 2:
 			kintsugi["cracked"] = _shuffled(range(2, disks + 1), rng).slice(0, 2)
 		params[KintsugiRule.ID] = kintsugi
 	if modes.has(SolitaireRule.ID):
@@ -862,12 +890,36 @@ static func _shape(modes: Array, board: Dictionary, rng: RandomNumberGenerator) 
 			solitaire["cell"] = pegs - 1
 			keep.append(pegs - 1)
 		if variants.has("red_black"):
+			# The colours take turns up the sizes but for one or two places where
+			# two neighbours share a colour (such a pair never stacks): with
+			# random colours nearly every board was cut into pieces that could
+			# not be solved (measured 2026-10-18).
+			var breaks: Array = _shuffled(range(1, disks), rng).slice(0, 1 if disks < 8 else rng.randi_range(1, 2))
 			var colours: Array = []
-			for size: int in disks:
-				colours.append(rng.randi_range(0, 1))
+			var colour: int = rng.randi_range(0, 1)
+			for size: int in range(1, disks + 1):
+				if size > 1 and not breaks.has(size - 1):
+					colour = 1 - colour
+				colours.append(colour)
 			solitaire["colours"] = colours
-		if variants.has("king_spot"):
-			solitaire["kings"] = rng.randi_range(maxi(disks / 2, 2), disks - 1)
+		# The arch and the narrow tower sit on a peg other than the cell: the arch
+		# lets through at least the disks of the start and goal (so they stay
+		# solvable) but not the largest, the tower holds at least the tallest
+		# stack of either (a run is one stack, so it limits only longer runs).
+		var plain: Array = range(pegs).filter(func(p: int) -> bool: return not keep.has(p))
+		if variants.has("run_arch"):
+			var arches: Array = []
+			arches.resize(pegs)
+			arches.fill(0)
+			var widest: int = maxi(disks - 2, 1)
+			arches[_shuffled(plain, rng)[0]] = rng.randi_range(maxi(disks / 2, 1), maxi(widest, 1))
+			solitaire["arches"] = arches
+		if variants.has("run_narrow"):
+			var limits: Array = []
+			limits.resize(pegs)
+			limits.fill(0)
+			limits[_shuffled(plain, rng)[0]] = rng.randi_range(2, maxi(disks / 2, 2))
+			solitaire["limits"] = limits
 		params[SolitaireRule.ID] = solitaire
 	return {"params": params, "keep": keep}
 

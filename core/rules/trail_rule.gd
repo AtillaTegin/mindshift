@@ -11,11 +11,13 @@ extends RuleBase
 ##   "rules": ["classic_hanoi", "trail"], "rule_params": {"trail": {"disk": 1, "recent": 2}}
 ## World 7 waves (ICRA World 5-9, section 3.9), optional settings:
 ##   "clean": peg       "Təmiz qüllə": that peg never stays on a trail
-##   "recent": 3 or 4   "Silinən iz": the trail fades after that many of the
-##                      disk's moves (the base form keeps two)
+##   "fade": n          "Silinən iz": every peg the disk leaves stays on its
+##                      trail for the next n moves of any disk, then the mark
+##                      fades (instead of "recent"; a countdown per peg)
 ##   "disks": [a, b]    "İki izli disk": two disks, each with its own trail
 ##                      (instead of "disk"; the memory holds both)
-##   a "disk" that is the largest one: "Böyük iz"
+## "Böyük iz" (the largest disk leaves the trail) is not built: the largest
+## disk never has to come back to a peg, so it never changed a solution.
 
 const ID: String = "trail"
 
@@ -24,6 +26,8 @@ var disks: Array[int] = []
 ## How many of its latest pegs the trail remembers (0: every peg it has stood on).
 var recent: int = 0
 var clean: int = -1
+## How many moves a peg the disk left stays on its trail (0: no fading).
+var fade: int = 0
 
 
 func _init() -> void:
@@ -41,11 +45,11 @@ var disk: int:
 
 
 func configure(params: Dictionary) -> String:
-	var problem: String = "rule \"%s\" needs {\"disk\": the disk that leaves the trail} or \"disks\": [two], optional \"recent\", \"clean\"" % ID
+	var problem: String = "rule \"%s\" needs {\"disk\": the disk that leaves the trail} or \"disks\": [two], optional \"recent\" or \"fade\", \"clean\"" % ID
 	for key: String in params:
-		if not key in ["disk", "disks", "recent", "clean"]:
+		if not key in ["disk", "disks", "recent", "clean", "fade"]:
 			return problem
-	if params.has("disk") == params.has("disks"):
+	if params.has("disk") == params.has("disks") or (params.has("recent") and params.has("fade")):
 		return problem
 	var list: Variant = [params["disk"]] if params.has("disk") else params["disks"]
 	if typeof(list) != TYPE_ARRAY or not (list as Array).size() in [1, 2] \
@@ -56,10 +60,13 @@ func configure(params: Dictionary) -> String:
 		return problem
 	var count: Variant = params.get("recent", 0)
 	var peg: Variant = params.get("clean", -1)
-	if typeof(count) != TYPE_INT or count < 0 or typeof(peg) != TYPE_INT or peg < -1:
+	var moves: Variant = params.get("fade", 0)
+	if typeof(count) != TYPE_INT or count < 0 or typeof(peg) != TYPE_INT or peg < -1 \
+			or typeof(moves) != TYPE_INT or moves < 0:
 		return problem
 	recent = count
 	clean = peg
+	fade = moves
 	return ""
 
 
@@ -69,6 +76,8 @@ func get_params() -> Dictionary:
 		params["recent"] = recent
 	if clean >= 0:
 		params["clean"] = clean
+	if fade > 0:
+		params["fade"] = fade
 	return params
 
 
@@ -82,8 +91,11 @@ func uses_memory() -> bool:
 
 
 ## The memory of one trail: every peg, one bit each; the latest `recent`, one
-## digit (peg + 1, 0 none) in base peg_count + 1 each, the newest lowest.
+## digit (peg + 1, 0 none) in base peg_count + 1 each, the newest lowest; a
+## fading trail one digit per peg, the moves its mark still lasts (base fade + 1).
 func _trail_states(peg_count: int) -> int:
+	if fade > 0:
+		return int(pow(fade + 1, peg_count))
 	return 1 << peg_count if recent == 0 else int(pow(peg_count + 1, recent))
 
 
@@ -91,9 +103,12 @@ func memory_states(peg_count: int, _disk_count: int) -> int:
 	return int(pow(_trail_states(peg_count), disks.size()))
 
 
-## The peg each tracked disk starts on is already visited.
+## The peg each tracked disk starts on is already visited (a fading trail
+## marks a peg only once the disk leaves it).
 func start_memory(state: PuzzleState) -> int:
 	var memory: int = 0
+	if fade > 0:
+		return memory
 	var scale: int = 1
 	for tracked: int in disks:
 		for peg_index: int in state.pegs.size():
@@ -103,9 +118,13 @@ func start_memory(state: PuzzleState) -> int:
 	return memory
 
 
-func memory_after(facts: MoveFacts, moving: int, _from_peg: int, to_peg: int) -> int:
+## The clean peg leaves no mark, but the disk's older steps still fade (an
+## empty step in its place).
+func memory_after(facts: MoveFacts, moving: int, from_peg: int, to_peg: int) -> int:
+	if fade > 0:
+		return _faded_after(facts.memory, moving, from_peg, facts.peg_count())
 	var index: int = disks.find(moving)
-	if index == -1 or to_peg == clean:
+	if index == -1 or (to_peg == clean and recent == 0):
 		return facts.memory
 	var states: int = _trail_states(facts.peg_count())
 	var scale: int = int(pow(states, index))
@@ -115,8 +134,35 @@ func memory_after(facts: MoveFacts, moving: int, _from_peg: int, to_peg: int) ->
 		after = own | (1 << to_peg)
 	else:
 		var base: int = facts.peg_count() + 1
-		after = (to_peg + 1 + own * base) % int(pow(base, recent))
+		var step: int = 0 if to_peg == clean else to_peg + 1
+		after = (step + own * base) % int(pow(base, recent))
 	return facts.memory - own * scale + after * scale
+
+
+## A fading trail after a move: every mark one move older, then the peg a
+## tracked disk just left (not the clean one) marked for `fade` moves.
+func _faded_after(memory: int, moving: int, from_peg: int, peg_count: int) -> int:
+	var base: int = fade + 1
+	var after: int = 0
+	var scale: int = 1
+	for index: int in disks.size():
+		for peg_index: int in peg_count:
+			var left: int = memory / scale % base
+			if disks[index] == moving and peg_index == from_peg and peg_index != clean:
+				left = fade
+			elif left > 0:
+				left -= 1
+			after += left * scale
+			scale *= base
+	return after
+
+
+## How many more moves `peg_index` stays on the fading trail of tracked disk
+## `index` (0: not on it; always 0 without fading).
+func fade_left(memory: int, index: int, peg_index: int, peg_count: int) -> int:
+	if fade == 0:
+		return 0
+	return memory / int(pow(fade + 1, index * peg_count + peg_index)) % (fade + 1)
 
 
 ## Whether `memory` keeps `peg_index` on the first disk's trail.
@@ -128,6 +174,8 @@ func remembers(memory: int, peg_index: int, peg_count: int) -> bool:
 func remembers_of(memory: int, index: int, peg_index: int, peg_count: int) -> bool:
 	if peg_index == clean:
 		return false
+	if fade > 0:
+		return fade_left(memory, index, peg_index, peg_count) > 0
 	var states: int = _trail_states(peg_count)
 	var own: int = (memory / int(pow(states, index))) % states
 	if recent == 0:

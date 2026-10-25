@@ -123,7 +123,6 @@ const VARIANTS: Dictionary = {
 	"clean_peg": ["VARIANT_CLEAN_PEG_NAME", "VARIANT_CLEAN_PEG_RULE"],
 	"fading": ["VARIANT_FADING_NAME", "VARIANT_FADING_RULE"],
 	"two_trails": ["VARIANT_TWO_TRAILS_NAME", "VARIANT_TWO_TRAILS_RULE"],
-	"big_trail": ["VARIANT_BIG_TRAIL_NAME", "VARIANT_BIG_TRAIL_RULE"],
 	# World 8-9 (ICRA 3.10-3.14).
 	"fair": ["VARIANT_FAIR_NAME", "VARIANT_FAIR_RULE"],
 	"sum_and_height": ["VARIANT_SUM_AND_HEIGHT_NAME", "VARIANT_SUM_AND_HEIGHT_RULE"],
@@ -143,7 +142,8 @@ const VARIANTS: Dictionary = {
 	"lamp_disk": ["VARIANT_LAMP_DISK_NAME", "VARIANT_LAMP_DISK_RULE"],
 	"free_cell": ["VARIANT_FREE_CELL_NAME", "VARIANT_FREE_CELL_RULE"],
 	"red_black": ["VARIANT_RED_BLACK_NAME", "VARIANT_RED_BLACK_RULE"],
-	"king_spot": ["VARIANT_KING_SPOT_NAME", "VARIANT_KING_SPOT_RULE"],
+	"run_arch": ["VARIANT_RUN_ARCH_NAME", "VARIANT_RUN_ARCH_RULE"],
+	"run_narrow": ["VARIANT_RUN_NARROW_NAME", "VARIANT_RUN_NARROW_RULE"],
 	"goal_sum": ["VARIANT_GOAL_SUM_NAME", "VARIANT_GOAL_SUM_RULE"],
 }
 ## Sub-elements that are a lesson of their own (Level.lesson(): the exchange's

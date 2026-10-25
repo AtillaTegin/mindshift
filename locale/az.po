@@ -316,8 +316,8 @@ msgstr "Disk yalnız özündən bir böyük diskin üstünə və ya boş qüllə
 msgid "RULE_CELL_FULL"
 msgstr "Boş hücrə yalnız bir disk saxlayır."
 
-msgid "RULE_KING_SPOT"
-msgstr "Boş qülləyə yalnız böyük disklər qoyula bilər."
+msgid "RULE_NARROW_FULL"
+msgstr "Bu dar qüllə daha çox disk tutmur."
 
 msgid "RULE_RED_BLACK"
 msgstr "Üst-üstə disklərin rəngi növbələşməlidir."
@@ -800,19 +800,13 @@ msgid "VARIANT_FADING_NAME"
 msgstr "Silinən iz"
 
 msgid "VARIANT_FADING_RULE"
-msgstr "iz daha uzun qalır, yalnız bir neçə gedişdən sonra silinir."
+msgstr "diskin tərk etdiyi hər qüllədə iz bir neçə gediş qalır, rəqəm neçə gediş qaldığını göstərir."
 
 msgid "VARIANT_TWO_TRAILS_NAME"
 msgstr "İki izli disk"
 
 msgid "VARIANT_TWO_TRAILS_RULE"
 msgstr "iki disk iz qoyur, hər biri öz izinə qayıda bilməz."
-
-msgid "VARIANT_BIG_TRAIL_NAME"
-msgstr "Böyük iz"
-
-msgid "VARIANT_BIG_TRAIL_RULE"
-msgstr "indi iz qoyan disk ən kiçik yox, ən böyük diskdir."
 
 msgid "VARIANT_FAIR_NAME"
 msgstr "Ədalət"
@@ -922,11 +916,17 @@ msgstr "Qırmızı-qara"
 msgid "VARIANT_RED_BLACK_RULE"
 msgstr "üst-üstə disklərin rəngi növbələşməlidir."
 
-msgid "VARIANT_KING_SPOT_NAME"
-msgstr "Kral yeri"
+msgid "VARIANT_RUN_ARCH_NAME"
+msgstr "Tağ"
 
-msgid "VARIANT_KING_SPOT_RULE"
-msgstr "boş qülləyə yalnız işarəli ölçüdən böyük disk qoyulur."
+msgid "VARIANT_RUN_ARCH_RULE"
+msgstr "işarəli qülləyə yalnız rəqəmindən böyük olmayan disklər qoyulur."
+
+msgid "VARIANT_RUN_NARROW_NAME"
+msgstr "Dar qüllə"
+
+msgid "VARIANT_RUN_NARROW_RULE"
+msgstr "işarəli qüllə rəqəmdən çox disk tutmur."
 
 msgid "VARIANT_GOAL_SUM_NAME"
 msgstr "Cəm hədəfi"

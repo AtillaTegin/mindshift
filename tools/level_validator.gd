@@ -308,10 +308,9 @@ static func validate_variants(level: Level, errors: Array[String]) -> void:
 					"bonfire", "mixed", "caravanserai", "three_caravans", "navel", "coloured", "buta", "twin", "target_ko", \
 					"free_peg", "long_ko", "two_stones", "two_chains", "breaking", "long_chain", "rubber", "cart", \
 					"reverse_weight", "fatigue", "uphill", "neutral_earth", "element_base", "creation", "element_peg", \
-					"changing", "clean_peg", "fading", "two_trails", "big_trail", "fair", "sum_and_height", "double_peg", \
-					"parity", "pass", "grey", "double_turn", "three_colours", "deep_crack", "two_workshops", "single_repair", \
+					"changing", "clean_peg", "fading", "two_trails", "fair", "sum_and_height", "double_peg", "parity", "pass", "grey", "double_turn", "three_colours", "deep_crack", "two_workshops", "single_repair", \
 					"ordered_repair", "long_light", "fixed_lantern", "two_lamps", "lamp_disk", "free_cell", "red_black", \
-					"king_spot":
+					"run_arch", "run_narrow":
 				missing = not found.has(variant)
 			"goal_sum":
 				missing = not level.rule_ids.has(SumRule.ID)
@@ -475,8 +474,8 @@ static func world_seven_variants(rules: RuleSet, level: Level, errors: Array[Str
 					found.append(pair[0])
 		elif rule is TrailRule:
 			var trail: TrailRule = rule
-			for pair: Array in [["clean_peg", trail.clean >= 0], ["fading", trail.recent > 2],
-					["two_trails", trail.disks.size() > 1], ["big_trail", trail.disk == level.get_disk_count()]]:
+			for pair: Array in [["clean_peg", trail.clean >= 0], ["fading", trail.fade > 0],
+					["two_trails", trail.disks.size() > 1]]:
 				if pair[1]:
 					found.append(pair[0])
 	return found
@@ -507,7 +506,8 @@ static func world_eight_nine_variants(rules: RuleSet, level: Level) -> Array[Str
 		elif rule is SolitaireRule:
 			var solitaire: SolitaireRule = rule
 			pairs = [["free_cell", solitaire.cell >= 0], ["red_black", not solitaire.colours.is_empty()],
-					["king_spot", solitaire.kings > 0]]
+					["run_arch", solitaire.arches.any(func(n: int) -> bool: return n > 0)],
+					["run_narrow", solitaire.limits.any(func(n: int) -> bool: return n > 0)]]
 		for pair: Array in pairs:
 			if pair[1]:
 				found.append(pair[0])
