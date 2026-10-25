@@ -36,6 +36,14 @@ const BUILT_WORLDS: Array[int] = [1, 2, 3]
 ## (draw_group()); a draw with a count not seen yet wins at once.
 const ATTEMPTS_PER_LEVEL: int = 600
 const CANDIDATES: int = 3
+## One level's budget: past it the smaller boards are tried (the floor stays)
+## and the weak spot goes to the log.
+const LEVEL_SECONDS: float = 60.0
+const LEVEL_TRIES: int = 3000
+## Attempts the last draw_one() used, for the progress log.
+static var last_tries: int = 0
+## `-- --trial=N`: draw only the first N wave levels of the last world, write nothing.
+static var trial_limit: int = 0
 ## Sub-elements that rarely make a level in a window (World 3-4, measured
 ## 2026-10-17: a narrow bridge or a one-way road on a line, the figure eight,
 ## a neutral disk or a coloured base about 1 draw in 30), and how many times
@@ -420,9 +428,14 @@ func _run() -> bool:
 			worlds = parse_worlds(arg.trim_prefix("--worlds="))
 		elif arg.begins_with("--keep="):
 			keep = parse_worlds(arg.trim_prefix("--keep="))
+		elif arg.begins_with("--trial="):
+			trial_limit = arg.trim_prefix("--trial=").to_int()
 	var started: int = Time.get_ticks_msec()
 	var errors: Array[String] = []
 	var road: Dictionary = build(worlds, errors, keep)
+	if trial_limit > 0:
+		print("trial: %d s" % [(Time.get_ticks_msec() - started) / 1000])
+		return errors.is_empty()
 	if not errors.is_empty():
 		for error: String in errors:
 			printerr(error)
@@ -476,6 +489,8 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 			_keep_world(plan, world, used, errors)
 			continue
 		_draw_waves(tracks, world, used, errors)
+		if trial_limit > 0:
+			return {"trial": true}
 		_draw_bands(tracks, world, used, errors)
 	if not errors.is_empty():
 		return {}
@@ -558,6 +573,21 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 
 ## The wave levels of `world` (a window of their own each), in road order:
 ## its main road slots, then its islands'.
+static func _slot_name(slot: Dictionary) -> String:
+	var name: String = stream_of(slot["modes"])
+	var variants: Array = slot.get("variants", [])
+	return name if variants.is_empty() else "%s[%s]" % [name, ",".join(variants)]
+
+
+static func _wave_total(tracks: Array, world: int) -> int:
+	var total: int = 0
+	for track: Array in tracks:
+		for slot: Dictionary in track:
+			if slot.has("low") and slot["world"] == world:
+				total += 1
+	return total
+
+
 static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Array[String]) -> void:
 	for t: int in tracks.size():
 		var started: int = Time.get_ticks_msec()
@@ -566,6 +596,9 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			var slot: Dictionary = tracks[t][i]
 			if not slot.has("low") or slot["world"] != world:
 				continue
+			if trial_limit > 0 and count >= trial_limit:
+				return
+			var level_start: int = Time.get_ticks_msec()
 			var draft: Dictionary = draw_one(slot, BASE_SEED + t * 10000 + i, used)
 			# Too many sub-elements for the window: the later ones go, one by one
 			# (the first is the one the wave teaches).
@@ -592,6 +625,8 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			used[draft["key"]] = true
 			slot["draft"] = draft
 			count += 1
+			print("  W%d %s %d/%d · cəhd %d · %d san" % [world, _slot_name(slot), count, _wave_total(tracks, world),
+					last_tries, (Time.get_ticks_msec() - level_start) / 1000])
 		if count > 0:
 			print("  world %d track %d: %d wave levels in %.1f s" % [world, t, count, (Time.get_ticks_msec() - started) / 1000.0])
 
@@ -1130,19 +1165,47 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 	var attempts: int = ATTEMPTS_PER_LEVEL / 2
 	for variant: String in slot.get("variants", []):
 		attempts = maxi(attempts, ATTEMPTS_PER_LEVEL / 2 * int(SCARCE.get(variant, 1)))
+	var started: int = Time.get_ticks_msec()
+	last_tries = 0
+	var weak: String = ""
+	var rounds: Array = []
 	for band: String in bands:
-		var boards: Array = recipe.get(band, []).duplicate()
-		var offset: int = rng.randi_range(0, maxi(boards.size() - 1, 0))
-		if sealed:
-			offset = 0
-			boards.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["disks"] < b["disks"])
-		for turn: int in boards.size():
-			var board: Dictionary = (boards[(offset + turn) % boards.size()] as Dictionary).duplicate()
-			board.merge(slot.get("extra", {}), true)
-			for attempt: int in attempts:
-				var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
-				if not draft.is_empty():
-					return draft
+		rounds.append(recipe.get(band, []).duplicate())
+	for pass_index: int in 2:
+		var over: bool = false
+		for boards: Array in rounds:
+			var offset: int = rng.randi_range(0, maxi(boards.size() - 1, 0))
+			if sealed or pass_index == 1:
+				offset = 0
+				boards.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["disks"] < b["disks"])
+			for turn: int in boards.size():
+				var board: Dictionary = (boards[(offset + turn) % boards.size()] as Dictionary).duplicate()
+				board.merge(slot.get("extra", {}), true)
+				for attempt: int in attempts:
+					last_tries += 1
+					var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
+					if not draft.is_empty():
+						if weak != "":
+							print("    zəif: %s (%d-%d, %s)" % [weak, slot["low"], slot["high"], stream_of(slot["modes"])])
+						return draft
+					if pass_index == 0 and (last_tries > LEVEL_TRIES or (Time.get_ticks_msec() - started) / 1000.0 > LEVEL_SECONDS):
+						weak = "cəhd %d" % last_tries if last_tries > LEVEL_TRIES else "vaxt %d san" % int(LEVEL_SECONDS)
+						over = true
+						break
+				if over:
+					break
+			if over:
+				break
+		if not over:
+			break
+		# Second pass: every board, the smaller ones first (the floor stays).
+		var every: Array = []
+		for boards: Array in rounds:
+			every.append_array(boards)
+		rounds = [every]
+		weak += ", lövhə kiçildi"
+		last_tries = 0
+		started = Time.get_ticks_msec()
 	return {}
 
 

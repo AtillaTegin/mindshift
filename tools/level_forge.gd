@@ -39,6 +39,9 @@ extends RefCounted
 const TOWER_GOAL_CHANCE: float = 0.5
 ## Search limit while building (offline, so far above an in-game hint's).
 const MAX_STATES: int = LevelValidator.SOLVER_MAX_STATES
+## Search cap for one draw (a draw needing more is dropped); the validator keeps
+## MAX_STATES. Stops big boards (Böyük Sınaq, 6-peg scales) from stalling a run.
+const DRAW_MAX_STATES: int = 500000
 ## Sub-elements that only change what the player sees ("three_scales" is a
 ## board of six pegs).
 const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosing", "three_scales", "double_peg"]
@@ -189,7 +192,7 @@ static func attempt(modes: Array, board: Dictionary, low: int, high: int, used: 
 		return {}
 	if (rule_ids.has(FoundationRule.ID) or rule_ids.has(SealedBoxRule.ID)) and rules.memory_of(start) != 0:
 		return {}  # every lock and seal closed at the start
-	var result: Dictionary = Solver.solve(start, goal, rules, MAX_STATES)
+	var result: Dictionary = Solver.solve(start, goal, rules, DRAW_MAX_STATES)
 	var moves: int = result["min_moves"]
 	if not result["solvable"] or moves < low or moves > high:
 		return {}
