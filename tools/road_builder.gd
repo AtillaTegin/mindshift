@@ -30,7 +30,7 @@ extends SceneTree
 
 const BASE_SEED: int = 20261015
 ## Worlds whose chapters are built (chapter plan's order: world 1-2 first).
-const BUILT_WORLDS: Array[int] = [1, 2]
+const BUILT_WORLDS: Array[int] = [1, 2, 3]
 ## Draws per level before its board gives way to the next recipe board, and
 ## fitting draws compared for the move count the group has least
 ## (draw_group()); a draw with a count not seen yet wins at once.
