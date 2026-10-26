@@ -20,7 +20,7 @@ func _built_chapters() -> Array[Dictionary]:
 
 func test_plan_follows_the_table() -> void:
 	# Section 2 and ICRA World 5-9 section 1: chapters back to back, world by
-	# world (World 1-4 to main 1020, then World 5-9 to 2880 as they are planned).
+	# world (World 1-4 to main 730, then World 5-9 to 2590 as they are planned).
 	var next: int = 1
 	var world: int = 1
 	var ends: Dictionary = {}
@@ -30,16 +30,16 @@ func test_plan_follows_the_table() -> void:
 		world = chapter["world"]
 		next = int(chapter["last"]) + 1
 		ends[world] = chapter["last"]
-	assert_eq([ends[4], ends[5]], [1020, 1420], "World 4 ends at 1020, World 5 at 1420")
+	assert_eq([ends[4], ends[5]], [730, 1130], "World 4 ends at 730, World 5 at 1130")
 	assert_true(world >= 5 and world <= 9)
 	var lengths: Dictionary = {}
 	for chapter: Dictionary in ChapterPlan.CHAPTERS:
 		lengths[chapter.get("mode", "%s %d" % [chapter["kind"], chapter["first"]])] = ChapterPlan.length_of(chapter)
 	assert_eq(lengths["peg_capacity"], 50)
 	assert_eq(lengths["covered_pegs"], 100)
-	assert_eq(lengths["alternation"], 120)
-	assert_eq(lengths["balance"], 150)
-	assert_eq([lengths["king"], lengths["river"], lengths["color_swap"], lengths["combo 1371"]], [100, 100, 150, 50])
+	assert_eq(lengths["alternation"], 60)
+	assert_eq(lengths["balance"], 60)
+	assert_eq([lengths["king"], lengths["river"], lengths["color_swap"], lengths["combo 1081"]], [100, 100, 150, 50])
 	assert_eq(lengths["combo 301"], 50)
 	for mode: String in ChapterPlan.MODES:
 		assert_true(ChapterPlan.CHAPTERS.filter(func(c: Dictionary) -> bool: return c.get("mode", "") == mode).size() <= 1,
@@ -68,8 +68,8 @@ func test_bands_climb_through_a_chapter() -> void:
 
 
 func test_world_floors() -> void:
-	# Chapter waves v1.2, 5b (the user's decision): 7, 14, 16, then 18.
-	assert_eq([1, 2, 3, 4, 7].map(func(world: int) -> int: return ChapterPlan.world_floor(world)), [7, 14, 16, 18, 18])
+	# 7, 14, then 10 (eased worlds, 2026-10-27; was 16, 18).
+	assert_eq([1, 2, 3, 4, 7].map(func(world: int) -> int: return ChapterPlan.world_floor(world)), [7, 14, 10, 10, 10])
 	assert_eq(ChapterPlan.world_at(50), 1)
 	assert_eq(ChapterPlan.world_at(101), 2)
 	assert_eq(ChapterPlan.world_at(351), 3)
@@ -77,6 +77,14 @@ func test_world_floors() -> void:
 	assert_eq(ChapterPlan.band_range("medium", 14), [14, 18] as Array[int])
 	assert_eq(ChapterPlan.band_range("hard", 18), [25, 33] as Array[int], "above the floor: unchanged")
 	assert_eq(ChapterPlan.band_range("easy", 7), [7, 9] as Array[int])
+	assert_eq(ChapterPlan.band_range("medium", 10, true), [10, 16] as Array[int], "eased worlds: comfortable 10-16")
+	assert_eq(ChapterPlan.band_range("hard", 10, true), [25, 30] as Array[int], "eased worlds: hard tops at 30")
+	var counts: Dictionary = {}
+	for band: String in ChapterPlan.MIX_CYCLE:
+		counts[band] = counts.get(band, 0) + 1
+	assert_eq([counts["medium"], counts["medium_hard"], counts["hard"]], [10, 7, 3], "the mix is 50 / 35 / 15")
+	for i: int in ChapterPlan.MIX_CYCLE.size():
+		assert_false(ChapterPlan.mix_band(i) == "hard" and ChapterPlan.mix_band(i + 1) == "hard", "no hard next to a hard")
 
 
 ## No main road level below its world's floor but the guided intros (the

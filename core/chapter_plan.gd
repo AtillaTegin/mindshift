@@ -39,50 +39,50 @@ const CHAPTERS: Array[Dictionary] = [
 	{"world": 2, "kind": MODE_CHAPTER, "mode": "foundation", "first": 201, "last": 300, "ratio": 3.0},
 	{"world": 2, "kind": COMBO_CHAPTER, "first": 301, "last": 350, "singles": ["covered_pegs", "foundation"],
 		"combos": [["peg_capacity", "covered_pegs"], ["peg_capacity", "foundation"], ["covered_pegs", "foundation"]]},
-	{"world": 3, "kind": MODE_CHAPTER, "mode": "adjacent_pegs", "first": 351, "last": 450, "ratio": 3.0},
-	{"world": 3, "kind": MODE_CHAPTER, "mode": "stripes", "first": 451, "last": 550, "ratio": 3.0},
-	{"world": 3, "kind": MODE_CHAPTER, "mode": "cyclic", "first": 551, "last": 650, "ratio": 3.0},
-	{"world": 3, "kind": COMBO_CHAPTER, "first": 651, "last": 700, "singles": ["adjacent_pegs", "stripes", "cyclic"],
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "adjacent_pegs", "first": 351, "last": 410, "ratio": 3.0},
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "stripes", "first": 411, "last": 470, "ratio": 3.0},
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "cyclic", "first": 471, "last": 530, "ratio": 3.0},
+	{"world": 3, "kind": COMBO_CHAPTER, "first": 531, "last": 570, "singles": ["adjacent_pegs", "stripes", "cyclic"],
 		"combos": [["adjacent_pegs", "peg_capacity"], ["adjacent_pegs", "foundation"], ["stripes", "peg_capacity"],
 			["stripes", "adjacent_pegs"], ["cyclic", "peg_capacity"], ["cyclic", "foundation"],
 			# Current decisions 2026-10-16, D: karakuri comes back here (and with
 			# the balance in combination III, "Gizli Yük"), never inside its
 			# chapter before the player knows the other mode.
 			["covered_pegs", "stripes"]]},
-	{"world": 4, "kind": MODE_CHAPTER, "mode": "alternation", "first": 701, "last": 820, "ratio": 3.0},
-	{"world": 4, "kind": MODE_CHAPTER, "mode": "balance", "first": 821, "last": 970, "ratio": 3.0},
-	{"world": 4, "kind": COMBO_CHAPTER, "first": 971, "last": 1020, "singles": ["alternation", "balance"],
+	{"world": 4, "kind": MODE_CHAPTER, "mode": "alternation", "first": 571, "last": 630, "ratio": 3.0},
+	{"world": 4, "kind": MODE_CHAPTER, "mode": "balance", "first": 631, "last": 690, "ratio": 3.0},
+	{"world": 4, "kind": COMBO_CHAPTER, "first": 691, "last": 730, "singles": ["alternation", "balance"],
 		"combos": [["alternation", "peg_capacity"], ["balance", "peg_capacity"], ["balance", "foundation"],
 			["balance", "stripes"], ["balance", "covered_pegs"]]},
 	# ICRA World 5-9 (2026-10-17) replaces the old World 5-7 plan; Güzgü,
 	# Bağlı, Maqnit and the Final wait for a later update.
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "king", "first": 1021, "last": 1120, "ratio": 3.0},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "river", "first": 1121, "last": 1220, "ratio": 3.0},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 1221, "last": 1370, "ratio": 3.0},
-	{"world": 5, "kind": COMBO_CHAPTER, "first": 1371, "last": 1420, "singles": ["king", "river", "color_swap"],
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "king", "first": 731, "last": 830, "ratio": 3.0},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "river", "first": 831, "last": 930, "ratio": 3.0},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 931, "last": 1080, "ratio": 3.0},
+	{"world": 5, "kind": COMBO_CHAPTER, "first": 1081, "last": 1130, "singles": ["king", "river", "color_swap"],
 		"combos": [["river", "peg_capacity"], ["river", "covered_pegs"], ["river", "foundation"],
 			["color_swap", "adjacent_pegs"], ["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 1421, "last": 1520, "ratio": 3.0},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 1521, "last": 1620, "ratio": 3.0},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 1621, "last": 1770, "ratio": 3.0},
-	{"world": 6, "kind": COMBO_CHAPTER, "first": 1771, "last": 1820, "singles": ["carpet", "ko", "chain"],
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 1131, "last": 1230, "ratio": 3.0},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 1231, "last": 1330, "ratio": 3.0},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 1331, "last": 1480, "ratio": 3.0},
+	{"world": 6, "kind": COMBO_CHAPTER, "first": 1481, "last": 1530, "singles": ["carpet", "ko", "chain"],
 		"combos": [["ko", "peg_capacity"], ["ko", "adjacent_pegs"], ["ko", "river"], ["chain", "peg_capacity"],
 			["chain", "adjacent_pegs"], ["chain", "balance"], ["carpet", "stripes"]]},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "heavy", "first": 1821, "last": 1920, "ratio": 3.0},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "elements", "first": 1921, "last": 2040, "ratio": 3.0},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "trail", "first": 2041, "last": 2140, "ratio": 3.0},
-	{"world": 7, "kind": COMBO_CHAPTER, "first": 2141, "last": 2190, "singles": ["heavy", "elements", "trail"],
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "heavy", "first": 1531, "last": 1630, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "elements", "first": 1631, "last": 1750, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "trail", "first": 1751, "last": 1850, "ratio": 3.0},
+	{"world": 7, "kind": COMBO_CHAPTER, "first": 1851, "last": 1900, "singles": ["heavy", "elements", "trail"],
 		"combos": [["elements", "cyclic"], ["elements", "adjacent_pegs"], ["elements", "peg_capacity"],
 			["heavy", "peg_capacity"], ["heavy", "foundation"], ["trail", "adjacent_pegs"], ["trail", "river"]]},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "sum", "first": 2191, "last": 2290, "ratio": 3.0},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "turns", "first": 2291, "last": 2390, "ratio": 3.0},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "kintsugi", "first": 2391, "last": 2510, "ratio": 3.0},
-	{"world": 8, "kind": COMBO_CHAPTER, "first": 2511, "last": 2560, "singles": ["sum", "turns", "kintsugi"],
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "sum", "first": 1901, "last": 2000, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "turns", "first": 2001, "last": 2100, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "kintsugi", "first": 2101, "last": 2220, "ratio": 3.0},
+	{"world": 8, "kind": COMBO_CHAPTER, "first": 2221, "last": 2270, "singles": ["sum", "turns", "kintsugi"],
 		"combos": [["sum", "peg_capacity"], ["sum", "adjacent_pegs"], ["sum", "foundation"], ["turns", "peg_capacity"],
 			["turns", "river"], ["kintsugi", "adjacent_pegs"], ["kintsugi", "turns"]]},
-	{"world": 9, "kind": MODE_CHAPTER, "mode": "lamp", "first": 2561, "last": 2680, "ratio": 3.0},
-	{"world": 9, "kind": MODE_CHAPTER, "mode": "solitaire", "first": 2681, "last": 2830, "ratio": 3.0},
-	{"world": 9, "kind": COMBO_CHAPTER, "first": 2831, "last": 2880, "singles": ["lamp", "solitaire"],
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "lamp", "first": 2271, "last": 2390, "ratio": 3.0},
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "solitaire", "first": 2391, "last": 2540, "ratio": 3.0},
+	{"world": 9, "kind": COMBO_CHAPTER, "first": 2541, "last": 2590, "singles": ["lamp", "solitaire"],
 		"combos": [["solitaire", "stripes"], ["solitaire", "peg_capacity"], ["solitaire", "adjacent_pegs"],
 			["lamp", "peg_capacity"], ["lamp", "adjacent_pegs"]]},
 ]
@@ -119,7 +119,38 @@ const LATER_CLASSIC_BANDS: Array[String] = ["medium_hard", "hard"]
 ## (world 4 and later the last one), except the guided intros: the two
 ## tutorial levels and the first main road level of each lesson and of each
 ## sub-element. A band below the floor is lifted to it (band_range()).
-const WORLD_FLOORS: Array[int] = [7, 14, 16, 18]
+const WORLD_FLOORS: Array[int] = [7, 14, 10, 10]
+
+## The eased worlds (user's decision after play-testing, 2026-10-27: World 3-4
+## tired the player): from EASED_FROM_WORLD on, a chapter mixes levels as
+## MIX_CYCLE says (comfortable 10-16 moves ~50%, medium 17-24 ~35%, hard 25-30
+## ~15%, a hard one never next to another), an ordinary level takes at most 30
+## moves, a Böyük Sınaq EASED_BIG_TEST, an island level EASED_ISLAND_MOVES, a
+## mixed wave carries at most two sub-elements (three only in the Böyük
+## Sınaq). The ranges below stand in for BANDS in those worlds (band names
+## stay, they name the recipe boards).
+const EASED_FROM_WORLD: int = 3
+const EASED_RANGES: Dictionary = {"easy_medium": [10, 16], "medium": [10, 16], "medium_hard": [17, 24], "hard": [25, 30]}
+const MIX_CYCLE: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
+		"medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium_hard",
+		"medium_hard", "hard", "medium"]
+const EASED_CEILING: int = 30
+const EASED_BIG_TEST: Array[int] = [28, 34]
+const EASED_ISLAND_MOVES: Array[int] = [30, 40]
+
+
+static func is_eased(world: int) -> bool:
+	return world >= EASED_FROM_WORLD
+
+
+## The Böyük Sınaq's move range in `world`.
+static func big_test_range(world: int) -> Array[int]:
+	return EASED_BIG_TEST if is_eased(world) else BIG_TEST
+
+
+## The band of the `index`-th level of an eased chapter's mix.
+static func mix_band(index: int) -> String:
+	return MIX_CYCLE[index % MIX_CYCLE.size()]
 ## A lifted band keeps at least this many moves between its ends.
 const FLOOR_BAND_WIDTH: int = 2
 
@@ -242,7 +273,7 @@ const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 ## never a Böyük Sınaq. The goal comes from a goal-setting mode's rule
 ## (GOAL_RULES); such a level names the variant and is still a level of its
 ## chapter's mode (Level.modes()).
-const GOAL_VARIANTS: Dictionary = {"goal_king": 1121, "goal_odd_even": 1121, "goal_silhouette": 1521, "goal_sum": 2291}
+const GOAL_VARIANTS: Dictionary = {"goal_king": 831, "goal_odd_even": 831, "goal_silhouette": 1231, "goal_sum": 2001}
 const GOAL_RULES: Dictionary = {"goal_king": "king", "goal_odd_even": "king", "goal_silhouette": "carpet", "goal_sum": "sum"}
 const BREATH_SHARE: float = 0.1
 const BREATH_MOVES: Array[int] = [12, 18]
@@ -327,7 +358,11 @@ static func world_floor(world: int) -> int:
 
 ## The move range of `band` in a world whose floor is `floor_moves`: lifted
 ## to the floor where it lies lower, at least FLOOR_BAND_WIDTH wide.
-static func band_range(band: String, floor_moves: int) -> Array[int]:
+static func band_range(band: String, floor_moves: int, eased: bool = false) -> Array[int]:
+	if eased and EASED_RANGES.has(band):
+		var span: Array = EASED_RANGES[band]
+		var start: int = maxi(int(span[0]), floor_moves)
+		return [start, maxi(int(span[1]), start + FLOOR_BAND_WIDTH)]
 	var low: int = maxi(int(BANDS[band][0]), floor_moves)
 	return [low, maxi(int(BANDS[band][1]), low + FLOOR_BAND_WIDTH)]
 

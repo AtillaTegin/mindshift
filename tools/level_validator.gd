@@ -165,16 +165,20 @@ static func validate_path(levels_dir: String) -> Array[String]:
 				var big_test: bool = ChapterPlan.is_big_test(i + 1)
 				if level.difficulty == "expert" and not big_test:
 					errors.append("main %d: expert level %s belongs on an island" % [i + 1, file])
-				if big_test and (level.min_moves < ChapterPlan.BIG_TEST[0] or level.min_moves > ChapterPlan.BIG_TEST[1]):
+				var big_range: Array[int] = ChapterPlan.big_test_range(ChapterPlan.world_at(i + 1))
+				if big_test and (level.min_moves < big_range[0] or level.min_moves > big_range[1]):
 					errors.append("main %d: the Böyük Sınaq %s takes %d moves, not %d-%d" % [i + 1, file, level.min_moves,
-							ChapterPlan.BIG_TEST[0], ChapterPlan.BIG_TEST[1]])
+							big_range[0], big_range[1]])
+				if not big_test and ChapterPlan.is_eased(ChapterPlan.world_at(i + 1)) and level.min_moves > ChapterPlan.EASED_CEILING:
+					errors.append("main %d: %s takes %d moves, over the eased worlds' %d" % [i + 1, file, level.min_moves,
+							ChapterPlan.EASED_CEILING])
 				var fit: String = fits_chapter(modes, i + 1)
 				if not fit.is_empty():
 					errors.append("main %d: %s %s" % [i + 1, file, fit])
 			elif track["mode"] == Level.CLASSIC and not modes.is_empty():
 				errors.append("%s: the classic island holds classic levels only" % file)
 			elif track["mode"] != Level.CLASSIC and (modes.size() != 1 or modes[0] != track["mode"] \
-					or level.difficulty != "expert"):
+					or (level.difficulty != "expert" and not ChapterPlan.is_eased(ChapterPlan.world_at(track["after"])))):
 				errors.append("%s: the %s island holds expert %s levels only" % [file, track["mode"], track["mode"]])
 	for i: int in TUTORIAL_LEVEL_IDS.size():
 		if main.size() <= i or main[i]["id"] != TUTORIAL_LEVEL_IDS[i]:
