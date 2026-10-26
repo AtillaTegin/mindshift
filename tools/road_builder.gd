@@ -452,12 +452,10 @@ func _run() -> bool:
 	if trial_limit > 0:
 		print("trial: %d s" % [(Time.get_ticks_msec() - started) / 1000])
 		return errors.is_empty()
-	if not errors.is_empty():
-		for error: String in errors:
-			printerr(error)
-		return false
+	# Empty slots do not stop the writing (the work is kept); they are listed at the end.
 	write(road, Difficulty.LEVELS_DIR)
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(checkpoint_path))
+	if errors.is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(checkpoint_path))
 	LevelCatalog.clear_cache()
 	var report: Dictionary = LevelValidator.validate_directory(Difficulty.LEVELS_DIR)
 	var failures: Dictionary = report["failures"]
@@ -465,7 +463,11 @@ func _run() -> bool:
 		printerr("FAIL %s: %s" % [path, "; ".join(failures[path])])
 	print(describe(road))
 	print("%d levels in %d s" % [report["files"], (Time.get_ticks_msec() - started) / 1000])
-	return failures.is_empty()
+	if not errors.is_empty():
+		print("EMPTY SLOTS (%d), left out of the road:" % errors.size())
+		for error: String in errors:
+			printerr(error)
+	return failures.is_empty() and errors.is_empty()
 
 
 ## `-- --trial=N --only=<selector>`: N levels of the last world's slots that
@@ -505,6 +507,8 @@ func _trial(worlds: Array[int], keep: Array[int], selectors: String, count: int)
 			var draft: Dictionary
 			if slot.has("low"):
 				draft = draw_one(slot, BASE_SEED + entry[0] * 10000 + entry[1], used)
+				if draft.is_empty():
+					draft = _draw_stepped(slot, entry[0], entry[1], used)
 			else:
 				var found: Array[Dictionary] = draw_group(slot["modes"], slot["band"], 1,
 						BASE_SEED + entry[0] * 10000 + entry[1], used, [] as Array[String], slot["floor"])
@@ -522,6 +526,14 @@ func _trial(worlds: Array[int], keep: Array[int], selectors: String, count: int)
 
 
 static func _trial_match(plan: Dictionary, track: int, slot: Dictionary, selector: String) -> bool:
+	if selector.begins_with("slot:"):
+		# "slot:<track>/<slot number>" as the build's error lines print them.
+		var tracks: Array = [plan["main"]]
+		for island: Dictionary in plan["islands"]:
+			tracks.append(island["slots"])
+		var wanted: PackedStringArray = selector.trim_prefix("slot:").split("/")
+		var list: Array = tracks[wanted[0].to_int()]
+		return slot.has("low") and list.find(slot) == wanted[1].to_int() - 1
 	if selector.begins_with("island:"):
 		return track > 0 and plan["islands"][track - 1]["mode"] == selector.trim_prefix("island:")
 	if track > 0:
@@ -576,8 +588,6 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 		if trial_limit > 0:
 			return {"trial": true}
 		_draw_bands(tracks, world, used, errors)
-	if not errors.is_empty():
-		return {}
 	return _number(plan, ordered)
 
 
@@ -722,6 +732,64 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 		_save_checkpoint(tracks)
 
 
+## Fallbacks for a wave slot nothing was found for. An island slot tries the
+## ISLAND_STEPS windows below its own; a main road slot slides its window down
+## step by step (MAIN_STEP, never under MAIN_LOW_LIMIT); then, for a lone
+## sub-element, another one of the same chapter in the original window.
+const ISLAND_STEPS: Array = [[35, 37], [28, 34]]
+const MAIN_LOW_LIMIT: int = 18
+const MAIN_STEP: int = 2
+
+
+static func _draw_stepped(slot: Dictionary, t: int, i: int, used: Dictionary) -> Dictionary:
+	var seed_value: int = BASE_SEED + t * 10000 + i
+	var original_low: int = slot["low"]
+	var original_high: int = slot["high"]
+	var windows: Array = []
+	if t > 0:
+		for window: Array in ISLAND_STEPS:
+			if window[1] < original_high:
+				windows.append(window)
+	else:
+		var low: int = original_low
+		var high: int = original_high
+		while true:
+			high -= MAIN_STEP
+			if low > MAIN_LOW_LIMIT:
+				low = maxi(low - MAIN_STEP, MAIN_LOW_LIMIT)
+			if high < low + WINDOW:
+				break
+			windows.append([low, high])
+	for window: Array in windows:
+		slot["low"] = window[0]
+		slot["high"] = window[1]
+		var draft: Dictionary = draw_one(slot, seed_value, used)
+		if not draft.is_empty():
+			print("    track %d slot %d: found in step %d-%d (was %d-%d)" % [t, i + 1, window[0], window[1], original_low, original_high])
+			return draft
+	slot["low"] = original_low
+	slot["high"] = original_high
+	var variants: Array = slot.get("variants", [])
+	var original_extra: Dictionary = slot["extra"]
+	if t == 0 and variants.size() == 1 and (slot["modes"] as Array).size() == 1:
+		var mode: String = slot["modes"][0]
+		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+		rng.seed = seed_value
+		for other: String in _sharable(mode):
+			if variants.has(other):
+				continue
+			var swapped: Array[String] = [other]
+			slot["variants"] = swapped
+			slot["extra"] = _wave_extra(mode, swapped, slot["t"], rng)
+			var draft: Dictionary = draw_one(slot, seed_value, used)
+			if not draft.is_empty():
+				print("    track %d slot %d: sub-element %s instead of %s" % [t, i + 1, other, str(variants)])
+				return draft
+		slot["variants"] = variants
+		slot["extra"] = original_extra
+	return {}
+
+
 ## The wave levels of `world` (a window of their own each), in road order:
 ## its main road slots, then its islands'.
 static func _slot_name(slot: Dictionary) -> String:
@@ -772,6 +840,8 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 						slot["low"], slot["high"], stream_of(other)])
 				slot["modes"].assign(other)
 				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
+			if draft.is_empty():
+				draft = _draw_stepped(slot, t, i, used)
 			if draft.is_empty():
 				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
 						str(slot["variants"]), slot["low"], slot["high"]])
@@ -1417,20 +1487,24 @@ static func _number(plan: Dictionary, worlds: Array[int]) -> Dictionary:
 		return level
 	for world: int in worlds:
 		for slot: Dictionary in plan["main"]:
-			if slot["world"] == world:
+			if slot["world"] == world and slot.has("draft"):
 				slot["level"] = make.call(slot)
 		for island: Dictionary in plan["islands"]:
 			if island["world"] == world:
 				for slot: Dictionary in island["slots"]:
-					slot["level"] = make.call(slot)
+					if slot.has("draft"):
+						slot["level"] = make.call(slot)
+	# A slot nothing was found for is left out of the road (main() lists it).
 	var main: Array[Level] = []
 	for slot: Dictionary in plan["main"]:
-		main.append(slot["level"])
+		if slot.has("level"):
+			main.append(slot["level"])
 	var islands: Array[Dictionary] = []
 	for island: Dictionary in plan["islands"]:
 		var levels: Array[Level] = []
 		for slot: Dictionary in island["slots"]:
-			levels.append(slot["level"])
+			if slot.has("level"):
+				levels.append(slot["level"])
 		islands.append({"mode": island["mode"], "after": island["after"], "levels": levels})
 	return {"main": main, "islands": islands, "files": files}
 
