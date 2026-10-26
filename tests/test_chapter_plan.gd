@@ -68,8 +68,8 @@ func test_bands_climb_through_a_chapter() -> void:
 
 
 func test_world_floors() -> void:
-	# 7, 14, then 10 (eased worlds, 2026-10-27; was 16, 18).
-	assert_eq([1, 2, 3, 4, 7].map(func(world: int) -> int: return ChapterPlan.world_floor(world)), [7, 14, 10, 10, 10])
+	# 7, 14, then 8 (eased worlds: the floor is the mode weight's, 8 at least; was 16, 18).
+	assert_eq([1, 2, 3, 4, 7].map(func(world: int) -> int: return ChapterPlan.world_floor(world)), [7, 14, 8, 8, 8])
 	assert_eq(ChapterPlan.world_at(50), 1)
 	assert_eq(ChapterPlan.world_at(101), 2)
 	assert_eq(ChapterPlan.world_at(351), 3)
@@ -77,15 +77,28 @@ func test_world_floors() -> void:
 	assert_eq(ChapterPlan.band_range("medium", 14), [14, 18] as Array[int])
 	assert_eq(ChapterPlan.band_range("hard", 18), [25, 33] as Array[int], "above the floor: unchanged")
 	assert_eq(ChapterPlan.band_range("easy", 7), [7, 9] as Array[int])
-	assert_eq(ChapterPlan.band_range("medium", 10, true), [10, 16] as Array[int], "eased worlds: comfortable 10-16")
-	assert_eq(ChapterPlan.band_range("hard", 10, true), [25, 30] as Array[int], "eased worlds: hard tops at 30")
-	var counts: Dictionary = {}
-	for band: String in ChapterPlan.MIX_CYCLE:
-		counts[band] = counts.get(band, 0) + 1
-	assert_eq([counts["medium"], counts["medium_hard"], counts["hard"]], [10, 7, 3], "the mix is 50 / 35 / 15")
-	for i: int in ChapterPlan.MIX_CYCLE.size():
-		assert_false(ChapterPlan.mix_band(i) == "hard" and ChapterPlan.mix_band(i + 1) == "hard", "no hard next to a hard")
-
+	assert_eq(ChapterPlan.band_range("medium", 8, ChapterPlan.HEAVY), [8, 12] as Array[int], "heavy: comfortable 8-12")
+	assert_eq(ChapterPlan.band_range("hard", 8, ChapterPlan.LIGHT), [28, 33] as Array[int], "light: hard 28-33")
+	assert_eq(ChapterPlan.big_test_range(ChapterPlan.MEDIUM), [28, 33] as Array[int])
+	assert_eq(ChapterPlan.weight_of([] as Array[String]), ChapterPlan.LIGHT, "classic is light")
+	assert_eq(ChapterPlan.weight_of(["cyclic", "peg_capacity"]), ChapterPlan.MEDIUM, "a combination takes the heavier weight")
+	assert_eq(ChapterPlan.weight_of(["alternation", "peg_capacity"]), ChapterPlan.HEAVY)
+	assert_eq(ChapterPlan.weight_of(["balance", "adjacent_pegs"]), ChapterPlan.HEAVY_PAIR, "two heavy modes: two moves lower")
+	assert_true(ChapterPlan.weight_floor(ChapterPlan.HEAVY_PAIR) >= 8, "never under 8")
+	var shares: Dictionary = {ChapterPlan.LIGHT: [10, 7, 3], ChapterPlan.MEDIUM: [11, 7, 2], ChapterPlan.HEAVY: [13, 6, 1]}
+	for weight: String in shares:
+		var cycle: Array = ChapterPlan.WEIGHTS[weight]["cycle"]
+		var counts: Dictionary = {}
+		for band: String in cycle:
+			counts[band] = counts.get(band, 0) + 1
+		assert_eq([counts["medium"], counts["medium_hard"], counts["hard"]], shares[weight], "%s mix" % weight)
+		for i: int in cycle.size():
+			assert_false(cycle[i] == "hard" and cycle[(i + 1) % cycle.size()] == "hard", "%s: no hard next to a hard" % weight)
+		if weight == ChapterPlan.HEAVY:
+			for i: int in cycle.size():
+				assert_false(cycle[i] == "medium_hard" and cycle[(i + 1) % cycle.size()] == "medium_hard", "heavy: no two mediums in a row")
+	for mode: String in ChapterPlan.MODE_WEIGHTS:
+		assert_true(ChapterPlan.MODES.has(mode), "%s is a mode" % mode)
 
 ## No main road level below its world's floor but the guided intros (the
 ## tutorial levels and the first level of each lesson and of each sub-element).

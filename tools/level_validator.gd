@@ -151,7 +151,9 @@ static func validate_path(levels_dir: String) -> Array[String]:
 				for variant: String in level.variants:
 					intro = intro or not taught.has(level.lesson() + "/" + variant)
 					taught[level.lesson() + "/" + variant] = true
-			var least: int = ChapterPlan.world_floor(ChapterPlan.world_at(i + 1 if on_main else track["after"]))
+			var level_world: int = ChapterPlan.world_at(i + 1 if on_main else track["after"])
+			var weight: String = ChapterPlan.weight_of(modes) if ChapterPlan.is_eased(level_world) else ""
+			var least: int = ChapterPlan.weight_floor(weight) if weight != "" else ChapterPlan.world_floor(level_world)
 			# A goal variant's level is a short breather (ICRA section 4).
 			var breath: bool = level.variants.any(func(variant: String) -> bool: return ChapterPlan.GOAL_RULES.has(variant))
 			if not intro and not breath and level.min_moves < least:
@@ -165,13 +167,13 @@ static func validate_path(levels_dir: String) -> Array[String]:
 				var big_test: bool = ChapterPlan.is_big_test(i + 1)
 				if level.difficulty == "expert" and not big_test:
 					errors.append("main %d: expert level %s belongs on an island" % [i + 1, file])
-				var big_range: Array[int] = ChapterPlan.big_test_range(ChapterPlan.world_at(i + 1))
+				var big_range: Array[int] = ChapterPlan.big_test_range(weight) if weight != "" else ChapterPlan.BIG_TEST
 				if big_test and (level.min_moves < big_range[0] or level.min_moves > big_range[1]):
 					errors.append("main %d: the Böyük Sınaq %s takes %d moves, not %d-%d" % [i + 1, file, level.min_moves,
 							big_range[0], big_range[1]])
-				if not big_test and ChapterPlan.is_eased(ChapterPlan.world_at(i + 1)) and level.min_moves > ChapterPlan.EASED_CEILING:
-					errors.append("main %d: %s takes %d moves, over the eased worlds' %d" % [i + 1, file, level.min_moves,
-							ChapterPlan.EASED_CEILING])
+				if not big_test and weight != "" and level.min_moves > ChapterPlan.weight_top(weight):
+					errors.append("main %d: %s takes %d moves, over the %s weight's %d" % [i + 1, file, level.min_moves,
+							weight, ChapterPlan.weight_top(weight)])
 				var fit: String = fits_chapter(modes, i + 1)
 				if not fit.is_empty():
 					errors.append("main %d: %s %s" % [i + 1, file, fit])

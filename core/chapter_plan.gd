@@ -119,38 +119,86 @@ const LATER_CLASSIC_BANDS: Array[String] = ["medium_hard", "hard"]
 ## (world 4 and later the last one), except the guided intros: the two
 ## tutorial levels and the first main road level of each lesson and of each
 ## sub-element. A band below the floor is lifted to it (band_range()).
-const WORLD_FLOORS: Array[int] = [7, 14, 10, 10]
+const WORLD_FLOORS: Array[int] = [7, 14, 8, 8]
 
-## The eased worlds (user's decision after play-testing, 2026-10-27: World 3-4
-## tired the player): from EASED_FROM_WORLD on, a chapter mixes levels as
-## MIX_CYCLE says (comfortable 10-16 moves ~50%, medium 17-24 ~35%, hard 25-30
-## ~15%, a hard one never next to another), an ordinary level takes at most 30
-## moves, a Böyük Sınaq EASED_BIG_TEST, an island level EASED_ISLAND_MOVES, a
-## mixed wave carries at most two sub-elements (three only in the Böyük
-## Sınaq). The ranges below stand in for BANDS in those worlds (band names
-## stay, they name the recipe boards).
+## The eased worlds (user's decisions after play-testing, 2026-10-27: World
+## 3-4 tired the player; every mode then got its own weight): from
+## EASED_FROM_WORLD on, a level's windows depend on the weight of its mode
+## (WEIGHTS: the comfortable / medium / hard windows, the Böyük Sınaq's, and a
+## 20-slot cycle that gives the share of each; a hard level stands alone
+## between comfortable ones, in the heavy cycle no two mediums touch).
+## MODE_WEIGHTS: light = classic, capacity, stripes; medium = cyclic (karakuri
+## and foundation too, for combinations; World 1-2 are not eased); heavy =
+## caravan, nine rings, balance. A mode not listed there is medium: a new mode
+## must be given its weight here. A combination takes the heavier mode's
+## weight; two heavy modes together take "heavy_pair" (the heavy windows two
+## moves lower, never under 8). The floor is the bottom of the comfortable
+## window. Islands: the hard window's top + 5..12, at most ISLAND_TOP. Mixed
+## waves, repeats and islands carry at most two sub-elements (three only in
+## the Böyük Sınaq). The band names stay (they name the recipe boards):
+## "medium" = comfortable, "medium_hard" = medium, "hard" = hard.
 const EASED_FROM_WORLD: int = 3
-const EASED_RANGES: Dictionary = {"easy_medium": [10, 16], "medium": [10, 16], "medium_hard": [17, 24], "hard": [25, 30]}
-const MIX_CYCLE: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
+const LIGHT: String = "light"
+const MEDIUM: String = "medium"
+const HEAVY: String = "heavy"
+const HEAVY_PAIR: String = "heavy_pair"
+const ISLAND_TOP: int = 40
+const MODE_WEIGHTS: Dictionary = {"peg_capacity": LIGHT, "stripes": LIGHT, "cyclic": MEDIUM, "covered_pegs": MEDIUM,
+		"foundation": MEDIUM, "adjacent_pegs": HEAVY, "alternation": HEAVY, "balance": HEAVY}
+const _CYCLE_LIGHT: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
 		"medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium_hard",
 		"medium_hard", "hard", "medium"]
-const EASED_CEILING: int = 30
-const EASED_BIG_TEST: Array[int] = [28, 34]
-const EASED_ISLAND_MOVES: Array[int] = [30, 40]
+const _CYCLE_MEDIUM: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
+		"medium_hard", "medium", "medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard",
+		"medium_hard", "medium"]
+const _CYCLE_HEAVY: Array[String] = ["medium", "medium", "medium_hard", "medium", "medium", "hard", "medium", "medium_hard",
+		"medium", "medium", "medium_hard", "medium", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium",
+		"medium_hard", "medium"]
+const WEIGHTS: Dictionary = {
+	LIGHT: {"ranges": {"medium": [14, 20], "medium_hard": [21, 27], "hard": [28, 33]}, "big": [32, 38], "cycle": _CYCLE_LIGHT},
+	MEDIUM: {"ranges": {"medium": [12, 18], "medium_hard": [19, 24], "hard": [25, 29]}, "big": [28, 33], "cycle": _CYCLE_MEDIUM},
+	HEAVY: {"ranges": {"medium": [8, 12], "medium_hard": [13, 17], "hard": [18, 22]}, "big": [22, 27], "cycle": _CYCLE_HEAVY},
+	HEAVY_PAIR: {"ranges": {"medium": [8, 10], "medium_hard": [11, 15], "hard": [16, 20]}, "big": [20, 25], "cycle": _CYCLE_HEAVY},
+}
 
 
 static func is_eased(world: int) -> bool:
 	return world >= EASED_FROM_WORLD
 
 
-## The Böyük Sınaq's move range in `world`.
-static func big_test_range(world: int) -> Array[int]:
-	return EASED_BIG_TEST if is_eased(world) else BIG_TEST
+## The weight of a level of `modes` (empty = classic).
+static func weight_of(modes: Array) -> String:
+	var heaviest: String = LIGHT
+	var heavy: int = 0
+	for mode: String in modes:
+		var weight: String = MODE_WEIGHTS.get(mode, MEDIUM)
+		if weight == HEAVY:
+			heavy += 1
+		if weight == HEAVY or (weight == MEDIUM and heaviest == LIGHT):
+			heaviest = weight
+	return HEAVY_PAIR if heavy >= 2 else heaviest
 
 
-## The band of the `index`-th level of an eased chapter's mix.
-static func mix_band(index: int) -> String:
-	return MIX_CYCLE[index % MIX_CYCLE.size()]
+## The Böyük Sınaq's range for `weight`.
+static func big_test_range(weight: String) -> Array[int]:
+	var span: Array = WEIGHTS[weight]["big"]
+	return [int(span[0]), int(span[1])] as Array[int]
+
+
+## The floor of `weight`: the bottom of its comfortable window.
+static func weight_floor(weight: String) -> int:
+	return int(WEIGHTS[weight]["ranges"]["medium"][0])
+
+
+## The top of `weight`'s hard window.
+static func weight_top(weight: String) -> int:
+	return int(WEIGHTS[weight]["ranges"]["hard"][1])
+
+
+## The band of the `index`-th level of a chapter of `weight`.
+static func mix_band(index: int, weight: String) -> String:
+	var cycle: Array = WEIGHTS[weight]["cycle"]
+	return cycle[index % cycle.size()]
 ## A lifted band keeps at least this many moves between its ends.
 const FLOOR_BAND_WIDTH: int = 2
 
@@ -358,9 +406,9 @@ static func world_floor(world: int) -> int:
 
 ## The move range of `band` in a world whose floor is `floor_moves`: lifted
 ## to the floor where it lies lower, at least FLOOR_BAND_WIDTH wide.
-static func band_range(band: String, floor_moves: int, eased: bool = false) -> Array[int]:
-	if eased and EASED_RANGES.has(band):
-		var span: Array = EASED_RANGES[band]
+static func band_range(band: String, floor_moves: int, weight: String = "") -> Array[int]:
+	if weight != "" and WEIGHTS[weight]["ranges"].has(band):
+		var span: Array = WEIGHTS[weight]["ranges"][band]
 		var start: int = maxi(int(span[0]), floor_moves)
 		return [start, maxi(int(span[1]), start + FLOOR_BAND_WIDTH)]
 	var low: int = maxi(int(BANDS[band][0]), floor_moves)
