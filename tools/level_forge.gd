@@ -42,6 +42,9 @@ const MAX_STATES: int = LevelValidator.SOLVER_MAX_STATES
 ## Search cap for one draw (a draw needing more is dropped); the validator keeps
 ## MAX_STATES. Stops big boards (Böyük Sınaq, 6-peg scales) from stalling a run.
 const DRAW_MAX_STATES: int = 500000
+## Most disks on three scales (fitted()). Measured 2026-10-26: their positions
+## lie at most ~13 moves apart with 5-7 disks, so the floor of 18 is rare.
+const THREE_SCALE_DISKS: int = 6
 ## Sub-elements that only change what the player sees ("three_scales" is a
 ## board of six pegs).
 const LOOKS_ONLY: Array[String] = ["full_hidden", "glass", "empty_box", "reclosing", "three_scales", "double_peg"]
@@ -690,6 +693,9 @@ static func fitted(board: Dictionary) -> Dictionary:
 		fit["pegs"] = int(fit["pegs"]) + 1
 	if variants.has("three_scales") or variants.has("twin"):
 		fit["pegs"] = 6
+	if variants.has("three_scales"):
+		# 6^disks positions to sort through: 6 disks take ~1 s, 7 ~15 s, 8 minutes.
+		fit["disks"] = mini(int(fit["disks"]), THREE_SCALE_DISKS)
 	return fit
 
 
@@ -1495,6 +1501,8 @@ static func _positions_at(rules: RuleSet, start: PuzzleState, low: int, high: in
 		depth += 1
 		var next: Array[PuzzleState] = []
 		for state: PuzzleState in frontier:
+			if Solver.past_deadline():
+				return [] as Array[PuzzleState]
 			for move: Move in rules.get_legal_moves(state):
 				var after: PuzzleState = rules.apply_move_unchecked(state, move)
 				var key: String = rules.search_key(after)
@@ -1519,6 +1527,8 @@ static func _balanced_positions(rules: RuleSet, ids: Array[String], params: Dict
 		return _balanced[key]
 	var found: Array = []
 	for code: int in int(pow(pegs, disks)):
+		if code & 1023 == 0 and Solver.past_deadline():
+			return []  # not cached: the next draw starts it again
 		var layout: Array = []
 		for i: int in pegs:
 			layout.append([])

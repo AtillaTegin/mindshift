@@ -22,3 +22,6 @@ extension_api.json
 # Signing keys (never commit)
 *.keystore
 *.jks
+
+# Road builder checkpoint (tools/road_builder.gd --resume)
+.road_checkpoint.json

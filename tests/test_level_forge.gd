@@ -116,3 +116,42 @@ static func _keys(drafts: Array[Dictionary]) -> String:
 	for draft: Dictionary in drafts:
 		parts.append(draft["key"])
 	return "|".join(parts)
+
+
+func test_a_draw_stops_at_the_deadline() -> void:
+	# Three scales of 9 disks (6^9 positions to sort through) give up at once
+	# when the level's time is over instead of running for hours.
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = 7
+	var board: Dictionary = {"pegs": 4, "disks": 9, "tolerance": [5, 9], "variants": ["three_scales"]}
+	var started_ms: int = Time.get_ticks_msec()
+	Solver.deadline_msec = started_ms + 300
+	var draft: Dictionary = LevelForge.attempt([BalanceRule.ID], board, 18, 20, {}, rng)
+	Solver.deadline_msec = 0
+	var elapsed_ms: int = Time.get_ticks_msec() - started_ms
+	assert_true(draft.is_empty())
+	assert_true(elapsed_ms < 1500, "took %d ms past a 300 ms deadline" % elapsed_ms)
+
+
+func test_checkpoint_gives_back_the_drawn_levels() -> void:
+	# `--resume` takes the drawn levels back from the checkpoint as they were.
+	var draft: Dictionary = _group([BalanceRule.ID], "medium", 1, 5)[0]
+	var tracks: Array = [[{"world": 4, "modes": [BalanceRule.ID], "band": "medium", "draft": draft}, {"world": 4, "modes": []}]]
+	var saved_path: String = RoadBuilder.checkpoint_path
+	RoadBuilder.checkpoint_path = "res://.test_saves/test_road_checkpoint.json"
+	RoadBuilder._save_checkpoint(tracks)
+	var fresh: Array = [[{"world": 4, "modes": [BalanceRule.ID], "band": "medium"}, {"world": 4, "modes": []}]]
+	var used: Dictionary = {}
+	RoadBuilder._load_checkpoint(fresh, [4] as Array[int], used)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(RoadBuilder.checkpoint_path))
+	RoadBuilder.checkpoint_path = saved_path
+	var back: Dictionary = fresh[0][0]["draft"]
+	assert_false(fresh[0][1].has("draft"), "an undrawn slot stays undrawn")
+	assert_true(used.has(draft["key"]))
+	assert_true((back["start"] as PuzzleState).equals(draft["start"]))
+	assert_true((back["goal"] as PuzzleState).equals(draft["goal"]))
+	assert_eq(back["moves"], draft["moves"])
+	assert_eq(back["params"], draft["params"])
+	assert_eq((back["path"] as Array).size(), (draft["path"] as Array).size())
+	var level: Level = Level.create(1, "medium", back["start"], back["goal"], back["rule_ids"], back["path"], back["params"])
+	assert_true(Solver.solve(back["start"], back["goal"], level.get_rule_set())["min_moves"] == back["moves"])

@@ -36,14 +36,24 @@ const BUILT_WORLDS: Array[int] = [1, 2, 3]
 ## (draw_group()); a draw with a count not seen yet wins at once.
 const ATTEMPTS_PER_LEVEL: int = 600
 const CANDIDATES: int = 3
-## One level's budget: past it the smaller boards are tried (the floor stays)
-## and the weak spot goes to the log.
+## One level's budget: past FIRST_SECONDS (or LEVEL_TRIES) the smaller boards
+## get the rest of LEVEL_SECONDS (the floor stays) and the weak spot goes to the
+## log. The Solver stops at the deadline mid-search (Solver.deadline_msec).
 const LEVEL_SECONDS: float = 60.0
+const FIRST_SECONDS: float = 40.0
 const LEVEL_TRIES: int = 3000
 ## Attempts the last draw_one() used, for the progress log.
 static var last_tries: int = 0
 ## `-- --trial=N`: draw only the first N wave levels of the last world, write nothing.
 static var trial_limit: int = 0
+## `-- --only=<selectors>` with --trial: see _trial().
+static var only: String = ""
+## Drawn levels go to checkpoint_path every CHECKPOINT_EVERY wave levels and after
+## each band group; `-- --resume` takes them back and draws only the rest.
+static var checkpoint_path: String = "res://.road_checkpoint.json"
+const CHECKPOINT_EVERY: int = 10
+static var resume: bool = false
+static var _unsaved: int = 0
 ## Sub-elements that rarely make a level in a window (World 3-4, measured
 ## 2026-10-17: a narrow bridge or a one-way road on a line, the figure eight,
 ## a neutral disk or a coloured base about 1 draw in 30), and how many times
@@ -430,8 +440,14 @@ func _run() -> bool:
 			keep = parse_worlds(arg.trim_prefix("--keep="))
 		elif arg.begins_with("--trial="):
 			trial_limit = arg.trim_prefix("--trial=").to_int()
+		elif arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=")
+		elif arg == "--resume":
+			resume = true
 	var started: int = Time.get_ticks_msec()
 	var errors: Array[String] = []
+	if trial_limit > 0 and only != "":
+		return _trial(worlds, keep, only, trial_limit)
 	var road: Dictionary = build(worlds, errors, keep)
 	if trial_limit > 0:
 		print("trial: %d s" % [(Time.get_ticks_msec() - started) / 1000])
@@ -441,6 +457,7 @@ func _run() -> bool:
 			printerr(error)
 		return false
 	write(road, Difficulty.LEVELS_DIR)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(checkpoint_path))
 	LevelCatalog.clear_cache()
 	var report: Dictionary = LevelValidator.validate_directory(Difficulty.LEVELS_DIR)
 	var failures: Dictionary = report["failures"]
@@ -449,6 +466,71 @@ func _run() -> bool:
 	print(describe(road))
 	print("%d levels in %d s" % [report["files"], (Time.get_ticks_msec() - started) / 1000])
 	return failures.is_empty()
+
+
+## `-- --trial=N --only=<selector>`: N levels of the last world's slots that
+## `selector` names, each timed, nothing written. Selectors: a wave slot's
+## name ("balance[own_limits,three_scales]"), "big_test:<mode>",
+## "island:<mode>", "combo" (the world's combination chapter, its
+## combinations spread to its Böyük Sınaq). Several: comma-free, joined by ";".
+func _trial(worlds: Array[int], keep: Array[int], selectors: String, count: int) -> bool:
+	var world: int = worlds.max()
+	var plan: Dictionary = layout(worlds)
+	var errors: Array[String] = []
+	var used: Dictionary = {}
+	var earlier: Array[int] = keep.filter(func(w: int) -> bool: return w != world)
+	for kept: int in earlier:
+		_keep_world(plan, kept, used, errors)
+	var tracks: Array = [plan["main"]]
+	for island: Dictionary in plan["islands"]:
+		tracks.append(island["slots"])
+	var good: bool = true
+	for selector: String in selectors.split(";"):
+		var picked: Array = []  # [track, index]
+		for t: int in tracks.size():
+			for i: int in (tracks[t] as Array).size():
+				var slot: Dictionary = tracks[t][i]
+				if slot["world"] == world and not slot.has("fixed") and _trial_match(plan, t, slot, selector):
+					picked.append([t, i])
+		if selector == "combo" and picked.size() > count:
+			var spread: Array = []
+			for k: int in count:
+				spread.append(picked[(picked.size() - 1) * (k + 1) / count])
+			picked = spread
+		picked = picked.slice(0, count)
+		var longest: float = 0.0
+		for entry: Array in picked:
+			var slot: Dictionary = (tracks[entry[0]][entry[1]] as Dictionary).duplicate(true)
+			var started: int = Time.get_ticks_msec()
+			var draft: Dictionary
+			if slot.has("low"):
+				draft = draw_one(slot, BASE_SEED + entry[0] * 10000 + entry[1], used)
+			else:
+				var found: Array[Dictionary] = draw_group(slot["modes"], slot["band"], 1,
+						BASE_SEED + entry[0] * 10000 + entry[1], used, [] as Array[String], slot["floor"])
+				draft = found[0] if not found.is_empty() else {}
+			var seconds: float = (Time.get_ticks_msec() - started) / 1000.0
+			longest = maxf(longest, seconds)
+			if draft.is_empty():
+				good = false
+			else:
+				used[draft["key"]] = true
+			print("  %s: %s %s · %.1f san" % [selector, _slot_name(slot),
+					("%d gediş" % draft["moves"]) if not draft.is_empty() else "TAPILMADI", seconds])
+		print("trial %s: %d levels, max %.1f s" % [selector, picked.size(), longest])
+	return good
+
+
+static func _trial_match(plan: Dictionary, track: int, slot: Dictionary, selector: String) -> bool:
+	if selector.begins_with("island:"):
+		return track > 0 and plan["islands"][track - 1]["mode"] == selector.trim_prefix("island:")
+	if track > 0:
+		return false
+	if selector.begins_with("big_test:"):
+		return slot.get("wave", "") == "big_test" and stream_of(slot["modes"]) == selector.trim_prefix("big_test:")
+	if selector == "combo":
+		return (slot["modes"] as Array).size() > 1
+	return slot.has("low") and _slot_name(slot) == selector
 
 
 ## "1-2" or "1,3" -> [1, 2] / [1, 3].
@@ -484,6 +566,8 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 			used[slot["draft"]["key"]] = true
 	var ordered: Array[int] = worlds.duplicate()
 	ordered.sort()
+	if resume:
+		_load_checkpoint(tracks, worlds, used)
 	for world: int in ordered:
 		if keep.has(world):
 			_keep_world(plan, world, used, errors)
@@ -495,6 +579,71 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 	if not errors.is_empty():
 		return {}
 	return _number(plan, ordered)
+
+
+## Every drawn slot of `tracks` (not kept or fixed ones) to checkpoint_path, keyed
+## "track/index", for the run's `worlds`.
+static func _save_checkpoint(tracks: Array) -> void:
+	_unsaved = 0
+	var slots: Dictionary = {}
+	for t: int in tracks.size():
+		for i: int in (tracks[t] as Array).size():
+			var slot: Dictionary = tracks[t][i]
+			if not slot.has("draft") or slot.has("fixed") or slot.get("kept", false):
+				continue
+			var draft: Dictionary = slot["draft"]
+			var path: Array = []
+			for move: Move in draft["path"]:
+				path.append(move.to_array())
+			slots["%d/%d" % [t, i]] = {"modes": slot["modes"], "variants": slot.get("variants", []),
+				"draft": {"start": (draft["start"] as PuzzleState).to_array(), "goal": (draft["goal"] as PuzzleState).to_array(),
+				"rule_ids": draft["rule_ids"], "params": draft["params"], "covered": draft["covered"],
+				"glass": draft.get("glass", []), "variants": draft.get("variants", []), "path": path,
+				"moves": draft["moves"], "key": draft["key"]}}
+	var file: FileAccess = FileAccess.open(checkpoint_path, FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify({"slots": slots}))
+	print("  checkpoint: %d levels" % slots.size())
+
+
+static func _load_checkpoint(tracks: Array, worlds: Array[int], used: Dictionary) -> void:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(checkpoint_path))
+	if typeof(data) != TYPE_DICTIONARY:
+		print("  resume: no checkpoint")
+		return
+	var count: int = 0
+	var saved: Dictionary = data["slots"]
+	for ref: String in saved:
+		var t: int = ref.get_slice("/", 0).to_int()
+		var i: int = ref.get_slice("/", 1).to_int()
+		if t >= tracks.size() or i >= (tracks[t] as Array).size():
+			continue
+		var slot: Dictionary = tracks[t][i]
+		if not worlds.has(int(slot["world"])):
+			continue
+		var entry: Dictionary = saved[ref]
+		var stored: Dictionary = entry["draft"]
+		var draft: Dictionary = {"start": PuzzleState.from_array(stored["start"]), "goal": PuzzleState.from_array(stored["goal"]),
+			"params": Level._whole_numbers_as_ints(stored["params"]), "moves": int(stored["moves"]), "key": stored["key"]}
+		for name: String in ["rule_ids", "variants"]:
+			var names: Array[String] = []
+			names.assign(stored[name])
+			draft[name] = names
+		for name: String in ["covered", "glass"]:
+			var numbers: Array[int] = []
+			numbers.assign(Level._whole_numbers_as_ints(stored[name]))
+			draft[name] = numbers
+		var path: Array[Move] = []
+		for pair: Variant in stored["path"]:
+			path.append(Move.from_array(pair))
+		draft["path"] = path
+		(slot["modes"] as Array).assign(entry["modes"])
+		if slot.has("variants"):
+			(slot["variants"] as Array).assign(entry["variants"])
+		slot["draft"] = draft
+		used[draft["key"]] = true
+		count += 1
+	print("  resume: %d levels from the checkpoint" % count)
 
 
 ## The slots of `world` take their levels from the level files of the road as
@@ -523,6 +672,7 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 		slot["draft"] = {"start": level.start, "goal": level.goal, "rule_ids": level.rule_ids, "params": level.rule_params,
 				"covered": level.covered_pegs, "glass": level.glass_disks, "variants": level.variants,
 				"path": level.solution_path, "moves": level.min_moves, "key": key}
+		slot["kept"] = true
 		used[key] = true
 		kept += 1
 	print("  world %d: %d levels kept from the files" % [world, kept])
@@ -535,7 +685,7 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 	var order: Array[String] = []
 	for track: Array in tracks:
 		for slot: Dictionary in track:
-			if slot.has("fixed") or slot.has("low") or slot["world"] != world:
+			if slot.has("fixed") or slot.has("low") or slot["world"] != world or slot.has("draft"):
 				continue
 			var group: String = "%s/%s/w%d" % [stream_of(slot["modes"]), slot["band"], world]
 			if not groups.has(group):
@@ -569,6 +719,7 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 		if not missing.is_empty():
 			errors.append_array(group_errors)
 			errors.append("%s: only %d of %d levels found" % [group, slots.size() - missing.size(), slots.size()])
+		_save_checkpoint(tracks)
 
 
 ## The wave levels of `world` (a window of their own each), in road order:
@@ -595,6 +746,9 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 		for i: int in (tracks[t] as Array).size():
 			var slot: Dictionary = tracks[t][i]
 			if not slot.has("low") or slot["world"] != world:
+				continue
+			if slot.has("draft"):
+				count += 1
 				continue
 			if trial_limit > 0 and count >= trial_limit:
 				return
@@ -627,6 +781,11 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			count += 1
 			print("  W%d %s %d/%d · cəhd %d · %d san" % [world, _slot_name(slot), count, _wave_total(tracks, world),
 					last_tries, (Time.get_ticks_msec() - level_start) / 1000])
+			_unsaved += 1
+			if _unsaved >= CHECKPOINT_EVERY and trial_limit == 0:
+				_save_checkpoint(tracks)
+		if count > 0 and trial_limit == 0:
+			_save_checkpoint(tracks)
 		if count > 0:
 			print("  world %d track %d: %d wave levels in %.1f s" % [world, t, count, (Time.get_ticks_msec() - started) / 1000.0])
 
@@ -1116,10 +1275,13 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 		var found: Dictionary = {}
 		for turn: int in boards.size():
 			var board: Dictionary = boards[(i + turn) % own] if turn < own else boards[turn]
+			Solver.deadline_msec = Time.get_ticks_msec() + int(LEVEL_SECONDS * 1000.0)
 			var candidates: int = 0
 			for attempt: int in ATTEMPTS_PER_LEVEL:
 				var draft: Dictionary = LevelForge.attempt(modes, board, low, high, used, rng)
 				if draft.is_empty():
+					if Solver.past_deadline():
+						break
 					continue
 				candidates += 1
 				var seen: int = per_moves.get(draft["moves"], 0)
@@ -1130,6 +1292,7 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 					break
 			if not found.is_empty():
 				break
+		Solver.deadline_msec = 0
 		if found.is_empty():
 			errors.append("%s/%s: no level %d of %d on any recipe board" % [stream, band, i + 1, count])
 			break
@@ -1165,9 +1328,10 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 	var attempts: int = ATTEMPTS_PER_LEVEL / 2
 	for variant: String in slot.get("variants", []):
 		attempts = maxi(attempts, ATTEMPTS_PER_LEVEL / 2 * int(SCARCE.get(variant, 1)))
-	var started: int = Time.get_ticks_msec()
 	last_tries = 0
 	var weak: String = ""
+	var level_end: int = Time.get_ticks_msec() + int(LEVEL_SECONDS * 1000.0)
+	Solver.deadline_msec = Time.get_ticks_msec() + int(FIRST_SECONDS * 1000.0)
 	var rounds: Array = []
 	for band: String in bands:
 		rounds.append(recipe.get(band, []).duplicate())
@@ -1185,18 +1349,20 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 					last_tries += 1
 					var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
 					if not draft.is_empty():
+						Solver.deadline_msec = 0
 						if weak != "":
 							print("    zəif: %s (%d-%d, %s)" % [weak, slot["low"], slot["high"], stream_of(slot["modes"])])
 						return draft
-					if pass_index == 0 and (last_tries > LEVEL_TRIES or (Time.get_ticks_msec() - started) / 1000.0 > LEVEL_SECONDS):
-						weak = "cəhd %d" % last_tries if last_tries > LEVEL_TRIES else "vaxt %d san" % int(LEVEL_SECONDS)
+					if last_tries > LEVEL_TRIES or Solver.past_deadline():
+						if pass_index == 0:
+							weak = "cəhd %d" % last_tries if last_tries > LEVEL_TRIES else "vaxt %d san" % int(FIRST_SECONDS)
 						over = true
 						break
 				if over:
 					break
 			if over:
 				break
-		if not over:
+		if not over or pass_index == 1:
 			break
 		# Second pass: every board, the smaller ones first (the floor stays).
 		var every: Array = []
@@ -1205,7 +1371,9 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 		rounds = [every]
 		weak += ", lövhə kiçildi"
 		last_tries = 0
-		started = Time.get_ticks_msec()
+		Solver.deadline_msec = level_end
+	Solver.deadline_msec = 0
+	print("    limit: %s %d-%d, səviyyə tapılmadı" % [_slot_name(slot), slot["low"], slot["high"]])
 	return {}
 
 

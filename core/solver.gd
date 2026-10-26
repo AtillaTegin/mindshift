@@ -26,6 +26,13 @@ extends RefCounted
 ## implement RuleBase.
 
 const DEFAULT_MAX_STATES: int = 200000
+## Wall-clock end of every search (Time.get_ticks_msec()), 0 = none: a search
+## that runs past it stops as if at max_states. Set by the level tools only.
+static var deadline_msec: int = 0
+
+
+static func past_deadline() -> bool:
+	return deadline_msec > 0 and Time.get_ticks_msec() > deadline_msec
 ## Packed codes go up to peg_count ^ disk_count; larger puzzles use the generic search.
 const MAX_PACKED_CODE: int = 1 << 62
 
@@ -106,6 +113,8 @@ static func _solve_generic(start: PuzzleState, goal: PuzzleState, rules: RuleSet
 		var key: String = queue_keys[head]
 		queue[head] = null
 		head += 1
+		if head & 255 == 0 and past_deadline():
+			return _result(false, [], parents.size(), true)
 		for move: Move in rules.get_legal_moves(state):
 			var next: PuzzleState = rules.apply_move_unchecked(state, move)
 			var next_key: String = rules.search_key(next)
@@ -166,6 +175,7 @@ static func _solve_packed(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 	tops.resize(peg_count)
 	seconds.resize(peg_count)
 
+	var expanded: int = 0
 	while not forward_frontier.is_empty() and not backward_frontier.is_empty():
 		var go_forward: bool = forward_frontier.size() <= backward_frontier.size()
 		var frontier: PackedInt64Array = forward_frontier if go_forward else backward_frontier
@@ -173,6 +183,9 @@ static func _solve_packed(start: PuzzleState, goal: PuzzleState, rules: RuleSet,
 		var other: Dictionary[int, int] = backward if go_forward else forward
 		var next_frontier: PackedInt64Array = PackedInt64Array()
 		for code: int in frontier:
+			expanded += 1
+			if expanded & 255 == 0 and past_deadline():
+				return _result(false, [], forward.size() + backward.size(), true)
 			tops.fill(-1)
 			seconds.fill(-1)
 			var rest: int = code
@@ -296,6 +309,8 @@ static func _solve_packed_history(start: PuzzleState, goal: PuzzleState, rules: 
 	while head < frontier.size():
 		var key: int = frontier[head]
 		head += 1
+		if head & 255 == 0 and past_deadline():
+			return _result(false, [], parents.size(), true)
 		var memory: int = key % memories
 		var code: int = key / memories / lasts
 		var last_rank: int = key / memories % lasts - 1

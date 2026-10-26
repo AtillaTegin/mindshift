@@ -253,3 +253,21 @@ static func _to_pairs(moves: Array) -> Array:
 	for move: Move in moves:
 		pairs.append(move.to_array())
 	return pairs
+
+
+func test_deadline_stops_a_search_midway() -> void:
+	# A search whose answer is far beyond the deadline stops at it, as if at
+	# max_states (the level tools' per-level budget, Solver.deadline_msec).
+	var alternation: RuleSet = RuleSet.from_ids([ClassicHanoiRule.ID, AlternationRule.ID], {})
+	for case: Array in [[RuleSet.classic(), 5, 13, "packed"], [alternation, 5, 11, "packed_history"]]:
+		var start: PuzzleState = _tower(case[1], case[2], 0)
+		var goal: PuzzleState = _tower(case[1], case[2], case[1] - 1)
+		var started_ms: int = Time.get_ticks_msec()
+		Solver.deadline_msec = started_ms + 200
+		var result: Dictionary = Solver.solve(start, goal, case[0], 50000000)
+		Solver.deadline_msec = 0
+		var elapsed_ms: int = Time.get_ticks_msec() - started_ms
+		assert_eq(result["strategy"], case[3])
+		assert_true(result["limit_reached"], "%s: stopped by the deadline" % case[3])
+		assert_true(elapsed_ms < 1000, "%s: took %d ms past a 200 ms deadline" % [case[3], elapsed_ms])
+	assert_false(Solver.past_deadline(), "no deadline once cleared")
