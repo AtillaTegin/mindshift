@@ -1,0 +1,15 @@
+{
+  "id": 17099,
+  "difficulty": "hard",
+  "pegs": 4,
+  "disks": 6,
+  "start": [[4,2],[6,3],[5],[1]],
+  "goal": [[],[],[4,2],[6,5,3,1]],
+  "rules": ["classic_hanoi","balance"],
+  "min_moves": 32,
+  "solution_path": [[3,0],[2,3],[1,3],[1,2],[0,2],[3,1],[0,1],[0,3],[2,1],[2,0],[3,0],[3,2],[0,3],[1,0],[1,2],[1,3],[2,3],[2,1],[0,1],[0,2],[3,2],[3,0],[2,0],[1,0],[3,1],[2,3],[1,2],[1,3],[0,1],[0,2],[0,3],[1,3]],
+  "star_thresholds": {"three":32,"two":40},
+  "time_limit_seconds": null,
+  "rule_params": {"balance":{"moving_stone":true,"tolerances":[7,8],"weights":[0,0,1,0]}},
+  "variants": ["stone","own_limits","moving_stone"]
+}

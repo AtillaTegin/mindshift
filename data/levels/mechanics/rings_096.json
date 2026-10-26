@@ -1,0 +1,15 @@
+{
+  "id": 16096,
+  "difficulty": "expert",
+  "pegs": 4,
+  "disks": 8,
+  "start": [[5,4,3],[8,7,6,1],[2],[]],
+  "goal": [[],[],[8,7,6,5,4,3,2,1],[]],
+  "rules": ["classic_hanoi","alternation"],
+  "min_moves": 35,
+  "solution_path": [[2,0],[0,2],[1,0],[2,3],[1,2],[3,2],[1,3],[2,1],[2,3],[1,3],[1,2],[3,2],[3,1],[2,1],[3,2],[1,2],[0,3],[2,0],[1,2],[0,1],[0,2],[1,2],[0,1],[2,0],[2,1],[0,1],[0,2],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[3,2]],
+  "star_thresholds": {"three":35,"two":44},
+  "time_limit_seconds": null,
+  "rule_params": {"alternation":{"leader":2,"waiting":7}},
+  "variants": ["waiting_ring","new_leader"]
+}

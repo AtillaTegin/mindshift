@@ -1,0 +1,15 @@
+{
+  "id": 16036,
+  "difficulty": "hard",
+  "pegs": 4,
+  "disks": 8,
+  "start": [[6,5],[4],[7,3],[8,2,1]],
+  "goal": [[7,5],[8,2],[6,4,1],[3]],
+  "rules": ["classic_hanoi","alternation"],
+  "min_moves": 22,
+  "solution_path": [[3,0],[2,1],[3,1],[0,1],[0,2],[0,3],[1,0],[2,3],[0,1],[2,0],[3,0],[3,2],[1,3],[1,2],[1,0],[2,0],[1,2],[3,0],[3,1],[0,2],[0,1],[0,3]],
+  "star_thresholds": {"three":22,"two":28},
+  "time_limit_seconds": null,
+  "rule_params": {"alternation":{"reset":0}},
+  "variants": ["reset_peg"]
+}
