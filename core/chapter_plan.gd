@@ -160,7 +160,7 @@ const WAVES: Dictionary = {
 	"stripes": {"waves": ["base", "neutral", "colored_base", "paint", "inverse"], "mixed": true},
 	"cyclic": {"waves": ["base", "back_peg", "shortcut", "center", "eight"], "mixed": true},
 	"alternation": {"waves": ["base", "broken_ring", "reset_peg", "new_leader", "waiting_ring"], "mixed": true},
-	"balance": {"waves": ["base", "stone", "long_arm", "three_scales", "own_limits"], "mixed": true},
+	"balance": {"waves": ["base", "stone", "long_arm", "moving_stone", "own_limits"], "mixed": true},
 	# ICRA World 5-9, section 3.
 	"king": {"waves": ["base", "odd_even", "vizier", "narrow_gate", "siege"], "mixed": true},
 	"river": {"waves": ["base", "stone_bridge", "ferry", "two_crossings", "reverse"], "mixed": true},
@@ -265,7 +265,7 @@ static func goal_variants_at(position: int) -> Array[String]:
 static func variants_of(mode: String) -> Array[String]:
 	var found: Array[String] = []
 	found.assign(WAVES.get(mode, {}).get("waves", [BASE]))
-	if ISLAND_VARIANTS.has(mode):
+	if ISLAND_VARIANTS.has(mode) and not found.has(ISLAND_VARIANTS[mode]):
 		found.append(ISLAND_VARIANTS[mode])
 	if not OWN_GOAL.has(mode):
 		for variant: String in GOAL_VARIANTS:

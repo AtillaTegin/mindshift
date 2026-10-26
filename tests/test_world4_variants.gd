@@ -11,7 +11,7 @@ const CASES: Array = [
 	["alternation", "waiting_ring", 4, 5],
 	["balance", "stone", 4, 4],
 	["balance", "long_arm", 4, 4],
-	["balance", "three_scales", 6, 4],
+	["balance", "moving_stone", 4, 5],
 	["balance", "own_limits", 4, 4],
 ]
 
