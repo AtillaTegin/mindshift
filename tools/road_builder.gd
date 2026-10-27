@@ -53,6 +53,12 @@ static var only: String = ""
 static var checkpoint_path: String = "res://.road_checkpoint.json"
 const CHECKPOINT_EVERY: int = 10
 static var resume: bool = false
+## Set when a kept world gave no level: the run writes nothing.
+static var keep_failed: bool = false
+## --redo: every world is read back from the files and only the slots the
+## validator refuses are drawn again, in their places (own checkpoint).
+static var redo: bool = false
+const REDO_CHECKPOINT: String = "res://.redo_checkpoint.json"
 static var _unsaved: int = 0
 ## Sub-elements that rarely make a level in a window (World 3-4, measured
 ## 2026-10-17: a narrow bridge or a one-way road on a line, the figure eight,
@@ -444,6 +450,9 @@ func _run() -> bool:
 			only = arg.trim_prefix("--only=")
 		elif arg == "--resume":
 			resume = true
+		elif arg == "--redo":
+			redo = true
+			checkpoint_path = REDO_CHECKPOINT
 	var started: int = Time.get_ticks_msec()
 	var errors: Array[String] = []
 	if trial_limit > 0 and only != "":
@@ -452,6 +461,11 @@ func _run() -> bool:
 	if trial_limit > 0:
 		print("trial: %d s" % [(Time.get_ticks_msec() - started) / 1000])
 		return errors.is_empty()
+	# A kept world that gave nothing stops the run before anything is written.
+	if keep_failed:
+		for error: String in errors:
+			printerr(error)
+		return false
 	# Empty slots do not stop the writing (the work is kept); they are listed at the end.
 	write(road, Difficulty.LEVELS_DIR)
 	if errors.is_empty():
@@ -578,11 +592,20 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 			used[slot["draft"]["key"]] = true
 	var ordered: Array[int] = worlds.duplicate()
 	ordered.sort()
+	# Kept worlds first: their puzzles are taken before any checkpoint or draw
+	# may repeat them. With --redo every world is read back and only the slots
+	# the validator refuses are drawn again, in their places.
+	for world: int in ordered:
+		if keep.has(world) or redo:
+			_keep_world(plan, world, used, errors)
+	if redo and not keep_failed:
+		_drop_refused(tracks, used)
+	if keep_failed:
+		return {}
 	if resume:
 		_load_checkpoint(tracks, worlds, used)
 	for world: int in ordered:
 		if keep.has(world):
-			_keep_world(plan, world, used, errors)
 			continue
 		_draw_waves(tracks, world, used, errors)
 		if trial_limit > 0:
@@ -629,10 +652,13 @@ static func _load_checkpoint(tracks: Array, worlds: Array[int], used: Dictionary
 		if t >= tracks.size() or i >= (tracks[t] as Array).size():
 			continue
 		var slot: Dictionary = tracks[t][i]
-		if not worlds.has(int(slot["world"])):
+		if not worlds.has(int(slot["world"])) or slot.has("draft"):
 			continue
 		var entry: Dictionary = saved[ref]
 		var stored: Dictionary = entry["draft"]
+		# A checkpoint level that repeats a kept one is drawn again.
+		if used.has(stored["key"]):
+			continue
 		var draft: Dictionary = {"start": PuzzleState.from_array(stored["start"]), "goal": PuzzleState.from_array(stored["goal"]),
 			"params": Level._whole_numbers_as_ints(stored["params"]), "moves": int(stored["moves"]), "key": stored["key"]}
 		for name: String in ["rule_ids", "variants"]:
@@ -647,7 +673,12 @@ static func _load_checkpoint(tracks: Array, worlds: Array[int], used: Dictionary
 		for pair: Variant in stored["path"]:
 			path.append(Move.from_array(pair))
 		draft["path"] = path
+		var modes: Array = (slot["modes"] as Array).duplicate()
 		(slot["modes"] as Array).assign(entry["modes"])
+		# A level the validator refuses (drawn by an older builder) is drawn again.
+		if not validator_errors(slot, draft).is_empty():
+			(slot["modes"] as Array).assign(modes)
+			continue
 		if slot.has("variants"):
 			(slot["variants"] as Array).assign(entry["variants"])
 		slot["draft"] = draft
@@ -661,6 +692,19 @@ static func _load_checkpoint(tracks: Array, worlds: Array[int], used: Dictionary
 static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: Array[String]) -> void:
 	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [Difficulty.LEVELS_DIR, LevelCatalog.PATH_FILE], errors)
 	if path.is_empty():
+		keep_failed = true
+		return
+	# The files' levels go to the slots in the same places only if the road
+	# has every place (a road written with empty slots left out has moved on).
+	var short: bool = (path[LevelCatalog.MAIN] as Array).size() < _world_end(plan["main"], world)
+	for k: int in (plan["islands"] as Array).size():
+		var island: Dictionary = plan["islands"][k]
+		if island["world"] == world:
+			short = short or k >= (path["islands"] as Array).size() \
+					or (path["islands"][k]["levels"] as Array).size() != (island["slots"] as Array).size()
+	if short:
+		keep_failed = true
+		errors.append("kept world %d: the road in the files has fewer places than the plan, nothing is written" % world)
 		return
 	var pairs: Array = []
 	for i: int in (plan["main"] as Array).size():
@@ -668,7 +712,7 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 			pairs.append([plan["main"][i], path[LevelCatalog.MAIN][i]])
 	for k: int in (plan["islands"] as Array).size():
 		if k < (path["islands"] as Array).size():
-			for i: int in (plan["islands"][k]["slots"] as Array).size():
+			for i: int in mini((plan["islands"][k]["slots"] as Array).size(), (path["islands"][k]["levels"] as Array).size()):
 				pairs.append([plan["islands"][k]["slots"][i], path["islands"][k]["levels"][i]])
 	var kept: int = 0
 	for pair: Array in pairs:
@@ -683,9 +727,57 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 				"covered": level.covered_pegs, "glass": level.glass_disks, "variants": level.variants,
 				"path": level.solution_path, "moves": level.min_moves, "key": key}
 		slot["kept"] = true
+		slot["file"] = pair[1]["file"]
+		# A slot that took another combination or sub-element keeps what its file has.
+		if not slot.has("stream"):
+			(slot["modes"] as Array).assign(level.modes())
+		if slot.has("variants"):
+			(slot["variants"] as Array).assign(level.variants)
 		used[key] = true
 		kept += 1
 	print("  world %d: %d levels kept from the files" % [world, kept])
+	if kept == 0:
+		keep_failed = true
+		errors.append("kept world %d: no level could be read from the files, nothing is written" % world)
+
+
+## How many main road places the plan has up to the end of `world`.
+static func _world_end(main: Array, world: int) -> int:
+	var end: int = 0
+	for i: int in main.size():
+		if int(main[i]["world"]) <= world:
+			end = i + 1
+	return end
+
+
+## --redo: every kept slot whose file the validator refuses (its own checks,
+## or the same puzzle as a level before it on the road) loses its level and
+## is drawn again in its place.
+static func _drop_refused(tracks: Array, used: Dictionary) -> void:
+	used.clear()
+	var refused: int = 0
+	for track: Array in tracks:
+		for slot: Dictionary in track:
+			if slot.has("fixed") and slot.has("draft"):
+				used[slot["draft"]["key"]] = true
+	for t: int in tracks.size():
+		for i: int in (tracks[t] as Array).size():
+			var slot: Dictionary = tracks[t][i]
+			if not slot.get("kept", false):
+				continue
+			var errors: Array[String] = []
+			LevelValidator.load_and_validate("%s/%s" % [Difficulty.LEVELS_DIR, slot["file"]], errors)
+			var key: String = slot["draft"]["key"]
+			if used.has(key):
+				errors.append("the same puzzle as a level before it")
+			if errors.is_empty():
+				used[key] = true
+				continue
+			print("  redo track %d slot %d (%s): %s" % [t, i + 1, slot["file"], "; ".join(errors)])
+			slot.erase("draft")
+			slot.erase("kept")
+			refused += 1
+	print("  redo: %d slots to draw again" % refused)
 
 
 ## The band slots of `world`, by stream and band (one group per world), in
@@ -1425,6 +1517,8 @@ static func draw_group(modes: Array, band: String, count: int, seed_value: int, 
 			var candidates: int = 0
 			for attempt: int in ATTEMPTS_PER_LEVEL:
 				var draft: Dictionary = LevelForge.attempt(modes, board, low, high, used, rng)
+				if not draft.is_empty() and not validator_errors({"modes": modes}, draft).is_empty():
+					draft = {}
 				if draft.is_empty():
 					if Solver.past_deadline():
 						break
@@ -1494,6 +1588,12 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 				for attempt: int in attempts:
 					last_tries += 1
 					var draft: Dictionary = LevelForge.attempt(slot["modes"], board, slot["low"], slot["high"], used, rng)
+					var refused: Array[String] = []
+					if not draft.is_empty():
+						refused = validator_errors(slot, draft)
+					if not refused.is_empty():
+						print("    validator refused a draw: %s" % "; ".join(refused))
+						draft = {}
 					if not draft.is_empty():
 						Solver.deadline_msec = 0
 						if weak != "":
@@ -1521,6 +1621,28 @@ static func draw_one(slot: Dictionary, seed_value: int, used: Dictionary) -> Dic
 	Solver.deadline_msec = 0
 	print("    limit: %s %d-%d, səviyyə tapılmadı" % [_slot_name(slot), slot["low"], slot["high"]])
 	return {}
+
+
+## The validator's own checks of a level file (LevelValidator.validate_stored)
+## on `draft` as `slot` would store it, with an id and file of its stream;
+## returns the problems (none: the draw may be kept). Runs without the draw's
+## deadline, as the validator does.
+static func validator_errors(slot: Dictionary, draft: Dictionary) -> Array[String]:
+	var deadline: int = Solver.deadline_msec
+	Solver.deadline_msec = 0
+	var tier: String = Difficulty.tier_for_moves(draft["moves"])
+	var stream: String = slot.get("stream", stream_of(slot["modes"]))
+	var id: int = Difficulty.id_for(tier, 1) if stream == CLASSIC else id_block(stream)
+	var folder: String = tier if stream == CLASSIC else Difficulty.MECHANICS
+	var file_name: String = Difficulty.level_file_name(tier, 1) if stream == CLASSIC else ""
+	var level: Level = Level.create(id, tier, draft["start"], draft["goal"], draft["rule_ids"], draft["path"], draft["params"])
+	level.covered_pegs.assign(draft["covered"])
+	level.variants.assign(draft.get("variants", []))
+	level.glass_disks.assign(draft.get("glass", []))
+	var errors: Array[String] = []
+	LevelValidator.validate_stored(level, folder, file_name, errors)
+	Solver.deadline_msec = deadline
+	return errors
 
 
 static func _tutorial_draft(index: int) -> Dictionary:
@@ -1646,7 +1768,7 @@ static func describe(road: Dictionary) -> String:
 			break
 		var streams: Dictionary = {}
 		var moves: Array[int] = []
-		for position: int in range(int(chapter["first"]), int(chapter["last"]) + 1):
+		for position: int in range(int(chapter["first"]), mini(int(chapter["last"]), main.size()) + 1):
 			var level: Level = main[position - 1]
 			var stream: String = stream_of(level.modes())
 			streams[stream] = streams.get(stream, 0) + 1

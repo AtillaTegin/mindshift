@@ -122,6 +122,19 @@ static func puzzle_key(start: PuzzleState, goal: PuzzleState, rule_ids: Array, p
 	return PuzzleIdentity.key(start, goal, rule_ids, params)
 
 
+## The mechanic a level of `modes` gets (Level.mechanic(): its first rule
+## beyond classic Hanoi that carries no goal variant of `variants`).
+static func _mechanic_of(modes: Array, variants: Array) -> String:
+	var carried: Array = []
+	for variant: String in variants:
+		if ChapterPlan.GOAL_RULES.has(variant):
+			carried.append(ChapterPlan.GOAL_RULES[variant])
+	for rule_id: String in rule_ids_for(modes):
+		if rule_id != ClassicHanoiRule.ID and not carried.has(rule_id):
+			return ChapterPlan.mode_of_rule(rule_id)
+	return ChapterPlan.COVERED if modes.has(ChapterPlan.COVERED) else Level.CLASSIC
+
+
 ## One try at a level of `modes` on `board` whose shortest solution has
 ## `low`-`high` moves, avoiding the puzzle keys in `used`. Returns {} when the
 ## draw does not fit, else {start, goal, rule_ids, params, covered, glass,
@@ -132,6 +145,12 @@ static func attempt(modes: Array, board: Dictionary, low: int, high: int, used: 
 	var pegs: int = board["pegs"]
 	var disks: int = board["disks"]
 	var variants: Array = board.get("variants", [])
+	# The movable stone is a weight stone first: the level names both.
+	if variants.has("moving_stone") and not variants.has("stone"):
+		variants = variants + ["stone"]
+	# A board the grown pegs (a centre, an oasis) take past its mechanic's size never ships.
+	if not modes.is_empty() and not Difficulty.accepts_mechanic_size(pegs, disks, _mechanic_of(modes, variants)):
+		return {}
 	var shape: Variant = _shape(modes, board, rng)
 	var aim: Variant = _goal_shape(modes, board, rng)
 	if shape == null or aim == null:
@@ -430,6 +449,9 @@ static func _shorter(start: PuzzleState, goal: PuzzleState, rule_ids: Array[Stri
 	if rules == null or not rules.is_state_valid(start) or not rules.is_state_valid(goal):
 		return true
 	var result: Dictionary = Solver.solve(start, goal, rules, MAX_STATES)
+	# A search the draw's deadline cut short proves nothing (the validator has no deadline).
+	if not result["solvable"] and Solver.past_deadline():
+		return false
 	return not result["solvable"] or result["min_moves"] < moves
 
 
@@ -442,6 +464,8 @@ static func _longer(start: PuzzleState, goal: PuzzleState, rule_ids: Array[Strin
 	if rules == null or not rules.is_state_valid(start) or not rules.is_state_valid(goal):
 		return true
 	var result: Dictionary = Solver.solve(start, goal, rules, MAX_STATES)
+	if not result["solvable"] and Solver.past_deadline():
+		return false
 	return not result["solvable"] or result["min_moves"] > moves
 
 

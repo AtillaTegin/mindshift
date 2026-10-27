@@ -584,7 +584,13 @@ static func load_and_validate(path: String, errors: Array[String]) -> Level:
 	var level: Level = Level.load_file(path, errors)
 	if level == null:
 		return null
-	var folder: String = path.get_base_dir().get_file()
+	validate_stored(level, path.get_base_dir().get_file(), path.get_file(), errors)
+	return level
+
+
+## The checks of load_and_validate() on a level that would be stored as
+## `file_name` in `folder` (the road builder runs them before it keeps a draw).
+static func validate_stored(level: Level, folder: String, file_name: String, errors: Array[String]) -> void:
 	if folder == Difficulty.MECHANICS:
 		if level.mechanic() == Level.CLASSIC:
 			errors.append("a level in the mechanics folder needs a special rule or covered pegs")
@@ -596,10 +602,9 @@ static func load_and_validate(path: String, errors: Array[String]) -> Level:
 	elif Difficulty.accepts_id(level.difficulty, level.id):
 		# The game finds a level by id, so the file number must match it.
 		var expected_name: String = Difficulty.level_file_name(level.difficulty, Difficulty.index_of_id(level.id))
-		if path.get_file() != expected_name:
-			errors.append("id %d belongs in %s, not %s" % [level.id, expected_name, path.get_file()])
+		if file_name != expected_name:
+			errors.append("id %d belongs in %s, not %s" % [level.id, expected_name, file_name])
 	validate_level(level, errors)
-	return level
 
 
 ## Level.check() plus a fresh Solver run proving min_moves is the minimum.

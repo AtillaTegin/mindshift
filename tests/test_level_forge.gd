@@ -155,3 +155,31 @@ func test_checkpoint_gives_back_the_drawn_levels() -> void:
 	assert_eq((back["path"] as Array).size(), (draft["path"] as Array).size())
 	var level: Level = Level.create(1, "medium", back["start"], back["goal"], back["rule_ids"], back["path"], back["params"])
 	assert_true(Solver.solve(back["start"], back["goal"], level.get_rule_set())["min_moves"] == back["moves"])
+
+
+func test_draws_obey_the_validator() -> void:
+	# A centre on five stops would make 6 pegs, past the dial's mechanic size.
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = 3
+	var board: Dictionary = {"pegs": 5, "disks": 5, "variants": ["center"]}
+	assert_eq(LevelForge.attempt(["cyclic"], board, 1, 40, {}, rng), {}, "no 6 peg dial")
+	# A deadline-cut search proves no sub-element matters.
+	var start: PuzzleState = LevelForge.tower_state(4, 8, 0)
+	var goal: PuzzleState = LevelForge.tower_state(4, 8, 3)
+	var rule_ids: Array[String] = [ClassicHanoiRule.ID]
+	Solver.deadline_msec = 1
+	assert_false(LevelForge._shorter(start, goal, rule_ids, {}, 99), "cut short: unknown, not shorter")
+	Solver.deadline_msec = 0
+	assert_true(LevelForge._shorter(start, goal, rule_ids, {}, 99))
+
+
+func test_a_moving_stone_level_names_its_stone() -> void:
+	var variants: Array[String] = ["moving_stone"]
+	var modes: Array[String] = ["balance"]
+	var slot: Dictionary = {"modes": modes, "band": "medium", "low": 5, "high": 22,
+		"variants": variants, "extra": {"variants": variants}}
+	var draft: Dictionary = RoadBuilder.draw_one(slot, 11, {})
+	if draft.is_empty():
+		return
+	assert_true((draft["variants"] as Array).has("stone"), str(draft["variants"]))
+	assert_eq(RoadBuilder.validator_errors(slot, draft), [] as Array[String])
