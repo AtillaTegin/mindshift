@@ -712,8 +712,7 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 			pairs.append([plan["main"][i], path[LevelCatalog.MAIN][i]])
 	for k: int in (plan["islands"] as Array).size():
 		if k < (path["islands"] as Array).size():
-			for i: int in mini((plan["islands"][k]["slots"] as Array).size(), (path["islands"][k]["levels"] as Array).size()):
-				pairs.append([plan["islands"][k]["slots"][i], path["islands"][k]["levels"][i]])
+			pairs.append_array(_island_pairs(plan["islands"][k]["slots"], path["islands"][k]["levels"], errors))
 	var kept: int = 0
 	for pair: Array in pairs:
 		var slot: Dictionary = pair[0]
@@ -846,6 +845,14 @@ static func _draw_stepped(slot: Dictionary, t: int, i: int, used: Dictionary) ->
 		for window: Array in ISLAND_STEPS:
 			if window[1] < original_high:
 				windows.append(window)
+		# Then lower step by step, down to the mode's hard window.
+		if slot.has("weight"):
+			var hard: Array = ChapterPlan.WEIGHTS[slot["weight"]]["ranges"]["hard"]
+			var width: int = original_high - original_low
+			var top: int = mini(original_high, 33) - MAIN_STEP
+			while top >= int(hard[1]):
+				windows.append([maxi(top - width, int(hard[0])), top])
+				top -= MAIN_STEP
 	else:
 		var low: int = original_low
 		var high: int = original_high
@@ -868,7 +875,7 @@ static func _draw_stepped(slot: Dictionary, t: int, i: int, used: Dictionary) ->
 	slot["high"] = original_high
 	var variants: Array = slot.get("variants", [])
 	var original_extra: Dictionary = slot["extra"]
-	if t == 0 and variants.size() == 1 and (slot["modes"] as Array).size() == 1:
+	if (t > 0 or variants.size() == 1) and not variants.is_empty() and (slot["modes"] as Array).size() == 1:
 		var mode: String = slot["modes"][0]
 		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 		rng.seed = seed_value
@@ -1781,3 +1788,24 @@ static func describe(road: Dictionary) -> String:
 			tiers[level.difficulty] = tiers.get(level.difficulty, 0) + 1
 		lines.append("island after main %d (%s): %s" % [island["after"], island["mode"], str(tiers)])
 	return "\n".join(lines)
+
+
+## The island's slots paired with the path's levels. A road written with empty
+## slots left out has fewer levels than slots: then each slot takes the next
+## level that carries its sub-elements, and a slot nothing fits stays empty
+## (it is drawn again).
+static func _island_pairs(slots: Array, levels: Array, errors: Array[String]) -> Array:
+	var pairs: Array = []
+	var at: int = 0
+	for i: int in slots.size():
+		if at >= levels.size():
+			break
+		var slot: Dictionary = slots[i]
+		if levels.size() - at < slots.size() - i:
+			var level: Level = Level.load_file("%s/%s" % [Difficulty.LEVELS_DIR, levels[at]["file"]], errors)
+			var wanted: Array = slot.get("variants", [])
+			if level == null or not wanted.all(func(variant: String) -> bool: return level.variants.has(variant)):
+				continue
+		pairs.append([slot, levels[at]])
+		at += 1
+	return pairs

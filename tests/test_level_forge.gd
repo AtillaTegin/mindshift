@@ -183,3 +183,14 @@ func test_a_moving_stone_level_names_its_stone() -> void:
 		return
 	assert_true((draft["variants"] as Array).has("stone"), str(draft["variants"]))
 	assert_eq(RoadBuilder.validator_errors(slot, draft), [] as Array[String])
+
+
+func test_island_pairs_skip_empty_slots() -> void:
+	# No level files behind these entries: nothing fits a short road, so with
+	# as many levels as slots every slot pairs in place.
+	var slots: Array = [{"variants": []}, {"variants": []}, {"variants": []}]
+	var levels: Array = [{"file": "x/a.json"}, {"file": "x/b.json"}, {"file": "x/c.json"}]
+	allow_engine_errors = true
+	var errors: Array[String] = []
+	assert_eq(RoadBuilder._island_pairs(slots, levels, errors).size(), 3)
+	assert_eq(RoadBuilder._island_pairs(slots, [], errors).size(), 0)
