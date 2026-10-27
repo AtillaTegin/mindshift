@@ -56,33 +56,37 @@ const CHAPTERS: Array[Dictionary] = [
 			["balance", "stripes"], ["balance", "covered_pegs"]]},
 	# ICRA World 5-9 (2026-10-17) replaces the old World 5-7 plan; Güzgü,
 	# Bağlı, Maqnit and the Final wait for a later update.
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "king", "first": 731, "last": 830, "ratio": 3.0},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "river", "first": 831, "last": 930, "ratio": 3.0},
-	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 931, "last": 1080, "ratio": 3.0},
-	{"world": 5, "kind": COMBO_CHAPTER, "first": 1081, "last": 1130, "singles": ["king", "river", "color_swap"],
+	# Short chapters (user's plan 2026-10-27, to grow after player feedback):
+	# World 5-6 hold 30 levels a chapter, a mode chapter's island `island`
+	# levels, its mixed wave `mixed` levels, one classic per `ratio` (4:1).
+	# World 7-9 moved to follow; their lengths are still the old ones.
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "king", "first": 731, "last": 760, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "river", "first": 761, "last": 790, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 791, "last": 820, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 5, "kind": COMBO_CHAPTER, "first": 821, "last": 850, "singles": ["king", "river", "color_swap"],
 		"combos": [["river", "peg_capacity"], ["river", "covered_pegs"], ["river", "foundation"],
 			["color_swap", "adjacent_pegs"], ["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 1131, "last": 1230, "ratio": 3.0},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 1231, "last": 1330, "ratio": 3.0},
-	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 1331, "last": 1480, "ratio": 3.0},
-	{"world": 6, "kind": COMBO_CHAPTER, "first": 1481, "last": 1530, "singles": ["carpet", "ko", "chain"],
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 851, "last": 880, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 881, "last": 910, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 911, "last": 940, "ratio": 4.0, "island": 5, "mixed": 3},
+	{"world": 6, "kind": COMBO_CHAPTER, "first": 941, "last": 970, "singles": ["carpet", "ko", "chain"],
 		"combos": [["ko", "peg_capacity"], ["ko", "adjacent_pegs"], ["ko", "river"], ["chain", "peg_capacity"],
 			["chain", "adjacent_pegs"], ["chain", "balance"], ["carpet", "stripes"]]},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "heavy", "first": 1531, "last": 1630, "ratio": 3.0},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "elements", "first": 1631, "last": 1750, "ratio": 3.0},
-	{"world": 7, "kind": MODE_CHAPTER, "mode": "trail", "first": 1751, "last": 1850, "ratio": 3.0},
-	{"world": 7, "kind": COMBO_CHAPTER, "first": 1851, "last": 1900, "singles": ["heavy", "elements", "trail"],
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "heavy", "first": 971, "last": 1070, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "elements", "first": 1071, "last": 1190, "ratio": 3.0},
+	{"world": 7, "kind": MODE_CHAPTER, "mode": "trail", "first": 1191, "last": 1290, "ratio": 3.0},
+	{"world": 7, "kind": COMBO_CHAPTER, "first": 1291, "last": 1340, "singles": ["heavy", "elements", "trail"],
 		"combos": [["elements", "cyclic"], ["elements", "adjacent_pegs"], ["elements", "peg_capacity"],
 			["heavy", "peg_capacity"], ["heavy", "foundation"], ["trail", "adjacent_pegs"], ["trail", "river"]]},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "sum", "first": 1901, "last": 2000, "ratio": 3.0},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "turns", "first": 2001, "last": 2100, "ratio": 3.0},
-	{"world": 8, "kind": MODE_CHAPTER, "mode": "kintsugi", "first": 2101, "last": 2220, "ratio": 3.0},
-	{"world": 8, "kind": COMBO_CHAPTER, "first": 2221, "last": 2270, "singles": ["sum", "turns", "kintsugi"],
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "sum", "first": 1341, "last": 1440, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "turns", "first": 1441, "last": 1540, "ratio": 3.0},
+	{"world": 8, "kind": MODE_CHAPTER, "mode": "kintsugi", "first": 1541, "last": 1660, "ratio": 3.0},
+	{"world": 8, "kind": COMBO_CHAPTER, "first": 1661, "last": 1710, "singles": ["sum", "turns", "kintsugi"],
 		"combos": [["sum", "peg_capacity"], ["sum", "adjacent_pegs"], ["sum", "foundation"], ["turns", "peg_capacity"],
 			["turns", "river"], ["kintsugi", "adjacent_pegs"], ["kintsugi", "turns"]]},
-	{"world": 9, "kind": MODE_CHAPTER, "mode": "lamp", "first": 2271, "last": 2390, "ratio": 3.0},
-	{"world": 9, "kind": MODE_CHAPTER, "mode": "solitaire", "first": 2391, "last": 2540, "ratio": 3.0},
-	{"world": 9, "kind": COMBO_CHAPTER, "first": 2541, "last": 2590, "singles": ["lamp", "solitaire"],
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "lamp", "first": 1711, "last": 1830, "ratio": 3.0},
+	{"world": 9, "kind": MODE_CHAPTER, "mode": "solitaire", "first": 1831, "last": 1980, "ratio": 3.0},
+	{"world": 9, "kind": COMBO_CHAPTER, "first": 1981, "last": 2030, "singles": ["lamp", "solitaire"],
 		"combos": [["solitaire", "stripes"], ["solitaire", "peg_capacity"], ["solitaire", "adjacent_pegs"],
 			["lamp", "peg_capacity"], ["lamp", "adjacent_pegs"]]},
 ]
@@ -144,7 +148,9 @@ const HEAVY: String = "heavy"
 const HEAVY_PAIR: String = "heavy_pair"
 const ISLAND_TOP: int = 40
 const MODE_WEIGHTS: Dictionary = {"peg_capacity": LIGHT, "stripes": LIGHT, "cyclic": MEDIUM, "covered_pegs": MEDIUM,
-		"foundation": MEDIUM, "adjacent_pegs": HEAVY, "alternation": HEAVY, "balance": HEAVY}
+		"foundation": MEDIUM, "adjacent_pegs": HEAVY, "alternation": HEAVY, "balance": HEAVY,
+		# World 5-6 (user's plan 2026-10-27).
+		"king": MEDIUM, "river": MEDIUM, "carpet": MEDIUM, "chain": MEDIUM, "color_swap": HEAVY, "ko": HEAVY}
 const _CYCLE_LIGHT: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
 		"medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium_hard",
 		"medium_hard", "hard", "medium"]
@@ -222,6 +228,11 @@ static func is_big_test(position: int) -> bool:
 ## with a hard one).
 const ISLAND_LEVELS: int = 10
 const CLASSIC_ISLAND: Dictionary = {"expert": 28, "hard": 8, "medium": 4}
+
+
+## The island levels of mode `chapter` (its own "island", else ISLAND_LEVELS).
+static func island_levels(chapter: Dictionary) -> int:
+	return int(chapter.get("island", ISLAND_LEVELS))
 
 ## Waves inside a mode chapter (chapter waves v1, MindShift_Fesil_Daxili_
 ## Dalgalar_v1.md): each mode's sub-elements in the order they arrive. The
@@ -321,7 +332,7 @@ const SUB_RULES: Dictionary = {"sealed_box": "covered_pegs"}
 ## never a Böyük Sınaq. The goal comes from a goal-setting mode's rule
 ## (GOAL_RULES); such a level names the variant and is still a level of its
 ## chapter's mode (Level.modes()).
-const GOAL_VARIANTS: Dictionary = {"goal_king": 831, "goal_odd_even": 831, "goal_silhouette": 1231, "goal_sum": 2001}
+const GOAL_VARIANTS: Dictionary = {"goal_king": 761, "goal_odd_even": 761, "goal_silhouette": 881, "goal_sum": 1441}
 const GOAL_RULES: Dictionary = {"goal_king": "king", "goal_odd_even": "king", "goal_silhouette": "carpet", "goal_sum": "sum"}
 const BREATH_SHARE: float = 0.1
 const BREATH_MOVES: Array[int] = [12, 18]

@@ -20,7 +20,7 @@ func _built_chapters() -> Array[Dictionary]:
 
 func test_plan_follows_the_table() -> void:
 	# Section 2 and ICRA World 5-9 section 1: chapters back to back, world by
-	# world (World 1-4 to main 730, then World 5-9 to 2590 as they are planned).
+	# world (World 1-4 to main 730, then World 5-6 in 30-level chapters to 970, World 7-9 after them).
 	var next: int = 1
 	var world: int = 1
 	var ends: Dictionary = {}
@@ -30,7 +30,7 @@ func test_plan_follows_the_table() -> void:
 		world = chapter["world"]
 		next = int(chapter["last"]) + 1
 		ends[world] = chapter["last"]
-	assert_eq([ends[4], ends[5]], [730, 1130], "World 4 ends at 730, World 5 at 1130")
+	assert_eq([ends[4], ends[5], ends[6]], [730, 850, 970], "World 4 ends at 730, World 5 at 850, World 6 at 970")
 	assert_true(world >= 5 and world <= 9)
 	var lengths: Dictionary = {}
 	for chapter: Dictionary in ChapterPlan.CHAPTERS:
@@ -39,7 +39,8 @@ func test_plan_follows_the_table() -> void:
 	assert_eq(lengths["covered_pegs"], 100)
 	assert_eq(lengths["alternation"], 60)
 	assert_eq(lengths["balance"], 60)
-	assert_eq([lengths["king"], lengths["river"], lengths["color_swap"], lengths["combo 1081"]], [100, 100, 150, 50])
+	assert_eq([lengths["king"], lengths["river"], lengths["color_swap"], lengths["combo 821"]], [30, 30, 30, 30])
+	assert_eq([lengths["carpet"], lengths["ko"], lengths["chain"], lengths["combo 941"]], [30, 30, 30, 30])
 	assert_eq(lengths["combo 301"], 50)
 	for mode: String in ChapterPlan.MODES:
 		assert_true(ChapterPlan.CHAPTERS.filter(func(c: Dictionary) -> bool: return c.get("mode", "") == mode).size() <= 1,
@@ -264,8 +265,9 @@ func test_islands_end_their_chapters() -> void:
 	assert_eq(_level_at(islands[0], 1).difficulty, "hard", "and opens gently")
 	for i: int in range(1, islands.size()):
 		var mode: String = LevelCatalog.island_mode(islands[i])
-		assert_eq(LevelCatalog.track_length(islands[i]), ChapterPlan.ISLAND_LEVELS, mode)
-		for position: int in range(1, ChapterPlan.ISLAND_LEVELS + 1):
+		var size: int = ChapterPlan.island_levels(ChapterPlan.chapter_at(LevelCatalog.island_after(islands[i])))
+		assert_eq(LevelCatalog.track_length(islands[i]), size, mode)
+		for position: int in range(1, size + 1):
 			var level: Level = _level_at(islands[i], position)
 			assert_eq(level.modes(), [mode] as Array[String], "%s island %d" % [mode, position])
 			assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), "%s island %d" % [mode, position])

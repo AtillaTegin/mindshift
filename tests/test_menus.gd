@@ -61,7 +61,7 @@ func test_main_menu_builds() -> void:
 	var islands: int = 0
 	for chapter: Dictionary in ChapterPlan.CHAPTERS:
 		if int(chapter["last"]) <= road:
-			islands += ChapterPlan.ISLAND_LEVELS if chapter["kind"] == ChapterPlan.MODE_CHAPTER else 0
+			islands += ChapterPlan.island_levels(chapter) if chapter["kind"] == ChapterPlan.MODE_CHAPTER else 0
 			islands += 40 if chapter["kind"] == ChapterPlan.CLASSIC_CHAPTER else 0
 	assert_eq(LevelCatalog.total_levels(), road + islands, "%d on the road, %d on the islands" % [road, islands])
 	assert_false((menu.get_node("%SettingsPanel") as Control).visible)

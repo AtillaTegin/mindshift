@@ -25,12 +25,12 @@ extends SceneTree
 ##   slots easiest first, so each stream climbs through its chapter.
 ## - Islands: the classic chapter's island keeps its old mix (expert levels,
 ##   a few hard and medium ones, opening with a hard one); each mode chapter's
-##   island has ChapterPlan.ISLAND_LEVELS expert levels of its mode.
+##   island has ChapterPlan.island_levels() expert levels of its mode.
 ## Exits with code 0 only when every level was built and the set validates.
 
 const BASE_SEED: int = 20261015
 ## Worlds whose chapters are built (chapter plan's order: world 1-2 first).
-const BUILT_WORLDS: Array[int] = [1, 2, 3, 4]
+const BUILT_WORLDS: Array[int] = [1, 2, 3, 4, 5]
 ## Draws per level before its board gives way to the next recipe board, and
 ## fitting draws compared for the move count the group has least
 ## (draw_group()); a draw with a count not seen yet wins at once.
@@ -493,9 +493,9 @@ func _run() -> bool:
 
 ## `-- --trial=N --only=<selector>`: N levels of the last world's slots that
 ## `selector` names, each timed, nothing written. Selectors: a wave slot's
-## name ("balance[own_limits,three_scales]"), "big_test:<mode>",
-## "island:<mode>", "combo" (the world's combination chapter, its
-## combinations spread to its Böyük Sınaq). Several: comma-free, joined by ";".
+## name ("balance[own_limits,three_scales]"), "big_test:<mode>", "mixed:<mode>"
+## (its closing mixed wave), "island:<mode>", "combo" (the world's combination
+## chapter, its combinations spread to its Böyük Sınaq). Several: comma-free, joined by ";".
 func _trial(worlds: Array[int], keep: Array[int], selectors: String, count: int) -> bool:
 	var world: int = worlds.max()
 	var plan: Dictionary = layout(worlds)
@@ -561,6 +561,10 @@ static func _trial_match(plan: Dictionary, track: int, slot: Dictionary, selecto
 		return false
 	if selector.begins_with("big_test:"):
 		return slot.get("wave", "") == "big_test" and stream_of(slot["modes"]) == selector.trim_prefix("big_test:")
+	if selector.begins_with("mixed:"):
+		# The closing mixed wave (its items carry no "intro"; the exchange's
+		# "mixed" sub-element wave does).
+		return slot.get("wave", "") == "mixed" and not slot.has("intro") and stream_of(slot["modes"]) == selector.trim_prefix("mixed:")
 	if selector == "combo":
 		return (slot["modes"] as Array).size() > 1
 	return slot.has("low") and _slot_name(slot) == selector
@@ -994,7 +998,8 @@ static func layout(worlds: Array[int]) -> Dictionary:
 				islands.append({"mode": Level.CLASSIC, "after": chapter["last"], "slots": _classic_island()})
 			ChapterPlan.MODE_CHAPTER:
 				main.append_array(_mode_chapter(chapter, rng))
-				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": _mode_island(chapter["mode"], rng, _weight_in(chapter, [chapter["mode"]]))})
+				islands.append({"mode": chapter["mode"], "after": chapter["last"], "slots": _mode_island(chapter["mode"], rng, _weight_in(chapter, [chapter["mode"]]),
+						ChapterPlan.island_levels(chapter))})
 			ChapterPlan.COMBO_CHAPTER:
 				main.append_array(_combo_chapter(chapter, rng))
 		# Every slot learns its world (band slots its floor too; wave slots have
@@ -1082,7 +1087,7 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 		goals = ChapterPlan.goal_variants_at(first)
 	var breath_count: int = 0 if goals.is_empty() else roundi(length * ChapterPlan.BREATH_SHARE)
 	var items: Array[Dictionary] = wave_items(chapter["mode"], length - classic_count - repeat_count - breath_count, rng,
-			least, weight)
+			least, weight, int(chapter.get("mixed", MIXED_WAVE)))
 	var last: int = items.size() - 1
 	# Repeats spread over the second half of the mode levels (never after the last).
 	var repeats: Dictionary = {}
@@ -1129,7 +1134,7 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 
 ## A chapter's `count` levels of `mode` in waves (ChapterPlan.WAVES): wave 1
 ## the base form, each later wave one new sub-element, then (if the mode has
-## one) a mixed wave of MIXED_WAVE levels, and last the chapter's Böyük Sınaq
+## one) a mixed wave of `mixed_count` levels, and last the chapter's Böyük Sınaq
 ## (ChapterPlan.BIG_TEST moves, every sub-element that can share a level). Inside a
 ## wave: an intro with only the new sub-element on an easier board, a few
 ## levels of it alone, then mixed with the earlier ones, up to the wave's
@@ -1138,11 +1143,12 @@ static func _mode_chapter(chapter: Dictionary, rng: RandomNumberGenerator) -> Ar
 ## each wave starts a little below where the last one ended. They start at the
 ## mode's floor or the world's (`least`, ChapterPlan.world_floor), and only
 ## the intros, exempt from the world's, may reach below it.
-static func wave_items(mode: String, count: int, rng: RandomNumberGenerator, least: int = 0, weight: String = "") -> Array[Dictionary]:
+static func wave_items(mode: String, count: int, rng: RandomNumberGenerator, least: int = 0, weight: String = "",
+		mixed_count: int = MIXED_WAVE) -> Array[Dictionary]:
 	var eased: bool = weight != ""
 	var plan: Dictionary = ChapterPlan.WAVES.get(mode, {"waves": [ChapterPlan.BASE], "mixed": false})
 	var waves: Array = plan["waves"]
-	var mixed_size: int = MIXED_WAVE if plan["mixed"] else 0
+	var mixed_size: int = mixed_count if plan["mixed"] else 0
 	var body: int = count - 1 - mixed_size
 	var sections: int = waves.size() + (1 if plan["mixed"] else 0)
 	var mode_floor: int = MODE_FLOOR.get(mode, ChapterPlan.BANDS["easy_medium"][0])
@@ -1332,15 +1338,16 @@ static func _breath_item(mode: String, variant: String, item: Dictionary) -> Dic
 			"high": span[1], "t": item["t"], "band": band_of_moves((span[0] + span[1]) / 2), "breath": true}
 
 
-## The island of a mode chapter: ISLAND_LEVELS expert levels, each with the
+## The island of a mode chapter: `count` expert levels, each with the
 ## island's own sub-element (if the mode has one) and one or two of the
 ## chapter's, longer and longer; or the chapter's set that always goes
 ## together there (ChapterPlan.ISLAND_SETS).
-static func _mode_island(mode: String, rng: RandomNumberGenerator, weight: String = "") -> Array[Dictionary]:
+static func _mode_island(mode: String, rng: RandomNumberGenerator, weight: String = "",
+		count: int = ChapterPlan.ISLAND_LEVELS) -> Array[Dictionary]:
 	var eased: bool = weight != ""
 	var pool: Array = _sharable(mode)
 	var slots: Array[Dictionary] = []
-	for i: int in ChapterPlan.ISLAND_LEVELS:
+	for i: int in count:
 		var variants: Array[String] = []
 		if ChapterPlan.ISLAND_VARIANTS.has(mode):
 			variants.append(ChapterPlan.ISLAND_VARIANTS[mode])
@@ -1351,7 +1358,7 @@ static func _mode_island(mode: String, rng: RandomNumberGenerator, weight: Strin
 			variants.append_array(ChapterPlan.ISLAND_SETS[mode])
 		else:
 			variants.append_array(_pick_variants(pool, maxi(0, 2 - variants.size()) if eased else rng.randi_range(1, 2), variants, rng))
-		var extra: Dictionary = _wave_extra(mode, variants, float(i) / ChapterPlan.ISLAND_LEVELS, rng)
+		var extra: Dictionary = _wave_extra(mode, variants, float(i) / count, rng)
 		var low: int = ChapterPlan.BANDS["expert"][0] + i
 		var high: int = low + 10 + i
 		if ChapterPlan.ISLAND_CEILINGS.has(mode):
@@ -1359,7 +1366,7 @@ static func _mode_island(mode: String, rng: RandomNumberGenerator, weight: Strin
 			low = mini(low, high - 6)
 		if eased:
 			# The hard window's top + 5..12 (rising over the island), at most ISLAND_TOP.
-			high = mini(ChapterPlan.weight_top(weight) + 5 + roundi(7.0 * i / (ChapterPlan.ISLAND_LEVELS - 1)) + 2, ChapterPlan.ISLAND_TOP)
+			high = mini(ChapterPlan.weight_top(weight) + 5 + roundi(7.0 * i / maxi(count - 1, 1)) + 2, ChapterPlan.ISLAND_TOP)
 			low = high - 4
 		elif ChapterPlan.ISLAND_WINDOWS.has(mode):
 			low = ChapterPlan.ISLAND_WINDOWS[mode][0]
