@@ -1,15 +1,15 @@
 {
   "id": 12090,
-  "difficulty": "hard",
-  "pegs": 3,
-  "disks": 7,
-  "start": [[7,6,3,2],[],[5,4,1]],
-  "goal": [[7,6,5,4,3,2,1],[],[]],
+  "difficulty": "medium",
+  "pegs": 4,
+  "disks": 6,
+  "start": [[],[5,4,3,1],[6],[2]],
+  "goal": [[],[4],[3,2,1],[6,5]],
   "rules": ["classic_hanoi","foundation"],
-  "min_moves": 27,
-  "solution_path": [[0,1],[1,0],[2,0],[2,1],[0,1],[0,2],[1,2],[0,1],[2,0],[2,1],[0,1],[2,0],[1,2],[1,0],[2,0],[1,2],[0,1],[0,2],[1,2],[1,0],[2,0],[2,1],[0,1],[2,0],[1,2],[1,0],[2,0]],
-  "star_thresholds": {"three":27,"two":34},
+  "min_moves": 17,
+  "solution_path": [[1,0],[1,2],[3,2],[0,2],[1,3],[1,0],[2,0],[3,1],[2,1],[0,1],[2,0],[2,3],[0,2],[0,3],[1,0],[1,2],[0,2]],
+  "star_thresholds": {"three":17,"two":21},
   "time_limit_seconds": null,
-  "rule_params": {"foundation":{"keys":[2],"locked":[3],"targets":[1]}},
-  "variants": ["middle_lock","key_disk"]
+  "rule_params": {"foundation":{"stages":[{"keys":[1,2,3],"locked":[4],"targets":[2,2,2]},{"keys":[4],"locked":[6],"targets":[3]}]}},
+  "variants": ["middle_lock","chain_lock"]
 }

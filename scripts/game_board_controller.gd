@@ -336,7 +336,11 @@ func special_move() -> Move:
 ## Plays the special move (the stone's button), like any move; where the
 ## scale cannot take it now, it is refused like a disk move.
 func request_special_move() -> void:
-	if session == null or restricted_peg >= 0:
+	if session == null:
+		return
+	# A guided step that is the stone's own move keeps its button open.
+	var guided: bool = tutorial != null and tutorial.step_move != null and tutorial.step_move.from_peg == tutorial.step_move.to_peg
+	if restricted_peg >= 0 and not guided:
 		return
 	var move: Move = special_move()
 	if move == null or not session.try_move(move):

@@ -1,14 +1,14 @@
 {
   "id": 16001,
-  "difficulty": "medium",
+  "difficulty": "easy",
   "pegs": 4,
-  "disks": 6,
-  "start": [[5],[1],[2],[6,4,3]],
-  "goal": [[6,5,4,3,2,1],[],[],[]],
+  "disks": 5,
+  "start": [[],[2,1],[4],[5,3]],
+  "goal": [[4],[2],[3,1],[5]],
   "rules": ["classic_hanoi","alternation"],
-  "min_moves": 17,
-  "solution_path": [[1,0],[3,1],[2,1],[0,1],[0,2],[3,2],[1,2],[3,0],[2,1],[2,3],[2,0],[3,0],[1,2],[1,3],[1,0],[3,0],[2,0]],
-  "star_thresholds": {"three":17,"two":21},
+  "min_moves": 5,
+  "solution_path": [[1,0],[0,1],[2,0],[3,2],[1,2]],
+  "star_thresholds": {"three":5,"two":6},
   "time_limit_seconds": null,
   "rule_params": {"alternation":{}}
 }

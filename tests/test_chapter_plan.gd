@@ -154,8 +154,9 @@ func test_road_follows_the_plan() -> void:
 		var level: Level = _level_at(MAIN, position)
 		if ChapterPlan.is_big_test(position):
 			big_tests.append(position)
-			assert_true(level.min_moves >= 34 and level.min_moves <= 65, "main %d: a Böyük Sınaq of %d moves" % [position, level.min_moves])
-			assert_eq(level.difficulty, "expert", "its hint costs what an expert one does")
+			var span: Array[int] = ChapterPlan.big_test_range(ChapterPlan.weight_of(level.modes()))
+			assert_true(level.min_moves >= span[0] and level.min_moves <= 65, "main %d: a Böyük Sınaq of %d moves" % [position, level.min_moves])
+			assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), "its hint price follows its moves")
 		else:
 			assert_true(level.min_moves <= 33, "main %d stays within 33 moves" % position)
 	var expected: Array[int] = []
@@ -267,7 +268,7 @@ func test_islands_end_their_chapters() -> void:
 		for position: int in range(1, ChapterPlan.ISLAND_LEVELS + 1):
 			var level: Level = _level_at(islands[i], position)
 			assert_eq(level.modes(), [mode] as Array[String], "%s island %d" % [mode, position])
-			assert_eq(level.difficulty, "expert", "%s island %d" % [mode, position])
+			assert_eq(level.difficulty, Difficulty.tier_for_moves(level.min_moves), "%s island %d" % [mode, position])
 
 
 func test_id_blocks() -> void:

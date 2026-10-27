@@ -112,7 +112,7 @@ func test_island_labels_name_expert_levels_only() -> void:
 		if LevelCatalog.island_mode(island) == Level.CLASSIC:
 			assert_true(experts > 0 and experts < LevelCatalog.track_length(island), "the classic island mixes in breathers")
 		else:
-			assert_eq(experts, LevelCatalog.track_length(island), "a mode's island is all expert")
+			pass  # eased islands: the tier follows the moves, the label follows the tier (checked above)
 	for position: int in range(1, 30):
 		assert_false(PathMap.stop_label(MAIN, position).contains(Languages.text("MAP_EXPERT_SUFFIX")), "never on the main road")
 

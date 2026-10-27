@@ -89,6 +89,11 @@ func test_every_mechanic_is_introduced_on_its_first_level() -> void:
 			assert_true(tutorial.step_move.equals(path[k]), "%s step %d comes from the solution" % [mechanic, k])
 			assert_eq(_board.restricted_peg, path[k].from_peg, "only the shown peg reacts")
 			assert_true(_board.coaching.pointer.visible, "the ghost finger shows the move")
+			if path[k].from_peg == path[k].to_peg:
+				# The stone's own move: its button, no peg taps.
+				_board.request_special_move()
+				assert_eq(session.move_count, k + 1, "%s step %d made" % [mechanic, k])
+				continue
 			_tap(path[k].from_peg)
 			assert_eq(_board.restricted_peg, path[k].to_peg)
 			_tap(path[k].to_peg)

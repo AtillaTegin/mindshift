@@ -2,14 +2,14 @@
   "id": 16052,
   "difficulty": "hard",
   "pegs": 4,
-  "disks": 7,
-  "start": [[5,3,2],[6],[4,1],[7]],
-  "goal": [[],[],[7,6,5,4,3,2,1],[]],
+  "disks": 8,
+  "start": [[5,3,1],[8,4,2],[6],[7]],
+  "goal": [[8,7,6,5,4,3,2,1],[],[],[]],
   "rules": ["classic_hanoi","alternation"],
-  "min_moves": 23,
-  "solution_path": [[0,1],[2,0],[1,3],[2,1],[3,1],[3,2],[1,2],[1,3],[2,3],[1,2],[3,2],[0,1],[0,3],[2,3],[0,2],[3,2],[3,0],[2,0],[3,2],[0,3],[0,2],[3,2],[1,2]],
-  "star_thresholds": {"three":23,"two":29},
+  "min_moves": 31,
+  "solution_path": [[1,2],[0,1],[2,3],[0,2],[3,2],[1,2],[1,0],[0,1],[0,3],[1,3],[1,0],[3,0],[3,1],[0,1],[3,0],[1,0],[2,0],[2,1],[2,3],[1,3],[0,3],[0,1],[2,0],[1,2],[1,0],[2,0],[3,1],[3,2],[3,0],[2,0],[1,0]],
+  "star_thresholds": {"three":31,"two":39},
   "time_limit_seconds": null,
-  "rule_params": {"alternation":{"leader":2,"reset":1}},
-  "variants": ["new_leader","reset_peg"]
+  "rule_params": {"alternation":{"free":2,"leader":4}},
+  "variants": ["broken_ring","new_leader"]
 }

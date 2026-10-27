@@ -1,0 +1,13 @@
+{
+  "id": 2083,
+  "difficulty": "medium",
+  "pegs": 3,
+  "disks": 5,
+  "start": [[],[4,1],[5,3,2]],
+  "goal": [[],[],[5,4,3,2,1]],
+  "rules": ["classic_hanoi"],
+  "min_moves": 15,
+  "solution_path": [[1,0],[2,1],[0,1],[2,0],[1,2],[1,0],[2,0],[1,2],[0,2],[0,1],[2,1],[0,2],[1,0],[1,2],[0,2]],
+  "star_thresholds": {"three":15,"two":19},
+  "time_limit_seconds": null
+}

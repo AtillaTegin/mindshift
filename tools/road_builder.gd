@@ -606,7 +606,7 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 		if keep.has(world) or redo:
 			_keep_world(plan, world, used, errors)
 	if redo and not keep_failed:
-		_drop_refused(tracks, used)
+		_drop_refused(tracks, used, plan)
 	if keep_failed or dry_run:
 		return {}
 	if resume:
@@ -755,15 +755,25 @@ static func _world_end(main: Array, world: int) -> int:
 ## --redo: every kept slot whose file the validator refuses (its own checks,
 ## or the same puzzle as a level before it on the road) loses its level and
 ## is drawn again in its place.
-static func _drop_refused(tracks: Array, used: Dictionary) -> void:
+static func _drop_refused(tracks: Array, used: Dictionary, plan: Dictionary) -> void:
 	used.clear()
 	var refused: int = 0
 	for track: Array in tracks:
 		for slot: Dictionary in track:
 			if slot.has("fixed") and slot.has("draft"):
 				used[slot["draft"]["key"]] = true
+	# Road order, not track order: an island level stands after its main level
+	# `after`, so a copy of it further on the main road is the one redone.
+	var order: Array = []  # [road position, track, index]
 	for t: int in tracks.size():
+		var after: float = 0.0 if t == 0 else float((plan["islands"][t - 1] as Dictionary)["after"]) + 0.5
 		for i: int in (tracks[t] as Array).size():
+			order.append([(float(i + 1) if t == 0 else after + i * 0.0001), t, i])
+	order.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	for entry: Array in order:
+		var t: int = entry[1]
+		var i: int = entry[2]
+		if true:
 			var slot: Dictionary = tracks[t][i]
 			if not slot.get("kept", false):
 				continue
