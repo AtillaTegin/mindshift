@@ -65,7 +65,7 @@ const CHAPTERS: Array[Dictionary] = [
 	{"world": 5, "kind": MODE_CHAPTER, "mode": "color_swap", "first": 791, "last": 820, "ratio": 4.0, "island": 5, "mixed": 3},
 	{"world": 5, "kind": COMBO_CHAPTER, "first": 821, "last": 850, "singles": ["king", "river", "color_swap"],
 		"combos": [["river", "peg_capacity"], ["river", "covered_pegs"], ["river", "foundation"],
-			["color_swap", "adjacent_pegs"], ["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
+			["color_swap", "peg_capacity"], ["king", "adjacent_pegs"], ["king", "cyclic"]]},
 	{"world": 6, "kind": MODE_CHAPTER, "mode": "carpet", "first": 851, "last": 880, "ratio": 4.0, "island": 5, "mixed": 3},
 	{"world": 6, "kind": MODE_CHAPTER, "mode": "ko", "first": 881, "last": 910, "ratio": 4.0, "island": 5, "mixed": 3},
 	{"world": 6, "kind": MODE_CHAPTER, "mode": "chain", "first": 911, "last": 940, "ratio": 4.0, "island": 5, "mixed": 3},
@@ -150,7 +150,7 @@ const ISLAND_TOP: int = 40
 const MODE_WEIGHTS: Dictionary = {"peg_capacity": LIGHT, "stripes": LIGHT, "cyclic": MEDIUM, "covered_pegs": MEDIUM,
 		"foundation": MEDIUM, "adjacent_pegs": HEAVY, "alternation": HEAVY, "balance": HEAVY,
 		# World 5-6 (user's plan 2026-10-27).
-		"king": MEDIUM, "river": MEDIUM, "carpet": MEDIUM, "chain": MEDIUM, "color_swap": HEAVY, "ko": HEAVY}
+		"king": MEDIUM, "river": MEDIUM, "carpet": MEDIUM, "chain": MEDIUM, "color_swap": MEDIUM, "ko": HEAVY}
 const _CYCLE_LIGHT: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
 		"medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium_hard",
 		"medium_hard", "hard", "medium"]
