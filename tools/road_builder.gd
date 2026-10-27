@@ -911,6 +911,31 @@ static func _draw_stepped(slot: Dictionary, t: int, i: int, used: Dictionary) ->
 	return {}
 
 
+## A mixed wave slot whose pair does not fit its window: another pair of the same
+## chapter (the first sub-element stays, it is the one the wave teaches), same
+## window. The window never changes.
+static func _draw_other_set(slot: Dictionary, t: int, i: int, used: Dictionary) -> Dictionary:
+	var variants: Array = slot["variants"]
+	var original_extra: Dictionary = slot["extra"]
+	var mode: String = slot["modes"][0]
+	var seed_value: int = BASE_SEED + t * 10000 + i
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_value
+	for other: String in _sharable(mode):
+		if variants.has(other):
+			continue
+		var swapped: Array[String] = [variants[0], other]
+		slot["variants"] = swapped
+		slot["extra"] = _wave_extra(mode, swapped, slot["t"], rng)
+		var draft: Dictionary = draw_one(slot, seed_value, used)
+		if not draft.is_empty():
+			print("    track %d slot %d: pair %s instead of %s" % [t, i + 1, str(swapped), str(variants)])
+			return draft
+	slot["variants"] = variants
+	slot["extra"] = original_extra
+	return {}
+
+
 ## The wave levels of `world` (a window of their own each), in road order:
 ## its main road slots, then its islands'.
 static func _slot_name(slot: Dictionary) -> String:
@@ -945,6 +970,9 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			var draft: Dictionary = draw_one(slot, BASE_SEED + t * 10000 + i, used)
 			# Too many sub-elements for the window: the later ones go, one by one
 			# (the first is the one the wave teaches).
+			var mixed: bool = (slot["variants"] as Array).size() > 1
+			if draft.is_empty() and mixed:
+				draft = _draw_other_set(slot, t, i, used)
 			while draft.is_empty() and (slot["variants"] as Array).size() > 1:
 				var fewer: Array[String] = []
 				fewer.assign((slot["variants"] as Array).slice(0, -1))
@@ -961,7 +989,9 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 						slot["low"], slot["high"], stream_of(other)])
 				slot["modes"].assign(other)
 				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
-			if draft.is_empty():
+			# A mixed wave slot never widens or slides its window (decision
+			# 2026-10-28): other pair, then a single, both in the same window.
+			if draft.is_empty() and not mixed:
 				draft = _draw_stepped(slot, t, i, used)
 			if draft.is_empty():
 				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
