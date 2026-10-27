@@ -58,6 +58,8 @@ static var keep_failed: bool = false
 ## --redo: every world is read back from the files and only the slots the
 ## validator refuses are drawn again, in their places (own checkpoint).
 static var redo: bool = false
+## --dry-run (with --redo): read the files, list the slots to redo, write nothing.
+static var dry_run: bool = false
 const REDO_CHECKPOINT: String = "res://.redo_checkpoint.json"
 static var _unsaved: int = 0
 ## Sub-elements that rarely make a level in a window (World 3-4, measured
@@ -453,6 +455,8 @@ func _run() -> bool:
 		elif arg == "--redo":
 			redo = true
 			checkpoint_path = REDO_CHECKPOINT
+		elif arg == "--dry-run":
+			dry_run = true
 	var started: int = Time.get_ticks_msec()
 	var errors: Array[String] = []
 	if trial_limit > 0 and only != "":
@@ -466,6 +470,9 @@ func _run() -> bool:
 		for error: String in errors:
 			printerr(error)
 		return false
+	# --dry-run: the files were read and the redo slots listed, nothing drawn or written.
+	if dry_run:
+		return true
 	# Empty slots do not stop the writing (the work is kept); they are listed at the end.
 	write(road, Difficulty.LEVELS_DIR)
 	if errors.is_empty():
@@ -600,7 +607,7 @@ static func build(worlds: Array[int], errors: Array[String], keep: Array[int] = 
 			_keep_world(plan, world, used, errors)
 	if redo and not keep_failed:
 		_drop_refused(tracks, used)
-	if keep_failed:
+	if keep_failed or dry_run:
 		return {}
 	if resume:
 		_load_checkpoint(tracks, worlds, used)
@@ -694,14 +701,10 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 	if path.is_empty():
 		keep_failed = true
 		return
-	# The files' levels go to the slots in the same places only if the road
-	# has every place (a road written with empty slots left out has moved on).
+	# The main road's levels go to the slots in the same places only if the road
+	# has every place. Islands may have left empty slots out: _island_pairs
+	# matches those by their sub-elements.
 	var short: bool = (path[LevelCatalog.MAIN] as Array).size() < _world_end(plan["main"], world)
-	for k: int in (plan["islands"] as Array).size():
-		var island: Dictionary = plan["islands"][k]
-		if island["world"] == world:
-			short = short or k >= (path["islands"] as Array).size() \
-					or (path["islands"][k]["levels"] as Array).size() != (island["slots"] as Array).size()
 	if short:
 		keep_failed = true
 		errors.append("kept world %d: the road in the files has fewer places than the plan, nothing is written" % world)
