@@ -150,7 +150,7 @@ const ISLAND_TOP: int = 40
 const MODE_WEIGHTS: Dictionary = {"peg_capacity": LIGHT, "stripes": LIGHT, "cyclic": MEDIUM, "covered_pegs": MEDIUM,
 		"foundation": MEDIUM, "adjacent_pegs": HEAVY, "alternation": HEAVY, "balance": HEAVY,
 		# World 5-6 (user's plan 2026-10-27).
-		"king": MEDIUM, "river": MEDIUM, "carpet": MEDIUM, "chain": MEDIUM, "color_swap": MEDIUM, "ko": HEAVY}
+		"king": MEDIUM, "river": MEDIUM, "carpet": MEDIUM, "chain": MEDIUM, "color_swap": LIGHT, "ko": HEAVY}
 const _CYCLE_LIGHT: Array[String] = ["medium", "medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium",
 		"medium_hard", "medium", "hard", "medium", "medium_hard", "medium", "medium_hard", "medium", "medium_hard",
 		"medium_hard", "hard", "medium"]

@@ -993,6 +993,18 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			# 2026-10-28): other pair, then a single, both in the same window.
 			if draft.is_empty() and not mixed:
 				draft = _draw_stepped(slot, t, i, used)
+			# The main road is never left with a hole: the plain rule, no
+			# sub-element, in the original window (decision 2026-10-28).
+			if draft.is_empty() and t == 0 and not (slot["variants"] as Array).is_empty():
+				var plain: Array[String] = []
+				var plain_variants: Array = slot["variants"]
+				slot["variants"] = plain
+				slot["extra"] = _wave_extra(slot["modes"][0], plain, slot["t"], RandomNumberGenerator.new())
+				draft = draw_one(slot, BASE_SEED + t * 10000 + i, used)
+				if not draft.is_empty():
+					print("  track %d slot %d: PLAIN rule, no sub-element (wanted %s)" % [t, i + 1, str(plain_variants)])
+				else:
+					slot["variants"] = plain_variants
 			if draft.is_empty():
 				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
 						str(slot["variants"]), slot["low"], slot["high"]])
