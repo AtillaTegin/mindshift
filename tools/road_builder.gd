@@ -708,15 +708,19 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 	# The main road's levels go to the slots in the same places only if the road
 	# has every place. Islands may have left empty slots out: _island_pairs
 	# matches those by their sub-elements.
-	var short: bool = (path[LevelCatalog.MAIN] as Array).size() < _world_end(plan["main"], world)
-	if short:
+	var gaps: int = _world_end(plan["main"], world) - (path[LevelCatalog.MAIN] as Array).size()
+	if gaps > 0 and not redo:
 		keep_failed = true
 		errors.append("kept world %d: the road in the files has fewer places than the plan, nothing is written" % world)
 		return
 	var pairs: Array = []
-	for i: int in (plan["main"] as Array).size():
-		if i < (path[LevelCatalog.MAIN] as Array).size():
-			pairs.append([plan["main"][i], path[LevelCatalog.MAIN][i]])
+	if gaps > 0:
+		# --redo: holes in the main road are filled in their places.
+		pairs = _main_pairs(plan["main"], path[LevelCatalog.MAIN], gaps)
+	else:
+		for i: int in (plan["main"] as Array).size():
+			if i < (path[LevelCatalog.MAIN] as Array).size():
+				pairs.append([plan["main"][i], path[LevelCatalog.MAIN][i]])
 	for k: int in (plan["islands"] as Array).size():
 		if k < (path["islands"] as Array).size():
 			pairs.append_array(_island_pairs(plan["islands"][k]["slots"], path["islands"][k]["levels"], errors))
@@ -745,6 +749,31 @@ static func _keep_world(plan: Dictionary, world: int, used: Dictionary, errors: 
 	if kept == 0:
 		keep_failed = true
 		errors.append("kept world %d: no level could be read from the files, nothing is written" % world)
+
+
+## The main road's slots paired with the path's levels when the road has `gaps`
+## fewer entries than the plan: while holes remain, a slot takes the next level
+## only if it fits (same stream, its sub-elements, its move window); one that
+## does not fit is the hole and stays empty (drawn again in its place).
+static func _main_pairs(slots: Array, levels: Array, gaps: int) -> Array:
+	var pairs: Array = []
+	var at: int = 0
+	var left: int = gaps
+	for slot: Dictionary in slots:
+		if at >= levels.size():
+			break
+		if left > 0 and not slot.has("fixed"):
+			var level: Level = Level.load_file("%s/%s" % [Difficulty.LEVELS_DIR, levels[at]["file"]], [] as Array[String])
+			var fits: bool = level != null and stream_of(level.modes()) == stream_of(slot["modes"])
+			if fits and slot.has("low"):
+				fits = level.min_moves >= int(slot["low"]) and level.min_moves <= int(slot["high"]) \
+						and (slot["variants"] as Array).all(func(variant: String) -> bool: return level.variants.has(variant))
+			if not fits:
+				left -= 1
+				continue
+		pairs.append([slot, levels[at]])
+		at += 1
+	return pairs
 
 
 ## How many main road places the plan has up to the end of `world`.
@@ -838,6 +867,20 @@ static func _draw_bands(tracks: Array, world: int, used: Dictionary, errors: Arr
 					missing[i]["floor"] = ChapterPlan.weight_floor(missing[i]["weight"])
 				(missing[i] as Dictionary)["draft"] = more[i]
 			missing = missing.slice(more.size())
+		# The main road is never left with a hole: a classic level in the light window.
+		for slot: Dictionary in missing.duplicate():
+			if not (tracks[0] as Array).has(slot):
+				continue
+			var classic: Dictionary = _classic_fallback(slot, BASE_SEED + group.hash() % 100000, used)
+			if classic.is_empty():
+				continue
+			print("  %s: CLASSIC fallback (wanted %s)" % [group, stream_of(slot["modes"])])
+			slot["modes"] = []
+			slot["weight"] = ChapterPlan.LIGHT
+			slot["floor"] = ChapterPlan.weight_floor(ChapterPlan.LIGHT)
+			slot["draft"] = classic
+			used[classic["key"]] = true
+			missing.erase(slot)
 		if not missing.is_empty():
 			errors.append_array(group_errors)
 			errors.append("%s: only %d of %d levels found" % [group, slots.size() - missing.size(), slots.size()])
@@ -1005,6 +1048,19 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 					print("  track %d slot %d: PLAIN rule, no sub-element (wanted %s)" % [t, i + 1, str(plain_variants)])
 				else:
 					slot["variants"] = plain_variants
+			# Last resort: the main road still gets a classic level (light window).
+			if draft.is_empty() and t == 0:
+				draft = _classic_fallback(slot, BASE_SEED + t * 10000 + i, used)
+				if not draft.is_empty():
+					print("  track %d slot %d: CLASSIC fallback (wanted %s)" % [t, i + 1, _slot_name(slot)])
+					slot["modes"] = []
+					slot["variants"] = [] as Array[String]
+					slot["extra"] = {}
+					slot["weight"] = ChapterPlan.LIGHT
+					slot["floor"] = ChapterPlan.weight_floor(ChapterPlan.LIGHT)
+					slot.erase("intro")
+					slot.erase("breath")
+					slot.erase("fallback_modes")
 			if draft.is_empty():
 				errors.append("track %d slot %d: no %s level %s with %d-%d moves" % [t, i + 1, stream_of(slot["modes"]),
 						str(slot["variants"]), slot["low"], slot["high"]])
@@ -1021,6 +1077,15 @@ static func _draw_waves(tracks: Array, world: int, used: Dictionary, errors: Arr
 			_save_checkpoint(tracks)
 		if count > 0:
 			print("  world %d track %d: %d wave levels in %.1f s" % [world, t, count, (Time.get_ticks_msec() - started) / 1000.0])
+
+
+## A classic level in the comfortable light window for a main road slot nothing
+## else fits ({} if even that is not found). The slot itself is not changed.
+static func _classic_fallback(slot: Dictionary, seed_value: int, used: Dictionary) -> Dictionary:
+	var none: Array = []
+	var found: Array[Dictionary] = draw_group(none, ChapterPlan.mix_band(0, ChapterPlan.LIGHT), 1, seed_value, used,
+			[] as Array[String], ChapterPlan.weight_floor(ChapterPlan.LIGHT), ChapterPlan.LIGHT)
+	return found[0] if not found.is_empty() else {}
 
 
 ## The road's slots for `worlds`: {main: [slot], islands: [{mode, after,
