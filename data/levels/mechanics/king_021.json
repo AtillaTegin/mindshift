@@ -1,0 +1,15 @@
+{
+  "id": 24021,
+  "difficulty": "hard",
+  "pegs": 3,
+  "disks": 6,
+  "start": [[2],[6,5,1],[4,3]],
+  "goal": [[5,4],[3],[6,2,1]],
+  "rules": ["classic_hanoi","king"],
+  "min_moves": 23,
+  "solution_path": [[0,2],[1,2],[1,0],[2,1],[2,0],[1,0],[2,1],[0,2],[0,1],[2,1],[2,0],[1,0],[1,2],[0,2],[1,0],[2,1],[2,0],[1,0],[1,2],[0,1],[0,2],[1,2],[0,1]],
+  "star_thresholds": {"three":23,"two":29},
+  "time_limit_seconds": null,
+  "rule_params": {"king":{"crowns":[[6,2],[3,1]]}},
+  "variants": ["vizier","siege"]
+}

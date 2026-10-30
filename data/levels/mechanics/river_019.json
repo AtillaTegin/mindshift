@@ -1,0 +1,15 @@
+{
+  "id": 25019,
+  "difficulty": "medium",
+  "pegs": 5,
+  "disks": 7,
+  "start": [[7],[],[5,4,3,2,1],[],[6]],
+  "goal": [[],[6,5],[7],[],[4,3,2,1]],
+  "rules": ["classic_hanoi","river"],
+  "min_moves": 18,
+  "solution_path": [[2,3],[2,4],[3,4],[2,3],[4,2],[4,3],[2,3],[4,1],[2,4],[3,4],[3,2],[4,2],[3,4],[2,3],[2,4],[3,4],[2,1],[0,2]],
+  "star_thresholds": {"three":18,"two":23},
+  "time_limit_seconds": null,
+  "rule_params": {"river":{"banks":[0,0,1,1,1],"elephant":5,"reverse":true}},
+  "variants": ["reverse"]
+}
