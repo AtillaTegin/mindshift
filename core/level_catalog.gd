@@ -17,6 +17,8 @@ extends RefCounted
 ## stays open. There is no other lock.
 
 const PATH_FILE: String = "path.json"
+## The demo road's path file (ChapterPlan.road_mode).
+const DEMO_PATH_FILE: String = "demo_path.json"
 const MAIN: String = "main"
 const ISLAND_PREFIX: String = "island_"
 
@@ -53,7 +55,7 @@ static func clear_cache() -> void:
 static func path_data() -> Dictionary:
 	if _path.is_empty():
 		var errors: Array[String] = []
-		_path = read_path("%s/%s" % [Difficulty.LEVELS_DIR, PATH_FILE], errors)
+		_path = read_path("%s/%s" % [Difficulty.LEVELS_DIR, path_file()], errors)
 		for error: String in errors:
 			push_error("Level path: %s" % error)
 		_tracks[MAIN] = _path[MAIN]
@@ -67,6 +69,11 @@ static func path_data() -> Dictionary:
 			for i: int in entries.size():
 				_places[entries[i]["id"]] = {"track": track, "position": i + 1}
 	return _path
+
+
+## The path file of the road in use: path.json (full) or demo_path.json.
+static func path_file() -> String:
+	return DEMO_PATH_FILE if ChapterPlan.is_demo() else PATH_FILE
 
 
 ## Parses a path file; problems go to `errors`. The result always has both

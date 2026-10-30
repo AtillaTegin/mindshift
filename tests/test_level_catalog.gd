@@ -2,6 +2,8 @@ extends "res://tests/test_case.gd"
 ## LevelCatalog: the shipped levels, the level path (one road plus an island
 ## at the end of each chapter, chapter system v1), unlocking, next level and
 ## stars. The road's makeup is tested in test_chapter_plan.gd.
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_every_level_is_on_the_path_once", "test_expert_levels_only_on_islands", "test_next_after_stays_on_the_track", "test_tracks_and_islands", "test_islands_open_after_their_main_level", "test_next_to_play_follows_progress", "test_place_and_title"]
 
 const PATH: String = "res://.test_saves/test_level_catalog.json"
 const MAIN: String = LevelCatalog.MAIN

@@ -3,6 +3,8 @@ extends "res://tests/test_case.gd"
 ## beside its stops on the level map and a name and rule under the board, all
 ## from one register (ModeTexts). A mode the levels or the rule registry can
 ## produce without an entry there fails here, so none is ever forgotten.
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_every_stop_on_the_map_carries_its_mode"]
 
 const SAVE_PATH: String = "res://.test_saves/test_mode_texts_save.json"
 const MAIN: String = LevelCatalog.MAIN

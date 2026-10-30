@@ -1,6 +1,8 @@
 extends "res://tests/test_case.gd"
 ## The chapter system (MindShift_Fesil_Sistemi_v1.md): the plan itself, the
 ## combination rules, and the road the builder made from it.
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_plan_follows_the_table", "test_world_floors", "test_road_follows_the_plan", "test_world_one_is_classic_then_capacity", "test_mode_chapters_mix_classic_and_repeats", "test_combination_chapters", "test_islands_end_their_chapters"]
 
 const MAIN: String = LevelCatalog.MAIN
 

@@ -32,7 +32,7 @@ const COVERED: String = "covered_pegs"
 ## positions. Mode chapters: one classic level for every `ratio` mode levels
 ## (3:1, World 1's 2-3:1 as 2.5). Combination chapters: `combos` (section 4.3)
 ## and the single modes of their world (`singles`).
-const CHAPTERS: Array[Dictionary] = [
+const FULL_CHAPTERS: Array[Dictionary] = [
 	{"world": 1, "kind": CLASSIC_CHAPTER, "first": 1, "last": 50},
 	{"world": 1, "kind": MODE_CHAPTER, "mode": "peg_capacity", "first": 51, "last": 100, "ratio": 2.5},
 	{"world": 2, "kind": MODE_CHAPTER, "mode": "covered_pegs", "first": 101, "last": 200, "ratio": 3.0},
@@ -393,6 +393,49 @@ const CATEGORIES: Dictionary = {
 	"lamp": ["history"],
 	"solitaire": ["local"],
 }
+## The demo road (user's decision 2026-10-30): 205 levels picked from the full
+## road's World 1-4 levels (tools/demo_road.gd), no islands, no new levels. Its
+## chapters keep their worlds, so floors and weights stay the same.
+const DEMO_CHAPTERS: Array[Dictionary] = [
+	{"world": 1, "kind": CLASSIC_CHAPTER, "first": 1, "last": 25},
+	{"world": 1, "kind": MODE_CHAPTER, "mode": "peg_capacity", "first": 26, "last": 45},
+	{"world": 2, "kind": MODE_CHAPTER, "mode": "covered_pegs", "first": 46, "last": 65},
+	{"world": 2, "kind": MODE_CHAPTER, "mode": "foundation", "first": 66, "last": 85},
+	{"world": 2, "kind": COMBO_CHAPTER, "first": 86, "last": 95, "singles": ["covered_pegs", "foundation"],
+		"combos": [["peg_capacity", "covered_pegs"], ["peg_capacity", "foundation"], ["covered_pegs", "foundation"]]},
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "adjacent_pegs", "first": 96, "last": 115},
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "stripes", "first": 116, "last": 135},
+	{"world": 3, "kind": MODE_CHAPTER, "mode": "cyclic", "first": 136, "last": 155},
+	{"world": 3, "kind": COMBO_CHAPTER, "first": 156, "last": 165, "singles": ["adjacent_pegs", "stripes", "cyclic"],
+		"combos": [["adjacent_pegs", "peg_capacity"], ["adjacent_pegs", "foundation"], ["stripes", "peg_capacity"],
+			["stripes", "adjacent_pegs"], ["cyclic", "peg_capacity"], ["cyclic", "foundation"], ["covered_pegs", "stripes"]]},
+	{"world": 4, "kind": MODE_CHAPTER, "mode": "alternation", "first": 166, "last": 180},
+	{"world": 4, "kind": MODE_CHAPTER, "mode": "balance", "first": 181, "last": 195},
+	{"world": 4, "kind": COMBO_CHAPTER, "first": 196, "last": 205, "singles": ["alternation", "balance"],
+		"combos": [["alternation", "peg_capacity"], ["balance", "peg_capacity"], ["balance", "foundation"],
+			["balance", "stripes"], ["balance", "covered_pegs"]]},
+]
+## Which road the game and the tools use: "demo" (default, also on a phone)
+## or "full" (the archived road, git tag full-road-v1). The ROAD_MODE
+## environment variable picks it; tools/road_builder.gd always builds "full".
+const DEMO: String = "demo"
+const FULL: String = "full"
+## (Written in lower case so the locale key scan does not take it for a text key.)
+const ROAD_MODE_ENV: String = "road_mode"
+static var road_mode: String = FULL if OS.get_environment(ROAD_MODE_ENV.to_upper()) == FULL else DEMO
+static var CHAPTERS: Array[Dictionary] = FULL_CHAPTERS if road_mode == FULL else DEMO_CHAPTERS
+
+
+## Switches the road (`DEMO` or `FULL`); LevelCatalog reads the matching path file.
+static func use_road(mode: String) -> void:
+	road_mode = mode
+	CHAPTERS = FULL_CHAPTERS if mode == FULL else DEMO_CHAPTERS
+
+
+static func is_demo() -> bool:
+	return road_mode == DEMO
+
+
 ## Categories a combination may hold only one mode of (section 4.2, rule 1).
 const EXCLUSIVE: Array[String] = ["hidden", "topology", "colour", "history", "layout", "goal", "compound"]
 

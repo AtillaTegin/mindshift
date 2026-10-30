@@ -439,6 +439,7 @@ func _initialize() -> void:
 
 
 func _run() -> bool:
+	ChapterPlan.use_road(ChapterPlan.FULL)
 	var worlds: Array[int] = BUILT_WORLDS.duplicate()
 	var keep: Array[int] = []
 	for arg: String in OS.get_cmdline_user_args():

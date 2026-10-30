@@ -62,6 +62,7 @@ func _run_all() -> bool:
 
 	var passed: int = 0
 	var failed: int = 0
+	var skipped: int = 0
 	var started_ms: int = Time.get_ticks_msec()
 	for file_name: String in _find_test_files(filter):
 		print("== %s" % file_name)
@@ -76,6 +77,13 @@ func _run_all() -> bool:
 			if _required_arg_count(info) > 0:
 				print("  FAIL %s: test methods must not take arguments" % method_name)
 				failed += 1
+				continue
+			# Tests of one road only (ChapterPlan.road_mode): FULL_ROAD_TESTS run with
+			# ROAD_MODE=full, DEMO_ROAD_TESTS on the demo road (the default).
+			var road_only: String = _road_of(script, method_name)
+			if not road_only.is_empty() and road_only != ChapterPlan.road_mode:
+				print("  SKIP %s (%s road only)" % [method_name, road_only])
+				skipped += 1
 				continue
 			var errors_before: int = error_counter.get_errors()
 			var script_errors_before: int = error_counter.get_script_errors()
@@ -106,7 +114,7 @@ func _run_all() -> bool:
 	OS.remove_logger(error_counter)
 	var total_ms: int = Time.get_ticks_msec() - started_ms
 	print("")
-	print("%d passed, %d failed (%d ms)" % [passed, failed, total_ms])
+	print("%d passed, %d failed, %d skipped (%d ms)" % [passed, failed, skipped, total_ms])
 	if passed + failed == 0:
 		print("No tests found.")
 		return false
@@ -114,6 +122,17 @@ func _run_all() -> bool:
 
 
 ## Why `script` cannot be run as a test file, or "" if it can.
+## "full" or "demo" if `method_name` is listed in the script's FULL_ROAD_TESTS
+## or DEMO_ROAD_TESTS, else "".
+func _road_of(script: GDScript, method_name: String) -> String:
+	var constants: Dictionary = script.get_script_constant_map()
+	if (constants.get("FULL_ROAD_TESTS", []) as Array).has(method_name):
+		return ChapterPlan.FULL
+	if (constants.get("DEMO_ROAD_TESTS", []) as Array).has(method_name):
+		return ChapterPlan.DEMO
+	return ""
+
+
 func _check_test_script(script: GDScript) -> String:
 	if script == null or not script.can_instantiate():
 		return "could not load the script"

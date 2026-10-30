@@ -42,8 +42,8 @@ func _run() -> bool:
 		for error: String in failures[path]:
 			print("     - %s" % error)
 	var ok: bool = failures.is_empty() and report["files"] > 0
-	if not FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]):
-		print("FAIL %s/%s is missing (run tools/road_builder.gd)" % [levels_dir, LevelCatalog.PATH_FILE])
+	if not FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.path_file()]):
+		print("FAIL %s/%s is missing (run tools/road_builder.gd)" % [levels_dir, LevelCatalog.path_file()])
 		ok = false
 	var counts: Dictionary = report["valid_counts"]
 	if counts.has(Difficulty.MECHANICS):
@@ -70,12 +70,18 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 	var valid_counts: Dictionary = {}
 	var files: int = 0
 	var id_owner: Dictionary = {}
+	# The demo road: only the files on its path (the full road's other files stay in the repo).
+	var on_path: Dictionary = {}
+	if ChapterPlan.is_demo():
+		var demo: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.path_file()], [] as Array[String])
+		for entry: Dictionary in demo[LevelCatalog.MAIN]:
+			on_path[entry["file"]] = true
 	var pair_owner: Dictionary = {}
 	for tier: String in DirAccess.get_directories_at(levels_dir):
 		var file_names: Array = Array(DirAccess.get_files_at("%s/%s" % [levels_dir, tier]))
 		file_names.sort()
 		for file_name: String in file_names:
-			if not file_name.ends_with(".json"):
+			if not file_name.ends_with(".json") or (not on_path.is_empty() and not on_path.has("%s/%s" % [tier, file_name])):
 				continue
 			files += 1
 			var path: String = "%s/%s/%s" % [levels_dir, tier, file_name]
@@ -95,10 +101,10 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 				valid_counts[tier] = valid_counts.get(tier, 0) + 1
 			else:
 				failures[path] = errors
-	if FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]):
+	if FileAccess.file_exists("%s/%s" % [levels_dir, LevelCatalog.path_file()]):
 		var path_errors: Array[String] = validate_path(levels_dir)
 		if not path_errors.is_empty():
-			failures["%s/%s" % [levels_dir, LevelCatalog.PATH_FILE]] = path_errors
+			failures["%s/%s" % [levels_dir, LevelCatalog.path_file()]] = path_errors
 	return {"files": files, "failures": failures, "valid_counts": valid_counts}
 
 
@@ -114,7 +120,7 @@ static func validate_directory(levels_dir: String) -> Dictionary:
 ## levels and the first main level of each lesson and of each sub-element.
 static func validate_path(levels_dir: String) -> Array[String]:
 	var errors: Array[String] = []
-	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.PATH_FILE], errors)
+	var path: Dictionary = LevelCatalog.read_path("%s/%s" % [levels_dir, LevelCatalog.path_file()], errors)
 	var listed: Dictionary = {}
 	var main: Array = path[LevelCatalog.MAIN]
 	var tracks: Array[Dictionary] = [{"name": LevelCatalog.MAIN, "entries": main, "mode": "", "after": 0}]
@@ -185,6 +191,9 @@ static func validate_path(levels_dir: String) -> Array[String]:
 	for i: int in TUTORIAL_LEVEL_IDS.size():
 		if main.size() <= i or main[i]["id"] != TUTORIAL_LEVEL_IDS[i]:
 			errors.append("main %d must be tutorial level %d" % [i + 1, TUTORIAL_LEVEL_IDS[i]])
+	# The demo road picks from the full road's files: the rest stay, off its path.
+	if ChapterPlan.is_demo():
+		return errors
 	for folder: String in DirAccess.get_directories_at(levels_dir):
 		for file_name: String in DirAccess.get_files_at("%s/%s" % [levels_dir, folder]):
 			if file_name.ends_with(".json") and not listed.has("%s/%s" % [folder, file_name]):

@@ -2,6 +2,8 @@ extends "res://tests/test_case.gd"
 ## Chapter waves v1 (MindShift_Fesil_Daxili_Dalgalar_v1.md): the sub-elements'
 ## rules, their sessions and validator checks, their texts, and the waves the
 ## road builder made of world 1-2.
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_world_two_rides_in_waves"]
 
 const MAIN: String = LevelCatalog.MAIN
 

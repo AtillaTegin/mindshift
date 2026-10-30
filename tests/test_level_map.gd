@@ -2,6 +2,8 @@ extends "res://tests/test_case.gd"
 ## The level map (level structure addendum v3): one winding road of numbered
 ## stops, no tier tabs or labels, the islands as surprises (one at the end of
 ## each chapter, chapter system v1), and boards that follow the road.
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_big_tests_wear_a_crown", "test_island_appears_after_its_level_and_switches_tracks", "test_every_chapter_end_gets_its_island", "test_board_follows_the_road", "test_popup_announces_the_island_once"]
 
 const SAVE_PATH: String = "res://.test_saves/test_level_map_save.json"
 const SELECT_SCENE: PackedScene = preload("res://scenes/level_select.tscn")

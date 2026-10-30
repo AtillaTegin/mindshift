@@ -1,5 +1,7 @@
 extends "res://tests/test_case.gd"
 ## Main menu and shop screens (the level map: test_level_map.gd).
+## Tests of the full road (ROAD_MODE=full); the demo road skips them.
+const FULL_ROAD_TESTS: Array[String] = ["test_main_menu_builds"]
 
 const MENU_SCENE: PackedScene = preload("res://scenes/main_menu.tscn")
 const SAVE_PATH: String = "res://.test_saves/test_menus_save.json"
