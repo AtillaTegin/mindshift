@@ -1,19 +1,20 @@
 extends Control
 ## Isolated map composition and interaction preview.
 
-const ISLAND: Texture2D = preload("res://prototype/classic_saga/island.png")
+const ISLAND: Texture2D = preload("res://prototype/classic_saga/benares.png")
 const FRAME: Vector2 = Vector2(720, 1280)
 const STOP_COUNT: int = 25
-const FIRST_STOP: Vector2 = Vector2(267, 813)
+const WATER_CROSSINGS: Array[float] = [2.5, 9.5, 16.5]
+const FIRST_STOP: Vector2 = Vector2(253, 803)
 const LAST_STOP: Vector2 = Vector2(365, 269)
 const THRESHOLD: Vector2 = Vector2(365, 242)
 const WAYPOINTS: PackedVector2Array = [
-	FIRST_STOP, Vector2(388, 797), Vector2(534, 746),
-	Vector2(563, 692), Vector2(468, 660), Vector2(266, 681),
-	Vector2(145, 647), Vector2(126, 588), Vector2(242, 552),
-	Vector2(427, 551), Vector2(554, 508), Vector2(550, 454),
-	Vector2(450, 424), Vector2(244, 431), Vector2(162, 398),
-	Vector2(174, 355), Vector2(297, 326), Vector2(365, 309),
+	FIRST_STOP, Vector2(381, 784), Vector2(510, 738),
+	Vector2(594, 700), Vector2(510, 650), Vector2(282, 644),
+	Vector2(183, 628), Vector2(173, 593), Vector2(263, 551),
+	Vector2(427, 526), Vector2(504, 496), Vector2(515, 453),
+	Vector2(436, 425), Vector2(237, 462), Vector2(159, 443),
+	Vector2(168, 373), Vector2(327, 350), Vector2(446, 322),
 	LAST_STOP,
 ]
 
@@ -41,7 +42,7 @@ func _ready() -> void:
 		stop.text = str(index + 1)
 		stop.toggle_mode = true
 		stop.button_group = group
-		stop.size = Vector2(66, 50)
+		stop.size = Vector2(62, 48)
 		stop.position = _curve.sample_baked(stride * index, true) - stop.size / 2.0
 		stop.add_theme_font_size_override("font_size", 24)
 		stop.add_theme_color_override("font_color", Color("#fff1cd"))
@@ -84,18 +85,47 @@ func _draw_map() -> void:
 		_frame.draw_line(Vector2(0, edge), Vector2(720, edge), Color("#b57948"), 2.0)
 	var road: PackedVector2Array = _curve.get_baked_points()
 	road.append(THRESHOLD)
+	var length: float = _curve.get_baked_length()
+	for gap: float in WATER_CROSSINGS:
+		_draw_channel(length * gap / float(STOP_COUNT - 1))
 	_frame.draw_polyline(road, Color("#a0502c65"), 49.0, true)
 	_frame.draw_polyline(road, Color("#8f542f"), 40.0, true)
 	_frame.draw_polyline(road, Color("#f2bd7d"), 35.0, true)
 	_frame.draw_polyline(road, Color("#dca267"), 29.0, true)
-	var length: float = _curve.get_baked_length()
 	for offset: int in range(8, int(length) - 4, 15):
 		var p: Vector2 = _curve.sample_baked(float(offset))
 		var direction: Vector2 = (_curve.sample_baked(float(offset + 4)) - p).normalized()
 		var cross: Vector2 = direction.orthogonal() * 14.0
 		_frame.draw_line(p - cross, p + cross, Color("#8d553e85"), 1.4, true)
 		_frame.draw_line(p - cross + direction, p + cross + direction, Color("#ffde9eb0"), 1.0, true)
+	for gap: float in WATER_CROSSINGS:
+		_draw_crossing(length * gap / float(STOP_COUNT - 1))
 	_draw_portal()
+
+
+func _draw_channel(distance: float) -> void:
+	var center: Vector2 = _curve.sample_baked(distance)
+	var along: Vector2 = (_curve.sample_baked(distance + 5.0) - center).normalized()
+	var across: Vector2 = along.orthogonal()
+	var channel: PackedVector2Array = []
+	for step: int in range(-8, 9):
+		var t: float = float(step) / 8.0
+		channel.append(center + across * t * 52.0 + along * sin(t * PI) * 9.0)
+	_frame.draw_polyline(channel, Color("#543d32"), 29.0, true)
+	_frame.draw_polyline(channel, Color("#86704f"), 24.0, true)
+	_frame.draw_polyline(channel, Color("#0c535a"), 18.0, true)
+	_frame.draw_polyline(channel, Color("#31b4ad"), 11.0, true)
+	_frame.draw_polyline(channel, Color("#a4ebe0"), 2.0, true)
+
+
+func _draw_crossing(distance: float) -> void:
+	for index: int in range(-3, 4):
+		var d: float = distance + float(index) * 6.0
+		var center: Vector2 = _curve.sample_baked(d)
+		var along: Vector2 = (_curve.sample_baked(d + 3.0) - center).normalized()
+		var across: Vector2 = along.orthogonal() * 19.0
+		_frame.draw_line(center - across, center + across, Color("#754c35"), 6.0, true)
+		_frame.draw_line(center - across - along, center + across - along, Color("#ffe0a6"), 3.0, true)
 
 
 func _draw_portal() -> void:
@@ -147,6 +177,7 @@ func _label(value: String, font_size: int, top: float) -> Label:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Color("#f4dfc7"))
 	_frame.add_child(label)
 	return label
 
