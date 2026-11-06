@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/karvan_saga/karvan_island.png" id="2"]
+
+[node name="KarvanSaga" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+demo_chapter_index = 5
+chapter_title = "KARVAN YOLU"
+island_texture = ExtResource("2")
+waypoints = PackedVector2Array(333.98, 1126.56, 217.97, 1080.86, 147.66, 1028.13, 232.03, 985.94, 400.78, 926.17, 542.81, 862.19, 630.70, 791.88, 641.25, 749.69, 591.33, 705.39, 483.05, 673.05, 325.55, 650.55, 191.95, 625.23, 100.55, 588.67, 161.72, 557.03, 309.38, 533.13, 474.61, 511.33, 598.36, 478.98, 521.02, 455.08, 365.63, 436.80, 235.55, 412.89, 169.45, 391.80, 230.63, 370.00, 337.50, 348.91, 367.73, 336.25)
+threshold = Vector2(364, 322)
+embedded_gate = true
+portal_core = Vector2(364, 278)
+portal_radius = 34.0
+portal_light = Color(0.34, 0.82, 1, 1)
+portal_accent = Color(1, 0.76, 0.36, 1)
+painted_road = true
+pale_water = false
+stop_size = Vector2(60, 44)
+stop_face = Color(0.12, 0.25, 0.43, 1)
+stop_offsets = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+stop_lanes = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0)

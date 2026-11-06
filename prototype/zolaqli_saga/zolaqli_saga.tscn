@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/zolaqli_saga/zolaqli_long_route.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_close"]
+atlas = ExtResource("2")
+region = Rect2(48, 0, 928, 1392)
+filter_clip = true
+
+[node name="ZolaqliSaga" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+demo_chapter_index = 6
+chapter_title = "ZOLAQLI"
+island_texture = SubResource("AtlasTexture_close")
+waypoints = PackedVector2Array(270.78, 1015.52, 287.84, 982.16, 401.12, 928.62, 519.83, 882.84, 606.72, 842.50, 584.22, 823.10, 456.21, 795.17, 308.79, 761.81, 173.79, 736.21, 107.84, 726.12, 99.31, 709.83, 225.78, 697.41, 363.88, 673.36, 506.64, 651.64, 611.38, 638.45, 582.67, 626.03, 447.67, 605.09, 303.36, 580.26, 169.14, 549.22, 107.84, 529.05, 152.84, 509.66, 288.62, 488.71, 431.38, 470.86, 572.59, 454.57, 531.47, 433.62, 422.07, 414.22, 318.10, 393.28, 363.10, 374.66)
+threshold = Vector2(363, 360)
+embedded_gate = true
+portal_core = Vector2(364, 294)
+portal_radius = 47.0
+portal_light = Color(0.76, 0.56, 1, 1)
+portal_accent = Color(1, 0.87, 0.64, 1)
+painted_road = true
+pale_water = false
+stop_size = Vector2(60, 44)
+stop_face = Color(0.28, 0.19, 0.39, 1)
+chapter_effect = 1
+stop_offsets = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -16, 0)
+stop_lanes = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)

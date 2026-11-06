@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/tutum_saga/tutum_island.png" id="2"]
+
+[node name="TutumSaga" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+demo_chapter_index = 1
+chapter_title = "TUTUM"
+island_texture = ExtResource("2")
+waypoints = PackedVector2Array(246.09, 908.59, 362.11, 893.13, 492.19, 848.83, 592.73, 796.09, 562.5, 767.97, 474.61, 737.73, 337.5, 735.63, 193.36, 726.48, 144.84, 697.66, 147.66, 665.31, 239.06, 617.5, 365.63, 596.41, 465.47, 566.17, 506.25, 538.05, 509.06, 500.08, 432.42, 479.69, 326.25, 490.23, 219.38, 502.89, 144.14, 485.31, 144.14, 446.64, 176.48, 419.22, 309.38, 397.42, 407.11, 373.52, 431.72, 360.86, 369.84, 338.36, 358.59, 325.7)
+threshold = Vector2(359, 305)
+embedded_gate = true
+portal_core = Vector2(362, 222)
+portal_radius = 68.0
+portal_light = Color(0.36, 0.96, 1, 1)
+portal_accent = Color(1, 0.69, 0.31, 1)
+painted_road = true
+pale_water = true
+stop_size = Vector2(62, 46)

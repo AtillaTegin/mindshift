@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/saga_world/combination_3_road.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_close"]
+atlas = ExtResource("2")
+region = Rect2(48, 0, 928, 1392)
+filter_clip = true
+
+[node name="Combination3" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+demo_chapter_index = 11
+chapter_title = "BİRLƏŞMƏ III"
+island_texture = SubResource("AtlasTexture_close")
+waypoints = PackedVector2Array(347.58620689655174, 939.4827586206897, 314.2241379310345, 881.2931034482758, 389.48275862068965, 854.9137931034483, 457.7586206896552, 829.3103448275862, 528.3620689655172, 794.3965517241379, 424.3965517241379, 778.1034482758621, 362.32758620689657, 764.1379310344828, 229.6551724137931, 748.6206896551724, 297.9310344827586, 717.5862068965517, 366.2068965517241, 683.448275862069)
+threshold = Vector2(366.2068965517241, 674.1379310344828)
+portal_core = Vector2(366.2068965517241, 639.2241379310345)
+portal_radius = 28.0
+embedded_gate = true
+painted_road = true
+linked_anchors = true
+stop_size = Vector2(60, 44)
+chapter_effect = 4

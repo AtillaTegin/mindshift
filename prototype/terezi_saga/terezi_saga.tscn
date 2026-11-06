@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/terezi_saga/terezi_island.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_close"]
+atlas = ExtResource("2")
+region = Rect2(32, 0, 960, 1440)
+filter_clip = true
+
+[node name="TereziSaga" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+demo_chapter_index = 10
+chapter_title = "TƏRƏZİ"
+island_texture = SubResource("AtlasTexture_close")
+waypoints = PackedVector2Array(231, 883, 231, 832.75, 230.25, 782.5, 223.5, 730.75, 253.5, 692.5, 318, 667.75, 390, 652, 463.5, 639.25, 539.25, 624.25, 614.25, 601, 585, 571.75, 516, 555.25, 442.5, 535.75, 414.75, 508.75, 486.75, 487.75, 561.75, 469, 638.25, 448.75, 667.5, 419.5, 606, 397, 530.25, 382, 468.75, 352.75, 525.75, 328, 600, 308.5, 666, 281.5, 565.5, 223.75)
+threshold = Vector2(564, 208)
+embedded_gate = true
+portal_core = Vector2(564, 184)
+portal_radius = 16.0
+portal_light = Color(0.32, 1, 0.68, 1)
+portal_accent = Color(1, 0.87, 0.64, 1)
+painted_road = true
+stop_size = Vector2(54, 40)
+stop_face = Color(0.10, 0.21, 0.38, 1)
+pale_water = true
+chapter_effect = 4
+show_route_line = true
+stop_offsets = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 3, 0, 17, 8, 0, 0, 9, 1, 0, 0, 9, 0, -1, 4, 0)

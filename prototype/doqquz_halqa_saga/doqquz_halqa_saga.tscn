@@ -1,0 +1,36 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://prototype/classic_saga/classic_saga.gd" id="1"]
+[ext_resource type="Texture2D" path="res://prototype/doqquz_halqa_saga/doqquz_halqa_route.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_close"]
+atlas = ExtResource("2")
+region = Rect2(72, 0, 880, 1320)
+filter_clip = true
+
+[node name="DoqquzHalqaSaga" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+demo_chapter_index = 9
+chapter_title = "DOQQUZ HALQA"
+island_texture = SubResource("AtlasTexture_close")
+waypoints = PackedVector2Array(157.91, 1081.82, 252.00, 1081.82, 344.45, 1063.82, 411.55, 1022.91, 505.64, 994.27, 595.64, 979.55, 501.55, 940.82, 414.82, 925.55, 345.27, 878.09, 249.55, 861.73, 322.36, 824.09, 399.27, 804.45, 488.45, 761.91, 581.73, 741.45, 495.82, 713.64, 402.55, 697.27, 331.36, 663.00, 238.09, 635.09, 344.45, 610.55, 420.55, 584.36, 516.27, 552.45, 408.27, 523.82, 322.36, 476.36, 405.00, 428.91, 475.36, 365.09)
+threshold = Vector2(473.73, 326.64)
+embedded_gate = true
+portal_core = Vector2(473.73, 265.27)
+portal_radius = 58.0
+portal_light = Color(0.39, 0.96, 0.66, 1)
+portal_accent = Color(1, 0.87, 0.64, 1)
+painted_road = true
+pale_water = false
+stop_size = Vector2(60, 44)
+stop_face = Color(0.10, 0.29, 0.22, 1)
+chapter_effect = 3
+linked_anchors = true
+stop_offsets = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0)
+stop_lanes = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, -4, 0, 4, 0, 0, 0, 0)

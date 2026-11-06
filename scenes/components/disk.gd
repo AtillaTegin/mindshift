@@ -97,8 +97,15 @@ func move_to(target: Vector2, animated: bool, delay: float = 0.0) -> void:
 	_move = create_tween()
 	if delay > 0.0:
 		_move.tween_interval(delay)
+	if gilded_bevel and absf(position.x - target.x) > 1.0:
+		_move.tween_method(_arc_position.bind(position, target), 0.0, 1.0, 0.20).set_trans(Tween.TRANS_SINE)
+		return
 	_move.tween_property(self, "position", target, MOVE_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
+
+func _arc_position(progress: float, origin: Vector2, destination: Vector2) -> void:
+	position = origin.lerp(destination, progress)
+	position.y -= sin(progress * PI) * minf(absf(destination.x - origin.x) * 0.35, 110.0)
 
 ## "Not now" feedback for a disk a rule holds back: a short sideways shake in
 ## place with a soft grey rim (no red: nothing is punished).
@@ -151,6 +158,26 @@ func _update_shadow() -> void:
 	_shadow.polygon = points
 
 
+var gilded_bevel: bool = false
+
+
+func _draw_gilded_disk(fill: Color) -> void:
+	var radius: float = size.x * 0.5
+	var rim: float = size.y * 0.24
+	var top: Vector2 = Vector2(radius, rim)
+	var bottom: Vector2 = Vector2(radius, size.y - rim)
+	var bronze: Color = fill.darkened(0.40)
+	draw_rect(Rect2(0.0, rim, size.x, size.y - 2.0 * rim), bronze)
+	draw_set_transform(bottom + Vector2(0.0, lift), 0.0, Vector2(1.0, rim / radius))
+	draw_circle(Vector2.ZERO, radius, bronze, true, -1.0, true)
+	draw_set_transform(top + Vector2(0.0, lift), 0.0, Vector2(1.0, rim / radius))
+	draw_circle(Vector2.ZERO, radius, fill, true, -1.0, true)
+	draw_arc(Vector2.ZERO, radius * 0.97, PI, TAU, 32, fill.lightened(0.65), 2.0, true)
+	draw_circle(Vector2.ZERO, minf(radius * 0.19, 10.0), bronze.darkened(0.45), true, -1.0, true)
+	draw_set_transform(Vector2(0.0, lift))
+	if selected:
+		_draw_rim(ring_color, 3.0)
+
 func _draw() -> void:
 	draw_set_transform(Vector2(0.0, lift))
 	var box: StyleBoxFlat = StyleBoxFlat.new()
@@ -163,7 +190,13 @@ func _draw() -> void:
 	if selected:
 		box.set_border_width_all(4)
 		box.border_color = ThemeManager.color("text_primary")
-	draw_style_box(box, Rect2(Vector2.ZERO, size))
+	if gilded_bevel and not selected:
+		box.set_border_width_all(2)
+		box.border_color = color.darkened(0.36)
+	if gilded_bevel:
+		_draw_gilded_disk(box.bg_color)
+	else:
+		draw_style_box(box, Rect2(Vector2.ZERO, size))
 	if glass:
 		# A glint across the top, as on glass.
 		var glint: Color = color.lightened(0.8)
